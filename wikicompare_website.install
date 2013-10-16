@@ -1,0 +1,305 @@
+<?php
+
+
+/**
+ * Implements hook_install().
+ * This function is called only once at the module installation.
+ */
+function wikicompare_website_install() {
+
+  $t = get_t();
+
+  // Ensure that new node types is available.
+  node_types_rebuild();
+
+  $types = node_type_get_types();
+  node_add_body_field( $types[ 'wikicompare' ] , $t('Description'));
+  node_add_body_field( $types[ 'wikicompare_instance' ] , $t('Description'));
+  node_add_body_field( $types[ 'wikicompare_server' ] , $t('Description'));
+
+  $field = array(
+    'field_name' => 'wikicompare_admin_password',
+    'type' => 'text',
+    'cardinality' => 1,
+    'settings' => array(
+      'max_length' => '255',
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_admin_password',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare',
+    'label' => 'Admin Password',
+    'widget' => array(
+      'settings' => array(
+        'size' => '255',
+      ),
+      'type' => 'text_textfield',
+    ),
+  );
+  field_create_instance($instance);
+
+  $field = array(
+    'field_name' => 'wikicompare_user_name',
+    'type' => 'text',
+    'cardinality' => 1,
+    'settings' => array(
+      'max_length' => '255',
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_user_name',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare',
+    'label' => 'User name',
+    'widget' => array(
+      'settings' => array(
+        'size' => '255',
+      ),
+      'type' => 'text_textfield',
+    ),
+  );
+  field_create_instance($instance);
+
+
+  $field = array(
+    'field_name' => 'wikicompare_user_email',
+    'type' => 'text',
+    'cardinality' => 1,
+    'settings' => array(
+      'max_length' => '255',
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_user_email',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare',
+    'label' => 'Email',
+    'widget' => array(
+      'settings' => array(
+        'size' => '255',
+      ),
+      'type' => 'text_textfield',
+    ),
+  );
+  field_create_instance($instance);
+  
+  $field = array(
+    'field_name' => 'wikicompare_bdd',
+    'type' => 'list_text',
+    'cardinality' => 1,
+    'settings' => array(
+      'allowed_values' => array(
+        'mysql' => 'MySQL',
+        'pgsql' => 'PostgreSQL',
+      )
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_bdd',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare_instance',
+    'label' => 'Base de donnée',
+    'description' => 'TODO',
+    'required' => 1,
+    'widget' => array(
+      'type' => 'options_select',
+    ),
+  );
+  field_create_instance($instance);  
+  
+  $field = array(
+    'field_name' => 'wikicompare_instance',
+    'type' => 'entityreference',
+    'cardinality' => 1,
+    'settings' => array(
+      'target_type' => 'node',
+      'handler_settings' => array('target_bundles' => array('wikicompare_instance')),
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_instance',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare',
+    'label' => 'Instance',
+    'widget' => array(
+      'type' => 'entityreference_autocomplete',
+    ),
+    'settings' => array(
+      'target_type' => 'node',
+      'handler_settings' => array('target_bundles' => array('wikicompare_instance')),
+    ),
+
+  );
+  field_create_instance($instance);
+
+  
+  $field = array(
+    'field_name' => 'wikicompare_version',
+    'type' => 'text',
+    'cardinality' => 1,
+    'settings' => array(
+      'max_length' => '255',
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_version',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare_instance',
+    'label' => 'Version',
+    'widget' => array(
+      'settings' => array(
+        'size' => '255',
+      ),
+      'type' => 'text_textfield',
+    ),
+  );
+  field_create_instance($instance);  
+  
+  $field = array(
+    'field_name' => 'wikicompare_server',
+    'type' => 'entityreference',
+    'cardinality' => 1,
+    'settings' => array(
+      'target_type' => 'node',
+      'handler_settings' => array('target_bundles' => array('wikicompare_server')),
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_server',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare_instance',
+    'label' => 'Server',
+    'widget' => array(
+      'type' => 'entityreference_autocomplete',
+    ),
+    'settings' => array(
+      'target_type' => 'node',
+      'handler_settings' => array('target_bundles' => array('wikicompare_server')),
+    ),
+
+  );
+  field_create_instance($instance);
+
+  $field = array(
+    'field_name' => 'wikicompare_state',
+    'type' => 'list_text',
+    'cardinality' => 1,
+    'settings' => array(
+      'allowed_values' => array(
+        'installing' => 'Installing',
+        'enabled' => 'Enabled',
+        'blocked' => 'Blocked',
+        'removing' => 'Removing'
+      )
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_state',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare',
+    'label' => 'State',
+    'description' => 'TODO',
+    'required' => 1,
+    'default_value' => array(
+      0 => array(
+        'value' => 'installing',
+      ),
+    ),
+    'widget' => array(
+      'type' => 'options_select',
+    ),
+  );
+  field_create_instance($instance);
+
+  $field = array(
+    'field_name' => 'wikicompare_ip',
+    'type' => 'text',
+    'cardinality' => 1,
+    'settings' => array(
+      'max_length' => 255
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_ip',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare_server',
+    'label' => 'IP',
+    'widget' => array(
+      'settings' => array(
+        'size' => '255',
+      ),
+      'type' => 'text_textfield',
+    ),
+  );
+  field_create_instance($instance);
+
+}
+
+
+/**
+ * Implements hook_uninstall().
+ * This function is called at the module uninstallation.
+ */
+function wikicompare_website_uninstall() {
+
+
+  //Delete all nodes of feature type.
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'wikicompare'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+#  node_delete_multiple($nids);
+
+  //Delete all nodes of feature type.
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'wikicompare_instance'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+#  node_delete_multiple($nids);
+
+  //Delete all nodes of feature type.
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'wikicompare_server'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+#  node_delete_multiple($nids);
+
+
+  field_delete_field('wikicompare_admin_password');
+  field_delete_field('wikicompare_instance');
+  field_delete_field('wikicompare_server');
+  field_delete_field('wikicompare_bdd');
+  field_delete_field('wikicompare_version');    
+  field_delete_field('wikicompare_user_name');
+  field_delete_field('wikicompare_user_email');
+  field_delete_field('wikicompare_state');
+  field_delete_field('wikicompare_ip');
+
+}
+
+?>

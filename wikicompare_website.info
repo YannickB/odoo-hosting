@@ -1,0 +1,15 @@
+name = Wikicompare Website
+description = The module of wikicompare.info website
+
+configure = admin/config/wikicompare_website
+
+dependencies[] = ayah
+dependencies[] = entityreference
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = piwik
+dependencies[] = views
+
+package = Wikicompare
+version = VERSION
+core = 7.x

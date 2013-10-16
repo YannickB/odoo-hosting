@@ -1,0 +1,588 @@
+<?php
+
+/**
+* Implements hook_node_info().
+* This function create the new node types we need for the module.
+*/
+function wikicompare_website_node_info() {
+  return array(
+    'wikicompare' => array(
+      'name' => t('Wikicompare'),
+      'base' => 'Wikicompare',
+      'title_label' => t('Title'),
+    ),
+    'wikicompare_instance' => array(
+      'name' => t('Wikicompare Instance'),
+      'base' => 'wikicompare_instance',
+      'title_label' => t('Title'),
+    ),
+    'wikicompare_server' => array(
+      'name' => t('Wikicompare Server'),
+      'base' => 'wikicompare_server',
+      'title_label' => t('Title'),
+    ),
+  );
+}
+
+
+
+function wikicompare_form($node, $form_state) {
+  return node_content_form($node, $form_state);
+}
+
+function wikicompare_instance_form($node, $form_state) {
+  return node_content_form($node, $form_state);
+}
+
+function wikicompare_server_form($node, $form_state) {
+  return node_content_form($node, $form_state);
+}
+
+
+/**
+* Implements hook_menu().
+* This function create new menu in Drupal and also declare the ajax callback.
+*/
+function wikicompare_website_menu() {
+
+  $items = array();
+
+
+  $items['create_wikicompare'] = array(
+    'title' => 'Create Wikicompare',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wikicompare_website_create_wikicompare_form'),
+    'access callback' => TRUE,
+    'menu_name' => 'main-menu',
+    'weight' => 0,
+  );
+
+  $items['admin/config/wikicompare_website'] = array(
+    'title' => 'Wikicompare website settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wikicompare_website_admin'),
+    'access arguments' => array('administer users'),
+    'type' => MENU_NORMAL_ITEM,
+   );
+
+
+  return $items;
+}
+
+
+function wikicompare_website_create_wikicompare_form($form, &$form_state) {
+
+
+
+  $form = array();
+
+  if (!empty($form_state['values']['name'])) {
+    $url='http://' . str_replace('_', '-', $form_state['values']['name']) . '.wikicompare.info';
+    $form['submission'] = array(
+      '#markup' => 'The wikicompare is now created at <a href="' . $url . '" target="_blank">' . $url . '</a>. You can also follow his statistics at <a href="http://analytics.wikicompare.info" target="_blank">http://analytics.wikicompare.info</a>.'
+   );
+  }
+  else {
+
+
+  $form['name'] = array(
+      '#type' => 'textfield', 
+      '#title' => t('Wikicompare Name'), 
+      '#maxlength' => 10, 
+      '#description' => t("Please enter the name of your wikicompare. This name will be used in the domain name, like example.wikicompare.info, so you have to type it in small-letter and without space"),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_exist_small_space'),
+    );
+  $form['title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Wikicompare Title'),
+      '#maxlength' => 20,
+      '#description' => t("Please enter the title of your wikicompare. This title will be displayed at the top of your wikicompare. You can change it later."),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_text_simple'),
+    );
+  $form['user_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Username'),
+      '#maxlength' => 10,
+      '#description' => t("Please enter the name of the admin user. You will use it to log in on your first connection."),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_text_text'),
+    );
+  $form['user_password'] = array(
+      '#type' => 'textfield',
+      '#title' => t('User Password'),
+      '#maxlength' => 20,
+      '#description' => t("Please enter the password of the admin user. You will use it to log in on your first connection."),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_text_space'),
+    );
+  $form['user_email'] = array(
+      '#type' => 'textfield',
+      '#title' => t('User Email'),
+      '#maxlength' => 30,
+      '#description' => t("Please enter your email. It will be used if you forget your password."),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_text_space'),
+    );
+
+  if (user_access('administer users')) {
+
+    $form['admin_user'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Admin User'),
+      '#maxlength' => 10,
+      '#default_value' => variable_get('wikicompare_admin_user'),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_text_text'),
+    );
+    $form['instance'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Instance'),
+      '#default_value' => variable_get('wikicompare_instance'),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_text_path'),
+    );
+  
+    $form['archive_path'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Archive Path'),
+      '#default_value' => variable_get('wikicompare_archive_path'),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_text_path'),
+    );
+    $form['server'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Server'),
+      '#default_value' => variable_get('wikicompare_next_server'),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_text_email'),
+    );
+
+    $form['build'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Build?'),
+    );
+
+    $form['skip_analytics'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Skip Analytics?'),
+    );    
+   
+    
+  }
+
+  $form['warning'] = array(
+    '#markup' => "Once you submit the form, a popup will appear to verify that you're not a bot.<br/>Once you resolve the popup, the wikicompare installation will begin. This operation takes around two minutes so be patient.<br/>"
+ );
+  $form['submit'] =  array(
+      '#type' => 'submit',
+      '#value' => t('Create'),
+    );
+  
+  }
+
+  return $form;
+
+}
+
+/**
+* Function to validate fields values.
+*/
+function element_validate_exist_small_space($element, &$form_state) {
+
+  if (!preg_match('#^[0-9a-z_]+$#', $element['#value'])) {
+    form_error($element, t('%name must be a text in small-letter only.', array('%name' => $element['#title'])));
+  }
+
+  $test = False;
+
+  $query = db_select('node', 'n');
+  $query->addField('n', 'nid', 'nid');
+  $query->condition("n.title", $element['#value']);
+  $query->condition("n.type", 'wikicompare');
+  $result = $query->execute();
+  foreach($result as $record) {
+    $test = True;
+  }
+  
+  if (in_array($element['#value'], array('www', 'mail', 'analytics', 'build', 'build_mysql'))) {
+    $test = True;
+  }
+
+  if ($test) {
+    form_error($element, t('The name %name already exist, please chose another one.', array('%name' => $element['#value'])));
+  }
+
+}
+
+function element_validate_text_simple($element, &$form_state) {
+
+  if (!preg_match('#^[A-Za-z ]+$#', $element['#value'])) {
+    form_error($element, t('%name must be a text without special characters.', array('%name' => $element['#title'])));
+  }
+
+}
+
+
+function element_validate_text_text($element, &$form_state) {
+
+  if (!preg_match('#^[A-Za-z]+$#', $element['#value'])) {
+    form_error($element, t('%name must be a text without special characters.', array('%name' => $element['#title'])));
+  }
+
+}
+
+
+function element_validate_text_space($element, &$form_state) {
+
+  if (preg_match('/[ ]/i', $element['#value'])) {
+    form_error($element, t('%name must be a text without space.', array('%name' => $element['#title'])));
+  }
+
+}
+
+function element_validate_text_email($element, &$form_state) {
+
+  if (!preg_match('#^[@.a-z]+$#', $element['#value'])) {
+    form_error($element, t("%name isn't an email.", array('%name' => $element['#title'])));
+  }
+
+}
+
+function element_validate_text_path($element, &$form_state) {
+
+  if (!preg_match('#^[A-Za-z0-9./_]+$#', $element['#value'])) {
+    form_error($element, t("%name isn't a path.", array('%name' => $element['#title'])));
+  }
+
+}
+
+
+function wikicompare_website_create_wikicompare_form_submit($form, &$form_state) {
+
+    $chaine = 'azertyuiopqsdfghjklmwxcvbn123456789';
+    $nb_lettres = strlen($chaine) - 1;
+    $password = '';
+    for($i=0; $i < 15; $i++)
+    {
+        $pos = mt_rand(0, $nb_lettres);
+        $car = $chaine[$pos];
+        $password .= $car;
+    }
+
+    $name = $form_state['input']['name'];
+    $title = $form_state['input']['title'];
+    $user_name = $form_state['input']['user_name'];
+    $user_password = $form_state['input']['user_password'];
+    $user_email = $form_state['input']['user_email'];
+
+    $admin_user = variable_get('wikicompare_admin_user');
+    if (isset($form_state['input']['admin_user'])) {
+      $admin_user = $form_state['input']['admin_user'];
+    }
+
+    $instance = variable_get('wikicompare_instance');
+    if (isset($form_state['input']['instance'])) {
+      $instance = $form_state['input']['instance'];
+    }
+
+    $archive_path = variable_get('wikicompare_archive_path');
+    if (isset($form_state['input']['archive_path'])) {
+      $archive_path = $form_state['input']['archive_path'];
+    }
+
+    $server = variable_get('wikicompare_next_server');
+    if (isset($form_state['input']['server'])) {
+      $server = $form_state['input']['server'];
+    }
+
+    $module_path=variable_get('wikicompare_module_path');
+    $command = "$module_path/wikicompare.sh";
+    if (isset($form_state['input']['build'])) {
+      if ($form_state['input']['build'] == True) {
+        $command .= ' -b';
+      }
+    }
+    
+    if (isset($form_state['input']['skip_analytics'])) {
+      if ($form_state['input']['skip_analytics'] == True) {
+        $command .= ' -k';
+      }
+    }  
+   
+    
+    $command .= " -t $title -p '$password' -u $user_name -s '$user_password' -e $user_email -d $server -a $admin_user -n $instance -c $archive_path";
+
+  
+
+    $command .= " deploy $name > /var/wikicompare/log/install.txt";
+    exec($command);
+
+  $form_state['rebuild'] = TRUE;
+
+
+}
+
+
+function wikicompare_delete($node) {
+
+  if ($node->wikicompare_state['und'][0]['value'] != 'removing') {
+    $module_path=variable_get('wikicompare_module_path');
+    exec("$module_path/wikicompare.sh purge $node->title > /var/wikicompare/log/purge.txt");
+  }
+
+}
+
+/**
+* Implements hook_admin().
+* This function create the configuration page of wikicompare.
+*/
+function wikicompare_website_admin() {
+
+  $form = array();
+
+  $form['wikicompare_admin_user'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Admin User'),
+    '#default_value' => variable_get('wikicompare_admin_user'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_admin_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Admin Password'),
+    '#default_value' => variable_get('wikicompare_admin_password'),
+    '#required' => TRUE,
+  );
+
+  $form['wikicompare_instance'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Instance'),
+    '#default_value' => variable_get('wikicompare_instance'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_build_instance'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Build Instance'),
+    '#default_value' => variable_get('wikicompare_build_instance'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_archive_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Archive Path'),
+    '#default_value' => variable_get('wikicompare_archive_path'),
+    '#required' => TRUE,
+  );
+
+  $form['wikicompare_archive_build_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Archive Build Path'),
+    '#default_value' => variable_get('wikicompare_archive_build_path'),
+    '#required' => TRUE,
+  );
+
+  $form['wikicompare_next_server'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Next server'),
+    '#default_value' => variable_get('wikicompare_next_server'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_user_wikiadmin'] = array(
+    '#type' => 'textfield',
+    '#title' => t('User Wikiadmin'),
+    '#default_value' => variable_get('wikicompare_user_wikiadmin'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_password_wikiadmin'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password Wikiadmin'),
+    '#default_value' => variable_get('wikicompare_password_wikiadmin'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_email_wikiadmin'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email Wikiadmin'),
+    '#default_value' => variable_get('wikicompare_email_wikiadmin'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_make_file'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Make File'),
+    '#default_value' => variable_get('wikicompare_make_file'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_mysql_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Mysql Password'),
+    '#default_value' => variable_get('wikicompare_mysql_password'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_piwik_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Piwik Password'),
+    '#default_value' => variable_get('wikicompare_piwik_password'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_piwik_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Piwik Url'),
+    '#default_value' => variable_get('wikicompare_piwik_url'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_module_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Module Path'),
+    '#default_value' => variable_get('wikicompare_module_path'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_build_version'] = array(
+    '#markup' => 'Build version : ' . variable_get('wikicompare_build_version'),
+    '#suffix' => '<br/>',
+  );
+  $form['wikicompare_release_version'] = array(
+    '#markup' => 'Release version : ' .variable_get('wikicompare_release_version'),
+    '#suffix' => '<br/>',
+  );
+  $form['rebuild'] = array(
+    '#type' => 'submit',
+    '#value' => t('Rebuild wikicompare'),
+    '#button_type' => 'button',
+    '#submit' => array('wikicompare_website_rebuild'),
+  );
+  $form['populate'] = array(
+    '#type' => 'submit',
+    '#value' => t('Populate wikicompare'),
+    '#button_type' => 'button',
+    '#submit' => array('wikicompare_website_populate'),
+  );
+
+
+  return system_settings_form($form);
+
+}
+
+function wikicompare_website_rebuild() {
+
+    $module_path=variable_get('wikicompare_module_path');
+    exec("$module_path/wikicompare.sh build > /var/wikicompare/log/rebuild.txt");
+
+}
+
+
+function wikicompare_website_populate() {
+
+    $module_path=variable_get('wikicompare_module_path');
+    exec("$module_path/wikicompare.sh populate > /var/wikicompare/log/populate.txt");
+
+}
+
+
+function wikicompare_website_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'wikicompare_website'),
+  );
+}
+
+
+
+function wikicompare_website_views_default_views() {
+
+$view = new view();
+$view->name = 'wikicompare_list';
+$view->description = '';
+$view->tag = 'default';
+$view->base_table = 'node';
+$view->human_name = 'wikicompare_list';
+$view->core = 7;
+$view->api_version = '3.0';
+$view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+
+/* Display: Master */
+$handler = $view->new_display('default', 'Master', 'default');
+$handler->display->display_options['title'] = 'wikicompare_list';
+$handler->display->display_options['use_more_always'] = FALSE;
+$handler->display->display_options['access']['type'] = 'perm';
+$handler->display->display_options['access']['perm'] = 'administer users';
+$handler->display->display_options['cache']['type'] = 'none';
+$handler->display->display_options['query']['type'] = 'views_query';
+$handler->display->display_options['exposed_form']['type'] = 'basic';
+$handler->display->display_options['pager']['type'] = 'full';
+$handler->display->display_options['pager']['options']['items_per_page'] = '10';
+$handler->display->display_options['style_plugin'] = 'table';
+$handler->display->display_options['style_options']['columns'] = array(
+  'title' => 'title',
+);
+$handler->display->display_options['style_options']['default'] = '-1';
+$handler->display->display_options['style_options']['info'] = array(
+  'title' => array(
+    'sortable' => 0,
+    'default_sort_order' => 'asc',
+    'align' => '',
+    'separator' => '',
+    'empty_column' => 0,
+  ),
+);
+/* Field: Content: Title */
+$handler->display->display_options['fields']['title']['id'] = 'title';
+$handler->display->display_options['fields']['title']['table'] = 'node';
+$handler->display->display_options['fields']['title']['field'] = 'title';
+$handler->display->display_options['fields']['title']['label'] = '';
+$handler->display->display_options['fields']['title']['alter']['word_boundary'] = FALSE;
+$handler->display->display_options['fields']['title']['alter']['ellipsis'] = FALSE;
+/* Field: Content: Title */
+$handler->display->display_options['fields']['title_1']['id'] = 'title_1';
+$handler->display->display_options['fields']['title_1']['table'] = 'node';
+$handler->display->display_options['fields']['title_1']['field'] = 'title';
+/* Field: Content: User name */
+$handler->display->display_options['fields']['wikicompare_user_name']['id'] = 'wikicompare_user_name';
+$handler->display->display_options['fields']['wikicompare_user_name']['table'] = 'field_data_wikicompare_user_name';
+$handler->display->display_options['fields']['wikicompare_user_name']['field'] = 'wikicompare_user_name';
+/* Field: Content: Email */
+$handler->display->display_options['fields']['wikicompare_user_email']['id'] = 'wikicompare_user_email';
+$handler->display->display_options['fields']['wikicompare_user_email']['table'] = 'field_data_wikicompare_user_email';
+$handler->display->display_options['fields']['wikicompare_user_email']['field'] = 'wikicompare_user_email';
+/* Field: Content: Server */
+$handler->display->display_options['fields']['wikicompare_server']['id'] = 'wikicompare_server';
+$handler->display->display_options['fields']['wikicompare_server']['table'] = 'field_data_wikicompare_server';
+$handler->display->display_options['fields']['wikicompare_server']['field'] = 'wikicompare_server';
+/* Field: Content: State */
+$handler->display->display_options['fields']['wikicompare_state']['id'] = 'wikicompare_state';
+$handler->display->display_options['fields']['wikicompare_state']['table'] = 'field_data_wikicompare_state';
+$handler->display->display_options['fields']['wikicompare_state']['field'] = 'wikicompare_state';
+/* Field: Content: Post date */
+$handler->display->display_options['fields']['created']['id'] = 'created';
+$handler->display->display_options['fields']['created']['table'] = 'node';
+$handler->display->display_options['fields']['created']['field'] = 'created';
+$handler->display->display_options['fields']['created']['date_format'] = 'long';
+/* Field: Content: Edit link */
+$handler->display->display_options['fields']['edit_node']['id'] = 'edit_node';
+$handler->display->display_options['fields']['edit_node']['table'] = 'views_entity_node';
+$handler->display->display_options['fields']['edit_node']['field'] = 'edit_node';
+/* Sort criterion: Content: Post date */
+$handler->display->display_options['sorts']['created']['id'] = 'created';
+$handler->display->display_options['sorts']['created']['table'] = 'node';
+$handler->display->display_options['sorts']['created']['field'] = 'created';
+$handler->display->display_options['sorts']['created']['order'] = 'DESC';
+/* Filter criterion: Content: Published */
+$handler->display->display_options['filters']['status']['id'] = 'status';
+$handler->display->display_options['filters']['status']['table'] = 'node';
+$handler->display->display_options['filters']['status']['field'] = 'status';
+$handler->display->display_options['filters']['status']['value'] = 1;
+$handler->display->display_options['filters']['status']['group'] = 1;
+$handler->display->display_options['filters']['status']['expose']['operator'] = FALSE;
+
+/* Display: Page */
+$handler = $view->new_display('page', 'Page', 'page');
+$handler->display->display_options['path'] = 'wikicompare-list';
+$handler->display->display_options['menu']['type'] = 'normal';
+$handler->display->display_options['menu']['title'] = 'Liste';
+$handler->display->display_options['menu']['name'] = 'main-menu';
+
+
+$views[$view->name] = $view;
+return $views;
+
+}
+
+?>

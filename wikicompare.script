@@ -1,0 +1,102 @@
+#!/usr/bin/env drush
+
+
+
+$args = array();
+while ($arg = drush_shift()) {
+  $args[] = $arg;
+}
+
+
+switch ($args[0]) {
+
+  case 'install':
+    drush_print('Creating the node in the website');
+  
+    $node = new stdClass();
+    $node->type = 'wikicompare';
+    $node->title = $args[1];
+    $node->wikicompare_admin_password['und'][0]['value'] = $args[2];
+    $node->wikicompare_user_name['und'][0]['value'] = $args[3];
+    $node->wikicompare_user_email['und'][0]['value'] = $args[4];
+#    $nid = 0;
+#    $query = db_select('node', 'n');
+#    $query->addField('n', 'nid', 'nid');
+#    $query->condition("n.title", $args[5]);
+#    $query->condition("n.type", 'wikicompare_server');
+#    $result = $query->execute();
+#    foreach($result as $record) {
+#      $nid = $record->nid;
+#    }
+    $node->wikicompare_instance['und'][0]['target_id'] = $args[5];
+    $node->wikicompare_instance['und'][0]['target_type'] = "node";
+    $node->wikicompare_bdd['und'][0]['value'] = $args[6];
+    node_save($node);
+
+    drush_print('The node is created in the website');
+    break;
+
+  case 'finish':
+
+    $nid = 0;
+    $query = db_select('node', 'n');
+    $query->addField('n', 'nid', 'nid');
+    $query->condition("n.title", $args[1]);
+    $query->condition("n.type", 'wikicompare');
+    $result = $query->execute();
+    foreach($result as $record) {
+      $nid = $record->nid;
+    }
+
+    $node = node_load($nid);
+    $node->wikicompare_state['und'][0]['value'] = 'enabled';
+    node_save($node);
+
+    $user = user_load(1);
+    user_save($user,array('name'=>$args[2], 'password'=>$args[3]));
+
+    break;
+
+  case 'upgrade':
+
+    $nid = 0;
+    $query = db_select('node', 'n');
+    $query->addField('n', 'nid', 'nid');
+    $query->condition("n.title", $args[1]);
+    $query->condition("n.type", 'wikicompare_instance');
+    $result = $query->execute();
+    foreach($result as $record) {
+      $nid = $record->nid;
+    }
+
+    $node = node_load($nid);
+    $node->wikicompare_version['und'][0]['value'] = $args[2];
+    node_save($node);      
+    
+    break;
+    
+  case 'prepare_purge':
+    $query = db_select('node', 'n');
+    $query->addField('n', 'nid', 'nid');
+    $query->condition("n.title", $args[1]);
+    $query->condition("n.type", 'wikicompare');
+    $result = $query->execute();
+    foreach($result as $record) {
+      $node = node_load($record->nid);
+      $node->wikicompare_state['und'][0]['value'] = 'removing';
+      node_save($node);
+    }
+
+
+  case 'purge':
+    $query = db_select('node', 'n');
+    $query->addField('n', 'nid', 'nid');
+    $query->condition("n.title", $args[1]);
+    $query->condition("n.type", 'wikicompare');
+    $result = $query->execute();
+    foreach($result as $record) {
+      node_delete($record->nid);
+    }
+    break;
+}
+
