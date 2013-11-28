@@ -12,18 +12,15 @@ build=False
 skip_analytics=False
 db_type='pgsql'
 pgpass_file='/var/www/.pgpass'
+admin_email='yannick.buron@gmail.com'
+archive_path='/var/www/wikicompare_www/download'
+archive='wikicompare_release'
 admin_user=$(drush vget wikicompare_admin_user --format=json --exact)
 admin_user=${admin_user//[\"\\]/}
 admin_password=$(drush vget wikicompare_admin_password --format=json --exact)
 admin_password=${admin_password//[\"\\]/}
 instance=$(drush vget wikicompare_instance --format=json --exact)
 instance=${instance//[\"\\]/}
-build_instance=$(drush vget wikicompare_build_instance --format=json --exact)
-build_instance=${build_instance//[\"\\]/}
-archive_path=$(drush vget wikicompare_archive_path --format=json --exact)
-archive_path=${archive_path//[\"\\]/}
-archive_build_path=$(drush vget wikicompare_archive_build_path --format=json --exact)
-archive_build_path=${archive_build_path//[\"\\]/}
 user_name=$(drush vget wikicompare_user_wikiadmin --format=json --exact)
 user_name=${user_name//[\"\\]/}
 user_password=$(drush vget wikicompare_password_wikiadmin --format=json --exact)
@@ -32,8 +29,6 @@ user_mail=$(drush vget wikicompare_email_wikiadmin --format=json --exact)
 user_mail=${user_mail//[\"\\]/}
 server=$(drush vget wikicompare_next_server --format=json --exact)
 server=${server//[\"\\]/}
-make_file=$(drush vget wikicompare_make_file --format=json --exact)
-make_file=${make_file//[\"\\]/}
 mysql_password=$(drush vget wikicompare_mysql_password --format=json --exact)
 mysql_password=${mysql_password//[\"\\]/}
 piwik_password=$(drush vget wikicompare_piwik_password --format=json --exact)
@@ -100,7 +95,7 @@ do
              ;;
          b)
              build=True
-             archive_path=$archive_build_path
+             archive='wikicompare_preprod'
              ;;
          ?)
              usage
@@ -165,10 +160,15 @@ then
 fi
 echo $db_type
 
-
+bakery_master_site=$(drush vget bakery_master --format=json --exact)
+bakery_master_site=${bakery_master_site//[\"\\]/}
+bakery_private_key=$(drush vget bakery_key --format=json --exact)
+bakery_private_key=${bakery_private_key//[\"\\]/}
+bakery_cookie_domain=$(drush vget bakery_domain --format=json --exact)
+bakery_cookie_domain=${bakery_cookie_domain//[\"\\]/}
 IP=${IP//[^0-9.]/}
 db_name=wikicompare_$1
-db_user=wiki_$1
+db_user=wkc_$1
 domain_name=${1//_/-}
 #IP=${IP//[a-z_\/n\/r ]/}
 drush $module_path/wikicompare.script install $1 $admin_password $user_name $user_mail ${node_id//[a-z ]/} $db_type
@@ -202,8 +202,8 @@ echo Database created
 
 if [ ! -d "/var/www/$instance" ]; then
   mkdir /var/www/$instance
-  tar -xf $archive_path/archive.tar.gz -C /var/www/$instance
-  version=$(cat $archive_path/VERSION.txt)
+  tar -xf $archive_path/$archive/archive.tar.gz -C /var/www/$instance
+  version=$(cat $archive_path/$archive/VERSION.txt)
   drush $module_path/wikicompare.script upgrade $instance $version
 fi
 
@@ -220,10 +220,16 @@ then
 #drush -y si  --db-url=pgsql://wiki_build@127.0.0.1/wikicompare_build
 cd /var/www/$instance
 pwd
-drush -y si --db-url=$db_type://${db_user}:$admin_password@127.0.0.1/$db_name --account-mail=service@wikicompare.info --account-name=$admin_user --account-pass=$admin_password --sites-subdir=$domain_name.wikicompare.info minimal
+drush -y si --db-url=$db_type://${db_user}:$admin_password@127.0.0.1/$db_name --account-mail=$admin_email --account-name=$admin_user --account-pass=$admin_password --sites-subdir=$domain_name.wikicompare.info minimal
 cd sites/$domain_name.wikicompare.info
 pwd
-drush -y en piwik admin_menu_toolbar wikicompare
+drush -y en piwik admin_menu_toolbar bakery wikicompare wikicompare_profiles wikicompare_translation wikicompare_inherit_product
+drush -y pm-enable wikicompare_theme
+drush vset --yes --exact theme_default wikicompare_theme
+
+drush vset --yes --exact bakery_master $bakery_master_site
+drush vset --yes --exact bakery_key $bakery_private_key
+drush vset --yes --exact bakery_domain $bakery_cookie_domain
 #drush vset --yes --exact site_frontpage 'compare'
 #drush cc all
 
@@ -241,7 +247,7 @@ cp -r /var/www/$instance/$db_type/sites/* /var/www/$instance/sites/$domain_name.
 
 cd /var/www/$instance/sites/$domain_name.wikicompare.info
 sed -i -e "s/'database' => 'wikicompare_[a-z0-9_]*'/'database' => 'wikicompare_$1'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
-sed -i -e "s/'username' => 'wiki_[a-z0-9_]*'/'username' => 'wiki_$1'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
+sed -i -e "s/'username' => 'wkc_[a-z0-9_]*'/'username' => 'wkc_$1'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
 sed -i -e "s/'password' => '[#a-z0-9_!]*'/'password' => '$admin_password'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
 drush vset --yes --exact site_name $title
 drush user-password $admin_user --password=$admin_password
@@ -255,9 +261,14 @@ echo Drupal ready
 if [[ $skip_analytics != True ]]
 then
 
+if [[ $admin_user != $user_name ]]
+then
 drush user-create $user_name --password="$user_password" --mail="$user_mail"
 drush user-add-role wikicompare_admin $user_name
+fi
 
+if [[ domain_name != 'demo' ]]
+then
 mysql -u piwik -p$piwik_password piwik<< EOF
 INSERT INTO piwik_site (name, main_url, ts_created, timezone, currency) VALUES ('$domain_name.wikicompare.info', 'http://$domain_name.wikicompare.info', NOW(), 'Europe/Paris', 'EUR');
 EOF
@@ -265,6 +276,10 @@ piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_
 mysql -u piwik -p$piwik_password piwik<< EOF
 INSERT INTO piwik_access (login, idsite, access) VALUES ('anonymous', $piwik_id, 'view');
 EOF
+else
+piwik_id=$(drush vget wikicompare_piwik_demo_id --format=json --exact)
+piwik_id=${piwik_id//[\"\\]/}
+fi
 
 drush variable-set piwik_site_id $piwik_id
 drush variable-set piwik_url_http $piwik_url
@@ -381,6 +396,12 @@ upgrade()
 {
 pear upgrade drush/drush
 
+if [[ ! -d /var/www/$1 ]]
+then
+  echo "No $1 instance, no upgrade"
+  return
+fi
+
 mkdir /var/www/$1/../sites_${1}_temp
 cp -r /var/www/$1/sites/* /var/www/$1/../sites_${1}_temp
 
@@ -417,7 +438,7 @@ fi
 
 rm -rf /var/www/$1/*
 
-tar -xf $archive_path/archive.tar.gz -C /var/www/$1
+tar -xf $archive_path/$archive/archive.tar.gz -C /var/www/$1
 
 rm -rf /var/www/$1/sites/*
 
@@ -438,7 +459,7 @@ do
 done
 
 cd $website_path
-version=$(cat $archive_path/VERSION.txt)
+version=$(cat $archive_path/$archive/VERSION.txt)
 drush $module_path/wikicompare.script upgrade $1 $version
 
 }
@@ -483,7 +504,7 @@ sed -i "/$domain_name\sIN\sA/d" /etc/bind/db.wikicompare.info
 sudo /etc/init.d/bind9 reload
 
 db_name=wikicompare_$1
-db_user=wiki_$1
+db_user=wkc_$1
 if [[ $db_type != 'mysql' ]]
 then
 sudo -u postgres psql <<EOF
@@ -504,6 +525,9 @@ fi
 sudo a2dissite wikicompare_$1
 rm /etc/apache2/sites-available/wikicompare_$1
 sudo /etc/init.d/apache2 reload
+
+if [[ domain_name != 'demo' ]]
+then
 piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$domain_name.wikicompare.info' LIMIT 1")
 echo $piwik_id
 if [[ $piwik_id != '' ]]
@@ -512,6 +536,7 @@ mysql -u piwik -p$piwik_password piwik<< EOF
 UPDATE piwik_site SET name = 'droped_$piwik_id'  WHERE idsite = $piwik_id;
 DELETE FROM piwik_access WHERE idsite = $piwik_id;
 EOF
+fi
 fi
 
 
@@ -755,58 +780,72 @@ control_backup()
 
 build()
 {
-rm -rf $archive_build_path/*
-cd $archive_build_path
-drush make $make_file archive
+
+rm -rf $archive_path/wikicompare_${1}/*
+cd $archive_path/wikicompare_${1}
+drush make $module_path/wikicompare_${1}.make archive
 cd archive/
 tar -czf ../archive.tar.gz ./* 
 cd ../
 echo 'temp' > VERSION.txt
-chown -R www-data $archive_build_path/*
+chown -R www-data $archive_path/wikicompare_${1}/*
 
-purge build /var/www/$build_instance
-purge build_mysql /var/www/$build_instance
-rm -rf /var/www/$build_instance
-rm -rf /var/www/${build_instance}_mysql
+purge $1 /var/www/wikicompare_${1}
+purge ${1}_my /var/www/wikicompare_${1}
+rm -rf /var/www/wikicompare_${1}
+rm -rf /var/www/wikicompare_${1}_mysql
 build=True
 skip_analytics=True
-instance=$build_instance
-archive_path=$archive_build_path
+instance=wikicompare_${1}
+archive=wikicompare_${1}
 
 db_type='pgsql'
-deploy build
-mkdir $archive_build_path/pgsql
-mkdir $archive_build_path/pgsql/sites
-cp -r /var/www/$instance/sites/build.wikicompare.info/* $archive_build_path/pgsql/sites/
-pg_dump -U wiki_build -h 127.0.0.1 -Fc wikicompare_build > $archive_build_path/pgsql/build.sql
-cp -R $archive_build_path/pgsql $archive_build_path/archive/
+deploy $1
+mkdir $archive_path/wikicompare_${1}/pgsql
+mkdir $archive_path/wikicompare_${1}/pgsql/sites
+cp -r /var/www/$instance/sites/${1}.wikicompare.info/* $archive_path/wikicompare_${1}/pgsql/sites/
+pg_dump -U wkc_${1} -h 127.0.0.1 -Fc wikicompare_${1} > $archive_path/wikicompare_${1}/pgsql/build.sql
+cp -R $archive_path/wikicompare_${1}/pgsql $archive_path/wikicompare_${1}/archive/
+mkdir /var/www/$instance/pgsql
+cp -R $archive_path/wikicompare_${1}/pgsql/* /var/www/$instance/pgsql/
 
 db_type='mysql'
-instance=${build_instance}_mysql
-deploy build_mysql
-mkdir $archive_build_path/mysql
-mkdir $archive_build_path/mysql/sites
-cp -r /var/www/$instance/sites/build-mysql.wikicompare.info/* $archive_build_path/mysql/sites/
-mysqldump -u root -p$mysql_password wikicompare_build_mysql > $archive_build_path/mysql/build.sql
-cp -R $archive_build_path/mysql $archive_build_path/archive/
+instance=wikicompare_${1}_mysql
+deploy ${1}_my
+mkdir $archive_path/wikicompare_${1}/mysql
+mkdir $archive_path/wikicompare_${1}/mysql/sites
+cp -r /var/www/$instance/sites/${1}-my.wikicompare.info/* $archive_path/wikicompare_${1}/mysql/sites/
+mysqldump -u root -p$mysql_password wikicompare_${1}_my > $archive_path/wikicompare_${1}/mysql/build.sql
+cp -R $archive_path/wikicompare_${1}/mysql $archive_path/wikicompare_${1}/archive/
+mkdir /var/www/$instance/mysql
+cp -R $archive_path/wikicompare_${1}/mysql/* /var/www/$instance/mysql/
 
-cd /var/www/$build_instance/sites/build.wikicompare.info
+cd /var/www/wikicompare_${1}/sites/${1}.wikicompare.info
 version=$(drush status | grep 'Drupal version')
 version=${version//[^0-9.]/}
 version=$version.`date +%Y%m%d`
 cd $website_path
-drush vset --yes --exact wikicompare_build_version $version
-drush $module_path/wikicompare.script upgrade wikicompare_build $version
-echo $version > $archive_build_path/VERSION.txt
-cp $archive_build_path/VERSION.txt $archive_build_path/archive/
+drush vset --yes --exact wikicompare_${1}_version $version
+drush $module_path/wikicompare.script upgrade wikicompare_${1} $version
+echo $version > $archive_path/wikicompare_${1}/VERSION.txt
+cp $archive_path/wikicompare_${1}/VERSION.txt $archive_path/wikicompare_${1}/archive/
 
-cd $archive_build_path/
+cd $archive_path/wikicompare_${1}/
 rm archive.tar.gz
 cd archive/
 tar -czf ../archive.tar.gz ./* 
 cd ../
 rm -rf archive
-chown -R www-data $archive_build_path/*
+chown -R www-data $archive_path/wikicompare_${1}/*
+
+echo 'Deploying demo data'
+cd /var/www/wikicompare_${1}/sites/${1}.wikicompare.info
+drush -y en wikicompare_generate_demo
+drush $module_path/wikicompare.script deploy_demo
+echo 'Deploying mysql demo data'
+cd /var/www/wikicompare_${1}_mysql/sites/${1}-my.wikicompare.info
+drush -y en wikicompare_generate_demo
+drush $module_path/wikicompare.script deploy_demo
 
 }
 
@@ -1210,22 +1249,42 @@ case $1 in
        exit
        ;;
    build)
-       build
+       if [[ -z "$2" ]]
+       then
+         cat 'You need to specify the instance to rebuild.'
+         exit
+       fi
+       build $2
        exit
        ;;
    populate)
-       if [[ ! -s "$archive_path/VERSION.txt" ]]
+       if [[ ! -s "$archive_path/$archive/VERSION.txt" ]]
        then
-         version=$(cat $archive_path/VERSION.txt)
-         rm -rf $archive_path/../old_releases/$version
-         mkdir $archive_path/../old_releases/$version
-         cp -r $archive_path/* $archive_path/../old_releases/$version/
+         version=$(cat $archive_path/$archive/VERSION.txt)
+         rm -rf $archive_path/old_releases/$version
+         mkdir $archive_path/old_releases/$version
+         cp -r $archive_path/$archive/* $archive_path/old_releases/$version/
        fi
-       rm -rf $archive_path/*
-       cp -r $archive_build_path/* $archive_path/
-       version=$(cat $archive_build_path/VERSION.txt)
+       rm -rf $archive_path/$archive/*
+       cp -r $archive_path/wikicompare_preprod/* $archive_path/$archive
+
+       echo 'Upgrading ' $instance '...'
+       upgrade $instance
+
+       echo 'Refresh demo...'
+       title='Demo'
+       purge demo $instance
+       deploy demo
+
+       echo 'Installing demo data...'
+       cd /var/www/$instance/sites/demo.wikicompare.info
+       drush -y en wikicompare_generate_demo
+       drush $module_path/wikicompare.script deploy_demo
+
+       version=$(cat $archive_path/wikicompare_preprod/VERSION.txt)
        cd $website_path
        drush vset --yes --exact wikicompare_release_version $version
+       echo 'populate finished'
        exit
        ;;
    prepare-server)

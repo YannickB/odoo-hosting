@@ -98,5 +98,9 @@ switch ($args[0]) {
       node_delete($record->nid);
     }
     break;
+
+  case 'deploy_demo':
+    wikicompare_generate_erp_data();
+    break;
 }
 

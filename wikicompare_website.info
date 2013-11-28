@@ -4,6 +4,7 @@ description = The module of wikicompare.info website
 configure = admin/config/wikicompare_website
 
 dependencies[] = ayah
+dependencies[] = bakery
 dependencies[] = entityreference
 dependencies[] = list
 dependencies[] = menu

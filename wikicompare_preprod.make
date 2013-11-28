@@ -34,20 +34,34 @@ projects[drupal][version] = 7
 ; Modules
 ; --------
 projects[] = admin_menu
-projects[] = ayah
-projects[] = cas
+projects[] = bakery
 projects[] = ctools
 projects[] = devel
+projects[] = diff
+projects[] = imce
 projects[] = entity
 projects[] = entityreference
+projects[] = ckeditor
+projects[] = lang_dropdown
 projects[] = views
+projects[] = revisioning
+projects[] = simple_dialog
 projects[] = piwik
-projects[] = persona
+projects[] = userone
+projects[wikicompare][type] = "module"
+projects[wikicompare][download][type] = "git"
+projects[wikicompare][download][url] = "https://github.com/YannickB/wikicompare.git"
+projects[wikicompare][download][branch] = "dev"
+libraries[ckeditor][download][type] = "get"
+libraries[ckeditor][download][url] = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%203.6.3/ckeditor_3.6.3.tar.gz"
   
 
 ; Themes
 ; --------
-
+projects[] = zen
+projects[wikicompare_theme][type] = "theme"
+projects[wikicompare_theme][download][type] = "git"
+projects[wikicompare_theme][download][url] = "https://github.com/YannickB/wikicompare_theme.git"
   
   
 ; Libraries

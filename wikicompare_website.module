@@ -39,6 +39,7 @@ function wikicompare_server_form($node, $form_state) {
 }
 
 
+
 /**
 * Implements hook_menu().
 * This function create new menu in Drupal and also declare the ajax callback.
@@ -52,7 +53,7 @@ function wikicompare_website_menu() {
     'title' => 'Create Wikicompare',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('wikicompare_website_create_wikicompare_form'),
-    'access callback' => TRUE,
+    'access arguments' => array('create wikicompare'),
     'menu_name' => 'main-menu',
     'weight' => 0,
   );
@@ -68,6 +69,21 @@ function wikicompare_website_menu() {
 
   return $items;
 }
+
+
+
+/**
+ * Implements hook_permission().
+ * Add new permission specific to wikicompare.
+ */
+function wikicompare_website_permission() {
+  return array(
+    'create wikicompare' => array(
+      'title' => t('Create Wikicompare'),
+    ),
+  );
+}
+
 
 
 function wikicompare_website_create_wikicompare_form($form, &$form_state) {
@@ -101,30 +117,11 @@ function wikicompare_website_create_wikicompare_form($form, &$form_state) {
       '#required' => TRUE,
       '#element_validate' => array('element_validate_text_simple'),
     );
-  $form['user_name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Username'),
-      '#maxlength' => 10,
-      '#description' => t("Please enter the name of the admin user. You will use it to log in on your first connection."),
-      '#required' => TRUE,
-      '#element_validate' => array('element_validate_text_text'),
-    );
-  $form['user_password'] = array(
-      '#type' => 'textfield',
-      '#title' => t('User Password'),
-      '#maxlength' => 20,
-      '#description' => t("Please enter the password of the admin user. You will use it to log in on your first connection."),
-      '#required' => TRUE,
-      '#element_validate' => array('element_validate_text_space'),
-    );
-  $form['user_email'] = array(
-      '#type' => 'textfield',
-      '#title' => t('User Email'),
-      '#maxlength' => 30,
-      '#description' => t("Please enter your email. It will be used if you forget your password."),
-      '#required' => TRUE,
-      '#element_validate' => array('element_validate_text_space'),
-    );
+
+  $form['preprod'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Create a test wikicompare (Warning, the tests are destroyed each time we update our files, and this can happen at any moment.)'),
+  ); 
 
   if (user_access('administer users')) {
 
@@ -261,21 +258,32 @@ function element_validate_text_path($element, &$form_state) {
 
 function wikicompare_website_create_wikicompare_form_submit($form, &$form_state) {
 
+    $skip_analytics = False;
+
     $chaine = 'azertyuiopqsdfghjklmwxcvbn123456789';
     $nb_lettres = strlen($chaine) - 1;
-    $password = '';
+    $password_user = '';
     for($i=0; $i < 15; $i++)
     {
         $pos = mt_rand(0, $nb_lettres);
         $car = $chaine[$pos];
-        $password .= $car;
+        $password_user .= $car;
+    }
+    $password_admin = '';
+    for($i=0; $i < 15; $i++)
+    {
+        $pos = mt_rand(0, $nb_lettres);
+        $car = $chaine[$pos];
+        $password_admin .= $car;
     }
 
     $name = $form_state['input']['name'];
     $title = $form_state['input']['title'];
-    $user_name = $form_state['input']['user_name'];
-    $user_password = $form_state['input']['user_password'];
-    $user_email = $form_state['input']['user_email'];
+
+    global $user;
+    $user_name = $user->name;
+    $user_password = $password_user;
+    $user_email = $user->mail;
 
     $admin_user = variable_get('wikicompare_admin_user');
     if (isset($form_state['input']['admin_user'])) {
@@ -285,6 +293,11 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
     $instance = variable_get('wikicompare_instance');
     if (isset($form_state['input']['instance'])) {
       $instance = $form_state['input']['instance'];
+    }
+
+    if (isset($form_state['input']['preprod'])) {
+      $instance = variable_get('wikicompare_instance_preprod');
+      $skip_analytics = True;
     }
 
     $archive_path = variable_get('wikicompare_archive_path');
@@ -305,14 +318,16 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
       }
     }
     
-    if (isset($form_state['input']['skip_analytics'])) {
+    if (isset($form_state['input']['skip_analytics']) ) {
       if ($form_state['input']['skip_analytics'] == True) {
-        $command .= ' -k';
+        $skip_analytics = True;
       }
     }  
-   
+    if ($skip_analytics) {
+      $command .= ' -k';
+    }
     
-    $command .= " -t $title -p '$password' -u $user_name -s '$user_password' -e $user_email -d $server -a $admin_user -n $instance -c $archive_path";
+    $command .= " -t $title -p '$password_admin' -u $user_name -s '$user_password' -e $user_email -d $server -a $admin_user -n $instance -c $archive_path";
 
   
 
@@ -361,10 +376,10 @@ function wikicompare_website_admin() {
     '#default_value' => variable_get('wikicompare_instance'),
     '#required' => TRUE,
   );
-  $form['wikicompare_build_instance'] = array(
+  $form['wikicompare_instance_preprod'] = array(
     '#type' => 'textfield',
-    '#title' => t('Build Instance'),
-    '#default_value' => variable_get('wikicompare_build_instance'),
+    '#title' => t('Instance Preprod'),
+    '#default_value' => variable_get('wikicompare_instance_preprod'),
     '#required' => TRUE,
   );
   $form['wikicompare_archive_path'] = array(
@@ -429,25 +444,41 @@ function wikicompare_website_admin() {
     '#default_value' => variable_get('wikicompare_piwik_url'),
     '#required' => TRUE,
   );
+  $form['wikicompare_piwik_demo_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Piwik Demo ID'),
+    '#default_value' => variable_get('wikicompare_piwik_demo_id'),
+    '#required' => TRUE,
+  );
   $form['wikicompare_module_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Module Path'),
     '#default_value' => variable_get('wikicompare_module_path'),
     '#required' => TRUE,
   );
-  $form['wikicompare_build_version'] = array(
-    '#markup' => 'Build version : ' . variable_get('wikicompare_build_version'),
+  $form['wikicompare_dev_version'] = array(
+    '#markup' => 'Dev version : ' . variable_get('wikicompare_dev_version'),
+    '#suffix' => '<br/>',
+  );
+  $form['wikicompare_preprod_version'] = array(
+    '#markup' => 'Preprod version : ' . variable_get('wikicompare_preprod_version'),
     '#suffix' => '<br/>',
   );
   $form['wikicompare_release_version'] = array(
     '#markup' => 'Release version : ' .variable_get('wikicompare_release_version'),
     '#suffix' => '<br/>',
   );
-  $form['rebuild'] = array(
+  $form['rebuild_dev'] = array(
     '#type' => 'submit',
-    '#value' => t('Rebuild wikicompare'),
+    '#value' => t('Rebuild dev'),
     '#button_type' => 'button',
-    '#submit' => array('wikicompare_website_rebuild'),
+    '#submit' => array('wikicompare_website_rebuild_dev'),
+  );
+  $form['rebuild_preprod'] = array(
+    '#type' => 'submit',
+    '#value' => t('Rebuild preprod'),
+    '#button_type' => 'button',
+    '#submit' => array('wikicompare_website_rebuild_preprod'),
   );
   $form['populate'] = array(
     '#type' => 'submit',
@@ -461,10 +492,47 @@ function wikicompare_website_admin() {
 
 }
 
-function wikicompare_website_rebuild() {
+function wikicompare_website_rebuild_dev() {
 
     $module_path=variable_get('wikicompare_module_path');
-    exec("$module_path/wikicompare.sh build > /var/wikicompare/log/rebuild.txt");
+    exec("$module_path/wikicompare.sh build dev > /var/wikicompare/log/rebuild.txt");
+
+}
+
+function wikicompare_website_rebuild_preprod() {
+
+    $query = new EntityFieldQuery();
+    $entities = $query->entityCondition('entity_type', 'node')
+      ->propertyCondition('type', 'wikicompare_instance')
+      ->propertyCondition('title', variable_get('wikicompare_instance_preprod'))
+      ->range(0,1)
+      ->execute();
+    if (!empty($entities['node'])) {
+      $node = node_load(current(array_keys($entities['node'])));
+    }
+
+
+    $query = new EntityFieldQuery;
+    $result = $query
+      ->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'wikicompare')
+      ->fieldCondition('wikicompare_instance', 'target_id', $node->nid, '=')
+      ->execute();
+
+    if (isset($result['node'])) {
+      $records_nids = array_keys($result['node']);
+      $records = entity_load('node', $records_nids);
+      foreach ($records as $record){
+        if ($record->wikicompare_state['und'][0]['value'] != 'removing') {
+          $module_path=variable_get('wikicompare_module_path');
+          exec("$module_path/wikicompare.sh purge $record->title > /var/wikicompare/log/purge.txt");
+        }
+      }
+    }
+
+
+    $module_path=variable_get('wikicompare_module_path');
+    exec("$module_path/wikicompare.sh build preprod > /var/wikicompare/log/rebuild.txt");
 
 }
 
