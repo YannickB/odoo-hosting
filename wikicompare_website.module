@@ -164,7 +164,12 @@ function wikicompare_website_create_wikicompare_form($form, &$form_state) {
     $form['skip_analytics'] = array(
       '#type' => 'checkbox',
       '#title' => t('Skip Analytics?'),
-    );    
+    );
+
+    $form['mysql'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('MySQL?'),
+    ); 
    
     
   }
@@ -259,6 +264,8 @@ function element_validate_text_path($element, &$form_state) {
 function wikicompare_website_create_wikicompare_form_submit($form, &$form_state) {
 
     $skip_analytics = False;
+    $module_path=variable_get('wikicompare_module_path');
+    $command = "$module_path/wikicompare.sh";
 
     $chaine = 'azertyuiopqsdfghjklmwxcvbn123456789';
     $nb_lettres = strlen($chaine) - 1;
@@ -296,8 +303,18 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
     }
 
     if (isset($form_state['input']['preprod'])) {
-      $instance = variable_get('wikicompare_instance_preprod');
-      $skip_analytics = True;
+      if ($form_state['input']['preprod'] == True) {
+        $instance = variable_get('wikicompare_instance_preprod');
+        $skip_analytics = True;
+        $command .= ' -z';
+        if (isset($form_state['input']['mysql'])) {
+          if ($form_state['input']['mysql'] == True) {
+            $instance = variable_get('wikicompare_instance_preprod_mysql');
+          }
+        }
+//Temp
+            $instance = variable_get('wikicompare_instance_preprod_mysql');
+      }
     }
 
     $archive_path = variable_get('wikicompare_archive_path');
@@ -310,8 +327,6 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
       $server = $form_state['input']['server'];
     }
 
-    $module_path=variable_get('wikicompare_module_path');
-    $command = "$module_path/wikicompare.sh";
     if (isset($form_state['input']['build'])) {
       if ($form_state['input']['build'] == True) {
         $command .= ' -b';
@@ -332,6 +347,7 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
   
 
     $command .= " deploy $name > /var/wikicompare/log/install.txt";
+
     exec($command);
 
   $form_state['rebuild'] = TRUE;
@@ -380,6 +396,12 @@ function wikicompare_website_admin() {
     '#type' => 'textfield',
     '#title' => t('Instance Preprod'),
     '#default_value' => variable_get('wikicompare_instance_preprod'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_instance_preprod_mysql'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Instance Preprod Mysql'),
+    '#default_value' => variable_get('wikicompare_instance_preprod_mysql'),
     '#required' => TRUE,
   );
   $form['wikicompare_archive_path'] = array(
@@ -501,31 +523,33 @@ function wikicompare_website_rebuild_dev() {
 
 function wikicompare_website_rebuild_preprod() {
 
-    $query = new EntityFieldQuery();
-    $entities = $query->entityCondition('entity_type', 'node')
-      ->propertyCondition('type', 'wikicompare_instance')
-      ->propertyCondition('title', variable_get('wikicompare_instance_preprod'))
-      ->range(0,1)
-      ->execute();
-    if (!empty($entities['node'])) {
-      $node = node_load(current(array_keys($entities['node'])));
-    }
+    foreach (array(variable_get('wikicompare_instance_preprod'), variable_get('wikicompare_instance_preprod_mysql')) as $instance) {
+      $query = new EntityFieldQuery();
+      $entities = $query->entityCondition('entity_type', 'node')
+        ->propertyCondition('type', 'wikicompare_instance')
+        ->propertyCondition('title', $instance)
+        ->range(0,1)
+        ->execute();
+      if (!empty($entities['node'])) {
+        $node = node_load(current(array_keys($entities['node'])));
+      }
 
 
-    $query = new EntityFieldQuery;
-    $result = $query
-      ->entityCondition('entity_type', 'node')
-      ->entityCondition('bundle', 'wikicompare')
-      ->fieldCondition('wikicompare_instance', 'target_id', $node->nid, '=')
-      ->execute();
+      $query = new EntityFieldQuery;
+      $result = $query
+        ->entityCondition('entity_type', 'node')
+        ->entityCondition('bundle', 'wikicompare')
+        ->fieldCondition('wikicompare_instance', 'target_id', $node->nid, '=')
+        ->execute();
 
-    if (isset($result['node'])) {
-      $records_nids = array_keys($result['node']);
-      $records = entity_load('node', $records_nids);
-      foreach ($records as $record){
-        if ($record->wikicompare_state['und'][0]['value'] != 'removing') {
-          $module_path=variable_get('wikicompare_module_path');
-          exec("$module_path/wikicompare.sh purge $record->title > /var/wikicompare/log/purge.txt");
+      if (isset($result['node'])) {
+        $records_nids = array_keys($result['node']);
+        $records = entity_load('node', $records_nids);
+        foreach ($records as $record){
+          if ($record->wikicompare_state['und'][0]['value'] != 'removing') {
+            $module_path=variable_get('wikicompare_module_path');
+            exec("$module_path/wikicompare.sh purge $record->title > /var/wikicompare/log/purge.txt");
+          }
         }
       }
     }

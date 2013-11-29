@@ -9,6 +9,7 @@ cd $website_path
 
 title=''
 build=False
+test=False;
 skip_analytics=False
 db_type='pgsql'
 pgpass_file='/var/www/.pgpass'
@@ -21,10 +22,7 @@ admin_password=$(drush vget wikicompare_admin_password --format=json --exact)
 admin_password=${admin_password//[\"\\]/}
 instance=$(drush vget wikicompare_instance --format=json --exact)
 instance=${instance//[\"\\]/}
-user_name=$(drush vget wikicompare_user_wikiadmin --format=json --exact)
-user_name=${user_name//[\"\\]/}
-user_password=$(drush vget wikicompare_password_wikiadmin --format=json --exact)
-user_password=${user_password//[\"\\]/}
+user_name=$admin_user
 user_mail=$(drush vget wikicompare_email_wikiadmin --format=json --exact)
 user_mail=${user_mail//[\"\\]/}
 server=$(drush vget wikicompare_next_server --format=json --exact)
@@ -56,7 +54,7 @@ EOF
 }
 
 
-while getopts "ht:p:a:n:c:u:s:e:d:bk" OPTION;
+while getopts "ht:p:a:n:c:u:s:e:d:bkz" OPTION;
 do
      case $OPTION in
          h)
@@ -96,6 +94,9 @@ do
          b)
              build=True
              archive='wikicompare_preprod'
+             ;;
+         z)
+             test=True
              ;;
          ?)
              usage
@@ -252,20 +253,25 @@ sed -i -e "s/'password' => '[#a-z0-9_!]*'/'password' => '$admin_password'/g" /va
 drush vset --yes --exact site_name $title
 drush user-password $admin_user --password=$admin_password
 
+if [[ $test == True ]]
+then
+drush vset --yes --exact wikicompare_test_platform 1
+fi
+
 
 fi
 chown -R www-data:www-data /var/www/$instance
 chmod -R 700 /var/www/$instance/sites/$domain_name.wikicompare.info/
 echo Drupal ready
 
-if [[ $skip_analytics != True ]]
-then
-
 if [[ $admin_user != $user_name ]]
 then
 drush user-create $user_name --password="$user_password" --mail="$user_mail"
 drush user-add-role wikicompare_admin $user_name
 fi
+
+if [[ $skip_analytics != True ]]
+then
 
 if [[ domain_name != 'demo' ]]
 then
@@ -781,9 +787,17 @@ control_backup()
 build()
 {
 
+test=True
+
 rm -rf $archive_path/wikicompare_${1}/*
 cd $archive_path/wikicompare_${1}
 drush make $module_path/wikicompare_${1}.make archive
+
+if [[ $1 == 'dev' ]]
+then
+sed -i 's/settings[zen_rebuild_registry] = 0/settings[zen_rebuild_registry] = 1/' $archive_path/wikicompare_${1}/archive/sites/all/themes/wikicompare_theme/wikicompare_theme.info
+fi
+
 cd archive/
 tar -czf ../archive.tar.gz ./* 
 cd ../
@@ -842,10 +856,25 @@ echo 'Deploying demo data'
 cd /var/www/wikicompare_${1}/sites/${1}.wikicompare.info
 drush -y en wikicompare_generate_demo
 drush $module_path/wikicompare.script deploy_demo
+if [[ $1 == 'dev' ]]
+then
+drush -y en devel
+fi
+drush user-create wikiadmin --password="g00gle" --mail="wikicompare@yopmail.com"
+drush user-add-role wikicompare_admin wikiadmin
+
 echo 'Deploying mysql demo data'
 cd /var/www/wikicompare_${1}_mysql/sites/${1}-my.wikicompare.info
 drush -y en wikicompare_generate_demo
 drush $module_path/wikicompare.script deploy_demo
+if [[ $1 == 'dev' ]]
+then
+drush -y en devel
+fi
+drush user-create wikiadmin --password="g00gle" --mail="wikicompare@yopmail.com"
+drush user-add-role wikicompare_admin wikiadmin
+
+echo Build finished!
 
 }
 
@@ -1280,6 +1309,8 @@ case $1 in
        cd /var/www/$instance/sites/demo.wikicompare.info
        drush -y en wikicompare_generate_demo
        drush $module_path/wikicompare.script deploy_demo
+       drush user-create wikiadmin --password="g00gle" --mail="wikicompare@yopmail.com"
+       drush user-add-role wikicompare_admin wikiadmin
 
        version=$(cat $archive_path/wikicompare_preprod/VERSION.txt)
        cd $website_path
