@@ -771,7 +771,7 @@ control_backup()
       exit 2
     fi
 
-    if [[ ! (-s "$1.wikicompare.info-wikicompare_$1.sql" || -s "wikicompare_$1.sql")  ]]
+    if [[ ! (-s "${1/_/-}.wikicompare.info-wikicompare_${1}.sql" || -s "wikicompare_${1}.sql")  ]]
     then
       echo "The database file wikicompare_${wikicompare_name}.sql is empty."
       exit 2
@@ -1121,6 +1121,14 @@ define service{
   use                           generic-service
   register                      0
   aggregation                   system
+}
+
+define service{
+   service_description    HTTP Website
+   use            wikicompare-linux-service
+   register       0
+   host_name      wikicompare-linux-server
+   check_command  wikicompare_check_http!www.wikicompare.info
 }
 
 define service{
