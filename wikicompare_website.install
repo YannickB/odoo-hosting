@@ -143,6 +143,33 @@ function wikicompare_website_install() {
   );
   field_create_instance($instance);
 
+  $field = array(
+    'field_name' => 'wikicompare_bdd_server',
+    'type' => 'entityreference',
+    'cardinality' => 1,
+    'settings' => array(
+      'target_type' => 'node',
+      'handler_settings' => array('target_bundles' => array('wikicompare_server')),
+    ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'wikicompare_bdd_server',
+    'entity_type' => 'node',
+    'bundle' => 'wikicompare',
+    'label' => 'Database server',
+    'widget' => array(
+      'type' => 'entityreference_autocomplete',
+    ),
+    'settings' => array(
+      'target_type' => 'node',
+      'handler_settings' => array('target_bundles' => array('wikicompare_server')),
+    ),
+
+  );
+  field_create_instance($instance);
+
   
   $field = array(
     'field_name' => 'wikicompare_version',

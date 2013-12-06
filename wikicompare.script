@@ -30,7 +30,8 @@ switch ($args[0]) {
 #    }
     $node->wikicompare_instance['und'][0]['target_id'] = $args[5];
     $node->wikicompare_instance['und'][0]['target_type'] = "node";
-    $node->wikicompare_bdd['und'][0]['value'] = $args[6];
+    $node->wikicompare_bdd_server['und'][0]['target_id'] = $args[6];
+    $node->wikicompare_bdd_server['und'][0]['target_type'] = "node";
     node_save($node);
 
     drush_print('The node is created in the website');

@@ -155,6 +155,13 @@ function wikicompare_website_create_wikicompare_form($form, &$form_state) {
       '#required' => TRUE,
       '#element_validate' => array('element_validate_text_email'),
     );
+    $form['database_server'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Database Server'),
+      '#default_value' => variable_get('wikicompare_next_database_server'),
+      '#required' => TRUE,
+      '#element_validate' => array('element_validate_text_email'),
+    );
 
     $form['build'] = array(
       '#type' => 'checkbox',
@@ -327,6 +334,11 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
       $server = $form_state['input']['server'];
     }
 
+    $database_server = variable_get('wikicompare_next_database_server');
+    if (isset($form_state['input']['database_server'])) {
+      $database_server = $form_state['input']['database_server'];
+    }
+
     if (isset($form_state['input']['build'])) {
       if ($form_state['input']['build'] == True) {
         $command .= ' -b';
@@ -342,7 +354,7 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
       $command .= ' -k';
     }
     
-    $command .= " -t $title -p '$password_admin' -u $user_name -s '$user_password' -e $user_email -d $server -a $admin_user -n $instance -c $archive_path";
+    $command .= " -t $title -p '$password_admin' -u $user_name -s '$user_password' -e $user_email -r $server -d $database_server -a $admin_user -n $instance -c $archive_path";
 
   
 
@@ -422,6 +434,12 @@ function wikicompare_website_admin() {
     '#type' => 'textfield',
     '#title' => t('Next server'),
     '#default_value' => variable_get('wikicompare_next_server'),
+    '#required' => TRUE,
+  );
+  $form['wikicompare_next_database_server'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Next database server'),
+    '#default_value' => variable_get('wikicompare_next_database_server'),
     '#required' => TRUE,
   );
   $form['wikicompare_user_wikiadmin'] = array(
