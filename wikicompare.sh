@@ -424,7 +424,7 @@ echo "$domain_name IN A $IP" >> /etc/bind/db.wikicompare.info
 sudo /etc/init.d/bind9 reload
 EOF
 
-directory=/var/wikicompare/control_backups/`date +%Y-%m-%d`_${instance}
+directory=/var/wikicompare/control_backups/`date +%Y-%m-%d`_${instance}_${IP}
 ssh $shinken_server << EOF
   echo "define service{" > /usr/local/shinken/etc/services/wikicompare_$1.cfg
   echo "service_description    HTTP $1" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
@@ -902,7 +902,6 @@ control_backup()
     i=0
     wikicompare_name=''
     instance_name=''
-    echo $result_wikicompare
     for row_wikicompare in $result_wikicompare
     do
       if [[ $i == 3 ]]
@@ -918,9 +917,6 @@ control_backup()
       let i++
     done
     IP=${IP//[^0-9.]/}
-    echo wikicompare_name $wikicompare_name
-    echo instance $instance_name
-    echo IP $IP
     directory=/var/wikicompare/control_backups/`date +%Y-%m-%d`_${instance_name}_${IP}
     fi
     

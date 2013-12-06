@@ -319,8 +319,6 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
             $instance = variable_get('wikicompare_instance_preprod_mysql');
           }
         }
-//Temp
-            $instance = variable_get('wikicompare_instance_preprod_mysql');
       }
     }
 
