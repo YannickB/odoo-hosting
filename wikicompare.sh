@@ -373,6 +373,7 @@ EOF
 
 fi
 
+escape='\$1'
 ssh www-data@$IP << EOF
   echo "<VirtualHost *:80>" > /etc/apache2/sites-available/wikicompare_$1
   echo "ServerAdmin webmaster@localhost" >> /etc/apache2/sites-available/wikicompare_$1
@@ -392,7 +393,7 @@ ssh www-data@$IP << EOF
   echo "RewriteBase /" >> /etc/apache2/sites-available/wikicompare_$1
   echo "RewriteCond %{REQUEST_FILENAME} !-f" >> /etc/apache2/sites-available/wikicompare_$1
   echo "RewriteCond %{REQUEST_FILENAME} !-d" >> /etc/apache2/sites-available/wikicompare_$1
-  echo "RewriteRule ^(.*)$ index.php?q=\$1 [L,QSA]" >> /etc/apache2/sites-available/wikicompare_$1
+  echo "RewriteRule ^(.*)$ index.php?q=$escape [L,QSA]" >> /etc/apache2/sites-available/wikicompare_$1
   echo "</Directory>" >> /etc/apache2/sites-available/wikicompare_$1
   echo "ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/" >> /etc/apache2/sites-available/wikicompare_$1
   echo '<Directory "/usr/lib/cgi-bin">' >> /etc/apache2/sites-available/wikicompare_$1

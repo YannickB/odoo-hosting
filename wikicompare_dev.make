@@ -45,6 +45,7 @@ projects[] = entity
 projects[] = entityreference
 projects[] = ckeditor
 projects[] = lang_dropdown
+projects[] = privatemsg
 projects[] = views
 projects[] = revisioning
 projects[] = simple_dialog
