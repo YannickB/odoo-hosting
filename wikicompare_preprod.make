@@ -46,7 +46,6 @@ projects[] = lang_dropdown
 projects[] = privatemsg
 projects[] = views
 projects[] = revisioning
-projects[] = simple_dialog
 projects[] = piwik
 projects[] = userone
 projects[wikicompare][type] = "module"

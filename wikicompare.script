@@ -101,6 +101,22 @@ switch ($args[0]) {
     break;
 
   case 'deploy_demo':
+    module_load_include('inc', 'language', 'includes/language');
+    locale_add_language('fr');
+    //Define the way the language is defined.
+    $weighted_provider_list = array(
+      1 => 'locale-session',
+      2 => 'locale-user',
+      4 => 'locale-browser',
+      10 => 'language-default',
+    );
+    $all_negotiation_providers = language_negotiation_info();
+    $negotiation = array();
+    foreach ($weighted_provider_list as $weight => $id) {
+      $negotiation[$id] = $all_negotiation_providers[$id];
+      $negotiation[$id]['weight'] = $weight;
+    }
+    language_negotiation_set('language', $negotiation);
     wikicompare_generate_erp_data();
     break;
 }

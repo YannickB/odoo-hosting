@@ -1032,25 +1032,28 @@ chown -R www-data $archive_path/wikicompare_${1}/*
 
 echo 'Deploying demo data'
 cd /var/www/wikicompare_${1}/sites/${1}.wikicompare.info
+drush user-create wikiadmin --password="g00gle" --mail="wikicompare@yopmail.com"
+drush user-add-role wikicompare_admin wikiadmin
 drush -y en wikicompare_generate_demo
-drush $module_path/wikicompare.script deploy_demo
+drush $module_path/wikicompare.script --user=wikiadmin deploy_demo
 if [[ $1 == 'dev' ]]
 then
 drush -y en devel
 fi
-drush user-create wikiadmin --password="g00gle" --mail="wikicompare@yopmail.com"
-drush user-add-role wikicompare_admin wikiadmin
+
+
 
 echo 'Deploying mysql demo data'
 cd /var/www/wikicompare_${1}_mysql/sites/${1}-my.wikicompare.info
+drush user-create wikiadmin --password="g00gle" --mail="wikicompare@yopmail.com"
+drush user-add-role wikicompare_admin wikiadmin
 drush -y en wikicompare_generate_demo
-drush $module_path/wikicompare.script deploy_demo
+drush $module_path/wikicompare.script --user=wikiadmin deploy_demo
 if [[ $1 == 'dev' ]]
 then
 drush -y en devel
 fi
-drush user-create wikiadmin --password="g00gle" --mail="wikicompare@yopmail.com"
-drush user-add-role wikicompare_admin wikiadmin
+
 
 echo Build finished!
 
@@ -1510,10 +1513,10 @@ case $1 in
 
        echo 'Installing demo data...'
        cd /var/www/$instance/sites/demo.wikicompare.info
-       drush -y en wikicompare_generate_demo
-       drush $module_path/wikicompare.script deploy_demo
        drush user-create wikiadmin --password="g00gle" --mail="wikicompare@yopmail.com"
        drush user-add-role wikicompare_admin wikiadmin
+       drush -y en wikicompare_generate_demo
+       drush $module_path/wikicompare.script --user=wikiadmin deploy_demo
 
        version=$(cat $archive_path/wikicompare_preprod/VERSION.txt)
        cd $website_path
