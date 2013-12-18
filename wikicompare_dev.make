@@ -56,6 +56,8 @@ projects[wikicompare][download][url] = "https://github.com/YannickB/wikicompare.
 projects[wikicompare][download][branch] = "dev"
 libraries[ckeditor][download][type] = "get"
 libraries[ckeditor][download][url] = "http://download.cksource.com/CKEditor/CKEditor/CKEditor%203.6.3/ckeditor_3.6.3.tar.gz"
+libraries[ms-Dropdown][download][type] = "git"
+libraries[ms-Dropdown][download][url] = "https://github.com/marghoobsuleman/ms-Dropdown.git"
   
 
 ; Themes
