@@ -48,6 +48,22 @@ function wikicompare_website_menu() {
 
   $items = array();
 
+  //Enable landing page URL
+  $items['landing'] = array(
+    'title' => 'Home',
+    'description' => 'Home Page',
+    'page callback' => 'wikicompare_landing_page',
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  //Enable landing page URL
+  $items['subscribed'] = array(
+    'title' => 'Subscribed',
+    'page callback' => 'wikicompare_subscribed_page',
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
 
   $items['create_wikicompare'] = array(
     'title' => 'Create Wikicompare',
@@ -84,6 +100,100 @@ function wikicompare_website_permission() {
   );
 }
 
+
+function wikicompare_landing_page() {
+
+  $output = '<div id="landing-page">';
+
+  $img = theme('image', array(
+    'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/logo.png',
+    'alt' => 'Wikicompare',
+    'attributes' => array('style' => 'width: 95%;')
+  ));
+  $output .= render($img);
+
+  $output .= '<p class="big-gothic">GET UP</p>';
+  $output .= '<p class="little-montserrat"><span class="little-lobster">The</span> CONSUMER</p>';
+  $output .= '<p class="big-montserrat">BILL <span class="little-lobster">of</span> RIGHTS</p>';
+  $output .= '<p class="big-gothic">STAND UP</p>';
+
+  $img = theme('image', array(
+    'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/landing-image-1-V1.jpg',
+    'alt' => 'Wikicompare',
+  ));
+  $output .= render($img);
+
+  $output .= '<p class="description">Get all the data you need! No restriction from us.<br/>
+<br/>
+For the first time in the comparison shopping, no business related with any specific shop or brand!</p>';
+
+  $img = theme('image', array(
+    'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/landing-image-2-V1.jpg',
+    'alt' => 'Wikicompare',
+  ));
+  $output .= render($img);
+
+  $output .= "<p class='description'>Loyal because you don't know the competitors' offers?<br/>
+<br/>
+Here, the community helps you easily to get detailed criteria and learn how to choose.</p>";
+
+  $img = theme('image', array(
+    'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/landing-image-3-V1.jpg',
+    'alt' => 'Wikicompare',
+  ));
+  $output .= render($img);
+
+  $output .= '<p class="description">Use your voice, tell us about your experience with the product or the service you used. Write about the specifications.<br/>
+<br/>
+As well as Wikipedia, everyone will notice and evaluate your comment.</p>';
+
+  $output .= '<p class="little-montserrat red">START</p>';
+  $output .= '<p class="little-montserrat red"><span class="little-lobster red">the</span> FIGHT !</p>';
+
+  $block = module_invoke('simplenews', 'block_view', '1');
+  $output .= render($block['content']);
+
+  $output .= '<p class="little-montserrat join">JOIN US</p>';
+
+  $output .= '<p class="little-lobster spread">Spread the word</p>';
+
+  $output .= '<p style="margin-top: 3em; margin-bottom: 6em;">';
+
+  $img = theme('image', array(
+    'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/twitter.png',
+    'alt' => 'Facebook',
+    'attributes' => array('style' => 'margin-left: 15em; float: left; width: 20%;')
+  ));
+  $output .= '<a href="http://twitter.com/wikicompare" target="_blank">' . render($img) . '</a>';
+
+  $img = theme('image', array(
+    'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/facebook.png',
+    'alt' => 'Blog',
+    'attributes' => array('style' => 'margin-right: 15em; float: right; width: 20%;')
+  ));
+  $output .= '<a href="http://www.facebook.com/pages/Wikicompare/229269023920703" target="_blank">' . render($img) . '</a>';
+
+/*
+  $img = theme('image', array(
+    'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/twitter.png',
+    'alt' => 'Twitter',
+    'attributes' => array('style' => 'display:block; width: 20%; margin: auto;')
+  ));
+  $output .= render($img);*/
+
+  $output .= '</p>';
+
+  $output .= '</div>';
+
+  return $output;
+
+}
+
+function wikicompare_subscribed_page() {
+
+  return 'Thank you, we will send you some news soon.';
+
+}
 
 
 function wikicompare_website_create_wikicompare_form($form, &$form_state) {
