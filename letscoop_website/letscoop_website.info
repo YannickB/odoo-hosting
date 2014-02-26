@@ -1,10 +1,9 @@
-name = Wikicompare Website
+name = letscoop Website
 description = The module of wikicompare.info website
 
-configure = admin/config/wikicompare_website
+configure = admin/config/letscoop_website
 
 dependencies[] = ayah
-dependencies[] = bakery
 dependencies[] = entityreference
 dependencies[] = list
 dependencies[] = menu

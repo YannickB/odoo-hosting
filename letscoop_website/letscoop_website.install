@@ -5,7 +5,7 @@
  * Implements hook_install().
  * This function is called only once at the module installation.
  */
-function wikicompare_website_install() {
+function letscoop_website_install() {
 
   $t = get_t();
 
@@ -13,12 +13,12 @@ function wikicompare_website_install() {
   node_types_rebuild();
 
   $types = node_type_get_types();
-  node_add_body_field( $types[ 'wikicompare' ] , $t('Description'));
-  node_add_body_field( $types[ 'wikicompare_instance' ] , $t('Description'));
-  node_add_body_field( $types[ 'wikicompare_server' ] , $t('Description'));
+  node_add_body_field( $types[ 'letscoop' ] , $t('Description'));
+  node_add_body_field( $types[ 'letscoop_instance' ] , $t('Description'));
+  node_add_body_field( $types[ 'letscoop_server' ] , $t('Description'));
 
   $field = array(
-    'field_name' => 'wikicompare_admin_password',
+    'field_name' => 'letscoop_admin_password',
     'type' => 'text',
     'cardinality' => 1,
     'settings' => array(
@@ -28,9 +28,9 @@ function wikicompare_website_install() {
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_admin_password',
+    'field_name' => 'letscoop_admin_password',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare',
+    'bundle' => 'letscoop',
     'label' => 'Admin Password',
     'widget' => array(
       'settings' => array(
@@ -42,7 +42,7 @@ function wikicompare_website_install() {
   field_create_instance($instance);
 
   $field = array(
-    'field_name' => 'wikicompare_user_name',
+    'field_name' => 'letscoop_user_name',
     'type' => 'text',
     'cardinality' => 1,
     'settings' => array(
@@ -52,9 +52,9 @@ function wikicompare_website_install() {
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_user_name',
+    'field_name' => 'letscoop_user_name',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare',
+    'bundle' => 'letscoop',
     'label' => 'User name',
     'widget' => array(
       'settings' => array(
@@ -67,7 +67,7 @@ function wikicompare_website_install() {
 
 
   $field = array(
-    'field_name' => 'wikicompare_user_email',
+    'field_name' => 'letscoop_user_email',
     'type' => 'text',
     'cardinality' => 1,
     'settings' => array(
@@ -77,9 +77,9 @@ function wikicompare_website_install() {
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_user_email',
+    'field_name' => 'letscoop_user_email',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare',
+    'bundle' => 'letscoop',
     'label' => 'Email',
     'widget' => array(
       'settings' => array(
@@ -91,7 +91,7 @@ function wikicompare_website_install() {
   field_create_instance($instance);
   
   $field = array(
-    'field_name' => 'wikicompare_bdd',
+    'field_name' => 'letscoop_bdd',
     'type' => 'list_text',
     'cardinality' => 1,
     'settings' => array(
@@ -104,9 +104,9 @@ function wikicompare_website_install() {
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_bdd',
+    'field_name' => 'letscoop_bdd',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare_instance',
+    'bundle' => 'letscoop_instance',
     'label' => 'Base de donnée',
     'description' => 'TODO',
     'required' => 1,
@@ -117,54 +117,54 @@ function wikicompare_website_install() {
   field_create_instance($instance);  
   
   $field = array(
-    'field_name' => 'wikicompare_instance',
+    'field_name' => 'letscoop_instance',
     'type' => 'entityreference',
     'cardinality' => 1,
     'settings' => array(
       'target_type' => 'node',
-      'handler_settings' => array('target_bundles' => array('wikicompare_instance')),
+      'handler_settings' => array('target_bundles' => array('letscoop_instance')),
     ),
   );
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_instance',
+    'field_name' => 'letscoop_instance',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare',
+    'bundle' => 'letscoop',
     'label' => 'Instance',
     'widget' => array(
       'type' => 'entityreference_autocomplete',
     ),
     'settings' => array(
       'target_type' => 'node',
-      'handler_settings' => array('target_bundles' => array('wikicompare_instance')),
+      'handler_settings' => array('target_bundles' => array('letscoop_instance')),
     ),
 
   );
   field_create_instance($instance);
 
   $field = array(
-    'field_name' => 'wikicompare_bdd_server',
+    'field_name' => 'letscoop_bdd_server',
     'type' => 'entityreference',
     'cardinality' => 1,
     'settings' => array(
       'target_type' => 'node',
-      'handler_settings' => array('target_bundles' => array('wikicompare_server')),
+      'handler_settings' => array('target_bundles' => array('letscoop_server')),
     ),
   );
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_bdd_server',
+    'field_name' => 'letscoop_bdd_server',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare',
+    'bundle' => 'letscoop',
     'label' => 'Database server',
     'widget' => array(
       'type' => 'entityreference_autocomplete',
     ),
     'settings' => array(
       'target_type' => 'node',
-      'handler_settings' => array('target_bundles' => array('wikicompare_server')),
+      'handler_settings' => array('target_bundles' => array('letscoop_server')),
     ),
 
   );
@@ -172,7 +172,7 @@ function wikicompare_website_install() {
 
   
   $field = array(
-    'field_name' => 'wikicompare_version',
+    'field_name' => 'letscoop_version',
     'type' => 'text',
     'cardinality' => 1,
     'settings' => array(
@@ -182,9 +182,9 @@ function wikicompare_website_install() {
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_version',
+    'field_name' => 'letscoop_version',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare_instance',
+    'bundle' => 'letscoop_instance',
     'label' => 'Version',
     'widget' => array(
       'settings' => array(
@@ -196,34 +196,34 @@ function wikicompare_website_install() {
   field_create_instance($instance);  
   
   $field = array(
-    'field_name' => 'wikicompare_server',
+    'field_name' => 'letscoop_server',
     'type' => 'entityreference',
     'cardinality' => 1,
     'settings' => array(
       'target_type' => 'node',
-      'handler_settings' => array('target_bundles' => array('wikicompare_server')),
+      'handler_settings' => array('target_bundles' => array('letscoop_server')),
     ),
   );
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_server',
+    'field_name' => 'letscoop_server',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare_instance',
+    'bundle' => 'letscoop_instance',
     'label' => 'Server',
     'widget' => array(
       'type' => 'entityreference_autocomplete',
     ),
     'settings' => array(
       'target_type' => 'node',
-      'handler_settings' => array('target_bundles' => array('wikicompare_server')),
+      'handler_settings' => array('target_bundles' => array('letscoop_server')),
     ),
 
   );
   field_create_instance($instance);
 
   $field = array(
-    'field_name' => 'wikicompare_state',
+    'field_name' => 'letscoop_state',
     'type' => 'list_text',
     'cardinality' => 1,
     'settings' => array(
@@ -238,9 +238,9 @@ function wikicompare_website_install() {
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_state',
+    'field_name' => 'letscoop_state',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare',
+    'bundle' => 'letscoop',
     'label' => 'State',
     'description' => 'TODO',
     'required' => 1,
@@ -256,7 +256,7 @@ function wikicompare_website_install() {
   field_create_instance($instance);
 
   $field = array(
-    'field_name' => 'wikicompare_ip',
+    'field_name' => 'letscoop_ip',
     'type' => 'text',
     'cardinality' => 1,
     'settings' => array(
@@ -266,9 +266,9 @@ function wikicompare_website_install() {
   field_create_field($field);
 
   $instance = array(
-    'field_name' => 'wikicompare_ip',
+    'field_name' => 'letscoop_ip',
     'entity_type' => 'node',
-    'bundle' => 'wikicompare_server',
+    'bundle' => 'letscoop_server',
     'label' => 'IP',
     'widget' => array(
       'settings' => array(
@@ -286,12 +286,12 @@ function wikicompare_website_install() {
  * Implements hook_uninstall().
  * This function is called at the module uninstallation.
  */
-function wikicompare_website_uninstall() {
+function letscoop_website_uninstall() {
 
 
   //Delete all nodes of feature type.
   $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
-  $result = db_query($sql, array(':type' => 'wikicompare'));
+  $result = db_query($sql, array(':type' => 'letscoop'));
   $nids = array();
   foreach ($result as $row) {
     $nids[] = $row->nid;
@@ -300,7 +300,7 @@ function wikicompare_website_uninstall() {
 
   //Delete all nodes of feature type.
   $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
-  $result = db_query($sql, array(':type' => 'wikicompare_instance'));
+  $result = db_query($sql, array(':type' => 'letscoop_instance'));
   $nids = array();
   foreach ($result as $row) {
     $nids[] = $row->nid;
@@ -309,7 +309,7 @@ function wikicompare_website_uninstall() {
 
   //Delete all nodes of feature type.
   $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
-  $result = db_query($sql, array(':type' => 'wikicompare_server'));
+  $result = db_query($sql, array(':type' => 'letscoop_server'));
   $nids = array();
   foreach ($result as $row) {
     $nids[] = $row->nid;
@@ -317,15 +317,15 @@ function wikicompare_website_uninstall() {
 #  node_delete_multiple($nids);
 
 
-  field_delete_field('wikicompare_admin_password');
-  field_delete_field('wikicompare_instance');
-  field_delete_field('wikicompare_server');
-  field_delete_field('wikicompare_bdd');
-  field_delete_field('wikicompare_version');    
-  field_delete_field('wikicompare_user_name');
-  field_delete_field('wikicompare_user_email');
-  field_delete_field('wikicompare_state');
-  field_delete_field('wikicompare_ip');
+  field_delete_field('letscoop_admin_password');
+  field_delete_field('letscoop_instance');
+  field_delete_field('letscoop_server');
+  field_delete_field('letscoop_bdd');
+  field_delete_field('letscoop_version');    
+  field_delete_field('letscoop_user_name');
+  field_delete_field('letscoop_user_email');
+  field_delete_field('letscoop_state');
+  field_delete_field('letscoop_ip');
 
 }
 

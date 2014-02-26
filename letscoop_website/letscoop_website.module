@@ -4,21 +4,21 @@
 * Implements hook_node_info().
 * This function create the new node types we need for the module.
 */
-function wikicompare_website_node_info() {
+function letscoop_website_node_info() {
   return array(
-    'wikicompare' => array(
-      'name' => t('Wikicompare'),
-      'base' => 'Wikicompare',
+    'letscoop' => array(
+      'name' => t('Letscoop'),
+      'base' => 'Letscoop',
       'title_label' => t('Title'),
     ),
-    'wikicompare_instance' => array(
-      'name' => t('Wikicompare Instance'),
-      'base' => 'wikicompare_instance',
+    'letscoop_instance' => array(
+      'name' => t('Letscoop Instance'),
+      'base' => 'letscoop_instance',
       'title_label' => t('Title'),
     ),
-    'wikicompare_server' => array(
-      'name' => t('Wikicompare Server'),
-      'base' => 'wikicompare_server',
+    'letscoop_server' => array(
+      'name' => t('Letscoop Server'),
+      'base' => 'letscoop_server',
       'title_label' => t('Title'),
     ),
   );
@@ -26,15 +26,15 @@ function wikicompare_website_node_info() {
 
 
 
-function wikicompare_form($node, $form_state) {
+function letscoop_form($node, $form_state) {
   return node_content_form($node, $form_state);
 }
 
-function wikicompare_instance_form($node, $form_state) {
+function letscoop_instance_form($node, $form_state) {
   return node_content_form($node, $form_state);
 }
 
-function wikicompare_server_form($node, $form_state) {
+function letscoop_server_form($node, $form_state) {
   return node_content_form($node, $form_state);
 }
 
@@ -44,7 +44,7 @@ function wikicompare_server_form($node, $form_state) {
 * Implements hook_menu().
 * This function create new menu in Drupal and also declare the ajax callback.
 */
-function wikicompare_website_menu() {
+function letscoop_website_menu() {
 
   $items = array();
 
@@ -52,7 +52,7 @@ function wikicompare_website_menu() {
   $items['landing'] = array(
     'title' => 'Home',
     'description' => 'Home Page',
-    'page callback' => 'wikicompare_landing_page',
+    'page callback' => 'letscoop_landing_page',
     'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM,
   );
@@ -60,24 +60,24 @@ function wikicompare_website_menu() {
   //Enable landing page URL
   $items['subscribed'] = array(
     'title' => 'Subscribed',
-    'page callback' => 'wikicompare_subscribed_page',
+    'page callback' => 'letscoop_subscribed_page',
     'access callback' => TRUE,
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['create_wikicompare'] = array(
-    'title' => 'Create Wikicompare',
+  $items['create_letscoop'] = array(
+    'title' => 'Create Letscoop',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('wikicompare_website_create_wikicompare_form'),
-    'access arguments' => array('create wikicompare'),
+    'page arguments' => array('letscoop_website_create_letscoop_form'),
+    'access arguments' => array('create letscoop'),
     'menu_name' => 'main-menu',
     'weight' => 0,
   );
 
-  $items['admin/config/wikicompare_website'] = array(
-    'title' => 'Wikicompare website settings',
+  $items['admin/config/letscoop_website'] = array(
+    'title' => 'Letscoop website settings',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('wikicompare_website_admin'),
+    'page arguments' => array('letscoop_website_admin'),
     'access arguments' => array('administer users'),
     'type' => MENU_NORMAL_ITEM,
    );
@@ -90,24 +90,24 @@ function wikicompare_website_menu() {
 
 /**
  * Implements hook_permission().
- * Add new permission specific to wikicompare.
+ * Add new permission specific to letscoop.
  */
-function wikicompare_website_permission() {
+function letscoop_website_permission() {
   return array(
-    'create wikicompare' => array(
-      'title' => t('Create Wikicompare'),
+    'create letscoop' => array(
+      'title' => t('Create Letscoop'),
     ),
   );
 }
 
 
-function wikicompare_landing_page() {
+function letscoop_landing_page() {
 
   $output = '<div id="landing-page">';
 
   $img = theme('image', array(
     'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/logo.png',
-    'alt' => 'Wikicompare',
+    'alt' => 'Letscoop',
     'attributes' => array('style' => 'width: 95%;')
   ));
   $output .= render($img);
@@ -119,7 +119,7 @@ function wikicompare_landing_page() {
 
   $img = theme('image', array(
     'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/landing-image-1-V1.jpg',
-    'alt' => 'Wikicompare',
+    'alt' => 'Letscoop',
   ));
   $output .= render($img);
 
@@ -129,7 +129,7 @@ For the first time in the comparison shopping, no business related with any spec
 
   $img = theme('image', array(
     'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/landing-image-2-V1.jpg',
-    'alt' => 'Wikicompare',
+    'alt' => 'Letscoop',
   ));
   $output .= render($img);
 
@@ -139,7 +139,7 @@ Here, the community helps you easily to get detailed criteria and learn how to c
 
   $img = theme('image', array(
     'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/landing-image-3-V1.jpg',
-    'alt' => 'Wikicompare',
+    'alt' => 'Letscoop',
   ));
   $output .= render($img);
 
@@ -164,14 +164,14 @@ As well as Wikipedia, everyone will notice and evaluate your comment.</p>';
     'alt' => 'Facebook',
     'attributes' => array('style' => 'margin-left: 15em; float: left; width: 20%;')
   ));
-  $output .= '<a href="http://twitter.com/wikicompare" target="_blank">' . render($img) . '</a>';
+  $output .= '<a href="http://twitter.com/letscoop" target="_blank">' . render($img) . '</a>';
 
   $img = theme('image', array(
     'path' => drupal_get_path('theme',$GLOBALS['theme']) . '/images/landing/facebook.png',
     'alt' => 'Blog',
     'attributes' => array('style' => 'margin-right: 15em; float: right; width: 20%;')
   ));
-  $output .= '<a href="http://www.facebook.com/pages/Wikicompare/229269023920703" target="_blank">' . render($img) . '</a>';
+  $output .= '<a href="http://www.facebook.com/pages/Letscoop/229269023920703" target="_blank">' . render($img) . '</a>';
 
 /*
   $img = theme('image', array(
@@ -189,23 +189,23 @@ As well as Wikipedia, everyone will notice and evaluate your comment.</p>';
 
 }
 
-function wikicompare_subscribed_page() {
+function letscoop_subscribed_page() {
 
   return 'Thank you, we will send you some news soon.';
 
 }
 
 
-function wikicompare_website_create_wikicompare_form($form, &$form_state) {
+function letscoop_website_create_letscoop_form($form, &$form_state) {
 
 
 
   $form = array();
 
   if (!empty($form_state['values']['name'])) {
-    $url='http://' . str_replace('_', '-', $form_state['values']['name']) . '.wikicompare.info';
+    $url='http://' . str_replace('_', '-', $form_state['values']['name']) . '.letscoop.info';
     $form['submission'] = array(
-      '#markup' => 'The wikicompare is now created at <a href="' . $url . '" target="_blank">' . $url . '</a>. You can also follow his statistics at <a href="http://analytics.wikicompare.info" target="_blank">http://analytics.wikicompare.info</a>.'
+      '#markup' => 'The letscoop is now created at <a href="' . $url . '" target="_blank">' . $url . '</a>. You can also follow his statistics at <a href="http://analytics.letscoop.info" target="_blank">http://analytics.letscoop.info</a>.'
    );
   }
   else {
@@ -213,24 +213,24 @@ function wikicompare_website_create_wikicompare_form($form, &$form_state) {
 
   $form['name'] = array(
       '#type' => 'textfield', 
-      '#title' => t('Wikicompare Name'), 
+      '#title' => t('Letscoop Name'), 
       '#maxlength' => 10, 
-      '#description' => t("Please enter the name of your wikicompare. This name will be used in the domain name, like example.wikicompare.info, so you have to type it in small-letter and without space"),
+      '#description' => t("Please enter the name of your letscoop. This name will be used in the domain name, like example.letscoop.info, so you have to type it in small-letter and without space"),
       '#required' => TRUE,
       '#element_validate' => array('element_validate_exist_small_space'),
     );
   $form['title'] = array(
       '#type' => 'textfield',
-      '#title' => t('Wikicompare Title'),
+      '#title' => t('Letscoop Title'),
       '#maxlength' => 20,
-      '#description' => t("Please enter the title of your wikicompare. This title will be displayed at the top of your wikicompare. You can change it later."),
+      '#description' => t("Please enter the title of your letscoop. This title will be displayed at the top of your letscoop. You can change it later."),
       '#required' => TRUE,
       '#element_validate' => array('element_validate_text_simple'),
     );
 
   $form['preprod'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Create a test wikicompare (Warning, the tests are destroyed each time we update our files, and this can happen at any moment.)'),
+    '#title' => t('Create a test letscoop (Warning, the tests are destroyed each time we update our files, and this can happen at any moment.)'),
   ); 
 
   if (user_access('administer users')) {
@@ -239,14 +239,14 @@ function wikicompare_website_create_wikicompare_form($form, &$form_state) {
       '#type' => 'textfield',
       '#title' => t('Admin User'),
       '#maxlength' => 10,
-      '#default_value' => variable_get('wikicompare_admin_user'),
+      '#default_value' => variable_get('letscoop_admin_user'),
       '#required' => TRUE,
       '#element_validate' => array('element_validate_text_text'),
     );
     $form['instance'] = array(
       '#type' => 'textfield',
       '#title' => t('Instance'),
-      '#default_value' => variable_get('wikicompare_instance'),
+      '#default_value' => variable_get('letscoop_instance'),
       '#required' => TRUE,
       '#element_validate' => array('element_validate_text_path'),
     );
@@ -254,21 +254,21 @@ function wikicompare_website_create_wikicompare_form($form, &$form_state) {
     $form['archive_path'] = array(
       '#type' => 'textfield',
       '#title' => t('Archive Path'),
-      '#default_value' => variable_get('wikicompare_archive_path'),
+      '#default_value' => variable_get('letscoop_archive_path'),
       '#required' => TRUE,
       '#element_validate' => array('element_validate_text_path'),
     );
     $form['server'] = array(
       '#type' => 'textfield',
       '#title' => t('Server'),
-      '#default_value' => variable_get('wikicompare_next_server'),
+      '#default_value' => variable_get('letscoop_next_server'),
       '#required' => TRUE,
       '#element_validate' => array('element_validate_text_email'),
     );
     $form['database_server'] = array(
       '#type' => 'textfield',
       '#title' => t('Database Server'),
-      '#default_value' => variable_get('wikicompare_next_database_server'),
+      '#default_value' => variable_get('letscoop_next_database_server'),
       '#required' => TRUE,
       '#element_validate' => array('element_validate_text_email'),
     );
@@ -292,7 +292,7 @@ function wikicompare_website_create_wikicompare_form($form, &$form_state) {
   }
 
   $form['warning'] = array(
-    '#markup' => "Once you submit the form, a popup will appear to verify that you're not a bot.<br/>Once you resolve the popup, the wikicompare installation will begin. This operation takes around two minutes so be patient.<br/>"
+    '#markup' => "Once you submit the form, a popup will appear to verify that you're not a bot.<br/>Once you resolve the popup, the letscoop installation will begin. This operation takes around two minutes so be patient.<br/>"
  );
   $form['submit'] =  array(
       '#type' => 'submit',
@@ -319,7 +319,7 @@ function element_validate_exist_small_space($element, &$form_state) {
   $query = db_select('node', 'n');
   $query->addField('n', 'nid', 'nid');
   $query->condition("n.title", $element['#value']);
-  $query->condition("n.type", 'wikicompare');
+  $query->condition("n.type", 'letscoop');
   $result = $query->execute();
   foreach($result as $record) {
     $test = True;
@@ -378,11 +378,11 @@ function element_validate_text_path($element, &$form_state) {
 }
 
 
-function wikicompare_website_create_wikicompare_form_submit($form, &$form_state) {
+function letscoop_website_create_letscoop_form_submit($form, &$form_state) {
 
     $skip_analytics = False;
-    $module_path=variable_get('wikicompare_module_path');
-    $command = "$module_path/wikicompare.sh";
+    $module_path=variable_get('letscoop_module_path');
+    $command = "$module_path/letscoop.sh";
 
     $chaine = 'azertyuiopqsdfghjklmwxcvbn123456789';
     $nb_lettres = strlen($chaine) - 1;
@@ -409,40 +409,40 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
     $user_password = $password_user;
     $user_email = $user->mail;
 
-    $admin_user = variable_get('wikicompare_admin_user');
+    $admin_user = variable_get('letscoop_admin_user');
     if (isset($form_state['input']['admin_user'])) {
       $admin_user = $form_state['input']['admin_user'];
     }
 
-    $instance = variable_get('wikicompare_instance');
+    $instance = variable_get('letscoop_instance');
     if (isset($form_state['input']['instance'])) {
       $instance = $form_state['input']['instance'];
     }
 
     if (isset($form_state['input']['preprod'])) {
       if ($form_state['input']['preprod'] == True) {
-        $instance = variable_get('wikicompare_instance_preprod');
+        $instance = variable_get('letscoop_instance_preprod');
         $skip_analytics = True;
         $command .= ' -z';
         if (isset($form_state['input']['mysql'])) {
           if ($form_state['input']['mysql'] == True) {
-            $instance = variable_get('wikicompare_instance_preprod_mysql');
+            $instance = variable_get('letscoop_instance_preprod_mysql');
           }
         }
       }
     }
 
-    $archive_path = variable_get('wikicompare_archive_path');
+    $archive_path = variable_get('letscoop_archive_path');
     if (isset($form_state['input']['archive_path'])) {
       $archive_path = $form_state['input']['archive_path'];
     }
 
-    $server = variable_get('wikicompare_next_server');
+    $server = variable_get('letscoop_next_server');
     if (isset($form_state['input']['server'])) {
       $server = $form_state['input']['server'];
     }
 
-    $database_server = variable_get('wikicompare_next_database_server');
+    $database_server = variable_get('letscoop_next_database_server');
     if (isset($form_state['input']['database_server'])) {
       $database_server = $form_state['input']['database_server'];
     }
@@ -461,12 +461,14 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
     if ($skip_analytics) {
       $command .= ' -k';
     }
+
+    $letscoop_type = variable_get('letscoop_type');
     
     $command .= " -t $title -p '$password_admin' -u $user_name -s '$user_password' -e $user_email -r $server -d $database_server -a $admin_user -n $instance -c $archive_path";
 
   
 
-    $command .= " deploy $name > /var/wikicompare/log/install.txt";
+    $command .= " deploy $name > /var/$letscoop_type/log/install.txt";
 
     exec($command);
 
@@ -476,163 +478,176 @@ function wikicompare_website_create_wikicompare_form_submit($form, &$form_state)
 }
 
 
-function wikicompare_delete($node) {
+function letscoop_delete($node) {
 
-  if ($node->wikicompare_state['und'][0]['value'] != 'removing') {
-    $module_path=variable_get('wikicompare_module_path');
-    exec("$module_path/wikicompare.sh purge $node->title > /var/wikicompare/log/purge.txt");
+  $letscoop_type = variable_get('letscoop_type');
+
+  if ($node->letscoop_state['und'][0]['value'] != 'removing') {
+    $module_path=variable_get('letscoop_module_path');
+    exec("$module_path/letscoop.sh purge $node->title > /var/$letscoop_type/log/purge.txt");
   }
 
 }
 
 /**
 * Implements hook_admin().
-* This function create the configuration page of wikicompare.
+* This function create the configuration page of letscoop.
 */
-function wikicompare_website_admin() {
+function letscoop_website_admin() {
 
   $form = array();
 
-  $form['wikicompare_admin_user'] = array(
+  $form['letscoop_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Type'),
+    '#options' => array(
+      'wezer' => t("Wezer"),
+      'wikicompare' => t("Wikicompare"),
+    ),
+    '#default_value' => variable_get('letscoop_type'),
+    '#required' => TRUE,
+  );
+
+  $form['letscoop_admin_user'] = array(
     '#type' => 'textfield',
     '#title' => t('Admin User'),
-    '#default_value' => variable_get('wikicompare_admin_user'),
+    '#default_value' => variable_get('letscoop_admin_user'),
     '#required' => TRUE,
   );
-  $form['wikicompare_admin_password'] = array(
+  $form['letscoop_admin_password'] = array(
     '#type' => 'textfield',
     '#title' => t('Admin Password'),
-    '#default_value' => variable_get('wikicompare_admin_password'),
+    '#default_value' => variable_get('letscoop_admin_password'),
     '#required' => TRUE,
   );
 
-  $form['wikicompare_instance'] = array(
+  $form['letscoop_instance'] = array(
     '#type' => 'textfield',
     '#title' => t('Instance'),
-    '#default_value' => variable_get('wikicompare_instance'),
+    '#default_value' => variable_get('letscoop_instance'),
     '#required' => TRUE,
   );
-  $form['wikicompare_instance_preprod'] = array(
+  $form['letscoop_instance_preprod'] = array(
     '#type' => 'textfield',
     '#title' => t('Instance Preprod'),
-    '#default_value' => variable_get('wikicompare_instance_preprod'),
+    '#default_value' => variable_get('letscoop_instance_preprod'),
     '#required' => TRUE,
   );
-  $form['wikicompare_instance_preprod_mysql'] = array(
+  $form['letscoop_instance_preprod_mysql'] = array(
     '#type' => 'textfield',
     '#title' => t('Instance Preprod Mysql'),
-    '#default_value' => variable_get('wikicompare_instance_preprod_mysql'),
+    '#default_value' => variable_get('letscoop_instance_preprod_mysql'),
     '#required' => TRUE,
   );
-  $form['wikicompare_archive_path'] = array(
+  $form['letscoop_archive_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Archive Path'),
-    '#default_value' => variable_get('wikicompare_archive_path'),
+    '#default_value' => variable_get('letscoop_archive_path'),
     '#required' => TRUE,
   );
 
-  $form['wikicompare_archive_build_path'] = array(
+  $form['letscoop_archive_build_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Archive Build Path'),
-    '#default_value' => variable_get('wikicompare_archive_build_path'),
+    '#default_value' => variable_get('letscoop_archive_build_path'),
     '#required' => TRUE,
   );
 
-  $form['wikicompare_next_server'] = array(
+  $form['letscoop_next_server'] = array(
     '#type' => 'textfield',
     '#title' => t('Next server'),
-    '#default_value' => variable_get('wikicompare_next_server'),
+    '#default_value' => variable_get('letscoop_next_server'),
     '#required' => TRUE,
   );
-  $form['wikicompare_next_database_server'] = array(
+  $form['letscoop_next_database_server'] = array(
     '#type' => 'textfield',
     '#title' => t('Next database server'),
-    '#default_value' => variable_get('wikicompare_next_database_server'),
+    '#default_value' => variable_get('letscoop_next_database_server'),
     '#required' => TRUE,
   );
-  $form['wikicompare_user_wikiadmin'] = array(
+  $form['letscoop_user_wikiadmin'] = array(
     '#type' => 'textfield',
     '#title' => t('User Wikiadmin'),
-    '#default_value' => variable_get('wikicompare_user_wikiadmin'),
+    '#default_value' => variable_get('letscoop_user_wikiadmin'),
     '#required' => TRUE,
   );
-  $form['wikicompare_password_wikiadmin'] = array(
+  $form['letscoop_password_wikiadmin'] = array(
     '#type' => 'textfield',
     '#title' => t('Password Wikiadmin'),
-    '#default_value' => variable_get('wikicompare_password_wikiadmin'),
+    '#default_value' => variable_get('letscoop_password_wikiadmin'),
     '#required' => TRUE,
   );
-  $form['wikicompare_email_wikiadmin'] = array(
+  $form['letscoop_email_wikiadmin'] = array(
     '#type' => 'textfield',
     '#title' => t('Email Wikiadmin'),
-    '#default_value' => variable_get('wikicompare_email_wikiadmin'),
+    '#default_value' => variable_get('letscoop_email_wikiadmin'),
     '#required' => TRUE,
   );
-  $form['wikicompare_make_file'] = array(
+  $form['letscoop_make_file'] = array(
     '#type' => 'textfield',
     '#title' => t('Make File'),
-    '#default_value' => variable_get('wikicompare_make_file'),
+    '#default_value' => variable_get('letscoop_make_file'),
     '#required' => TRUE,
   );
-  $form['wikicompare_mysql_password'] = array(
+  $form['letscoop_mysql_password'] = array(
     '#type' => 'textfield',
     '#title' => t('Mysql Password'),
-    '#default_value' => variable_get('wikicompare_mysql_password'),
+    '#default_value' => variable_get('letscoop_mysql_password'),
     '#required' => TRUE,
   );
-  $form['wikicompare_piwik_password'] = array(
+  $form['letscoop_piwik_password'] = array(
     '#type' => 'textfield',
     '#title' => t('Piwik Password'),
-    '#default_value' => variable_get('wikicompare_piwik_password'),
+    '#default_value' => variable_get('letscoop_piwik_password'),
     '#required' => TRUE,
   );
-  $form['wikicompare_piwik_url'] = array(
+  $form['letscoop_piwik_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Piwik Url'),
-    '#default_value' => variable_get('wikicompare_piwik_url'),
+    '#default_value' => variable_get('letscoop_piwik_url'),
     '#required' => TRUE,
   );
-  $form['wikicompare_piwik_demo_id'] = array(
+  $form['letscoop_piwik_demo_id'] = array(
     '#type' => 'textfield',
     '#title' => t('Piwik Demo ID'),
-    '#default_value' => variable_get('wikicompare_piwik_demo_id'),
+    '#default_value' => variable_get('letscoop_piwik_demo_id'),
     '#required' => TRUE,
   );
-  $form['wikicompare_module_path'] = array(
+  $form['letscoop_module_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Module Path'),
-    '#default_value' => variable_get('wikicompare_module_path'),
+    '#default_value' => variable_get('letscoop_module_path'),
     '#required' => TRUE,
   );
-  $form['wikicompare_dev_version'] = array(
-    '#markup' => 'Dev version : ' . variable_get('wikicompare_dev_version'),
+  $form['letscoop_dev_version'] = array(
+    '#markup' => 'Dev version : ' . variable_get('letscoop_dev_version'),
     '#suffix' => '<br/>',
   );
-  $form['wikicompare_preprod_version'] = array(
-    '#markup' => 'Preprod version : ' . variable_get('wikicompare_preprod_version'),
+  $form['letscoop_preprod_version'] = array(
+    '#markup' => 'Preprod version : ' . variable_get('letscoop_preprod_version'),
     '#suffix' => '<br/>',
   );
-  $form['wikicompare_release_version'] = array(
-    '#markup' => 'Release version : ' .variable_get('wikicompare_release_version'),
+  $form['letscoop_release_version'] = array(
+    '#markup' => 'Release version : ' .variable_get('letscoop_release_version'),
     '#suffix' => '<br/>',
   );
   $form['rebuild_dev'] = array(
     '#type' => 'submit',
     '#value' => t('Rebuild dev'),
     '#button_type' => 'button',
-    '#submit' => array('wikicompare_website_rebuild_dev'),
+    '#submit' => array('letscoop_website_rebuild_dev'),
   );
   $form['rebuild_preprod'] = array(
     '#type' => 'submit',
     '#value' => t('Rebuild preprod'),
     '#button_type' => 'button',
-    '#submit' => array('wikicompare_website_rebuild_preprod'),
+    '#submit' => array('letscoop_website_rebuild_preprod'),
   );
   $form['populate'] = array(
     '#type' => 'submit',
-    '#value' => t('Populate wikicompare'),
+    '#value' => t('Populate letscoop'),
     '#button_type' => 'button',
-    '#submit' => array('wikicompare_website_populate'),
+    '#submit' => array('letscoop_website_populate'),
   );
 
 
@@ -640,19 +655,21 @@ function wikicompare_website_admin() {
 
 }
 
-function wikicompare_website_rebuild_dev() {
+function letscoop_website_rebuild_dev() {
 
-    $module_path=variable_get('wikicompare_module_path');
-    exec("$module_path/wikicompare.sh build dev > /var/wikicompare/log/rebuild.txt");
+    $letscoop_type = variable_get('letscoop_type');
+
+    $module_path=variable_get('letscoop_module_path');
+    exec("$module_path/letscoop.sh build dev > /var/$letscoop_type/log/rebuild.txt");
 
 }
 
-function wikicompare_website_rebuild_preprod() {
+function letscoop_website_rebuild_preprod() {
 
-    foreach (array(variable_get('wikicompare_instance_preprod'), variable_get('wikicompare_instance_preprod_mysql')) as $instance) {
+    foreach (array(variable_get('letscoop_instance_preprod'), variable_get('letscoop_instance_preprod_mysql')) as $instance) {
       $query = new EntityFieldQuery();
       $entities = $query->entityCondition('entity_type', 'node')
-        ->propertyCondition('type', 'wikicompare_instance')
+        ->propertyCondition('type', 'letscoop_instance')
         ->propertyCondition('title', $instance)
         ->range(0,1)
         ->execute();
@@ -664,61 +681,64 @@ function wikicompare_website_rebuild_preprod() {
       $query = new EntityFieldQuery;
       $result = $query
         ->entityCondition('entity_type', 'node')
-        ->entityCondition('bundle', 'wikicompare')
-        ->fieldCondition('wikicompare_instance', 'target_id', $node->nid, '=')
+        ->entityCondition('bundle', 'letscoop')
+        ->fieldCondition('letscoop_instance', 'target_id', $node->nid, '=')
         ->execute();
 
       if (isset($result['node'])) {
         $records_nids = array_keys($result['node']);
         $records = entity_load('node', $records_nids);
         foreach ($records as $record){
-          if ($record->wikicompare_state['und'][0]['value'] != 'removing') {
-            $module_path=variable_get('wikicompare_module_path');
-            exec("$module_path/wikicompare.sh purge $record->title > /var/wikicompare/log/purge.txt");
+          if ($record->letscoop_state['und'][0]['value'] != 'removing') {
+            $module_path=variable_get('letscoop_module_path');
+            exec("$module_path/letscoop.sh purge $record->title > /var/letscoop/log/purge.txt");
           }
         }
       }
     }
 
+    $letscoop_type = variable_get('letscoop_type');
 
-    $module_path=variable_get('wikicompare_module_path');
-    exec("$module_path/wikicompare.sh build preprod > /var/wikicompare/log/rebuild.txt");
-
-}
-
-
-function wikicompare_website_populate() {
-
-    $module_path=variable_get('wikicompare_module_path');
-    exec("$module_path/wikicompare.sh populate > /var/wikicompare/log/populate.txt");
+    $module_path=variable_get('letscoop_module_path');
+    exec("$module_path/letscoop.sh build preprod > /var/$letscoop_type/log/rebuild.txt");
 
 }
 
 
-function wikicompare_website_views_api() {
+function letscoop_website_populate() {
+
+    $letscoop_type = variable_get('letscoop_type');
+
+    $module_path=variable_get('letscoop_module_path');
+    exec("$module_path/letscoop.sh populate > /var/$letscoop_type/log/populate.txt");
+
+}
+
+
+function letscoop_website_views_api() {
   return array(
     'api' => 3,
-    'path' => drupal_get_path('module', 'wikicompare_website'),
+    'path' => drupal_get_path('module', 'letscoop_website'),
   );
 }
 
 
 
-function wikicompare_website_views_default_views() {
+function letscoop_website_views_default_views() {
 
 $view = new view();
-$view->name = 'wikicompare_list';
+$view->name = 'letscoop_list';
 $view->description = '';
 $view->tag = 'default';
 $view->base_table = 'node';
-$view->human_name = 'wikicompare_list';
+$view->human_name = 'letscoop_list';
 $view->core = 7;
 $view->api_version = '3.0';
 $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 
 /* Display: Master */
 $handler = $view->new_display('default', 'Master', 'default');
-$handler->display->display_options['title'] = 'wikicompare_list';
+$handler->display->display_options['title'] = 'letscoop_list';
 $handler->display->display_options['use_more_always'] = FALSE;
 $handler->display->display_options['access']['type'] = 'perm';
 $handler->display->display_options['access']['perm'] = 'administer users';
@@ -753,21 +773,21 @@ $handler->display->display_options['fields']['title_1']['id'] = 'title_1';
 $handler->display->display_options['fields']['title_1']['table'] = 'node';
 $handler->display->display_options['fields']['title_1']['field'] = 'title';
 /* Field: Content: User name */
-$handler->display->display_options['fields']['wikicompare_user_name']['id'] = 'wikicompare_user_name';
-$handler->display->display_options['fields']['wikicompare_user_name']['table'] = 'field_data_wikicompare_user_name';
-$handler->display->display_options['fields']['wikicompare_user_name']['field'] = 'wikicompare_user_name';
+$handler->display->display_options['fields']['letscoop_user_name']['id'] = 'letscoop_user_name';
+$handler->display->display_options['fields']['letscoop_user_name']['table'] = 'field_data_letscoop_user_name';
+$handler->display->display_options['fields']['letscoop_user_name']['field'] = 'letscoop_user_name';
 /* Field: Content: Email */
-$handler->display->display_options['fields']['wikicompare_user_email']['id'] = 'wikicompare_user_email';
-$handler->display->display_options['fields']['wikicompare_user_email']['table'] = 'field_data_wikicompare_user_email';
-$handler->display->display_options['fields']['wikicompare_user_email']['field'] = 'wikicompare_user_email';
+$handler->display->display_options['fields']['letscoop_user_email']['id'] = 'letscoop_user_email';
+$handler->display->display_options['fields']['letscoop_user_email']['table'] = 'field_data_letscoop_user_email';
+$handler->display->display_options['fields']['letscoop_user_email']['field'] = 'letscoop_user_email';
 /* Field: Content: Server */
-$handler->display->display_options['fields']['wikicompare_server']['id'] = 'wikicompare_server';
-$handler->display->display_options['fields']['wikicompare_server']['table'] = 'field_data_wikicompare_server';
-$handler->display->display_options['fields']['wikicompare_server']['field'] = 'wikicompare_server';
+$handler->display->display_options['fields']['letscoop_server']['id'] = 'letscoop_server';
+$handler->display->display_options['fields']['letscoop_server']['table'] = 'field_data_letscoop_server';
+$handler->display->display_options['fields']['letscoop_server']['field'] = 'letscoop_server';
 /* Field: Content: State */
-$handler->display->display_options['fields']['wikicompare_state']['id'] = 'wikicompare_state';
-$handler->display->display_options['fields']['wikicompare_state']['table'] = 'field_data_wikicompare_state';
-$handler->display->display_options['fields']['wikicompare_state']['field'] = 'wikicompare_state';
+$handler->display->display_options['fields']['letscoop_state']['id'] = 'letscoop_state';
+$handler->display->display_options['fields']['letscoop_state']['table'] = 'field_data_letscoop_state';
+$handler->display->display_options['fields']['letscoop_state']['field'] = 'letscoop_state';
 /* Field: Content: Post date */
 $handler->display->display_options['fields']['created']['id'] = 'created';
 $handler->display->display_options['fields']['created']['table'] = 'node';
@@ -792,7 +812,7 @@ $handler->display->display_options['filters']['status']['expose']['operator'] = 
 
 /* Display: Page */
 $handler = $view->new_display('page', 'Page', 'page');
-$handler->display->display_options['path'] = 'wikicompare-list';
+$handler->display->display_options['path'] = 'letscoop-list';
 $handler->display->display_options['menu']['type'] = 'normal';
 $handler->display->display_options['menu']['title'] = 'Liste';
 $handler->display->display_options['menu']['name'] = 'main-menu';

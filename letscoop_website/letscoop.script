@@ -14,24 +14,24 @@ switch ($args[0]) {
     drush_print('Creating the node in the website');
   
     $node = new stdClass();
-    $node->type = 'wikicompare';
+    $node->type = 'letscoop';
     $node->title = $args[1];
-    $node->wikicompare_admin_password['und'][0]['value'] = $args[2];
-    $node->wikicompare_user_name['und'][0]['value'] = $args[3];
-    $node->wikicompare_user_email['und'][0]['value'] = $args[4];
+    $node->letscoop_admin_password['und'][0]['value'] = $args[2];
+    $node->letscoop_user_name['und'][0]['value'] = $args[3];
+    $node->letscoop_user_email['und'][0]['value'] = $args[4];
 #    $nid = 0;
 #    $query = db_select('node', 'n');
 #    $query->addField('n', 'nid', 'nid');
 #    $query->condition("n.title", $args[5]);
-#    $query->condition("n.type", 'wikicompare_server');
+#    $query->condition("n.type", 'letscoop_server');
 #    $result = $query->execute();
 #    foreach($result as $record) {
 #      $nid = $record->nid;
 #    }
-    $node->wikicompare_instance['und'][0]['target_id'] = $args[5];
-    $node->wikicompare_instance['und'][0]['target_type'] = "node";
-    $node->wikicompare_bdd_server['und'][0]['target_id'] = $args[6];
-    $node->wikicompare_bdd_server['und'][0]['target_type'] = "node";
+    $node->letscoop_instance['und'][0]['target_id'] = $args[5];
+    $node->letscoop_instance['und'][0]['target_type'] = "node";
+    $node->letscoop_bdd_server['und'][0]['target_id'] = $args[6];
+    $node->letscoop_bdd_server['und'][0]['target_type'] = "node";
     node_save($node);
 
     drush_print('The node is created in the website');
@@ -43,14 +43,14 @@ switch ($args[0]) {
     $query = db_select('node', 'n');
     $query->addField('n', 'nid', 'nid');
     $query->condition("n.title", $args[1]);
-    $query->condition("n.type", 'wikicompare');
+    $query->condition("n.type", 'letscoop');
     $result = $query->execute();
     foreach($result as $record) {
       $nid = $record->nid;
     }
 
     $node = node_load($nid);
-    $node->wikicompare_state['und'][0]['value'] = 'enabled';
+    $node->letscoop_state['und'][0]['value'] = 'enabled';
     node_save($node);
 
     $user = user_load(1);
@@ -64,14 +64,14 @@ switch ($args[0]) {
     $query = db_select('node', 'n');
     $query->addField('n', 'nid', 'nid');
     $query->condition("n.title", $args[1]);
-    $query->condition("n.type", 'wikicompare_instance');
+    $query->condition("n.type", 'letscoop_instance');
     $result = $query->execute();
     foreach($result as $record) {
       $nid = $record->nid;
     }
 
     $node = node_load($nid);
-    $node->wikicompare_version['und'][0]['value'] = $args[2];
+    $node->letscoop_version['und'][0]['value'] = $args[2];
     node_save($node);      
     
     break;
@@ -80,11 +80,11 @@ switch ($args[0]) {
     $query = db_select('node', 'n');
     $query->addField('n', 'nid', 'nid');
     $query->condition("n.title", $args[1]);
-    $query->condition("n.type", 'wikicompare');
+    $query->condition("n.type", 'letscoop');
     $result = $query->execute();
     foreach($result as $record) {
       $node = node_load($record->nid);
-      $node->wikicompare_state['und'][0]['value'] = 'removing';
+      $node->letscoop_state['und'][0]['value'] = 'removing';
       node_save($node);
     }
 
@@ -93,7 +93,7 @@ switch ($args[0]) {
     $query = db_select('node', 'n');
     $query->addField('n', 'nid', 'nid');
     $query->condition("n.title", $args[1]);
-    $query->condition("n.type", 'wikicompare');
+    $query->condition("n.type", 'letscoop');
     $result = $query->execute();
     foreach($result as $record) {
       node_delete($record->nid);

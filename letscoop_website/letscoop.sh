@@ -1,9 +1,17 @@
 #!/bin/bash
 
-website_path='/var/www/wikicompare_www'
+letscoop_type=$1
+website_path=/var/www/${letscoop_type}_www
+domain='wikicompare.info'
+if [[ $letscoop_type == 'wezer' ]]
+then
+domain='wezer.org'
+fi
 ftpuser='sd-34468'
 ftppass='#g00gle!'
 ftpserver='dedibackup-dc3.online.net'
+openerp_superpassword='#g00gle!'
+openerp_password='admin'
 
 cd $website_path
 
@@ -16,28 +24,28 @@ pgpass_file='/var/www/.pgpass'
 admin_email='yannick.buron@gmail.com'
 archive_path='/var/www/wikicompare_www/download'
 archive='wikicompare_release'
-admin_user=$(drush vget wikicompare_admin_user --format=json --exact)
+admin_user=$(drush vget letscoop_admin_user --format=json --exact)
 admin_user=${admin_user//[\"\\]/}
-admin_password=$(drush vget wikicompare_admin_password --format=json --exact)
+admin_password=$(drush vget letscoop_admin_password --format=json --exact)
 admin_password=${admin_password//[\"\\]/}
-instance=$(drush vget wikicompare_instance --format=json --exact)
+instance=$(drush vget letscoop_instance --format=json --exact)
 instance=${instance//[\"\\]/}
 user_name=$admin_user
-user_mail=$(drush vget wikicompare_email_wikiadmin --format=json --exact)
+user_mail=$(drush vget letscoop_email_wikiadmin --format=json --exact)
 user_mail=${user_mail//[\"\\]/}
-server=$(drush vget wikicompare_next_server --format=json --exact)
+server=$(drush vget letscoop_next_server --format=json --exact)
 server=${server//[\"\\]/}
-database_server=$(drush vget wikicompare_next_database_server --format=json --exact)
+database_server=$(drush vget letscoop_next_database_server --format=json --exact)
 database_server=${database_server//[\"\\]/}
-mysql_password=$(drush vget wikicompare_mysql_password --format=json --exact)
+mysql_password=$(drush vget letscoop_mysql_password --format=json --exact)
 mysql_password=${mysql_password//[\"\\]/}
-piwik_password=$(drush vget wikicompare_piwik_password --format=json --exact)
+piwik_password=$(drush vget letscoop_piwik_password --format=json --exact)
 piwik_password=${piwik_password//[\"\\]/}
-piwik_url=$(drush vget wikicompare_piwik_url --format=json --exact)
+piwik_url=$(drush vget letscoop_piwik_url --format=json --exact)
 piwik_url=${piwik_url//[\"\\]/}
-piwik_demo_id=$(drush vget wikicompare_piwik_demo_id --format=json --exact)
+piwik_demo_id=$(drush vget letscoop_piwik_demo_id --format=json --exact)
 piwik_demo_id=${piwik_demo_id//[\"\\]/}
-module_path=$(drush vget wikicompare_module_path --format=json --exact)
+module_path=$(drush vget letscoop_module_path --format=json --exact)
 module_path=${module_path//[\"\\]/}
 
 shinken_server=shinken@shinken.wikicompare.info
@@ -120,52 +128,52 @@ done
 deploy()
 {
 echo deploying...
-
+echo $website_path
 cd $website_path
-node_id=$(drush sql-query "select title from node WHERE title = '$1' AND type = 'wikicompare' LIMIT 1")
+node_id=$(drush sql-query "select title from node WHERE title = '$1' AND type = 'letscoop' LIMIT 1")
 echo $node_id
 #result=$(drush /opt/drush.script $1 $3 $title $8 ${10})
 if [[ $node_id != 'title' ]]
 then
-    echo The wikicompare $1 already exist
+    echo The letscoop $1 already exist
     exit
 fi
 
-node_id=$(drush sql-query "select nid from node WHERE title = '$server' AND type = 'wikicompare_server' LIMIT 1")
+node_id=$(drush sql-query "select nid from node WHERE title = '$server' AND type = 'letscoop_server' LIMIT 1")
 #result=$(drush /opt/drush.script $1 $3 $title $8 ${10})
 echo $node_id
 if [[ $node_id == 'nid' ]]
 then
-    echo The wikicompare server $server does not exist
+    echo The letscoop server $server does not exist
     exit
 fi
 
-IP=$(drush sql-query "select wikicompare_ip_value from field_data_wikicompare_ip WHERE entity_id = ${node_id//[a-z ]/} LIMIT 1")
+IP=$(drush sql-query "select letscoop_ip_value from field_data_letscoop_ip WHERE entity_id = ${node_id//[a-z ]/} LIMIT 1")
 echo $IP
-if [[ $IP == 'wikicompare_ip_value' ]]
+if [[ $IP == 'letscoop_ip_value' ]]
 then
-    echo The wikicompare server $server has no IP.
+    echo The letscoop server $server has no IP.
     exit
 fi
 
-database_node_id=$(drush sql-query "select nid from node WHERE title = '$database_server' AND type = 'wikicompare_server' LIMIT 1")
+database_node_id=$(drush sql-query "select nid from node WHERE title = '$database_server' AND type = 'letscoop_server' LIMIT 1")
 #result=$(drush /opt/drush.script $1 $3 $title $8 ${10})
 echo $database_node_id
 if [[ $database_node_id == 'nid' ]]
 then
-    echo The wikicompare database server $database_server does not exist
+    echo The letscoop database server $database_server does not exist
     exit
 fi
 
-database_IP=$(drush sql-query "select wikicompare_ip_value from field_data_wikicompare_ip WHERE entity_id = ${database_node_id//[a-z ]/} LIMIT 1")
+database_IP=$(drush sql-query "select letscoop_ip_value from field_data_letscoop_ip WHERE entity_id = ${database_node_id//[a-z ]/} LIMIT 1")
 echo $database_IP
-if [[ $database_IP == 'wikicompare_ip_value' ]]
+if [[ $database_IP == 'letscoop_ip_value' ]]
 then
-    echo The wikicompare server $database_server has no IP.
+    echo The letscoop server $database_server has no IP.
     exit
 fi
 
-result=$(drush sql-query "SELECT n.nid, fd.wikicompare_bdd_value FROM node n INNER JOIN field_data_wikicompare_bdd fd ON n.nid=fd.entity_id INNER JOIN field_data_wikicompare_server f ON n.nid=f.entity_id WHERE n.title = '$instance' AND f.wikicompare_server_target_id = ${node_id//[a-z ]/} AND type = 'wikicompare_instance' LIMIT 1")
+result=$(drush sql-query "SELECT n.nid, fd.letscoop_bdd_value FROM node n INNER JOIN field_data_letscoop_bdd fd ON n.nid=fd.entity_id INNER JOIN field_data_letscoop_server f ON n.nid=f.entity_id WHERE n.title = '$instance' AND f.letscoop_server_target_id = ${node_id//[a-z ]/} AND type = 'letscoop_instance' LIMIT 1")
 #result=$(drush /opt/drush.script $1 $3 $title $8 ${10})
 echo $result
 i=0
@@ -184,20 +192,24 @@ do
 done
 if [[ ! $db_type ]]
 then
-    echo The wikicompare instance $instance does not exist
+    echo The letscoop instance $instance does not exist
     exit
 fi
 echo $db_type
 
+if [[ $letscoop_type == 'wezer' ]]
+then
 bakery_master_site=$(drush vget bakery_master --format=json --exact)
 bakery_master_site=${bakery_master_site//[\"\\]/}
 bakery_private_key=$(drush vget bakery_key --format=json --exact)
 bakery_private_key=${bakery_private_key//[\"\\]/}
 bakery_cookie_domain=$(drush vget bakery_domain --format=json --exact)
 bakery_cookie_domain=${bakery_cookie_domain//[\"\\]/}
+fi
+
 IP=${IP//[^0-9.]/}
 database_IP=${database_IP//[^0-9.]/}
-db_name=wikicompare_$1
+db_name=${letscoop_type}_$1
 db_user=wkc_$1
 domain_name=${1//_/-}
 #IP=${IP//[a-z_\/n\/r ]/}
@@ -218,162 +230,196 @@ then
   exit
 fi
 
-drush $module_path/wikicompare.script install $1 $admin_password $user_name $user_mail ${node_id//[a-z ]/} ${database_node_id//[a-z ]/}
+drush $module_path/letscoop.script install $1 $admin_password $user_name $user_mail ${node_id//[a-z ]/} ${database_node_id//[a-z ]/}
 
-echo Creating database wikicompare_$1 for user $db_user
-#SI postgres, create user
-echo $db_type
-if [[ $db_type != 'mysql' ]]
+echo Creating database ${letscoop_type}_$1 for user $db_user
+
+if [[ $letscoop_type == 'wezer' ]]
 then
-ssh postgres@$database_IP << EOF
-  psql
-  CREATE USER $db_user WITH PASSWORD '$admin_password';
-  CREATE DATABASE $db_name;
-  ALTER DATABASE $db_name OWNER TO $db_user;
-  \q
-EOF
-
-ssh www-data@$IP << EOF
-  sed -i "/:$db_name:$db_user:/d" $pgpass_file
-  sed -i "/:template1:$db_user:/d" $pgpass_file
-  echo "$database_IP:5432:$db_name:$db_user:$admin_password" >> $pgpass_file
-  echo "$database_IP:5432:template1:$db_user:$admin_password" >> $pgpass_file
+erppeek --server http://$IP:8069 -p $openerp_password << EOF
+client.create_database('$openerp_superpassword', '$1')
 EOF
 
 else
-ssh www-data@$database_IP << EOF
-  mysql -u root -p$mysql_password -se "create database $db_name;"
-  mysql -u root -p$mysql_password -se "grant all on $db_name.* to '${db_user}'@'${IP}' identified by '$admin_password';"
+  #SI postgres, create user
+  echo $db_type
+  if [[ $db_type != 'mysql' ]]
+  then
+  ssh postgres@$database_IP << EOF
+    psql
+    CREATE USER $db_user WITH PASSWORD '$admin_password';
+    CREATE DATABASE $db_name;
+    ALTER DATABASE $db_name OWNER TO $db_user;
+    \q
 EOF
+
+  ssh www-data@$IP << EOF
+    sed -i "/:$db_name:$db_user:/d" $pgpass_file
+    sed -i "/:template1:$db_user:/d" $pgpass_file
+    echo "$database_IP:5432:$db_name:$db_user:$admin_password" >> $pgpass_file
+    echo "$database_IP:5432:template1:$db_user:$admin_password" >> $pgpass_file
+EOF
+
+  else
+  ssh www-data@$database_IP << EOF
+    mysql -u root -p$mysql_password -se "create database $db_name;"
+    mysql -u root -p$mysql_password -se "grant all on $db_name.* to '${db_user}'@'${IP}' identified by '$admin_password';"
+EOF
+  fi
 fi
 echo Database created
 
-version=''
-if ssh www-data@$IP stat /var/www/$instance \> /dev/null 2\>\&1
+if [[ $letscoop_type != 'wezer' ]]
 then
-  echo instance was installed
-else
-ssh www-data@$IP << EOF
-  mkdir /var/www/$instance
+  version=''
+  if ssh www-data@$IP stat /var/www/$instance \> /dev/null 2\>\&1
+  then
+    echo instance was installed
+  else
+  ssh www-data@$IP << EOF
+    mkdir /var/www/$instance
+    cd /var/www/$instance
+    wget -q http://www.wikicompare.info/download/$archive/archive.tar.gz
+    tar -xf archive.tar.gz -C /var/www/$instance
+    rm archive.tar.gz
+EOF
+  version=$(curl http://www.wikicompare.info/download/$archive/VERSION.txt)
+  echo version : $version
+  drush $module_path/wikicompare.script upgrade $instance $version
+  fi
+
+
+  if ssh www-data@$IP stat /var/www/$instance \> /dev/null 2\>\&1
+  then
+    echo instance ok
+  else
+    echo There was an error while creating the instance
+    exit
+  fi
+
+
+
+  if [[ $build == True ]]
+  then
+  ssh www-data@$IP << EOF
   cd /var/www/$instance
-  wget -q http://www.wikicompare.info/download/$archive/archive.tar.gz
-  tar -xf archive.tar.gz -C /var/www/$instance
-  rm archive.tar.gz
-EOF
-version=$(curl http://www.wikicompare.info/download/$archive/VERSION.txt)
-echo version : $version
-drush $module_path/wikicompare.script upgrade $instance $version
-fi
-
-
-if ssh www-data@$IP stat /var/www/$instance \> /dev/null 2\>\&1
-then
-  echo instance ok
-else
-  echo There was an error while creating the instance
-  exit
-fi
-
-
-
-if [[ $build == True ]]
-then
-ssh www-data@$IP << EOF
-cd /var/www/$instance
-pwd
-drush -y si --db-url=$db_type://${db_user}:$admin_password@$database_IP/$db_name --account-mail=$admin_email --account-name=$admin_user --account-pass=$admin_password --sites-subdir=$domain_name.wikicompare.info minimal
-cd sites/$domain_name.wikicompare.info
-pwd
-drush -y en piwik admin_menu_toolbar bakery wikicompare wikicompare_profiles wikicompare_translation wikicompare_inherit_product
-drush -y pm-enable wikicompare_theme
-drush vset --yes --exact theme_default wikicompare_theme
-drush vset --yes --exact bakery_master $bakery_master_site
-drush vset --yes --exact bakery_key '$bakery_private_key'
-drush vset --yes --exact bakery_domain $bakery_cookie_domain
+  pwd
+  drush -y si --db-url=$db_type://${db_user}:$admin_password@$database_IP/$db_name --account-mail=$admin_email --account-name=$admin_user --account-pass=$admin_password --sites-subdir=$domain_name.wikicompare.info minimal
+  cd sites/$domain_name.wikicompare.info
+  pwd
+  drush -y en piwik admin_menu_toolbar bakery wikicompare wikicompare_profiles wikicompare_translation wikicompare_inherit_product
+  drush -y pm-enable wikicompare_theme
+  drush vset --yes --exact theme_default wikicompare_theme
+  drush vset --yes --exact bakery_master $bakery_master_site
+  drush vset --yes --exact bakery_key '$bakery_private_key'
+  drush vset --yes --exact bakery_domain $bakery_cookie_domain
 EOF
 
-else
+  else
 
-if [[ $db_type != 'mysql' ]]
-then
-ssh www-data@$IP << EOF
-pg_restore -U $db_user -h $database_IP --no-owner -Fc -d $db_name /var/www/$instance/$db_type/build.sql
+  if [[ $db_type != 'mysql' ]]
+  then
+  ssh www-data@$IP << EOF
+  pg_restore -U $db_user -h $database_IP --no-owner -Fc -d $db_name /var/www/$instance/$db_type/build.sql
+  EOF
+  else
+  ssh www-data@$database_IP << EOF
+  mysql -u $db_user -p$admin_password -h $database_IP $db_name < /var/www/$instance/$db_type/build.sql
 EOF
-else
-ssh www-data@$database_IP << EOF
-mysql -u $db_user -p$admin_password -h $database_IP $db_name < /var/www/$instance/$db_type/build.sql
-EOF
-fi
+  fi
 
-ssh www-data@$IP << EOF
-mkdir /var/www/$instance/sites/$domain_name.wikicompare.info
-cp -r /var/www/$instance/$db_type/sites/* /var/www/$instance/sites/$domain_name.wikicompare.info/
-cd /var/www/$instance/sites/$domain_name.wikicompare.info
-sed -i -e "s/'database' => 'wikicompare_[a-z0-9_]*'/'database' => 'wikicompare_$1'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
-sed -i -e "s/'username' => 'wkc_[a-z0-9_]*'/'username' => 'wkc_$1'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
-sed -i -e "s/'password' => '[#a-z0-9_!]*'/'password' => '$admin_password'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
-sed -i -e "s/'host' => '[0-9.]*'/'host' => '$database_IP'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
-pwd
-echo Title $title
-drush vset --yes --exact site_name $title
-drush user-password $admin_user --password=$admin_password
-EOF
-
-if [[ $test == True ]]
-then
-ssh www-data@$IP << EOF
-cd /var/www/$instance/sites/$domain_name.wikicompare.info
-drush vset --yes --exact wikicompare_test_platform 1
-EOF
-fi
-
-
-fi
-
-ssh www-data@$IP << EOF
-chown -R www-data:www-data /var/www/$instance
-chmod -R 700 /var/www/$instance/sites/$domain_name.wikicompare.info/
+  ssh www-data@$IP << EOF
+  mkdir /var/www/$instance/sites/$domain_name.wikicompare.info
+  cp -r /var/www/$instance/$db_type/sites/* /var/www/$instance/sites/$domain_name.wikicompare.info/
+  cd /var/www/$instance/sites/$domain_name.wikicompare.info
+  sed -i -e "s/'database' => 'wikicompare_[a-z0-9_]*'/'database' => 'wikicompare_$1'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
+  sed -i -e "s/'username' => 'wkc_[a-z0-9_]*'/'username' => 'wkc_$1'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
+  sed -i -e "s/'password' => '[#a-z0-9_!]*'/'password' => '$admin_password'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
+  sed -i -e "s/'host' => '[0-9.]*'/'host' => '$database_IP'/g" /var/www/$instance/sites/$domain_name.wikicompare.info/settings.php
+  pwd
+  echo Title $title
+  drush vset --yes --exact site_name $title
+  drush user-password $admin_user --password=$admin_password
 EOF
 
-if [[ $admin_user != $user_name ]]
-then
-ssh www-data@$IP << EOF
-cd /var/www/$instance/sites/$domain_name.wikicompare.info
-drush user-create $user_name --password="$user_password" --mail="$user_mail"
-drush user-add-role wikicompare_admin $user_name
+  if [[ $test == True ]]
+  then
+  ssh www-data@$IP << EOF
+  cd /var/www/$instance/sites/$domain_name.wikicompare.info
+  drush vset --yes --exact wikicompare_test_platform 1
 EOF
-fi
+  fi
 
 
-echo Drupal ready
+  fi
 
-if [[ $skip_analytics != True ]]
-then
-
-if [[ $domain_name != 'demo' ]]
-then
-ssh $piwik_server << EOF
-  mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_site (name, main_url, ts_created, timezone, currency) VALUES ('$domain_name.wikicompare.info', 'http://$domain_name.wikicompare.info', NOW(), 'Europe/Paris', 'EUR');"
+  ssh www-data@$IP << EOF
+  chown -R www-data:www-data /var/www/$instance
+  chmod -R 700 /var/www/$instance/sites/$domain_name.wikicompare.info/
 EOF
 
-piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$domain_name.wikicompare.info' LIMIT 1")
-ssh $piwik_server << EOF
-  mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_access (login, idsite, access) VALUES ('anonymous', $piwik_id, 'view');"
+  if [[ $admin_user != $user_name ]]
+  then
+  ssh www-data@$IP << EOF
+  cd /var/www/$instance/sites/$domain_name.wikicompare.info
+  drush user-create $user_name --password="$user_password" --mail="$user_mail"
+  drush user-add-role wikicompare_admin $user_name
 EOF
-else
-piwik_id=$piwik_demo_id
-fi
+  fi
 
-ssh www-data@$IP << EOF
-cd /var/www/$instance/sites/$domain_name.wikicompare.info
-drush variable-set piwik_site_id $piwik_id
-drush variable-set piwik_url_http $piwik_url
-drush variable-set piwik_privacy_donottrack 0
+
+  echo Drupal ready
+
+  if [[ $skip_analytics != True ]]
+  then
+
+  if [[ $domain_name != 'demo' ]]
+  then
+  ssh $piwik_server << EOF
+    mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_site (name, main_url, ts_created, timezone, currency) VALUES ('$domain_name.wikicompare.info', 'http://$domain_name.wikicompare.info', NOW(), 'Europe/Paris', 'EUR');"
 EOF
 
+  piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$domain_name.wikicompare.info' LIMIT 1")
+  ssh $piwik_server << EOF
+    mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_access (login, idsite, access) VALUES ('anonymous', $piwik_id, 'view');"
+EOF
+  else
+  piwik_id=$piwik_demo_id
+  fi
+
+  ssh www-data@$IP << EOF
+  cd /var/www/$instance/sites/$domain_name.wikicompare.info
+  drush variable-set piwik_site_id $piwik_id
+  drush variable-set piwik_url_http $piwik_url
+  drush variable-set piwik_privacy_donottrack 0
+EOF
+
+  fi
 fi
 
 escape='\$1'
+if [[ $letscoop_type == 'wezer' ]]
+then
+ssh www-data@$IP << EOF
+  echo "<VirtualHost *:80>" > /etc/apache2/sites-available/wezer_$1
+  echo "ServerName $domain_name.wezer.org" >> /etc/apache2/sites-available/wezer_$1
+  echo "ProxyRequests Off" >> /etc/apache2/sites-available/wezer_$1
+  echo "<Proxy *>" >> /etc/apache2/sites-available/wezer_$1
+  echo "Order deny,allow" >> /etc/apache2/sites-available/wezer_$1
+  echo "Allow from all" >> /etc/apache2/sites-available/wezer_$1
+  echo "</Proxy>" >> /etc/apache2/sites-available/wezer_$1
+  echo "ProxyVia On" >> /etc/apache2/sites-available/wezer_$1
+  echo "ProxyPass / http://127.0.0.1:8069/" >> /etc/apache2/sites-available/wezer_$1
+  echo "<location / >" >> /etc/apache2/sites-available/wezer_$1
+  echo "ProxyPassReverse /" >> /etc/apache2/sites-available/wezer_$1
+  echo "</location>" >> /etc/apache2/sites-available/wezer_$1
+  echo "RequestHeader set "X-Forwarded-Proto" "https"" >> /etc/apache2/sites-available/wezer_$1
+  echo "SetEnv proxy-nokeepalive 1" >> /etc/apache2/sites-available/wezer_$1
+  echo "</VirtualHost>" >> /etc/apache2/sites-available/wezer_$1
+  sudo a2ensite wezer_$1
+  sudo /etc/init.d/apache2 reload
+EOF
+else
 ssh www-data@$IP << EOF
   echo "<VirtualHost *:80>" > /etc/apache2/sites-available/wikicompare_$1
   echo "ServerAdmin webmaster@localhost" >> /etc/apache2/sites-available/wikicompare_$1
@@ -417,34 +463,34 @@ ssh www-data@$IP << EOF
   sudo a2ensite wikicompare_$1
   sudo /etc/init.d/apache2 reload
 EOF
-
+fi
 
 ssh $dns_server << EOF
-sed -i "/$1\sIN\sA/d" /etc/bind/db.wikicompare.info
-echo "$domain_name IN A $IP" >> /etc/bind/db.wikicompare.info
+sed -i "/$1\sIN\sA/d" /etc/bind/db.$letscoop_type.info
+echo "$domain_name IN A $IP" >> /etc/bind/db.$domain
 sudo /etc/init.d/bind9 reload
 EOF
 
 directory=/var/wikicompare/control_backups/`date +%Y-%m-%d`_${instance}_${IP}
 ssh $shinken_server << EOF
-  echo "define service{" > /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "service_description    HTTP $1" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "use            wikicompare-linux-service" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "register       0" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "host_name      wikicompare-linux-server" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "check_command  wikicompare_check_http!$domain_name.wikicompare.info" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "}" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "define service{" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "service_description    Backup $1" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "use            wikicompare-linux-service" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "register       0" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "host_name      wikicompare-linux-server" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "check_interval 60" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "retry_interval 15" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "check_period period_backup" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "check_command  wikicompare_check_backup!$1" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
-  echo "}" >> /usr/local/shinken/etc/services/wikicompare_$1.cfg
+  echo "define service{" > /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "service_description    HTTP $1" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "use            wikicompare-linux-service" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "register       0" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "host_name      wikicompare-linux-server" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "check_command  wikicompare_check_http!$domain_name.$domain" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "}" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "define service{" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "service_description    Backup $1" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "use            wikicompare-linux-service" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "register       0" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "host_name      wikicompare-linux-server" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "check_interval 60" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "retry_interval 15" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "check_period period_backup" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "check_command  wikicompare_check_backup!$1" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
+  echo "}" >> /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg
   /etc/init.d/shinken reload
 EOF
 
@@ -464,7 +510,7 @@ echo 'lorem ipsum' > $directory/wikicompare_$1.sql
 EOF
 
 cd $website_path
-drush $module_path/wikicompare.script finish $1 $admin_user $admin_password
+drush $module_path/letscoop.script finish $1 $admin_user $admin_password
 
 
 }
@@ -569,16 +615,16 @@ purge()
 domain_name=${1//_/-}
 
 cd $website_path
-result_wikicompare=$(drush sql-query "select n.title, fn.title, fnb.wikicompare_bdd_value, fndni.wikicompare_ip_value, fndni.wikicompare_ip_value from node n
-INNER JOIN field_data_wikicompare_instance f ON n.nid=f.entity_id 
-INNER JOIN node fn ON f.wikicompare_instance_target_id = fn.nid 
-INNER JOIN field_data_wikicompare_bdd fnb ON fn.nid=fnb.entity_id
-INNER JOIN field_data_wikicompare_server fnd ON fn.nid=fnd.entity_id
-INNER JOIN node fndn ON fnd.wikicompare_server_target_id = fndn.nid
-INNER JOIN field_data_wikicompare_ip fndni ON fndn.nid=fndni.entity_id 
-INNER JOIN field_data_wikicompare_bdd_server fd ON n.nid=fd.entity_id
-INNER JOIN node fdn ON fd.wikicompare_bdd_server_target_id = fdn.nid
-INNER JOIN field_data_wikicompare_ip fdni ON fdn.nid=fdni.entity_id 
+result_wikicompare=$(drush sql-query "select n.title, fn.title, fnb.letscoop_bdd_value, fndni.letscoop_ip_value, fndni.letscoop_ip_value from node n
+INNER JOIN field_data_letscoop_instance f ON n.nid=f.entity_id 
+INNER JOIN node fn ON f.letscoop_instance_target_id = fn.nid 
+INNER JOIN field_data_letscoop_bdd fnb ON fn.nid=fnb.entity_id
+INNER JOIN field_data_letscoop_server fnd ON fn.nid=fnd.entity_id
+INNER JOIN node fndn ON fnd.letscoop_server_target_id = fndn.nid
+INNER JOIN field_data_letscoop_ip fndni ON fndn.nid=fndni.entity_id 
+INNER JOIN field_data_letscoop_bdd_server fd ON n.nid=fd.entity_id
+INNER JOIN node fdn ON fd.letscoop_bdd_server_target_id = fdn.nid
+INNER JOIN field_data_letscoop_ip fdni ON fdn.nid=fdni.entity_id 
 WHERE n.title = '$1'  LIMIT 1")
 i=0
 wikicompare_name=''
@@ -614,18 +660,29 @@ echo db_type $db_type
 echo IP $IP
 echo database_IP $database_IP
 
-drush $module_path/wikicompare.script prepare_purge $1
+drush $module_path/letscoop.script prepare_purge $1
 
 ssh $shinken_server << EOF
-rm /usr/local/shinken/etc/services/wikicompare_$1.cfg 
+rm /usr/local/shinken/etc/services/${letscoop_type}_$1.cfg 
 /etc/init.d/shinken reload
 EOF
 
 ssh $dns_server << EOF
-sed -i "/$domain_name\sIN\sA/d" /etc/bind/db.wikicompare.info
+sed -i "/$domain_name\sIN\sA/d" /etc/bind/db.$domain
 sudo /etc/init.d/bind9 reload
 EOF
 
+if [[ $letscoop_type == 'wezer' ]]
+then
+ssh postgres@$database_IP << EOF
+  psql
+  update pg_database set datallowconn = 'false' where datname = '$1';
+  SELECT pg_terminate_backend(procpid) FROM pg_stat_activity WHERE datname = '$1';
+  DROP DATABASE $1;
+  \q
+EOF
+
+else
 db_name=wikicompare_$1
 db_user=wkc_$1
 if [[ $db_type != 'mysql' ]]
@@ -648,13 +705,16 @@ ssh www-data@$database_IP << EOF
   mysql -u root -p$mysql_password -se "drop user '$db_user'@'${IP}';"
 EOF
 fi
+fi
 
 ssh www-data@$IP << EOF
-sudo a2dissite wikicompare_$1
-rm /etc/apache2/sites-available/wikicompare_$1
+sudo a2dissite ${letscoop_type}_$1
+rm /etc/apache2/sites-available/${letscoop_type}_$1
 sudo /etc/init.d/apache2 reload
 EOF
 
+if [[ $letscoop_type != 'wezer' ]]
+then
 
 if [[ $domain_name != 'demo' ]]
 then
@@ -682,12 +742,14 @@ ssh www-data@$IP << EOF
 rm -rf /var/www/$instance_name/sites/$domain_name.wikicompare.info
 EOF
 fi
+fi
 
 echo avant script
 cd $website_path
-drush $module_path/wikicompare.script purge $1
+drush $module_path/letscoop.script purge $1
 echo apres script
 }
+
 
 
 save()
@@ -697,12 +759,12 @@ if [[ $1 ]]
 then
 
     cd $website_path
-    result_wikicompare=$(drush sql-query "select n.title, fn.title, fndni.wikicompare_ip_value from node n
-    INNER JOIN field_data_wikicompare_instance f ON n.nid=f.entity_id 
-    INNER JOIN node fn ON f.wikicompare_instance_target_id = fn.nid
-    INNER JOIN field_data_wikicompare_server fnd ON fn.nid=fnd.entity_id
-    INNER JOIN node fndn ON fnd.wikicompare_server_target_id = fndn.nid
-    INNER JOIN field_data_wikicompare_ip fndni ON fndn.nid=fndni.entity_id 
+    result_wikicompare=$(drush sql-query "select n.title, fn.title, fndni.letscoop_ip_value from node n
+    INNER JOIN field_data_letscoop_instance f ON n.nid=f.entity_id 
+    INNER JOIN node fn ON f.letscoop_instance_target_id = fn.nid
+    INNER JOIN field_data_letscoop_server fnd ON fn.nid=fnd.entity_id
+    INNER JOIN node fndn ON fnd.letscoop_server_target_id = fndn.nid
+    INNER JOIN field_data_letscoop_ip fndni ON fndn.nid=fndni.entity_id 
     WHERE n.title = '$1'  LIMIT 1")
     i=0
     wikicompare_name=''
@@ -729,11 +791,27 @@ then
     echo IP $IP
 
     domain_name=${wikicompare_name//_/-}
-    filename=`date +%Y-%m-%d_%H-%M`_manual_${wikicompare_name}_`date +%H-%M`.tar.gz
+    filename=`date +%Y-%m-%d_%H-%M`_manual_${letscoop_type}_${wikicompare_name}_`date +%H-%M`.tar.gz
+
+if [[ $letscoop_type == 'wezer' ]]
+then
+ssh www-data@$IP << EOF
+mkdir /var/wikicompare/backups/prepare_temp/${filename}
+pg_dump -U openerp-wezer-prod $wikicompare_name > /var/wikicompare/backups/prepare_temp/${filename}/wezer_${wikicompare_name}.sql
+mkdir /var/wikicompare/backups/prepare_temp/${filename}/filestore
+cp -R /opt/openerp/filestore/${wikicompare_name} /var/wikicompare/backups/prepare_temp/${filename}/filestore
+cd /var/wikicompare/backups/prepare_temp/${filename}
+tar -czf ../../prepare/$filename ./*
+cd ../../
+rm -rf /var/wikicompare/backups/prepare_temp/${filename}
+EOF
+else
 ssh www-data@$IP << EOF
 cd /var/www/$instance_name/sites/$domain_name.wikicompare.info
 drush archive-dump $domain_name.wikicompare.info --destination=/var/wikicompare/backups/prepare/$filename
 EOF
+fi
+
 scp www-data@$IP:/var/wikicompare/backups/prepare/$filename /var/wikicompare/backups/$filename
 ssh www-data@$IP << EOF
 rm /var/wikicompare/backups/prepare/$filename
@@ -750,9 +828,10 @@ ssh $shinken_server << EOF
 rm -rf /var/wikicompare/control_backups/*
 EOF
 
+echo $letscoop_type
 
 cd $website_path
-filename=`date +%Y-%m-%d`_wikicompare_www.tar.gz
+filename=`date +%Y-%m-%d`_${letscoop_type}_www.tar.gz
 rm /var/wikicompare/backups/$filename
 drush archive-dump --destination=/var/wikicompare/backups/$filename
 ncftp -u  $ftpuser -p $ftppass $ftpserver<< EOF
@@ -761,6 +840,8 @@ put /var/wikicompare/backups/$filename
 EOF
 echo website saved
 
+if [[ $letscoop_type != 'wezer' ]]
+then
 filename=`date +%Y-%m-%d`_wikicompare_analytics.tar.gz
 rm /var/wikicompare/backups/$filename
 ssh $piwik_server << EOF
@@ -784,9 +865,14 @@ put /var/wikicompare/backups/$filename
 
 EOF
 echo piwik saved
+fi
 
 cd $website_path
-result=$(drush sql-query "select nid from node WHERE type = 'wikicompare_instance'")
+
+if [[ $letscoop_type == 'wezer' ]]
+then
+
+result=$(drush sql-query "select nid from node WHERE type = 'letscoop'")
 first=True
 
 echo $result
@@ -796,13 +882,13 @@ do
   then
     echo $row
     cd $website_path
-    result_wikicompare=$(drush sql-query "select n.title, fn.title, fndni.wikicompare_ip_value from node n 
-    INNER JOIN field_data_wikicompare_instance f ON n.nid=f.entity_id 
-    INNER JOIN node fn ON f.wikicompare_instance_target_id = fn.nid 
-    INNER JOIN field_data_wikicompare_server fnd ON fn.nid=fnd.entity_id
-    INNER JOIN node fndn ON fnd.wikicompare_server_target_id = fndn.nid
-    INNER JOIN field_data_wikicompare_ip fndni ON fndn.nid=fndni.entity_id
-    WHERE f.wikicompare_instance_target_id=$row")
+    result_wikicompare=$(drush sql-query "select n.title, fn.title, fndni.letscoop_ip_value from node n
+    INNER JOIN field_data_letscoop_instance f ON n.nid=f.entity_id 
+    INNER JOIN node fn ON f.letscoop_instance_target_id = fn.nid
+    INNER JOIN field_data_letscoop_server fnd ON fn.nid=fnd.entity_id
+    INNER JOIN node fndn ON fnd.letscoop_server_target_id = fndn.nid
+    INNER JOIN field_data_letscoop_ip fndni ON fndn.nid=fndni.entity_id 
+    WHERE n.nid = '$row'  LIMIT 1")
     i=1
     sites='default'
     entete=True
@@ -839,13 +925,20 @@ do
     if [[ $wikicompare_name != '' ]]
     then
       domain_name=${wikicompare_name//_/-}
-      filename=`date +%Y-%m-%d`_${instance_name}_${IP}.tar.gz
+      filename=`date +%Y-%m-%d`_${letscoop_type}_${wikicompare_name}_${IP}.tar.gz
       rm /var/wikicompare/backups/$filename
+
 ssh www-data@$IP << EOF
-      cd /var/www/$instance_name/sites/$domain_name.wikicompare.info
-      echo ${instance_name}_`date +%Y-%m-%d`.tar.bz2
-      drush archive-dump $sites --destination=/var/wikicompare/backups/prepare/$filename
+mkdir /var/wikicompare/backups/prepare_temp/${filename}
+pg_dump -Fc -U openerp-wezer-prod $wikicompare_name > /var/wikicompare/backups/prepare_temp/${filename}/wezer_${wikicompare_name}.sql
+mkdir /var/wikicompare/backups/prepare_temp/${filename}/filestore
+cp -R /opt/openerp/filestore/${wikicompare_name} /var/wikicompare/backups/prepare_temp/${filename}/filestore
+cd /var/wikicompare/backups/prepare_temp/${filename}
+tar -czf ../../prepare/$filename ./*
+cd ../../
+rm -rf /var/wikicompare/backups/prepare_temp/${filename}
 EOF
+
 scp www-data@$IP:/var/wikicompare/backups/prepare/$filename /var/wikicompare/backups/$filename
 ssh www-data@$IP << EOF
 rm /var/wikicompare/backups/prepare/$filename
@@ -861,6 +954,90 @@ EOF
   fi
 
 done
+
+
+else
+
+
+result=$(drush sql-query "select nid from node WHERE type = 'letscoop_instance'")
+first=True
+
+echo $result
+for row in $result
+do
+  if [[ $first != True ]]
+  then
+    echo $row
+    cd $website_path
+    result_wikicompare=$(drush sql-query "select n.title, fn.title, fndni.letscoop_ip_value from node n 
+    INNER JOIN field_data_letscoop_instance f ON n.nid=f.entity_id 
+    INNER JOIN node fn ON f.letscoop_instance_target_id = fn.nid 
+    INNER JOIN field_data_letscoop_server fnd ON fn.nid=fnd.entity_id
+    INNER JOIN node fndn ON fnd.letscoop_server_target_id = fndn.nid
+    INNER JOIN field_data_letscoop_ip fndni ON fndn.nid=fndni.entity_id
+    WHERE f.letscoop_instance_target_id=$row")
+    i=1
+    sites='default'
+    entete=True
+    wikicompare_name=''
+    instance_name=''
+    echo $result_wikicompare
+    for row_wikicompare in $result_wikicompare
+    do
+      if [ $i == 1 ] && [ $entete == False ]
+      then
+        wikicompare_name=$row_wikicompare
+        row_domain=${row_wikicompare//_/-}
+        sites=$sites,$row_domain.wikicompare.info
+      elif [ $i == 2 ] && [ $entete == False ]
+      then
+        instance_name=$row_wikicompare
+      elif [ $i == 3 ] && [ $entete == False ]
+      then
+        IP=$row_wikicompare
+      fi
+      if [ $i == 3 ]
+      then
+        i=0
+        entete=False
+      fi
+      let i++
+    done
+    IP=${IP//[^0-9.]/}
+    echo wikicompare_name $wikicompare_name
+    echo instance_name $instance_name
+    echo IP $IP
+    echo sites $sites
+
+    if [[ $wikicompare_name != '' ]]
+    then
+      domain_name=${wikicompare_name//_/-}
+      filename=`date +%Y-%m-%d`_${letscoop_type}_${instance_name}_${IP}.tar.gz
+      rm /var/wikicompare/backups/$filename
+
+ssh www-data@$IP << EOF
+      cd /var/www/$instance_name/sites/$domain_name.wikicompare.info
+      echo ${instance_name}_`date +%Y-%m-%d`.tar.bz2
+      drush archive-dump $sites --destination=/var/wikicompare/backups/prepare/$filename
+EOF
+
+scp www-data@$IP:/var/wikicompare/backups/prepare/$filename /var/wikicompare/backups/$filename
+ssh www-data@$IP << EOF
+rm /var/wikicompare/backups/prepare/$filename
+EOF
+ncftp -u  $ftpuser -p $ftppass $ftpserver<< EOF
+      rm $filename
+      put /var/wikicompare/backups/$filename
+EOF
+    fi
+
+  else
+    first=False
+  fi
+
+done
+
+fi
 
 filename=`date +%Y-%m-%d -d '5 days ago'`_*
 echo $filename
@@ -893,12 +1070,12 @@ control_backup()
       directory=/var/wikicompare/control_backups/`date +%Y-%m-%d`_${instance_name}
     else
     cd $website_path
-    result_wikicompare=$(drush sql-query "select n.title, fn.title, fndni.wikicompare_ip_value from node n 
-    INNER JOIN field_data_wikicompare_instance f ON n.nid=f.entity_id 
-    INNER JOIN node fn ON f.wikicompare_instance_target_id = fn.nid
-    INNER JOIN field_data_wikicompare_server fnd ON fn.nid=fnd.entity_id
-    INNER JOIN node fndn ON fnd.wikicompare_server_target_id = fndn.nid
-    INNER JOIN field_data_wikicompare_ip fndni ON fndn.nid=fndni.entity_id
+    result_wikicompare=$(drush sql-query "select n.title, fn.title, fndni.letscoop_ip_value from node n 
+    INNER JOIN field_data_letscoop_instance f ON n.nid=f.entity_id 
+    INNER JOIN node fn ON f.letscoop_instance_target_id = fn.nid
+    INNER JOIN field_data_letscoop_server fnd ON fn.nid=fnd.entity_id
+    INNER JOIN node fndn ON fnd.letscoop_server_target_id = fndn.nid
+    INNER JOIN field_data_letscoop_ip fndni ON fndn.nid=fndni.entity_id
     WHERE n.title = '$1'  LIMIT 1")
     i=0
     wikicompare_name=''
@@ -918,7 +1095,12 @@ control_backup()
       let i++
     done
     IP=${IP//[^0-9.]/}
-    directory=/var/wikicompare/control_backups/`date +%Y-%m-%d`_${instance_name}_${IP}
+    directory=/var/wikicompare/control_backups/`date +%Y-%m-%d`_${letscoop_type}_${instance_name}_${IP}
+    if [[ $letscoop_type == 'wezer' ]]
+    then
+    directory=/var/wikicompare/control_backups/`date +%Y-%m-%d`_${letscoop_type}_${wikicompare_name}_${IP}
+    fi
+
     fi
     
     if [[ ! $instance_name ]]
@@ -937,13 +1119,16 @@ control_backup()
 
     cd $directory
     
+    if [[ $letscoop_type != 'wezer' ]]
+    then
     if [[ ! "$(ls -A $instance_name)" ]]
     then
       echo "The instance directory $instance_name is empty."
       exit 2
     fi
+    fi
 
-    if [[ ! (-s "${1/_/-}.wikicompare.info-wikicompare_${1}.sql" || -s "wikicompare_${1}.sql")  ]]
+    if [[ ! (-s "${1/_/-}.wikicompare.info-wikicompare_${1}.sql" || -s "${letscoop_type}_${1}.sql")  ]]
     then
       echo "The database file wikicompare_${wikicompare_name}.sql is empty."
       exit 2
@@ -1441,11 +1626,11 @@ while [ $# -gt 0 ]; do
         fi                                                                                
 done  
 
-wikicompare_name=${2/-/_}
+wikicompare_name=${3/-/_}
 
-case $1 in
+case $2 in
    deploy)
-       if [[ -z "$2" ]]
+       if [[ -z "$3" ]]
        then 
          cat 'You need to specify the name of the wikicompare.'
          exit
@@ -1454,16 +1639,16 @@ case $1 in
        exit
        ;;
    upgrade)
-       if [[ -z "$3" ]]
+       if [[ -z "$4" ]]
        then 
          cat 'You need to specify the server name.'
          exit
        fi 
-       upgrade $instance $3
+       upgrade $instance $4
        exit
        ;;       
    purge)
-       if [[ -z "$2" ]]
+       if [[ -z "$3" ]]
        then 
          cat 'You need to specify the name of the wikicompare.'
          exit
@@ -1475,21 +1660,21 @@ case $1 in
        exit
        ;;
    control_backup)
-       if [[ -z "$2" ]]
+       if [[ -z "$3" ]]
        then
          cat 'You need to specify the name of the wikicompare.'
          exit
        fi
-       control_backup $wikicompare_name $3
+       control_backup $wikicompare_name $4
        exit
        ;;
    build)
-       if [[ -z "$2" ]]
+       if [[ -z "$3" ]]
        then
          cat 'You need to specify the instance to rebuild.'
          exit
        fi
-       build $2
+       build $3
        exit
        ;;
    populate)

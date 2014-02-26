@@ -1,0 +1,10 @@
+name = Wezer Website
+description = The module of wezer.info website
+
+configure = admin/config/wezer_website
+
+dependencies[] = letscoop_website
+
+package = Wikicompare
+version = VERSION
+core = 7.x
