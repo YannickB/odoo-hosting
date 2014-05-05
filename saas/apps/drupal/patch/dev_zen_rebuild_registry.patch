@@ -1,0 +1,11 @@
+--- wikicompare_theme.info	2013-12-04 15:06:17.000000000 +0100
++++ wikicompare_theme.info.new	2013-12-04 15:09:04.188305241 +0100
+@@ -134,7 +134,7 @@
+ settings[zen_html5_respond_meta][] = respond
+ settings[zen_html5_respond_meta][] = html5
+ ;settings[zen_html5_respond_meta][] = meta
+-settings[zen_rebuild_registry] = 0
++settings[zen_rebuild_registry] = 1
+ settings[zen_wireframes]           = 0
+ 
+ ; To make this sub-theme an admin theme with shortcut links next to titles,

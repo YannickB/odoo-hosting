@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <menuitem id="menu_saas" name="SaaS" sequence="40"/>
+
+        <menuitem id="menu_saas_saas" name="SaaS" parent="menu_saas" sequence="5"/>
+
+
+        <record id="action_saas_saas_form" model="ir.actions.act_window">
+            <field name="name">SaaS</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">saas.saas</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_saas_saas_form" id="menu_action_saas_saas_form" parent="menu_saas_saas"/>
+
+        <record id="view_saas_saas_form" model="ir.ui.view">
+            <field name="name">saas.saas.form</field>
+            <field name="model">saas.saas</field>
+            <field name="arch" type="xml">
+                <form string="SaaS" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="title"/>
+                        <field name="domain_id"/>
+                        <field name="instance_id"/>
+                        <field name="admin_passwd"/>
+                        <field name="poweruser_name"/>
+                        <field name="poweruser_passwd"/>
+                        <field name="poweruser_email"/>
+                        <field name="build"/>
+                        <field name="test"/>
+                        <button name="button_save" string="Manual Save" type="object"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="view_saas_saas_tree" model="ir.ui.view">
+            <field name="name">saas.saas.tree</field>
+            <field name="model">saas.saas</field>
+            <field name="arch" type="xml">
+                <tree string="SaaS">
+                        <field name="name"/>
+                        <field name="domain_id"/>
+                        <field name="instance_id"/>
+                        <field name="state"/>
+                </tree>
+            </field>
+        </record>
+
+
+        <record id="action_saas_instance_form" model="ir.actions.act_window">
+            <field name="name">Instances</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">saas.instance</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_saas_instance_form" id="menu_action_saas_instance_form" parent="menu_saas_saas"/>
+
+        <record id="view_saas_instance_form" model="ir.ui.view">
+            <field name="name">saas.instance.form</field>
+            <field name="model">saas.instance</field>
+            <field name="arch" type="xml">
+                <form string="Instance" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="application_id"/>
+                        <field name="bdd"/>
+                        <field name="server_id"/>
+                        <field name="database_server_id"/>
+                        <field name="database_password"/>
+                        <field name="port"/>
+                        <field name="version"/>
+                        <field name="skip_analytics"/>
+                        <button name="button_save" string="Manual Save" type="object"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="view_saas_instance_tree" model="ir.ui.view">
+            <field name="name">saas.instance.tree</field>
+            <field name="model">saas.instance</field>
+            <field name="arch" type="xml">
+                <tree string="Instances">
+                    <field name="name"/>
+                    <field name="application_id"/>
+                    <field name="bdd"/>
+                    <field name="server_id"/>
+                    <field name="version"/>
+                </tree>
+            </field>
+        </record>
+
+
+
+        <record id="action_saas_server_form" model="ir.actions.act_window">
+            <field name="name">Servers</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">saas.server</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_saas_server_form" id="menu_action_saas_server_form" parent="menu_saas_saas"/>
+
+        <record id="view_saas_server_form" model="ir.ui.view">
+            <field name="name">saas.server.form</field>
+            <field name="model">saas.server</field>
+            <field name="arch" type="xml">
+                <form string="Server" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="ip"/>
+                        <field name="mysql_passwd"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="view_saas_server_tree" model="ir.ui.view">
+            <field name="name">saas.server.tree</field>
+            <field name="model">saas.server</field>
+            <field name="arch" type="xml">
+                <tree string="Servers">
+                    <field name="name"/>
+                    <field name="ip"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_saas_save_form" model="ir.actions.act_window">
+            <field name="name">Saves</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">saas.save</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_saas_save_form" id="menu_action_saas_save_form" parent="menu_saas_saas"/>
+
+        <record id="view_saas_save_form" model="ir.ui.view">
+            <field name="name">saas.save.form</field>
+            <field name="model">saas.save</field>
+            <field name="arch" type="xml">
+                <form string="Save" version="7.0">
+                    <group col="4">
+                      <field name="name"/>
+                      <field name="type"/>
+                      <field name='instance_id'/>
+                      <field name="saas_id"/>
+                      <field name="create_date"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="view_saas_save_tree" model="ir.ui.view">
+            <field name="name">saas.save.tree</field>
+            <field name="model">saas.save</field>
+            <field name="arch" type="xml">
+                <tree string="Save">
+                    <field name="name"/>
+                    <field name="type"/>
+                    <field name='instance_id'/>
+                    <field name="saas_id"/>
+                    <field name="create_date"/>
+                </tree>
+            </field>
+        </record>
+
+
+
+        <menuitem id="menu_saas_configuration" name="Configuration" parent="menu_saas" sequence="10"/>
+
+        <record id="action_saas_domain_form" model="ir.actions.act_window">
+            <field name="name">Domains</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">saas.domain</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_saas_domain_form" id="menu_action_saas_domain_form" parent="menu_saas_configuration"/>
+
+        <record id="view_saas_domain_form" model="ir.ui.view">
+            <field name="name">saas.domain.form</field>
+            <field name="model">saas.domain</field>
+            <field name="arch" type="xml">
+                <form string="Domain" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="view_saas_domain_tree" model="ir.ui.view">
+            <field name="name">saas.domain.tree</field>
+            <field name="model">saas.domain</field>
+            <field name="arch" type="xml">
+                <tree string="Domains">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_saas_application_type_form" model="ir.actions.act_window">
+            <field name="name">Application types</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">saas.application.type</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_saas_application_type_form" id="menu_action_saas_application_type_form" parent="menu_saas_configuration"/>
+
+        <record id="view_saas_application_type_form" model="ir.ui.view">
+            <field name="name">saas.application.type.form</field>
+            <field name="model">saas.application.type</field>
+            <field name="arch" type="xml">
+                <form string="Application type" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="system_user"/>
+                        <field name="admin_name"/>
+                        <field name="admin_email"/>
+                        <field name="mysql"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="view_saas_application_type_tree" model="ir.ui.view">
+            <field name="name">saas.application.type.tree</field>
+            <field name="model">saas.application.type</field>
+            <field name="arch" type="xml">
+                <tree string="Application types">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+
+        <record id="action_saas_application_form" model="ir.actions.act_window">
+            <field name="name">Applications</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">saas.application</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_saas_application_form" id="menu_action_saas_application_form" parent="menu_saas_configuration"/>
+
+        <record id="view_saas_application_form" model="ir.ui.view">
+            <field name="name">saas.application.form</field>
+            <field name="model">saas.application</field>
+            <field name="arch" type="xml">
+                <form string="Application" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="type_id"/>
+                        <field name="next_instance_id"/>
+                        <field name="next_bdd_server_id"/>
+                        <field name="preprod_domain_id"/>
+                        <field name="preprod_server_id"/>
+                        <field name="preprod_bdd_server_id"/>
+                        <field name="preprod_port"/>
+                        <field name="preprod_instance_id"/>
+                        <field name="preprod_mysql_instance_id"/>
+                        <field name="test_port"/>
+                        <field name="test_instance_id"/>
+                        <field name="test_mysql_instance_id"/>
+                        <field name="dev_port"/>
+                        <field name="dev_instance_id"/>
+                        <field name="dev_mysql_instance_id"/>
+                        <field name="instances_path"/>
+                        <field name="archive_path"/>
+                        <field name="build_directory"/>
+                        <field name="poweruser_name"/>
+                        <field name="poweruser_password"/>
+                        <field name="poweruser_email"/>
+                        <field name="piwik_demo_id"/>
+                        <field name="version_prod"/>
+                        <field name="version_preprod"/>
+                        <field name="version_test"/>
+                        <field name="version_dev"/>
+                        <button name="build" string="Build Dev" type="object" context="{'build_name': 'dev'}"/>
+
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="view_saas_application_tree" model="ir.ui.view">
+            <field name="name">saas.application.tree</field>
+            <field name="model">saas.application</field>
+            <field name="arch" type="xml">
+                <tree string="Applications">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+
+
+        <record id="view_saas_configuration" model="ir.ui.view">
+            <field name="name">saas settings</field>
+            <field name="model">saas.config.settings</field>
+            <field name="arch" type="xml">
+                <form string="Application" version="7.0">
+                    <group col="4">
+                        <field name="openerp_path" required="1"/>
+                        <field name="log_path" required="1"/>
+                        <field name="backup_directory" required="1"/>
+                        <field name="piwik_server" required="1"/>
+                        <field name="piwik_password" required="1"/>
+                        <field name="dns_server" required="1"/>
+                        <field name="shinken_server" required="1"/>
+                        <field name="ftpuser" required="1"/>
+                        <field name="ftppass" required="1"/>
+                        <field name="ftpserver" required="1"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <record id="saas_settings" model='saas.config.settings'/>
+
+        <record id="action_saas_configuration" model="ir.actions.act_window">
+            <field name="name">Configure SaaS</field>
+            <field name="res_model">saas.config.settings</field>
+            <field name="view_id" ref="view_saas_configuration"/>
+            <field name="view_mode">form</field>
+            <field name="res_id" ref="saas_settings"/>
+        </record>
+
+        <menuitem id="menu_saas_admin_configuration" parent="menu_saas_configuration"
+            sequence="15" action="action_saas_configuration"/>
+
+        <record id="save_saas_scheduler" model="ir.cron">
+          <field name="name">Save SaaS Scheduler</field>
+          <field eval="1" name="interval_number"/>
+          <field name="interval_type">days</field>
+          <field eval="-1" name="numbercall"/>
+          <field eval="0" name="doall"/>
+          <field name="model">saas.config.settings</field>
+          <field name="function">cron_save</field>
+          <field name="args">()</field>
+        </record> 
+
+    </data>
+</openerp>

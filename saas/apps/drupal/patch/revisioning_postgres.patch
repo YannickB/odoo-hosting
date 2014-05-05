@@ -1,0 +1,16 @@
+--- revisioning.module	2013-12-04 14:34:21.903509224 +0100
++++ revisioning.module.new	2013-12-04 14:33:43.726467914 +0100
+@@ -348,11 +348,11 @@
+  * @see http://drupal.org/node/500864
+  */
+ function vid_to_arg($arg, &$map, $index) {
+-  if (empty($arg)) {
++/*  if (empty($arg)) {
+     // For e.g. node/%/revisions.
+     // Suppresses subtabs of Revisions tab where %vid is omitted.
+     $map = array();
+-  }
++  }*/
+   return $arg;
+ }
+ 
