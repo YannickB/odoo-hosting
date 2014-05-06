@@ -60,7 +60,7 @@ class saas_application(osv.osv):
         'code': fields.char('Code', size=4, required=True),
         'type_id': fields.many2one('saas.application.type', 'Type', required=True),
         'next_instance_id': fields.many2one('saas.instance', 'Next instance'),
-        'next_bdd_server_id': fields.many2one('saas.server', 'Next database server'),
+        'demo_saas_id': fields.many2one('saas.saas', 'Demo SaaS'),
         'preprod_domain_id': fields.many2one('saas.domain', 'Preprod Domain'),
         'preprod_server_id': fields.many2one('saas.server', 'Preprod server'),
         'preprod_bdd_server_id': fields.many2one('saas.server', 'Preprod database server'),
@@ -98,23 +98,41 @@ class saas_application(osv.osv):
 
             _logger.info('Rebuilding %s', name)
 
-            args = [
-                config.openerp_path + '/saas/saas/shell/build.sh',
-                'build_archive',
-                app.type_id.name,
-                app.code,
-                name,
-                app.type_id.system_user,
-                app.archive_path,
-                config.openerp_path,
-                app.build_directory
-            ]
-            _logger.info('command %s', " ".join(args))
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            outfile = open(config.log_path + '/build_' + name + '.log', "w")
-            for line in proc.stdout:
-               _logger.info(line)
-               outfile.write(line)
+            if context['build']:
+                args = [
+                    config.openerp_path + '/saas/saas/shell/build.sh',
+                    'build_archive',
+                    app.type_id.name,
+                    app.code,
+                    name,
+                    app.type_id.system_user,
+                    app.archive_path,
+                    config.openerp_path,
+                    app.build_directory
+                ]
+                _logger.info('command %s', " ".join(args))
+                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                outfile = open(config.log_path + '/build_' + name + '.log', "w")
+                for line in proc.stdout:
+                   _logger.info(line)
+                   outfile.write(line)
+            else:
+                args = [
+                    config.openerp_path + '/saas/saas/shell/build.sh',
+                    'build_copy',
+                    app.type_id.name,
+                    app.code,
+                    name,
+                    context['build_source'],
+                    config.openerp_path,
+                    app.archive_path,
+                ]
+                _logger.info('command %s', " ".join(args))
+                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                outfile = open(config.log_path + '/build_' + name + '.log', "w")
+                for line in proc.stdout:
+                   _logger.info(line)
+                   outfile.write(line)
 
 
             instance_ids = instance_obj.search(cr, uid, [('name','in',[app.code + '-' + name, app.code + '-' + name + '-my']), ('application_id', '=', app.id)], context=context)
@@ -144,29 +162,30 @@ class saas_application(osv.osv):
                 'test': False,
               }, context=context)
 
-            args = [
-                config.openerp_path + '/saas/saas/shell/build.sh',
-                'build_dump',
-                app.type_id.name,
-                app.code,
-                name,
-                app.preprod_domain_id.name,
-                app.code + '-' + name,
-                app.type_id.system_user,
-                app.preprod_server_id.name,
-                app.preprod_bdd_server_id.name,
-                'pgsql',
-                config.openerp_path,
-                app.archive_path,
-                app.instances_path,
-                app.preprod_bdd_server_id.mysql_passwd
-            ]
-            _logger.info('command %s', " ".join(args))
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            outfile = open(config.log_path + '/build_' + name + '.log', "w")
-            for line in proc.stdout:
-               _logger.info(line)
-               outfile.write(line)
+            if context['build']:
+                args = [
+                    config.openerp_path + '/saas/saas/shell/build.sh',
+                    'build_dump',
+                    app.type_id.name,
+                    app.code,
+                    name,
+                    app.preprod_domain_id.name,
+                    app.code + '-' + name,
+                    app.type_id.system_user,
+                    app.preprod_server_id.name,
+                    app.preprod_bdd_server_id.name,
+                    'pgsql',
+                    config.openerp_path,
+                    app.archive_path,
+                    app.instances_path,
+                    app.preprod_bdd_server_id.mysql_passwd
+                ]
+                _logger.info('command %s', " ".join(args))
+                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                outfile = open(config.log_path + '/build_' + name + '.log', "w")
+                for line in proc.stdout:
+                   _logger.info(line)
+                   outfile.write(line)
 
             if app.type_id.mysql:
               instance_id = instance_obj.create(cr, uid, {
@@ -193,29 +212,30 @@ class saas_application(osv.osv):
 
               _logger.info('system_user %s', app.type_id.system_user)
               _logger.info('bdd_server %s', app.preprod_bdd_server_id.name)
-              args = [
-                  config.openerp_path + '/saas/saas/shell/build.sh',
-                  'build_dump',
-                  app.type_id.name,
-                  app.code,
-                  name + '-my',
-                  app.preprod_domain_id.name,
-                  app.code + '-' + name + '-my',
-                  app.type_id.system_user,
-                  app.preprod_server_id.name,
-                  app.preprod_bdd_server_id.name,
-                  'mysql',
-                  config.openerp_path,
-                  app.archive_path,
-                  app.instances_path,
-                  app.preprod_bdd_server_id.mysql_passwd
-              ]
-              _logger.info('command %s', " ".join(args))
-              proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-              outfile = open(config.log_path + '/build_' + name + '.log', "w")
-              for line in proc.stdout:
-                 _logger.info(line)
-                 outfile.write(line)
+              if context['build']:
+                  args = [
+                      config.openerp_path + '/saas/saas/shell/build.sh',
+                      'build_dump',
+                      app.type_id.name,
+                      app.code,
+                      name + '-my',
+                      app.preprod_domain_id.name,
+                      app.code + '-' + name + '-my',
+                      app.type_id.system_user,
+                      app.preprod_server_id.name,
+                      app.preprod_bdd_server_id.name,
+                      'mysql',
+                      config.openerp_path,
+                      app.archive_path,
+                      app.instances_path,
+                      app.preprod_bdd_server_id.mysql_passwd
+                  ]
+                  _logger.info('command %s', " ".join(args))
+                  proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                  outfile = open(config.log_path + '/build_' + name + '.log', "w")
+                  for line in proc.stdout:
+                     _logger.info(line)
+                     outfile.write(line)
 
 
             #Get Version
@@ -229,28 +249,6 @@ class saas_application(osv.osv):
                 app.preprod_domain_id.name,
                 config.openerp_path,
                 app.instances_path,
-            ]
-            _logger.info('command %s', " ".join(args))
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            outfile = open(config.log_path + '/build_' + name + '.log', "w")
-            for line in proc.stdout:
-               _logger.info(line)
-               outfile.write(line)
-               version = line
-            _logger.info('Version %s', version)
-
-            self.write(cr, uid, [app.id], {'version_' + name: version}, context=context)
-
-
-            #Build after
-            args = [
-                config.openerp_path + '/saas/saas/shell/build.sh',
-                'build_after',
-                app.type_id.name,
-                app.code,
-                name,
-                version,
-                config.openerp_path,
                 app.archive_path,
             ]
             _logger.info('command %s', " ".join(args))
@@ -259,6 +257,30 @@ class saas_application(osv.osv):
             for line in proc.stdout:
                _logger.info(line)
                outfile.write(line)
+            with open(app.archive_path  + '/' + app.code + '-' + name + '/VERSION.txt') as f:
+                version = f.read()
+                _logger.info('version : %s', version)
+                self.write(cr, uid, [app.id], {'version_' + name: version}, context=context)
+
+
+            if context['build']:
+                #Build after
+                args = [
+                    config.openerp_path + '/saas/saas/shell/build.sh',
+                    'build_after',
+                    app.type_id.name,
+                    app.code,
+                    name,
+                    version,
+                    config.openerp_path,
+                    app.archive_path,
+                ]
+                _logger.info('command %s', " ".join(args))
+                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                outfile = open(config.log_path + '/build_' + name + '.log', "w")
+                for line in proc.stdout:
+                   _logger.info(line)
+                   outfile.write(line)
 
                
             args = [
@@ -338,7 +360,62 @@ class saas_application(osv.osv):
                  _logger.info(line)
                  outfile.write(line)
         return True
+        
+        
+        
+    def populate(self, cr, uid, ids, context={}):
+    
+        instance_obj = self.pool.get('saas.instance')
+        
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
 
+
+        for app in self.browse(cr, uid, ids, context=context):
+            preprod_archive = app.code + '-preprod'
+            prod_archive = app.code + '-prod'
+            args = [
+                config.openerp_path + '/saas/saas/shell/populate.sh',
+                app.code,
+                preprod_archive,
+                prod_archive,
+                app.archive_path,
+            ]
+            _logger.info('command %s', " ".join(args))
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            outfile = open(config.log_path + '/populate.log', "w")
+            for line in proc.stdout:
+               _logger.info(line)
+               outfile.write(line)
+               
+               
+            with open(app.archive_path  + '/' + prod_archive + '/VERSION.txt') as f:
+                version = f.read()
+                _logger.info('version : %s', version)
+                self.write(cr, uid, [app.id], {'version_prod': version}, context=context)
+        return True
+            
+    def refresh_demo(self, cr, uid, ids, context={}):
+    
+        saas_obj = self.pool.get('saas.saas')
+    
+        for app in self.browse(cr, uid, ids, context=context):
+            if app.demo_saas_id:
+                saas_obj.unlink(cr, uid, [app.demo_saas_id.id], context=context)
+            
+            demo_id = saas_obj.create(cr, uid, {
+              'name': 'demo',
+              'title': 'Demo',
+              'domain_id': app.preprod_domain_id.id,
+              'instance_id': app.next_instance_id.id,
+              'poweruser_name': app.poweruser_name,
+              'poweruser_passwd': app.poweruser_password,
+              'poweruser_email': app.poweruser_email,
+              'build': True,
+              'test': True,
+            }, context=context)
+            
+            self.write(cr, uid, [app.id], {'demo_saas_id': demo_id}, context=context)
+        return True
 
 class saas_server(osv.osv):
     _name = 'saas.server'
@@ -420,7 +497,7 @@ class saas_instance(osv.osv):
 
         for instance in self.browse(cr, uid, ids, context=context):
 
-            _logger.info('Deploying instance %s', instance.name)
+            _logger.info('Removing instance %s', instance.name)
 
             _logger.info('command : %s', config.openerp_path + '/saas/saas/shell/purge.sh ' + 'instance' + ' ' + instance.application_id.type_id.name  +  ' ' + instance.name + ' ' + instance.application_id.instances_path + ' ' + instance.bdd + ' ' + instance.application_id.type_id.system_user + ' ' + instance.server_id.name + ' ' + instance.database_server_id.name + ' ' + config.openerp_path)
 
@@ -432,7 +509,47 @@ class saas_instance(osv.osv):
                 outfile.write(line)
 
         return super(saas_instance, self).unlink(cr, uid, ids, context=context)
+        
+        
+    def upgrade(self, cr, uid, ids, context=None):
+    
 
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        
+        self.save(cr, uid, ids, type='preupgrade', context=context)
+
+        for instance in self.browse(cr, uid, ids, context=context):
+
+            _logger.info('Upgrading instance %s', instance.name)
+
+            archive = instance.application_id.code + '-prod'
+            if 'build_name' in context:
+                archive = instance.application_id.code + '-' + context['build_name']
+
+            args = [
+                config.openerp_path + '/saas/saas/shell/upgrade.sh',
+                instance.application_id.type_id.name,
+                instance.application_id.code,
+                instance.name,
+                instance.application_id.type_id.system_user,
+                instance.server_id.name,
+                archive,
+                instance.application_id.instances_path,
+                config.openerp_path,
+                instance.application_id.archive_path,
+            ]
+
+            _logger.info('command %s', " ".join(args))
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
+            for line in proc.stdout:
+                _logger.info(line)
+                outfile.write(line)
+
+            with open(instance.application_id.archive_path  + '/' + archive + '/VERSION.txt') as f:
+                self.write(cr, uid, [instance.id], {'version': f.read()}, context=context)
+        return True
 
     def save(self, cr, uid, ids, saas_id=False, type='manual', context=None):
 

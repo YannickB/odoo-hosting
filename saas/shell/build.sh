@@ -98,6 +98,18 @@ chmod -R 777 $archive_path/${app}-${name}/*
 
 }
 
+build_copy()
+{
+
+rm -rf $archive_path/${app}-${name}
+mkdir $archive_path/${app}-${name}
+cp -R $archive_path/${app}-${name_source}/* $archive_path/${app}-${name}
+
+ssh root@localhost << EOF
+chmod -R 777 $archive_path/${app}-${name}/
+EOF
+}
+
 build_dump()
 {
 
@@ -144,7 +156,7 @@ EOF
 get_version()
 {
 
-$openerp_path/saas/saas/apps/$application_type/build.sh get_version $application $name $domain $instances_path
+$openerp_path/saas/saas/apps/$application_type/build.sh get_version $application $name $domain $instances_path $archive_path
 
 }
 
@@ -152,8 +164,6 @@ $openerp_path/saas/saas/apps/$application_type/build.sh get_version $application
 build_after()
 {
 
-
-echo $version > $archive_path/${application}-${name}/VERSION.txt
 cp $archive_path/${application}-${name}/VERSION.txt $archive_path/${application}-${name}/archive/
 
 cd $archive_path/${application}-${name}/
@@ -188,6 +198,18 @@ case $1 in
     exit
     ;;
 
+  build_copy)
+    application_type=$2
+    app=$3
+    name=$4
+    name_source=$5
+    openerp_path=$6
+    archive_path=$7
+
+    build_copy
+    exit
+    ;;
+
   build_dump)
     application_type=$2
     application=$3
@@ -214,6 +236,7 @@ case $1 in
     domain=$5
     openerp_path=$6
     instances_path=$7
+    archive_path=$8
 
     get_version
     exit

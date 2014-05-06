@@ -39,22 +39,22 @@ case $1 in
   
     application=$2
     domain=$3
-    saas=$4
-    db_type=$5
-    system_user=$6
-    server=$7
-    database_server=$8
-    database_password=$9
-    admin_user=${10}
-    admin_password=${11}
-    admin_email=${12}
-    instances_path=${13}
+    instance=$4
+    saas=$5
+    db_type=$6
+    system_user=$7
+    server=$8
+    database_server=$9
+    database_password=${10}
+    admin_user=${11}
+    admin_password=${12}
+    admin_email=${13}
+    instances_path=${14}
 	
 	  unique_name=$application-$saas-$domain
     unique_name=${unique_name//./-}
     unique_name_underscore=${unique_name//-/_}
-    
-    instance=$application-$saas
+
     db_user=${instance//-/_}
   
     echo drush -y si --db-url=$db_type://${db_user}:$database_password@$database_server/$unique_name_underscore --account-mail=$admin_email --account-name=$admin_user --account-pass=$admin_password --sites-subdir=$saas.$domain minimal
@@ -82,24 +82,24 @@ EOF
 
     application=$2
     domain=$3
-    saas=$4
-    title=$5
-    system_user=$6
-    server=$7
-    db_type=$8
-    database_server=$9
-    database_password=${10}
-    admin_user=${11}
-    admin_password=${12}
-    admin_email=${13}
-    instances_path=${14}
+    instance=$4
+    saas=$5
+    title=$6
+    system_user=$7
+    server=$8
+    db_type=$9
+    database_server=${10}
+    database_password=${11}
+    admin_user=${12}
+    admin_password=${13}
+    admin_email=${14}
+    instances_path=${15}
     
     
     unique_name=$application-$saas-$domain
     unique_name=${unique_name//./-}
     unique_name_underscore=${unique_name//-/_}
   
-    instance=$application-$saas
     db_user=${instance//-/_}
 
     echo post_restore
@@ -125,15 +125,15 @@ EOF
   
     application=$2
     domain=$3
-    saas=$4
-    system_user=$5
-    server=$6
-    user_name=$7
-    user_password=$8
-    user_email=$9
-    instances_path=${10}
+    instance=$4
+    saas=$5
+    system_user=$6
+    server=$7
+    user_name=$8
+    user_password=$9
+    user_email=${10}
+    instances_path=${11}
     
-    instance=$application-$saas
     
     ssh $system_user@$server << EOF  
     cd $instances_path/$instance/sites/$saas.$domain
@@ -148,13 +148,12 @@ EOF
 
     application=$2
     domain=$3
-    saas=$4
-    system_user=$5
-    server=$6
-    user_name=$7
-    instances_path=$8
-  
-    instance=$application-$saas
+    instance=$4
+    saas=$5
+    system_user=$6
+    server=$7
+    user_name=$8
+    instances_path=$9
   
     echo 'Deploying demo data'
     ssh $system_user@$server << EOF
@@ -179,12 +178,12 @@ EOF
   
     application=$2
     domain=$3
-    saas=$4
-    system_user=$5
-    server=$6
-    instances_path=$7
+    instance=$4
+    saas=$5
+    system_user=$6
+    server=$7
+    instances_path=$8
   
-    instance=$application-$saas
     
     ssh $system_user@$server << EOF
     chmod -R 700 $instances_path/$instance/sites/$saas.$domain/
@@ -199,14 +198,14 @@ EOF
   
     application=$2
     domain=$3
-    saas=$4
-    system_user=$5
-    server=$6
-    piwik_id=$7
-    piwik_url=$8
-    instances_path=$9
+    instance=$4
+    saas=$5
+    system_user=$6
+    server=$7
+    piwik_id=$8
+    piwik_url=$9
+    instances_path=${10}
   
-    instance=$application-$saas
 
     ssh $system_user@$server << EOF
     cd $instances_path/$instance/sites/$saas.$domain
@@ -221,13 +220,12 @@ EOF
   prepare_apache)
     application=$2
     saas=$3
-    domain=$4
-    server=$5
-    port=$6
-    unique_name=$7
-    instances_path=$8
-    
-    instance=$application-$saas
+    instance=$4
+    domain=$5
+    server=$6
+    port=$7
+    unique_name=$8
+    instances_path=$9
 
 
 

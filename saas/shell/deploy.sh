@@ -155,7 +155,7 @@ EOF
   fi
   echo Database created
 
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh build $application $domain $saas $db_type $system_user $server $database_server $database_password $admin_name $admin_password $admin_email $instances_path
+  $openerp_path/saas/saas/apps/$application_type/deploy.sh build $application $domain $instance $saas $db_type $system_user $server $database_server $database_password $admin_name $admin_password $admin_email $instances_path
 
 
 else
@@ -173,19 +173,19 @@ EOF
 EOF
   fi
 
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh post_restore $application $domain $saas $title $system_user $server $db_type $database_server $database_password $admin_name $admin_password $admin_email $instances_path
+  $openerp_path/saas/saas/apps/$application_type/deploy.sh post_restore $application $domain $instance $saas $title $system_user $server $db_type $database_server $database_password $admin_name $admin_password $admin_email $instances_path
 
 fi
 
 if [[ $admin_name != $user_name ]]
 then
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh create_poweruser $application $domain $saas $system_user $server $user_name $user_password $user_email $instances_path
+  $openerp_path/saas/saas/apps/$application_type/deploy.sh create_poweruser $application $domain $instance $saas $system_user $server $user_name $user_password $user_email $instances_path
 fi
 
 
 if [[ $test == True ]]
 then
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh test_specific $application $domain $saas $system_user $server $user_name $instances_path
+  $openerp_path/saas/saas/apps/$application_type/deploy.sh test_specific $application $domain $instance $saas $system_user $server $user_name $instances_path
 fi
 
 
@@ -194,7 +194,7 @@ fi
   # chown -R $system_user:$system_user $instances_path/$instance
 # EOF
 
-$openerp_path/saas/saas/apps/$application_type/deploy.sh post_deploy $application $domain $saas $system_user $server $instances_path
+$openerp_path/saas/saas/apps/$application_type/deploy.sh post_deploy $application $domain $instance $saas $system_user $server $instances_path
 
 
 if [[ $skip_analytics != True ]]
@@ -214,7 +214,7 @@ EOF
   piwik_id=$piwik_demo_id
   fi
 
-  $openerp_path/apps/$application_type/deploy.sh post_piwik $application $domain $saas $system_user $server $piwik_id $piwik_server $instances_path
+  $openerp_path/saas/saas/apps/$application_type/deploy.sh post_piwik $application $domain $instance $saas $system_user $server $piwik_id $piwik_server $instances_path
 
 fi
 
@@ -222,8 +222,7 @@ fi
 scp $openerp_path/saas/saas/apps/$application_type/apache.config www-data@$server:/etc/apache2/sites-available/$unique_name
 
 # escape='\$1'
-echo $openerp_path/saas/saas/apps/$application_type/deploy.sh prepare_apache $application $saas $domain $server $port $unique_name $instances_path
-$openerp_path/saas/saas/apps/$application_type/deploy.sh prepare_apache $application $saas $domain $server $port $unique_name $instances_path
+$openerp_path/saas/saas/apps/$application_type/deploy.sh prepare_apache $application $saas $instance $domain $server $port $unique_name $instances_path
 
 ssh www-data@$server << EOF
   sudo a2ensite $unique_name

@@ -89,11 +89,12 @@ EOF
   prepare_apache)
     application=$2
     saas=$3
-    domain=$4
-    server=$5
-    port=$6
-    unique_name=$7
-    instances_path=$8
+    instance=$4
+    domain=$5
+    server=$6
+    port=$7
+    unique_name=$8
+    instances_path=$9
 
     ssh www-data@$server << EOF
     sed -i 's/SAAS/${saas}/g' /etc/apache2/sites-available/$unique_name

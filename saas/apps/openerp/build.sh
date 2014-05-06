@@ -46,9 +46,10 @@ case $1 in
     name=$3
     domain=$4
     instances_path=$5
+    archive_path=$6
 
     version='1'
-    echo $version
+    echo $version > $archive_path/${app}-${name}/VERSION.txt
     exit
     ;;
 

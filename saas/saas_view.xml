@@ -33,6 +33,7 @@
                         <field name="build"/>
                         <field name="test"/>
                         <button name="button_save" string="Manual Save" type="object"/>
+                        <button name="send_preprod" string="Send to preprod" type="object"/>
                     </group>
                 </form>
             </field>
@@ -76,6 +77,7 @@
                         <field name="version"/>
                         <field name="skip_analytics"/>
                         <button name="button_save" string="Manual Save" type="object"/>
+                        <button name="upgrade" string="Upgrade" type="object"/>
                     </group>
                 </form>
             </field>
@@ -255,7 +257,6 @@
                         <field name="code"/>
                         <field name="type_id"/>
                         <field name="next_instance_id"/>
-                        <field name="next_bdd_server_id"/>
                         <field name="preprod_domain_id"/>
                         <field name="preprod_server_id"/>
                         <field name="preprod_bdd_server_id"/>
@@ -279,8 +280,16 @@
                         <field name="version_preprod"/>
                         <field name="version_test"/>
                         <field name="version_dev"/>
-                        <button name="build" string="Build Dev" type="object" context="{'build_name': 'dev'}"/>
-
+                        <newline/>
+                        <button name="build" string="Build Dev" type="object" context="{'build_name': 'dev', 'build': True}"/>
+                        <newline/>
+                        <button name="build" string="Build Test" type="object" context="{'build_name': 'test', 'build': True}"/>
+                        <newline/>
+                        <button name="build" string="Build Preprod" type="object" context="{'build_name': 'preprod', 'build': False, 'build_source': 'test'}"/>
+                        <newline/>
+                        <button name="populate" string="Populate" type="object"/>
+                        <newline/>
+                        <button name="refresh_demo" string="Refresh Demo" type="object"/>
                     </group>
                 </form>
             </field>
