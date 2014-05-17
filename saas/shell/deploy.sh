@@ -126,7 +126,7 @@ then
 
   echo Creating database for $saas
 
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh create_database $application $domain $saas $server $database_password $port $system_user $instances_path
+  $openerp_path/saas/saas/apps/$application_type/deploy.sh create_database $application $domain $saas $server $database_password $port $system_user $instances_path $test $admin_password
 
   if [[ $? != 1 ]]
   then
@@ -155,7 +155,7 @@ EOF
   fi
   echo Database created
 
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh build $application $domain $instance $saas $db_type $system_user $server $database_server $database_password $admin_name $admin_password $admin_email $instances_path
+  $openerp_path/saas/saas/apps/$application_type/deploy.sh build $application $domain $instance $saas $db_type $system_user $server $database_server $database_password $admin_name $admin_password $admin_email $instances_path $port
 
 
 else
@@ -185,9 +185,8 @@ fi
 
 if [[ $test == True ]]
 then
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh test_specific $application $domain $instance $saas $system_user $server $user_name $instances_path
+  $openerp_path/saas/saas/apps/$application_type/deploy.sh test_specific $application $domain $instance $saas $system_user $server $user_name $instances_path $admin_name $admin_password $port
 fi
-
 
 
   # ssh $system_user@$IP << EOF

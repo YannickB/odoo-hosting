@@ -49,7 +49,8 @@ class saas_application_type(osv.osv):
         'system_user': fields.char('System User', size=64, required=True),
         'admin_name': fields.char('Admin name', size=64, required=True),
         'admin_email': fields.char('Admin email', size=64, required=True),
-        'mysql': fields.boolean('Can have mysql?')
+        'mysql': fields.boolean('Can have mysql?'),
+        'init_test': fields.boolean('Demo mode must be set at database creation?'),
     }
 
 class saas_application(osv.osv):
@@ -159,7 +160,7 @@ class saas_application(osv.osv):
                 'poweruser_passwd': app.poweruser_password,
                 'poweruser_email': app.poweruser_email,
                 'build': True,
-                'test': False,
+                'test': app.type_id.init_test,
               }, context=context)
 
             if context['build']:
@@ -207,7 +208,7 @@ class saas_application(osv.osv):
                   'poweruser_passwd': app.poweruser_password,
                   'poweruser_email': app.poweruser_email,
                   'build': True,
-                  'test': False,
+                  'test': app.type_id.init_test,
                 }, context=context)
 
               _logger.info('system_user %s', app.type_id.system_user)
@@ -303,23 +304,24 @@ class saas_application(osv.osv):
                _logger.info(line)
                outfile.write(line)
                
-            args = [
-                config.openerp_path + '/saas/saas/apps/' + app.type_id.name + '/deploy.sh',
-                'test_specific',
-                app.code,
-                app.preprod_domain_id.name,
-                name,
-                app.type_id.system_user,
-                app.preprod_server_id.name,
-                app.poweruser_name,
-                app.instances_path,
-            ]
-            _logger.info('command %s', " ".join(args))
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            outfile = open(config.log_path + '/build_' + name + '.log', "w")
-            for line in proc.stdout:
-               _logger.info(line)
-               outfile.write(line)
+            if not app.type_id.init_test :
+                args = [
+                    config.openerp_path + '/saas/saas/apps/' + app.type_id.name + '/deploy.sh',
+                    'test_specific',
+                    app.code,
+                    app.preprod_domain_id.name,
+                    name,
+                    app.type_id.system_user,
+                    app.preprod_server_id.name,
+                    app.poweruser_name,
+                    app.instances_path,
+                ]
+                _logger.info('command %s', " ".join(args))
+                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                outfile = open(config.log_path + '/build_' + name + '.log', "w")
+                for line in proc.stdout:
+                   _logger.info(line)
+                   outfile.write(line)
 
             if app.type_id.mysql:
               args = [
@@ -342,23 +344,24 @@ class saas_application(osv.osv):
                  _logger.info(line)
                  outfile.write(line)
                  
-              args = [
-                  config.openerp_path + '/saas/saas/apps/' + app.type_id.name + '/deploy.sh',
-                  'test_specific',
-                  app.code,
-                  app.preprod_domain_id.name,
-                  name + '-my',
-                  app.type_id.system_user,
-                  app.preprod_server_id.name,
-                  app.poweruser_name,
-                  app.instances_path,
-              ]
-              _logger.info('command %s', " ".join(args))
-              proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-              outfile = open(config.log_path + '/build_' + name + '.log', "w")
-              for line in proc.stdout:
-                 _logger.info(line)
-                 outfile.write(line)
+              if not app.type_id.init_test:
+                  args = [
+                      config.openerp_path + '/saas/saas/apps/' + app.type_id.name + '/deploy.sh',
+                      'test_specific',
+                      app.code,
+                      app.preprod_domain_id.name,
+                      name + '-my',
+                      app.type_id.system_user,
+                      app.preprod_server_id.name,
+                      app.poweruser_name,
+                      app.instances_path,
+                  ]
+                  _logger.info('command %s', " ".join(args))
+                  proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                  outfile = open(config.log_path + '/build_' + name + '.log', "w")
+                  for line in proc.stdout:
+                     _logger.info(line)
+                     outfile.write(line)
         return True
         
         
@@ -787,7 +790,7 @@ class saas_config_settings(osv.osv):
     }
 
 
-    def cron_save(self, cr, uid, context={}):
+    def cron_save(self, cr, uid, ids, context={}):
 
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
 
@@ -829,3 +832,5 @@ class saas_config_settings(osv.osv):
         old_date = datetime.now()-timedelta(days=5)
         save_ids = save_obj.search(cr, uid, [('create_date','<', old_date.strftime("%Y-%m-%d"))], context=context)
         save_obj.unlink(cr, uid, save_ids, context=context)
+
+        return True

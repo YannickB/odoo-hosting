@@ -36,7 +36,6 @@ projects[drupal][version] = 7
 ; Modules
 ; --------
 projects[] = admin_menu
-projects[] = bakery
 projects[] = ctools
 projects[] = devel
 projects[] = diff

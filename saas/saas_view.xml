@@ -223,6 +223,7 @@
                         <field name="admin_name"/>
                         <field name="admin_email"/>
                         <field name="mysql"/>
+                        <field name="init_test"/>
                     </group>
                 </form>
             </field>
@@ -322,6 +323,8 @@
                         <field name="ftpuser" required="1"/>
                         <field name="ftppass" required="1"/>
                         <field name="ftpserver" required="1"/>
+                        <newline/>
+                        <button name="cron_save" string="Save All" type="object"/>
                     </group>
                 </form>
             </field>

@@ -43,6 +43,8 @@ EOF
     port=$7
     system_user=$8
     instances_path=$9
+    test=${10}
+    admin_password=${11}
 
     unique_name=$application-$saas-$domain
     unique_name=${unique_name//./-}
@@ -50,8 +52,11 @@ EOF
 
     echo creating openerp database
 
-/usr/local/bin/erppeek --server http://$server:$port -p $database_password << EOF
-client.create_database('$database_password', '$unique_name_underscore')
+    echo $test
+
+# -p $database_password 
+/usr/local/bin/erppeek --server http://$server:$port << EOF
+client.create_database('$database_password', '$unique_name_underscore', demo=$test, lang='fr_FR', user_password='$admin_password')
 EOF
 
     ssh $system_user@$server << EOF
@@ -62,6 +67,31 @@ EOF
     ;;
 
   build)
+
+    application=$2
+    domain=$3
+    instance=$4
+    saas=$5
+    db_type=$6
+    system_user=$7
+    server=$8
+    database_server=$9
+    database_password=${10}
+    admin_user=${11}
+    admin_password=${12}
+    admin_email=${13}
+    instances_path=${14}
+    port=${15}
+	
+	  unique_name=$application-$saas-$domain
+    unique_name=${unique_name//./-}
+    unique_name_underscore=${unique_name//-/_}
+
+/usr/local/bin/erppeek --server http://$server:$port -u $admin_user -p $admin_password -d $unique_name_underscore << EOF
+client.install('account_accountant', 'account_chart_install', 'l10n_fr')
+client.execute('account.chart.template', 'install_chart', 'l10n_fr', 'l10n_fr_pcg_chart_template', 1, 1)
+client.install('community')
+EOF
     exit
     ;;
 
@@ -71,6 +101,29 @@ EOF
     ;;
 
   test_specific)
+
+    application=$2
+    domain=$3
+    instance=$4
+    saas=$5
+    system_user=$6
+    server=$7
+    user_name=$8
+    instances_path=$9
+    admin_user=${10}
+    admin_password=${11}
+    port=${12}
+
+	  unique_name=$application-$saas-$domain
+    unique_name=${unique_name//./-}
+    unique_name_underscore=${unique_name//-/_}
+
+    echo server : $server, user_name: $user_name, instances_path: $instances_path, admin_user : $admin_user, admin_password: $admin_password, port : $port
+    echo 'Deploying demo data'
+/usr/local/bin/erppeek --server http://$server:$port -u $admin_user -p $admin_password -d $unique_name_underscore << EOF
+client.install('community_blog', 'community_crm', 'community_event', 'community_forum', 'community_marketplace', 'community_project')
+EOF
+
     exit
     ;;
 

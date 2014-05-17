@@ -27,6 +27,8 @@ case $1 in
     port=$7
     system_user=$8
     instances_path=$9
+    test=${10}
+    admin_password=${11}
 
     unique_name=$application-$saas-$domain
     unique_name=${unique_name//./-}
@@ -50,6 +52,7 @@ case $1 in
     admin_password=${12}
     admin_email=${13}
     instances_path=${14}
+    port=${15}
 	
 	  unique_name=$application-$saas-$domain
     unique_name=${unique_name//./-}
@@ -65,7 +68,7 @@ case $1 in
       drush -y si --db-url=$db_type://${db_user}:$database_password@$database_server/$unique_name_underscore --account-mail=$admin_email --account-name=$admin_user --account-pass=$admin_password --sites-subdir=$saas.$domain minimal
       cd sites/$saas.$domain
       pwd
-      drush -y en piwik admin_menu_toolbar bakery wikicompare wikicompare_profiles wikicompare_translation wikicompare_inherit_product
+      drush -y en piwik admin_menu_toolbar wikicompare wikicompare_profiles wikicompare_translation wikicompare_inherit_product
       drush -y pm-enable wikicompare_theme
       drush vset --yes --exact theme_default wikicompare_theme
 EOF
@@ -154,6 +157,9 @@ EOF
     server=$7
     user_name=$8
     instances_path=$9
+    admin_user=${10}
+    admin_password=${11}
+    port=${12}
   
     echo 'Deploying demo data'
     ssh $system_user@$server << EOF
