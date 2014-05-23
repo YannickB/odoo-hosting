@@ -57,7 +57,7 @@ EOF
 
 echo $system_user@$server:$instances_path/$instance
 
-scp $archive_path/$archive/archive.tar.gz $system_user@$server:$instances_path/$instance/
+scp $archive_path/$application/$archive/archive.tar.gz $system_user@$server:$instances_path/$instance/
 
 
 ssh $system_user@$server << EOF
@@ -120,47 +120,49 @@ unique_name_underscore=${unique_name//-/_}
 
 db_user=${instance//-/_}
 
+echo db_user : $db_user
+
 echo build : $build
-if [[ $build == True ]]
+
+echo Creating database for $saas
+
+$openerp_path/saas/saas/apps/$application_type/deploy.sh create_database $application $domain $saas $server $database_password $port $system_user $instances_path $build $test $admin_password
+
+if [[ $? != 1 ]]
 then
-
-  echo Creating database for $saas
-
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh create_database $application $domain $saas $server $database_password $port $system_user $instances_path $test $admin_password
-
-  if [[ $? != 1 ]]
+  #SI postgres, create user
+  echo $db_type
+  if [[ $db_type != 'mysql' ]]
   then
-    #SI postgres, create user
-    echo $db_type
-    if [[ $db_type != 'mysql' ]]
-    then
-    ssh postgres@$database_server << EOF
-      psql
-      CREATE DATABASE $unique_name_underscore;
-      ALTER DATABASE $unique_name_underscore OWNER TO $db_user;
-      \q
+  ssh postgres@$database_server << EOF
+    psql
+    CREATE DATABASE $unique_name_underscore;
+    ALTER DATABASE $unique_name_underscore OWNER TO $db_user;
+    \q
 EOF
 
-    ssh $system_user@$server << EOF
-      sed -i "/:*:$db_user:/d" ~/.pgpass
-      echo "$database_server:5432:*:$db_user:$database_password" >> ~/.pgpass
-EOF
+  # ssh $system_user@$server << EOF
+    # sed -i "/:*:$db_user:/d" ~/.pgpass
+    # echo "$database_server:5432:*:$db_user:$database_password" >> ~/.pgpass
+# EOF
 
-    else
-    ssh www-data@$database_server << EOF
-      mysql -u root -p'$mysql_password' -se "create database $unique_name_underscore;"
-      mysql -u root -p'$mysql_password' -se "grant all on $unique_name_underscore.* to '${db_user}';"
+  else
+  ssh www-data@$database_server << EOF
+    mysql -u root -p'$mysql_password' -se "create database $unique_name_underscore;"
+    mysql -u root -p'$mysql_password' -se "grant all on $unique_name_underscore.* to '${db_user}';"
 EOF
-    fi
   fi
-  echo Database created
+fi
+echo Database created
+
+if [[ $build == 'build' ]]
+then
 
   $openerp_path/saas/saas/apps/$application_type/deploy.sh build $application $domain $instance $saas $db_type $system_user $server $database_server $database_password $admin_name $admin_password $admin_email $instances_path $port
 
 
-else
-
-
+elif [[ $build == 'restore' ]]
+then
 
   if [[ $db_type != 'mysql' ]]
   then
@@ -177,43 +179,49 @@ EOF
 
 fi
 
-if [[ $admin_name != $user_name ]]
-then
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh create_poweruser $application $domain $instance $saas $system_user $server $user_name $user_password $user_email $instances_path
-fi
 
-
-if [[ $test == True ]]
-then
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh test_specific $application $domain $instance $saas $system_user $server $user_name $instances_path $admin_name $admin_password $port
-fi
-
-
-  # ssh $system_user@$IP << EOF
-  # chown -R $system_user:$system_user $instances_path/$instance
-# EOF
-
-$openerp_path/saas/saas/apps/$application_type/deploy.sh post_deploy $application $domain $instance $saas $system_user $server $instances_path
-
-
-if [[ $skip_analytics != True ]]
+if [[ $build != 'none' ]]
 then
 
-  if [[ $saas != 'demo' ]]
+  if [[ $admin_name != $user_name ]]
   then
-  ssh $piwik_server << EOF
-    mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_site (name, main_url, ts_created, timezone, currency) VALUES ('$domain_name.wikicompare.info', 'http://$domain_name.wikicompare.info', NOW(), 'Europe/Paris', 'EUR');"
-EOF
-
-  piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$domain_name.wikicompare.info' LIMIT 1")
-  ssh $piwik_server << EOF
-    mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_access (login, idsite, access) VALUES ('anonymous', $piwik_id, 'view');"
-EOF
-  else
-  piwik_id=$piwik_demo_id
+    $openerp_path/saas/saas/apps/$application_type/deploy.sh create_poweruser $application $domain $instance $saas $system_user $server $user_name $user_password $user_email $instances_path
   fi
 
-  $openerp_path/saas/saas/apps/$application_type/deploy.sh post_piwik $application $domain $instance $saas $system_user $server $piwik_id $piwik_server $instances_path
+
+  if [[ $test == True ]]
+  then
+    $openerp_path/saas/saas/apps/$application_type/deploy.sh test_specific $application $domain $instance $saas $system_user $server $user_name $instances_path $admin_name $admin_password $port
+  fi
+
+
+    # ssh $system_user@$IP << EOF
+    # chown -R $system_user:$system_user $instances_path/$instance
+  # EOF
+
+  $openerp_path/saas/saas/apps/$application_type/deploy.sh post_deploy $application $domain $instance $saas $system_user $server $instances_path
+
+
+  if [[ $skip_analytics != True ]]
+  then
+
+    if [[ $saas != 'demo' ]]
+    then
+    ssh $piwik_server << EOF
+      mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_site (name, main_url, ts_created, timezone, currency) VALUES ('$domain_name.wikicompare.info', 'http://$domain_name.wikicompare.info', NOW(), 'Europe/Paris', 'EUR');"
+EOF
+
+    piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$domain_name.wikicompare.info' LIMIT 1")
+    ssh $piwik_server << EOF
+      mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_access (login, idsite, access) VALUES ('anonymous', $piwik_id, 'view');"
+EOF
+    else
+    piwik_id=$piwik_demo_id
+    fi
+
+    $openerp_path/saas/saas/apps/$application_type/deploy.sh post_piwik $application $domain $instance $saas $system_user $server $piwik_id $piwik_server $instances_path
+
+  fi
 
 fi
 

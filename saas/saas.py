@@ -148,6 +148,7 @@ class saas_application(osv.osv):
                 'server_id': app.preprod_server_id.id,
                 'database_server_id': app.preprod_bdd_server_id.id,
                 'port': getattr(app, name + '_port'),
+                'prod': False,
                 'skip_analytics': True
               }, context=context)
             self.write(cr, uid, [app.id], {name + '_instance_id': instance_id}, context=context)
@@ -159,7 +160,7 @@ class saas_application(osv.osv):
                 'poweruser_name': app.type_id.admin_name,
                 'poweruser_passwd': app.poweruser_password,
                 'poweruser_email': app.poweruser_email,
-                'build': True,
+                'build': 'build',
                 'test': app.type_id.init_test,
               }, context=context)
 
@@ -196,6 +197,7 @@ class saas_application(osv.osv):
                   'server_id': app.preprod_server_id.id,
                   'database_server_id': app.preprod_bdd_server_id.id,
                   'port': getattr(app, name + '_port'),
+                  'prod': False,
                   'skip_analytics': True
                 }, context=context)
               self.write(cr, uid, [app.id], {name + '_mysql_instance_id': instance_id}, context=context)
@@ -207,7 +209,7 @@ class saas_application(osv.osv):
                   'poweruser_name': app.type_id.admin_name,
                   'poweruser_passwd': app.poweruser_password,
                   'poweruser_email': app.poweruser_email,
-                  'build': True,
+                  'build': 'build',
                   'test': app.type_id.init_test,
                 }, context=context)
 
@@ -251,6 +253,7 @@ class saas_application(osv.osv):
                 config.openerp_path,
                 app.instances_path,
                 app.archive_path,
+                app.build_directory
             ]
             _logger.info('command %s', " ".join(args))
             proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -258,7 +261,7 @@ class saas_application(osv.osv):
             for line in proc.stdout:
                _logger.info(line)
                outfile.write(line)
-            with open(app.archive_path  + '/' + app.code + '-' + name + '/VERSION.txt') as f:
+            with open(app.archive_path  + '/' + app.code + '/' + app.code + '-' + name + '/VERSION.txt') as f:
                 version = f.read()
                 _logger.info('version : %s', version)
                 self.write(cr, uid, [app.id], {'version_' + name: version}, context=context)
@@ -369,6 +372,7 @@ class saas_application(osv.osv):
     def populate(self, cr, uid, ids, context={}):
     
         instance_obj = self.pool.get('saas.instance')
+        version_obj = self.pool.get('saas.version')
         
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
 
@@ -376,8 +380,15 @@ class saas_application(osv.osv):
         for app in self.browse(cr, uid, ids, context=context):
             preprod_archive = app.code + '-preprod'
             prod_archive = app.code + '-prod'
+
+            with open(app.archive_path  + '/' + app.code + '/' + preprod_archive + '/VERSION.txt') as f:
+                version = f.read()
+                version = version.replace('\n','')
+                _logger.info('version : %s', version)
+
             args = [
                 config.openerp_path + '/saas/saas/shell/populate.sh',
+                'populate',
                 app.code,
                 preprod_archive,
                 prod_archive,
@@ -391,9 +402,13 @@ class saas_application(osv.osv):
                outfile.write(line)
                
                
-            with open(app.archive_path  + '/' + prod_archive + '/VERSION.txt') as f:
+            with open(app.archive_path  + '/' + app.code + '/' + prod_archive + '/VERSION.txt') as f:
                 version = f.read()
+                version = version.replace('\n','')
                 _logger.info('version : %s', version)
+                version_ids = version_obj.search(cr, uid, [('name','=',version),('application_id','=',app.id)], context=context)
+                if not version_ids:
+                    version_obj.create(cr, uid, {'name': version, 'application_id': app.id}, context=context)
                 self.write(cr, uid, [app.id], {'version_prod': version}, context=context)
         return True
             
@@ -413,7 +428,7 @@ class saas_application(osv.osv):
               'poweruser_name': app.poweruser_name,
               'poweruser_passwd': app.poweruser_password,
               'poweruser_email': app.poweruser_email,
-              'build': True,
+              'build': 'build',
               'test': True,
             }, context=context)
             
@@ -440,11 +455,13 @@ class saas_instance(osv.osv):
         'database_server_id': fields.many2one('saas.server', 'Database server', required=True),
         'database_password': fields.char('Database password', size=64, required=True),
         'port': fields.integer('Port'),
-        'version': fields.char('Version', size=64),
+        'prod': fields.boolean('Prod?', readonly=True),
+        'version_many2one': fields.many2one('saas.version', 'Version'),
         'skip_analytics': fields.boolean('Skip Analytics?'),
     }
 
     _defaults = {
+      'prod': True,
       'database_password': '#g00gle!'
     }
 
@@ -457,9 +474,10 @@ class saas_instance(osv.osv):
 
             _logger.info('Deploying instance %s', instance.name)
 
-            archive = instance.application_id.code + '-prod'
             if 'build_name' in context:
                 archive = instance.application_id.code + '-' + context['build_name']
+            else:
+                archive = 'versions/' + instance.version_many2one.name
 
             args = [
                 config.openerp_path + '/saas/saas/shell/deploy.sh',
@@ -488,11 +506,17 @@ class saas_instance(osv.osv):
                 _logger.info(line)
                 outfile.write(line)
 
-            with open(instance.application_id.archive_path  + '/' + archive + '/VERSION.txt') as f:
-                self.write(cr, uid, [instance.id], {'version': f.read()}, context=context)
-
-
+            _logger.info('If prod, dont forget to update the workers in conf')
         return res
+
+    def write(self, cr, uid, ids, vals, context={}):
+
+        for instance in self.browse(cr, uid, ids, context=context):
+
+            if instance.prod and 'version_many2one' in vals and vals['version_many2one'] != instance.version_many2one:
+                self.upgrade(cr, uid, [instance.id], vals['version_many2one'], context=context)
+
+        return super(saas_instance, self).write(cr, uid, ids, vals, context=context)
 
     def unlink(self, cr, uid, ids, context=None):
 
@@ -514,12 +538,15 @@ class saas_instance(osv.osv):
         return super(saas_instance, self).unlink(cr, uid, ids, context=context)
         
         
-    def upgrade(self, cr, uid, ids, context=None):
+    def upgrade(self, cr, uid, ids, version_id, context=None):
     
+        saas_obj = self.pool.get('saas.saas')
 
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
         
         self.save(cr, uid, ids, type='preupgrade', context=context)
+
+        version = self.pool.get('saas.version').browse(cr, uid, version_id, context=context).name
 
         for instance in self.browse(cr, uid, ids, context=context):
 
@@ -536,7 +563,7 @@ class saas_instance(osv.osv):
                 instance.name,
                 instance.application_id.type_id.system_user,
                 instance.server_id.name,
-                archive,
+                version,
                 instance.application_id.instances_path,
                 config.openerp_path,
                 instance.application_id.archive_path,
@@ -550,8 +577,31 @@ class saas_instance(osv.osv):
                 _logger.info(line)
                 outfile.write(line)
 
-            with open(instance.application_id.archive_path  + '/' + archive + '/VERSION.txt') as f:
-                self.write(cr, uid, [instance.id], {'version': f.read()}, context=context)
+            saas_ids = saas_obj.search(cr, uid, [('instance_id', '=', instance.id)], context=context)
+            for saas in saas_obj.browse(cr, uid, saas_ids, context=context):
+                args = [
+                    config.openerp_path + '/saas/saas/apps/' + instance.application_id.type_id.name + '/upgrade.sh',
+                    'upgrade_saas',
+                    instance.application_id.code,
+                    saas.name,
+                    saas.domain_id.name,
+                    instance.name,
+                    instance.application_id.type_id.system_user,
+                    instance.server_id.name,
+                    str(instance.port),
+                    instance.application_id.type_id.admin_name,
+                    saas.admin_passwd,
+                    instance.application_id.instances_path,
+                ]
+
+                _logger.info('command %s', " ".join(args))
+                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+                outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
+                for line in proc.stdout:
+                    _logger.info(line)
+                    outfile.write(line)
+
         return True
 
     def save(self, cr, uid, ids, saas_id=False, type='manual', context=None):
@@ -569,6 +619,7 @@ class saas_instance(osv.osv):
             saas_names = ''
             if saas_id:
                 type_save = 'saas'
+                saas_ids = [saas_id]
                 for saas in saas_obj.browse(cr, uid, [saas_id], context=context):
                     saas_names = saas.name + '.' + saas.domain_id.name
             else:
@@ -583,7 +634,7 @@ class saas_instance(osv.osv):
             filename = time.strftime("%Y-%m-%d")
             if type != 'auto':
                 filename += time.strftime("-%H-%M")
-            filename += '-' + instance.server_id.name.replace(".","-") + '-' + instance.name + '-' + type + '.tar.gz'
+            filename += '-' + instance.server_id.name.replace(".","-") + '-' + instance.name + '-' + type
 
             args = [
                 config.openerp_path + '/saas/saas/shell/save.sh',
@@ -610,7 +661,8 @@ class saas_instance(osv.osv):
                _logger.info(line)
                outfile.write(line)
 
-            save_obj.create(cr, uid, {'name': filename, 'type': type_save, 'instance_id': instance.id, 'saas_id': saas_id}, context=context)
+            version = instance.prod and instance.version_many2one.name or False
+            save_obj.create(cr, uid, {'name': filename, 'instance_id': instance.id, 'saas_ids': [(6, 0, saas_ids)], 'version': version}, context=context)
 
     def button_save(self, cr, uid, ids, context={}):
         self.save(cr, uid, ids, context=context)
@@ -629,7 +681,10 @@ class saas_saas(osv.osv):
         'poweruser_name': fields.char('PowerUser name', size=64),
         'poweruser_passwd': fields.char('PowerUser password', size=64),
         'poweruser_email': fields.char('PowerUser email', size=64),
-        'build': fields.boolean('Build?'),
+        'build': fields.selection([
+                 ('none','No action'),
+                 ('build','Build'),
+                 ('restore','Restore')],'Build?'),
         'test': fields.boolean('Test?'),
         'state': fields.selection([
                 ('installing','Installing'),
@@ -639,6 +694,7 @@ class saas_saas(osv.osv):
     }
 
     _defaults = {
+      'build': 'restore',
       'admin_passwd': '#g00gle!',
       'poweruser_passwd': '#g00gle!'
     }
@@ -678,7 +734,7 @@ class saas_saas(osv.osv):
                 saas.poweruser_name,
                 saas.poweruser_passwd,
                 saas.poweruser_email,
-                str(saas.build),
+                saas.build,
                 str(saas.test),
                 str(saas.instance_id.skip_analytics),
                 config.piwik_server,
@@ -753,8 +809,94 @@ class saas_saas(osv.osv):
     def button_save(self, cr, uid, ids, context={}):
         instance_obj = self.pool.get('saas.instance')
         for saas in self.browse(cr, uid, ids, context=context):
-            self.pool.get('saas.config.settings').cron_save(cr, uid, context=context)
-#            instance_obj.save(cr, uid, [saas.instance_id.id], saas_id=saas.id, context=context)
+            instance_obj.save(cr, uid, [saas.instance_id.id], saas_id=saas.id, context=context)
+        return True
+
+    def send_preprod(self, cr, uid, ids, context={}):
+
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        saas_obj = self.pool.get('saas.saas')
+
+        for saas in self.browse(cr, uid, ids, context=context):
+
+#            new_saas = 'preprod-' + saas.name
+            new_saas = 'preprod' + saas.name
+
+            saas_ids = saas_obj.search(cr, uid, [('name', '=', new_saas),('domain_id','=',saas.domain_id.id)], context=context)
+            saas_obj.unlink(cr, uid, saas_ids, context=context)
+
+            self.create(cr, uid, {
+                'name': new_saas,
+                'title': saas.title,
+                'domain_id': saas.domain_id.id,
+                'instance_id': saas.instance_id.application_id.preprod_instance_id.id,
+                'poweruser_name': saas.poweruser_name,
+                'poweruser_passwd': saas.poweruser_passwd,
+                'poweruser_email': saas.poweruser_email,
+                'build': 'none',
+                'test': saas.test,
+              }, context=context)
+
+            _logger.info('moving saas %s', saas.name)
+
+            args = [
+                config.openerp_path + '/saas/saas/shell/move.sh',
+                'move_saas',
+                saas.instance_id.application_id.type_id.name,
+                saas.instance_id.application_id.code,
+                saas.name,
+                saas.domain_id.name,
+                saas.instance_id.name,
+                saas.instance_id.server_id.name,
+                saas.instance_id.application_id.type_id.system_user,
+                saas.instance_id.database_server_id.name,
+                new_saas,
+                saas.domain_id.name,
+                saas.instance_id.application_id.preprod_instance_id.name,
+                saas.instance_id.application_id.preprod_instance_id.server_id.name,
+                saas.instance_id.application_id.type_id.system_user,
+                saas.instance_id.application_id.preprod_instance_id.database_server_id.name,
+                saas.instance_id.application_id.instances_path,
+                config.backup_directory,
+                config.openerp_path,
+
+            ]
+
+            _logger.info('command %s', " ".join(args))
+
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            outfile = open(config.log_path + '/send_preprod.log', "w")
+            for line in proc.stdout:
+               _logger.info(line)
+               outfile.write(line)
+
+            instance = saas.instance_id.application_id.preprod_instance_id
+            args = [
+                config.openerp_path + '/saas/saas/apps/' + instance.application_id.type_id.name + '/upgrade.sh',
+                'upgrade_saas',
+                instance.application_id.code,
+                new_saas,
+                saas.domain_id.name,
+                instance.name,
+                instance.application_id.type_id.system_user,
+                instance.server_id.name,
+                str(instance.port),
+                instance.application_id.type_id.admin_name,
+                saas.admin_passwd,
+                instance.application_id.instances_path,
+            ]
+
+            _logger.info('command %s', " ".join(args))
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
+            for line in proc.stdout:
+                _logger.info(line)
+                outfile.write(line)
+
+
+
         return True
 
 class saas_save(osv.osv):
@@ -762,15 +904,191 @@ class saas_save(osv.osv):
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),
-        'type': fields.selection([
-                ('instance','Instance'),
-                ('saas','SaaS')],'Type'),
-        'saas_id': fields.many2one('saas.saas', 'SaaS'),
+        'saas_ids': fields.many2many('saas.saas', 'saas_saas_save_rel', 'save_id', 'saas_id', 'SaaS', readonly=True),
         'instance_id': fields.many2one('saas.instance', 'Instance'),
+        'application_id': fields.related('instance_id','application_id', type='many2one', relation='saas.application', string='Application'),
         'create_date': fields.datetime('Create Date'),
+        'version': fields.char('Version', size=64),
+        'restore_instance_id': fields.many2one('saas.instance', 'Target instance for restore'),
+        'restore_saas_ids': fields.many2many('saas.saas', 'saas_saas_save_restore_rel', 'save_id', 'saas_id', 'SaaS to restore'),
+        'restore_prefix': fields.char('Restore prefix (optional)', size=64),
     }
 
     _order = 'create_date desc'
+
+
+    def unlink(self, cr, uid, ids, context=None):
+
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+
+        for save in self.browse(cr, uid, ids, context=context):
+
+            _logger.info('Removing save %s', save.name)
+
+            args = [
+                config.openerp_path + '/saas/saas/shell/save.sh',
+                'save_remove',
+                save.name,
+                config.backup_directory,
+                config.shinken_server,
+                config.ftpuser,
+                config.ftppass,
+                config.ftpserver
+            ]
+
+            _logger.info('command %s', " ".join(args))
+
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            outfile = open(config.log_path + '/save_remove.log', "w")
+            for line in proc.stdout:
+               _logger.info(line)
+               outfile.write(line)
+
+        return super(saas_save, self).unlink(cr, uid, ids, context=context)
+
+    def restore(self, cr, uid, ids, context={}):
+
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+
+        saas_obj = self.pool.get('saas.saas')
+        instance_obj = self.pool.get('saas.instance')
+
+        for save in self.browse(cr, uid, ids, context=context):
+            if not save.restore_instance_id:
+                raise osv.except_osv(_('Error!'),_("You need to specify a the target instance!"))
+
+            for saas in save.restore_saas_ids:
+
+                instance_obj.save(cr, uid, [saas.instance_id.id], saas_id=saas.id, type='prerestore', context=context)
+
+                from_saas_name = saas.name
+                to_saas_name = save.restore_prefix and save.restore_prefix + from_saas_name or from_saas_name
+                domain = saas.domain_id.name
+                instance = save.restore_instance_id
+
+                vals = {
+                  'name': to_saas_name,
+                  'title': saas.title,
+                  'domain_id': saas.domain_id.id,
+                  'instance_id': instance.id,
+                  'poweruser_name': saas.poweruser_name,
+                  'poweruser_passwd': saas.poweruser_passwd,
+                  'poweruser_email': saas.poweruser_email,
+                  'build': 'none',
+                  'test': saas.test,
+                }
+
+                save_ids = []
+                if not save.restore_prefix:
+                    save_ids = self.search(cr, uid, [('saas_ids','in',saas.id)], context=context)
+                    saas_obj.unlink(cr, uid, [saas.id], context=context)
+
+                saas_id = saas_obj.create(cr, uid, vals, context=context)
+
+                if save_ids:
+                    self.write(cr, uid, save_ids, {'saas_ids': [(4, saas_id)]}, context=context)
+                    self.write(cr, uid, [save.id], {'restore_saas_ids': [(4, saas_id)]}, context=context)
+
+                args = [
+                    config.openerp_path + '/saas/saas/shell/restore.sh',
+                    'restore_saas',
+                    instance.application_id.type_id.name,
+                    instance.application_id.code,
+                    from_saas_name,
+                    to_saas_name,
+                    domain,
+                    instance.name,
+                    instance.server_id.name,
+                    instance.application_id.type_id.system_user,
+                    instance.database_server_id.name,
+                    save.name, 
+                    instance.application_id.instances_path,
+                    config.backup_directory,
+                    config.shinken_server,
+                    config.openerp_path,
+                    config.ftpuser,
+                    config.ftppass,
+                    config.ftpserver
+                ]
+
+                _logger.info('command %s', " ".join(args))
+
+                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+                outfile = open(config.log_path + '/restore.log', "w")
+                for line in proc.stdout:
+                   _logger.info(line)
+                   outfile.write(line)
+
+                version = instance.prod and instance.version_many2one.name or False
+                if save.version != version:
+                    args = [
+                        config.openerp_path + '/saas/saas/apps/' + instance.application_id.type_id.name + '/upgrade.sh',
+                        'upgrade_saas',
+                        instance.application_id.code,
+                        to_saas.name,
+                        domain,
+                        instance.name,
+                        instance.application_id.type_id.system_user,
+                        instance.server_id.name,
+                        instance.port,
+                        instance.application_id.type_id.admin_name,
+                        to_saas.admin_password,
+                        instance.application_id.instances_path,
+                    ]
+
+                    _logger.info('command %s', " ".join(args))
+                    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+                    outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
+                    for line in proc.stdout:
+                        _logger.info(line)
+                        outfile.write(line)
+
+
+        return True
+
+class saas_version(osv.osv):
+    _name = 'saas.version'
+
+    _columns = {
+        'name': fields.char('Name', size=64, required=True),
+        'application_id': fields.many2one('saas.application', 'Application', required=True),
+    }
+
+    _sql_constraints = [
+        ('name_app_uniq', 'unique (name,application_id)', 'The name of the version must be unique per application !')
+    ]
+
+
+    def unlink(self, cr, uid, ids, context=None):
+
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+
+        for version in self.browse(cr, uid, ids, context=context):
+
+            _logger.info('Removing version %s', version.name)
+
+            args = [
+                config.openerp_path + '/saas/saas/shell/populate.sh',
+                'remove_version',
+                version.application_id.code,
+                version.name,
+                version.application_id.archive_path,
+            ]
+            _logger.info('command %s', " ".join(args))
+            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            outfile = open(config.log_path + '/populate.log', "w")
+            for line in proc.stdout:
+               _logger.info(line)
+               outfile.write(line)
+
+
+        return super(saas_version, self).unlink(cr, uid, ids, context=context)
+
+
+
 
 class saas_config_settings(osv.osv):
     _name = 'saas.config.settings'

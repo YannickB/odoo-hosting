@@ -33,15 +33,17 @@ EOF
       db_user=${instance//-/_}
 
       ssh $system_user@$server << EOF
-      pg_dump -U $db_user -h $database_server $saas_name_underscore > $backup_directory/backups/prepare_temp/${filename}/${saas_name_underscore}.sql
+      pg_dump -Fc -U $db_user -h $database_server $saas_name_underscore > $backup_directory/backups/prepare_temp/${filename}/${saas_name_underscore}.sql
       cp -R $instances_path/filestore/${saas_name_underscore} $backup_directory/backups/prepare_temp/${filename}/filestore
 EOF
 
     done
 
+    echo ${filename}.tar.gz
+
     ssh $system_user@$server << EOF
       cd $backup_directory/backups/prepare_temp/${filename}
-      tar -czf ../../prepare/$filename ./*
+      tar -czf ../../prepare/${filename}.tar.gz ./*
       cd ../../
       rm -rf $backup_directory/backups/prepare_temp/${filename}
 EOF

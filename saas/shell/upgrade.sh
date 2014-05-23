@@ -5,7 +5,7 @@ application=$2
 instance=$3
 system_user=$4
 server=$5
-archive=$6
+version=$6
 instances_path=$7
 openerp_path=$8
 archive_path=$9
@@ -25,7 +25,7 @@ ssh $system_user@$server << EOF
 rm -rf $instances_path/$instance/*
 EOF
 
-scp $archive_path/$archive/archive.tar.gz $system_user@$server:$instances_path/$instance/
+scp $archive_path/$application/versions/$version/archive.tar.gz $system_user@$server:$instances_path/$instance/
 
 ssh $system_user@$server << EOF
 cd $instances_path/$instance
@@ -35,3 +35,4 @@ EOF
 
 echo before post_upgrade
 $openerp_path/saas/saas/apps/$application_type/upgrade.sh post_upgrade $instance $system_user $server $instances_path
+

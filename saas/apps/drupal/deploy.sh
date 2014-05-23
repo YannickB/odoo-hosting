@@ -27,8 +27,9 @@ case $1 in
     port=$7
     system_user=$8
     instances_path=$9
-    test=${10}
-    admin_password=${11}
+    build=${10}
+    test=${11}
+    admin_password=${12}
 
     unique_name=$application-$saas-$domain
     unique_name=${unique_name//./-}

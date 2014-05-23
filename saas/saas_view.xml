@@ -74,10 +74,11 @@
                         <field name="database_server_id"/>
                         <field name="database_password"/>
                         <field name="port"/>
-                        <field name="version"/>
                         <field name="skip_analytics"/>
+                        <newline/>
+                        <field name="prod"/>
+                        <field name="version_many2one" attrs="{'invisible': [('prod','=',False)], 'required': [('prod','=',True)]}" widget="selection"/>
                         <button name="button_save" string="Manual Save" type="object"/>
-                        <button name="upgrade" string="Upgrade" type="object"/>
                     </group>
                 </form>
             </field>
@@ -91,7 +92,6 @@
                     <field name="application_id"/>
                     <field name="bdd"/>
                     <field name="server_id"/>
-                    <field name="version"/>
                 </tree>
             </field>
         </record>
@@ -147,10 +147,17 @@
                 <form string="Save" version="7.0">
                     <group col="4">
                       <field name="name"/>
-                      <field name="type"/>
-                      <field name='instance_id'/>
-                      <field name="saas_id"/>
+                      <field name="instance_id"/>
+                      <field name="saas_ids"/>
                       <field name="create_date"/>
+                      <field name="version"/>
+                      <field name="application_id" invisible="1"/>
+                      <newline/>
+                      <newline/>
+                      <field name="restore_instance_id" domain="[('application_id','=',application_id)]"/>
+                      <field name="restore_prefix"/>
+                      <field name="restore_saas_ids" domain="[('id','in',saas_ids[0][2])]"/>
+                      <button name="restore" string="Restore SaaS" type="object"/>
                     </group>
                 </form>
             </field>
@@ -161,10 +168,10 @@
             <field name="arch" type="xml">
                 <tree string="Save">
                     <field name="name"/>
-                    <field name="type"/>
                     <field name='instance_id'/>
-                    <field name="saas_id"/>
+                    <field name="saas_ids"/>
                     <field name="create_date"/>
+                    <field name="version"/>
                 </tree>
             </field>
         </record>
@@ -305,7 +312,37 @@
             </field>
         </record>
 
+        <record id="action_saas_version_form" model="ir.actions.act_window">
+            <field name="name">Versions</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">saas.version</field>
+            <field name="view_type">form</field>
+        </record>
 
+        <menuitem action="action_saas_version_form" id="menu_action_saas_version_form" parent="menu_saas_configuration"/>
+
+        <record id="view_saas_version_form" model="ir.ui.view">
+            <field name="name">saas.version.form</field>
+            <field name="model">saas.version</field>
+            <field name="arch" type="xml">
+                <form string="Version" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="application_id"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="view_saas_version_tree" model="ir.ui.view">
+            <field name="name">saas.version.tree</field>
+            <field name="model">saas.version</field>
+            <field name="arch" type="xml">
+                <tree string="Versions">
+                    <field name="name"/>
+                    <field name="application_id"/>
+                </tree>
+            </field>
+        </record>
 
         <record id="view_saas_configuration" model="ir.ui.view">
             <field name="name">saas settings</field>
@@ -351,7 +388,7 @@
           <field eval="0" name="doall"/>
           <field name="model">saas.config.settings</field>
           <field name="function">cron_save</field>
-          <field name="args">()</field>
+          <field name="args">([1])</field>
         </record> 
 
     </data>

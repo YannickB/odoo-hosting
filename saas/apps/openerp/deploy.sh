@@ -43,8 +43,9 @@ EOF
     port=$7
     system_user=$8
     instances_path=$9
-    test=${10}
-    admin_password=${11}
+    build=${10}
+    test=${11}
+    admin_password=${12}
 
     unique_name=$application-$saas-$domain
     unique_name=${unique_name//./-}
@@ -54,16 +55,24 @@ EOF
 
     echo $test
 
+    ssh $system_user@$server << EOF
+      mkdir $instances_path/filestore/$unique_name_underscore
+EOF
+
+    if [[ $build == 'build' ]]
+    then
+
 # -p $database_password 
 /usr/local/bin/erppeek --server http://$server:$port << EOF
 client.create_database('$database_password', '$unique_name_underscore', demo=$test, lang='fr_FR', user_password='$admin_password')
 EOF
 
-    ssh $system_user@$server << EOF
-      mkdir $instances_path/filestore/$unique_name_underscore
-EOF
-
     exit 1
+
+    fi
+
+    exit 0
+
     ;;
 
   build)
@@ -91,6 +100,8 @@ EOF
 client.install('account_accountant', 'account_chart_install', 'l10n_fr')
 client.execute('account.chart.template', 'install_chart', 'l10n_fr', 'l10n_fr_pcg_chart_template', 1, 1)
 client.install('community')
+extended_group_id = client.search('res.groups', [('name','=','Technical Features')])[0]
+model('res.groups').write([extended_group_id], {'users': [(4, 1)]})
 EOF
     exit
     ;;

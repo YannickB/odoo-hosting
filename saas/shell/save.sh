@@ -78,13 +78,13 @@ save_dump()
 
 $openerp_path/saas/saas/apps/$application_type/save.sh save_dump $application $saas_names $filename $server $database_server $instance $system_user $backup_directory $instances_path
 
-scp $system_user@$server:$backup_directory/backups/prepare/$filename $backup_directory/backups/$filename
+scp $system_user@$server:$backup_directory/backups/prepare/${filename}.tar.gz $backup_directory/backups/${filename}.tar.gz
 ssh $system_user@$server << EOF
-rm $backup_directory/backups/prepare/$filename
+rm $backup_directory/backups/prepare/${filename}.tar.gz
 EOF
 
 ncftp -u  $ftpuser -p $ftppass $ftpserver<< EOF
-    put $backup_directory/backups/$filename
+    put $backup_directory/backups/${filename}.tar.gz
 EOF
 
 }
@@ -152,7 +152,20 @@ find $backup_directory/backups/ -type f -mtime +4 | xargs -r rm
 # echo piwik saved
 # fi
 
+save_remove()
+{
 
+rm $backup_directory/backups/${filename}.tar.gz
+
+ncftp -u $ftpuser -p $ftppass $ftpserver<<EOF
+rm ${filename}.tar.gz
+EOF
+
+ssh $shinken_server << EOF
+rm -rf $backup_directory/control_backups/$filename
+EOF
+
+}
 
 case $1 in
   save_dump)
@@ -200,6 +213,17 @@ EOF
     exit
     ;;
 
+  save_remove)
+    filename=$2
+    backup_directory=$3
+    shinken_server=$4
+    ftpuser=$5
+    ftppass=$6
+    ftpserver=$7
+
+    save_remove
+    exit
+    ;;
 
   ?)
     exit

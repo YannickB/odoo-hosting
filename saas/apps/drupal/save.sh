@@ -27,7 +27,7 @@ case $1 in
 
     ssh $system_user@$server << EOF
       cd $instances_path/$instance/sites/$saas
-      drush archive-dump $saas_names --destination=$backup_directory/backups/prepare/$filename
+      drush archive-dump $saas_names --destination=$backup_directory/backups/prepare/${filename}.tar.gz
 EOF
 
     echo after drupal save_dump

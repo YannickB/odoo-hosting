@@ -13,13 +13,13 @@ case $1 in
     build_directory=$6
 
 echo $openerp_path/saas/saas/apps/drupal/wikicompare_${name}.make
-    drush make $openerp_path/saas/saas/apps/drupal/wikicompare_${name}.make $archive_path/${app}-${name}/archive
+    drush make $openerp_path/saas/saas/apps/drupal/wikicompare_${name}.make $archive_path/$app/${app}-${name}/archive
 
-    patch -p0 -d $archive_path/${app}-${name}/archive/sites/all/modules/revisioning/ < $openerp_path/saas/saas/apps/drupal/patch/revisioning_postgres.patch
+    patch -p0 -d $archive_path/$app/${app}-${name}/archive/sites/all/modules/revisioning/ < $openerp_path/saas/saas/apps/drupal/patch/revisioning_postgres.patch
 
     if [[ $name == 'dev' ]]
     then
-    patch -p0 -d $archive_path/${app}-${name}/archive/sites/all/themes/wikicompare_theme/ < $openerp_path/saas/saas/apps/drupal/patch/dev_zen_rebuild_registry.patch
+    patch -p0 -d $archive_path/$app/${app}-${name}/archive/sites/all/themes/wikicompare_theme/ < $openerp_path/saas/saas/apps/drupal/patch/dev_zen_rebuild_registry.patch
     fi
 
     exit
@@ -36,8 +36,8 @@ echo $openerp_path/saas/saas/apps/drupal/wikicompare_${name}.make
     
     name_truncated=${name//-my/}
 
-    mkdir $archive_path/${app}-${name_truncated}/$db_type/sites
-    scp -r root@localhost:$instances_path/$instance/sites/${name}.$domain/* $archive_path/${app}-${name_truncated}/$db_type/sites/
+    mkdir $archive_path/$app/${app}-${name_truncated}/$db_type/sites
+    scp -r root@localhost:$instances_path/$instance/sites/${name}.$domain/* $archive_path/$app/${app}-${name_truncated}/$db_type/sites/
     exit
     ;;
 
@@ -48,11 +48,11 @@ echo $openerp_path/saas/saas/apps/drupal/wikicompare_${name}.make
     instances_path=$5
     archive_path=$6
 
-    cd $instances_path/${app}-${name}/sites/${name}.${domain}
+    cd $instances_path/$app/${app}-${name}/sites/${name}.${domain}
     version=$(drush status | grep 'Drupal version')
     version=${version//[^0-9.]/}
     version=$version.`date +%Y%m%d`
-    echo $version > $archive_path/${app}-${name}/VERSION.txt
+    echo $version > $archive_path/$app/${app}-${name}/VERSION.txt
     exit
     ;;
 

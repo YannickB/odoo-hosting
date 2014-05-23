@@ -81,19 +81,19 @@ done
 
 build_archive()
 {
-echo $archive_path/${app}-${name}
-rm -rf $archive_path/${app}-${name}
-mkdir $archive_path/${app}-${name}
-cd $archive_path/${app}-${name}
+echo $archive_path/$app/${app}-${name}
+rm -rf $archive_path/$app/${app}-${name}
+mkdir $archive_path/$app/${app}-${name}
+cd $archive_path/$app/${app}-${name}
 
 $openerp_path/saas/saas/apps/$application_type/build.sh build_archive $app $name $archive_path $openerp_path $build_directory
 
-cd $archive_path/${app}-${name}/archive
+cd $archive_path/$app/${app}-${name}/archive
 tar -czf ../archive.tar.gz ./* 
 cd ../
 echo 'temp' > VERSION.txt
 
-chmod -R 777 $archive_path/${app}-${name}/*
+chmod -R 777 $archive_path/$app/${app}-${name}/*
 
 
 }
@@ -101,12 +101,12 @@ chmod -R 777 $archive_path/${app}-${name}/*
 build_copy()
 {
 
-rm -rf $archive_path/${app}-${name}
-mkdir $archive_path/${app}-${name}
-cp -R $archive_path/${app}-${name_source}/* $archive_path/${app}-${name}
+rm -rf $archive_path/$app/${app}-${name}
+mkdir $archive_path/$app/${app}-${name}
+cp -R $archive_path/$app/${app}-${name_source}/* $archive_path/$app/${app}-${name}
 
 ssh root@localhost << EOF
-chmod -R 777 $archive_path/${app}-${name}/
+chmod -R 777 $archive_path/$app/${app}-${name}/
 EOF
 }
 
@@ -122,9 +122,9 @@ db_user=${instance//-/_}
 name_truncated=${name//-my/}
 
 
-mkdir $archive_path/${application}-${name_truncated}/$db_type
+mkdir $archive_path/$application/${application}-${name_truncated}/$db_type
 ssh root@localhost << EOF
-chmod -R 777 $archive_path/${application}-${name_truncated}/
+chmod -R 777 $archive_path/$application/${application}-${name_truncated}/
 EOF
 
 $openerp_path/saas/saas/apps/$application_type/build.sh build_dump $application $name $instance $domain $db_type $archive_path $instances_path
@@ -133,20 +133,20 @@ echo Before dump
 if [[ $db_type != 'mysql' ]]
 then
 ssh $system_user@$server << EOF
-pg_dump -U $db_user -h $database_server -Fc --no-owner $unique_name_underscore > $archive_path/${application}-${name}/pgsql/build.sql
+pg_dump -U $db_user -h $database_server -Fc --no-owner $unique_name_underscore > $archive_path/$application/${application}-${name}/pgsql/build.sql
 EOF
 else
-mysqldump -u root -p$mysql_password $unique_name_underscore > $archive_path/${application}-${name_truncated}/mysql/build.sql
+mysqldump -u root -p$mysql_password $unique_name_underscore > $archive_path/$application/${application}-${name_truncated}/mysql/build.sql
 fi
 echo end dump
 
 ssh root@localhost << EOF
-chmod -R 777 $archive_path/${application}-${name_truncated}/
+chmod -R 777 $archive_path/$application/${application}-${name_truncated}/
 EOF
-cp -R $archive_path/${application}-${name_truncated}/$db_type $archive_path/${application}-${name_truncated}/archive/
+cp -R $archive_path/$application/${application}-${name_truncated}/$db_type $archive_path/$application/${application}-${name_truncated}/archive/
 ssh $system_user@$server << EOF
 mkdir $instances_path/$instance/$db_type
-cp -R $archive_path/${application}-${name_truncated}/$db_type/* $instances_path/$instance/$db_type/
+cp -R $archive_path/$application/${application}-${name_truncated}/$db_type/* $instances_path/$instance/$db_type/
 EOF
 
 }
@@ -156,7 +156,7 @@ EOF
 get_version()
 {
 
-$openerp_path/saas/saas/apps/$application_type/build.sh get_version $application $name $domain $instances_path $archive_path
+$openerp_path/saas/saas/apps/$application_type/build.sh get_version $application $name $domain $instances_path $archive_path $build_directory
 
 }
 
@@ -164,17 +164,17 @@ $openerp_path/saas/saas/apps/$application_type/build.sh get_version $application
 build_after()
 {
 
-cp $archive_path/${application}-${name}/VERSION.txt $archive_path/${application}-${name}/archive/
+cp $archive_path/$application/${application}-${name}/VERSION.txt $archive_path/$application/${application}-${name}/archive/
 
-cd $archive_path/${application}-${name}/
+cd $archive_path/$application/${application}-${name}/
 rm archive.tar.gz
 cd archive/
 tar -czf ../archive.tar.gz ./* 
 cd ../
 rm -rf archive
 ssh root@localhost << EOF
-  chown -R www-data $archive_path/${application}-${name}/*
-  chmod -R 777 $archive_path/${application}-${name}/*
+  chown -R www-data $archive_path/$application/${application}-${name}/*
+  chmod -R 777 $archive_path/$application/${application}-${name}/*
 EOF
 
 
@@ -237,6 +237,7 @@ case $1 in
     openerp_path=$6
     instances_path=$7
     archive_path=$8
+    build_directory=$9
 
     get_version
     exit

@@ -20,11 +20,14 @@ case $1 in
 
     for dir in $build_directory/*
     do
-        bzr pull -d $dir
+        if [[ -d $dir ]]
+        then
+            bzr pull -d $dir
+        fi
     done
 
-    mkdir $archive_path/${app}-${name}/archive
-    cp -R $build_directory/* $archive_path/${app}-${name}/archive
+    mkdir $archive_path/$app/${app}-${name}/archive
+    cp -R $build_directory/* $archive_path/$app/${app}-${name}/archive
 
     exit
     ;;
@@ -47,9 +50,12 @@ case $1 in
     domain=$4
     instances_path=$5
     archive_path=$6
+    build_directory=$7
 
-    version='1'
-    echo $version > $archive_path/${app}-${name}/VERSION.txt
+    version=$(cat $build_directory/VERSION.txt)
+    version=${version//[^0-9.]/}
+    version=$version.`date +%Y%m%d`
+    echo $version > $archive_path/$app/${app}-${name}/VERSION.txt
     exit
     ;;
 
