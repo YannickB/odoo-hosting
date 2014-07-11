@@ -13,7 +13,7 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC='OpenERP INSTANCE'
 NAME=INSTANCE
-DAEMON=/opt/openerp/INSTANCE/server/openerp-server
+DAEMON=/opt/openerp/INSTANCE/odoo/odoo.py
  
 # Specify the user name (Default: terp).
 USER="SYSTEM_USER"
@@ -25,7 +25,7 @@ CONFIGFILE="/etc/openerp/INSTANCE.config"
 PIDFILE=/var/run/$NAME.pid
  
 # Additional options that are passed to the Daemon
-DAEMON_OPTS="--db-filter=^APPLICATION_%h$ -c $CONFIGFILE"
+DAEMON_OPTS="-c $CONFIGFILE"
  
 # Exit if the package is not installed
 [ -x "$DAEMON" ] || exit 0

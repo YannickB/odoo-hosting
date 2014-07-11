@@ -30,6 +30,7 @@ case $1 in
     sed -i 's/APPLICATION/$application/g' /etc/init.d/${instance}
     /etc/init.d/$instance start
 EOF
+    sleep 5
     exit
     ;;
 

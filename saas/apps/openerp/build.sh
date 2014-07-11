@@ -22,7 +22,9 @@ case $1 in
     do
         if [[ -d $dir ]]
         then
-            bzr pull -d $dir
+            cd $dir
+            git fetch
+            git checkout origin
         fi
     done
 
