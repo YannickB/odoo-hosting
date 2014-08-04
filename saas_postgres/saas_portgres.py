@@ -19,21 +19,16 @@
 #
 ##############################################################################
 
-{'name': 'SaaS',
- 'version': '1.0',
- 'category': 'Community',
- 'depends': ['base',
-             ],
- 'author': 'Yannick Buron',
- 'license': 'AGPL-3',
- 'website': 'https://github.com/YannickB',
- 'description': """
-SaaS
-=================
-""",
- 'demo': [],
- 'data': ['saas_view.xml'
-         ],
- 'installable': True,
- 'application': True,
-}
+
+from openerp import netsvc
+from openerp import pooler
+from openerp.osv import fields, osv, orm
+from openerp.tools.translate import _
+
+import time
+from datetime import datetime, timedelta
+import subprocess
+
+import logging
+_logger = logging.getLogger(__name__)
+

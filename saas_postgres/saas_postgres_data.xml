@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_postgres" model="saas.application.type">
+            <field name="name">postgres</field>
+            <field name="system_user">postgres</field>
+            <field name="admin_name">postgres</field>
+            <field name="admin_email">postgres@localhost</field>
+            <field name="standard_port">5432</field>
+        </record>
+
+        <record id="app_postgres" model="saas.application">
+            <field name="name">postgres</field>
+            <field name="code">postgres</field>
+            <field name="type_id" ref="apptype_postgres"/>
+        </record>
+
+        <record id="image_postgres" model="saas.image">
+            <field name="name">img_postgres</field>
+            <field name="application_id" ref="app_postgres"/>
+            <field name="current_version">9.1</field>
+        </record>
+        <record id="image_postgres_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_postgres"/>
+            <field name="name">/etc/postgresql</field>
+        </record>
+        <record id="image_postgres_volume2" model="saas.image.volume">
+            <field name="image_id" ref="image_postgres"/>
+            <field name="name">/var/log/postgresql</field>
+        </record>
+        <record id="image_postgres_volume3" model="saas.image.volume">
+            <field name="image_id" ref="image_postgres"/>
+            <field name="name">/var/lib/postgresql</field>
+        </record>
+        <record id="image_postgres_port1" model="saas.image.port">
+            <field name="image_id" ref="image_postgres"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+        </record>
+        <record id="image_postgres_port2" model="saas.image.port">
+            <field name="image_id" ref="image_postgres"/>
+            <field name="name">postgres</field>
+            <field name="localport">5432</field>
+        </record>
+        <!-- I place the dockerfile after the volume/port to make sure all data are correctly loaded when the version is computed -->
+        <record id="image_postgres" model="saas.image">
+            <field name="dockerfile"><![CDATA[FROM debian
+MAINTAINER yannick.buron@gmail.com
+
+# Update the Ubuntu and PostgreSQL repository indexes
+RUN apt-get update
+
+RUN apt-get -y -qq install postgresql openssh-server
+
+# Note: The official Debian and Ubuntu images automatically ``apt-get clean``
+# after each ``apt-get``
+
+# Run the rest of the commands as the ``postgres`` user created by the ``postgres-9.3`` package when it was ``apt-get installed``
+USER postgres
+
+# Create a PostgreSQL role named ``docker`` with ``docker`` as the password and
+# then create a database `docker` owned by the ``docker`` role.
+# Note: here we use ``&&\`` to run commands one after the other - the ``\``
+#       allows the RUN command to span multiple lines.
+#RUN    /etc/init.d/postgresql start &&\
+#    psql --command "CREATE USER docker WITH SUPERUSER PASSWORD 'docker';" &&\
+#    createdb -O docker docker
+
+# Adjust PostgreSQL configuration so that remote connections to the
+# database are possible. 
+RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/9.1/main/pg_hba.conf
+
+# And add ``listen_addresses`` to ``/etc/postgresql/9.1/main/postgresql.conf``
+RUN echo "listen_addresses='*'" >> /etc/postgresql/9.1/main/postgresql.conf
+
+USER root
+RUN echo "#!/bin/bash" >> /opt/start.sh
+RUN echo "/etc/init.d/postgresql restart" >> /opt/start.sh
+RUN echo "/etc/init.d/ssh restart" >> /opt/start.sh
+RUN echo "tail -f /etc/postgresql/9.1/main/postgresql.conf" >> /opt/start.sh
+RUN chmod +x /opt/start.sh
+]]></field>
+        </record>
+
+    </data>
+</openerp>

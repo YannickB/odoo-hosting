@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-{'name': 'SaaS',
+{'name': 'SaaS Odoo',
  'version': '1.0',
  'category': 'Community',
  'depends': ['base',
@@ -28,12 +28,12 @@
  'license': 'AGPL-3',
  'website': 'https://github.com/YannickB',
  'description': """
-SaaS
+SaaS Odoo
 =================
 """,
  'demo': [],
- 'data': ['saas_view.xml'
-         ],
+ 'data': ['saas_odoo_data.xml'
+          ],
  'installable': True,
  'application': True,
 }

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_odoo" model="saas.application.type">
+            <field name="name">odoo</field>
+            <field name="system_user">odoo</field>
+            <field name="admin_name">yodadmin</field>
+            <field name="admin_email">odoo@localhost</field>
+            <field name="standard_port">8069</field>
+        </record>
+
+        <record id="app_odoo_ocm" model="saas.application">
+            <field name="name">Odoo Community Management</field>
+            <field name="code">ocm</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="current_version">8.0</field>
+            <field name="buildfile"><![CDATA[
+[buildout]
+parts = odoo
+extensions = gp.vcsdevelop
+vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/1.8#egg=aro-1.8
+vcs-update = True
+find-links = http://download.gna.org/pychart/
+
+[versions]
+# in some cases that's needed
+anybox.recipe.openerp =
+
+[odoo]
+recipe = anybox.recipe.openerp:server
+version = git http://github.com/odoo/odoo.git odoo master
+
+[versions]
+reportlab = 2.7
+]]></field>
+        </record>
+
+        <record id="image_odoo" model="saas.image">
+            <field name="name">img_odoo</field>
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="current_version">8.0</field>
+        </record>
+        <record id="image_odoo_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">/etc/odoo</field>
+        </record>
+        <record id="image_odoo_volume2" model="saas.image.volume">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">/opt/filestore</field>
+        </record>
+        <record id="image_odoo_volume3" model="saas.image.volume">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">/opt/extra-addons</field>
+        </record>
+        <record id="image_odoo_port1" model="saas.image.port">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+        </record>
+        <record id="image_odoo_port2" model="saas.image.port">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">odoo1</field>
+            <field name="localport">8069</field>
+        </record>
+        <record id="image_odoo_port3" model="saas.image.port">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">odoo2</field>
+            <field name="localport">7069</field>
+        </record>
+        <record id="image_odoo_port4" model="saas.image.port">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">odoo3</field>
+            <field name="localport">6069</field>
+        </record>
+        <record id="image_odoo_port5" model="saas.image.port">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">odoo4</field>
+            <field name="localport">5069</field>
+        </record>
+        <record id="image_odoo_port6" model="saas.image.port">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">odoo5</field>
+            <field name="localport">4069</field>
+        </record>
+        <!-- I place the dockerfile after the volume/port to make sure all data are correctly loaded when the version is computed -->
+        <record id="image_odoo" model="saas.image">
+            <field name="dockerfile"><![CDATA[FROM debian
+MAINTAINER yannick.buron@gmail.com
+
+# Update the Ubuntu and PostgreSQL repository indexes
+RUN apt-get update
+
+RUN apt-get -y -qq install openssh-server python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi
+
+# Note: The official Debian and Ubuntu images automatically ``apt-get clean``
+# after each ``apt-get``
+
+RUN useradd -m -s /bin/bash openerp
+RUN mkdir /home/openerp/.ssh
+RUN ln -s /root/.ssh/authorized_keys /home/openerp/.ssh/authorized_keys
+
+
+
+USER root
+RUN echo "#!/bin/bash" >> /opt/restart_odoo.sh
+RUN echo "#!/bin/bash" >> /opt/start.sh
+RUN echo "/etc/init.d/ssh restart" >> /opt/start.sh
+RUN echo "/opt/restart_odoo.sh" >> /opt/start.sh
+RUN echo "tail -f /home/openerp/.ssh/authorized_keys" >> /opt/start.sh
+RUN chmod +x /opt/restart_odoo.sh
+RUN chmod +x /opt/start.sh
+]]></field>
+        </record>
+
+    </data>
+</openerp>
