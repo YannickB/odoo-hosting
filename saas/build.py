@@ -66,7 +66,6 @@ class saas_image_version(osv.osv):
             ports += port['localport'] + ' '
         if ports:
             dockerfile += '\nEXPOSE ' + ports
-        dockerfile += '\nCMD ["/opt/start.sh"]'
 
         execute.execute_write_file('/tmp/saas-conductor/Dockerfile', dockerfile, context)
         execute.execute_local(['sudo','docker', 'build', '-t', vals['image_version_fullname'],'/tmp/saas-conductor'], context)
@@ -99,13 +98,14 @@ class saas_application_version(osv.osv):
         if execute.local_dir_exist(vals['app_version_full_archivepath']):
             execute.execute_local(['rm', '-rf', vals['app_version_full_archivepath']], context)
         execute.execute_local(['mkdir', vals['app_version_full_archivepath']], context)
+        execute.execute_local(['mkdir', '-p', vals['app_version_full_archivepath'] + '/extra'], context)
         self.build_application(cr, uid, vals, context)
         execute.execute_write_file(vals['app_version_full_archivepath'] + '/VERSION.txt', vals['app_version_name'], context)
         execute.execute_local(['pwd'], context, path=vals['app_version_full_archivepath'])
-        execute.execute_local(['tar', '-cvzf', '../' + vals['app_version_name'] + '.tar.gz', './*'], context, path=vals['app_version_full_archivepath'])
+        execute.execute_local(['tar', 'czf', vals['app_version_full_archivepath_targz'], '-C', vals['app_full_archivepath'] + '/' + vals['app_version_name'], '.'], context)
 #chmod -R 777 $archive_path/$app/${app}-${name}/*
 
     def purge(self, cr, uid, id, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         execute.execute_local(['sudo','rm', '-rf', vals['app_version_full_archivepath']], context)
-        execute.execute_local(['sudo','rm', vals['app_version_full_archivepath'] + '.tar.gz'], context)
+        execute.execute_local(['sudo','rm', vals['app_version_full_archivepath_targz']], context)

@@ -103,7 +103,7 @@ class saas_image(osv.osv):
 
     _columns = {
         'name': fields.char('Image name', size=64, required=True),
-        'application_id': fields.many2one('saas.application', 'Application', required=True),
+        'application_id': fields.many2one('saas.application', 'Application'),
         'current_version': fields.char('Current version', size=64, required=True),
         'dockerfile': fields.text('DockerFile'),
         'volume_ids': fields.one2many('saas.image.volume', 'image_id', 'Volumes'),
@@ -157,6 +157,8 @@ class saas_image_volume(osv.osv):
     _columns = {
         'image_id': fields.many2one('saas.image', 'Image', ondelete="cascade", required=True),
         'name': fields.char('Path', size=128, required=True),
+        'hostpath': fields.char('Host path', size=128),
+        'readonly': fields.boolean('Readonly?'),
     }
 
 
@@ -167,6 +169,7 @@ class saas_image_port(osv.osv):
         'image_id': fields.many2one('saas.image', 'Image', ondelete="cascade", required=True),
         'name': fields.char('Name', size=64, required=True),
         'localport': fields.char('Local port', size=12, required=True),
+        'expose': fields.boolean('Expose?'),
     }
 
 class saas_image_version(osv.osv):
@@ -233,6 +236,9 @@ class saas_application_type(osv.osv):
         'mysql': fields.boolean('Can have mysql?'),
         'init_test': fields.boolean('Demo mode must be set at database creation?'),
         'standard_port': fields.char('Standard port', size=12),
+        'localpath': fields.char('Localpath', size=128),
+        'option_ids': fields.one2many('saas.application.type.option', 'apptype_id', 'Options'),
+        'application_ids': fields.one2many('saas.application', 'type_id', 'Applications'),
     }
 
     def get_vals(self, cr, uid, id, context=None):
@@ -244,16 +250,38 @@ class saas_application_type(osv.osv):
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
         vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
 
+        options = {
+            'application': {},
+            'container': {},
+            'service': {},
+            'base': {}
+        }
+        for option in apptype.option_ids:
+            options[option.type][option.name] = {'id': option.id, 'name': option.name, 'type': option.type, 'default': option.default}
+
         vals.update({
             'apptype_name': apptype.name,
             'apptype_system_user': apptype.system_user,
             'apptype_admin_name': apptype.admin_name,
             'apptype_admin_email': apptype.admin_email,
             'apptype_mysql': apptype.mysql,
-            'apptype_init_test': apptype.init_test
+            'apptype_init_test': apptype.init_test,
+            'apptype_localpath': apptype.localpath,
+            'apptype_options': options
         })
 
         return vals
+
+class saas_application_type_option(osv.osv):
+    _name = 'saas.application.type.option'
+
+    _columns = {
+        'apptype_id': fields.many2one('saas.application.type', 'Application Type', ondelete="cascade", required=True),
+        'name': fields.char('Name', size=64, required=True),
+        'type': fields.selection([('application','Application'),('container','Container'),('service','Service'),('base','Base')], 'Type', required=True),
+        'default': fields.text('Default value'),
+#        'inherit': fields.boolean('Inherit?'),
+    }
 
 
 class saas_application(osv.osv):
@@ -264,6 +292,7 @@ class saas_application(osv.osv):
         'code': fields.char('Code', size=4, required=True),
         'type_id': fields.many2one('saas.application.type', 'Type', required=True),
         'current_version': fields.char('Current version', size=64, required=True),
+        'bdd': fields.selection([('pgsql','PostgreSQL'),('mysql','MySQL')], 'BDD', required=True),
         # 'next_instance_id': fields.many2one('saas.service', 'Next instance'),
         # 'demo_saas_id': fields.many2one('saas.saas', 'Demo SaaS'),
         # 'preprod_domain_id': fields.many2one('saas.domain', 'Preprod Domain'),
@@ -288,8 +317,14 @@ class saas_application(osv.osv):
         'version_preprod': fields.char('Version Preprod', size=64),
         'version_test': fields.char('Version Test', size=64),
         'version_dev': fields.char('Version Dev', size=64),
+        'option_ids': fields.one2many('saas.application.option', 'application_id', 'Options'),
         'version_ids': fields.one2many('saas.application.version', 'application_id', 'Versions'),
         'buildfile': fields.text('Build File'),
+        'container_ids': fields.one2many('saas.container', 'application_id', 'Containers'),
+    }
+
+    _defaults = {
+        'bdd': 'pgsql',
     }
 
     def get_vals(self, cr, uid, id, context=None):
@@ -303,21 +338,34 @@ class saas_application(osv.osv):
         now = datetime.now()
         computed_version = app.current_version + '.' + now.strftime('%Y%m%d.%H%M')
 
+        options = {}
+        for option in app.type_id.option_ids:
+            if option.type == 'application':
+                options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
+        for option in app.option_ids:
+            options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+
+
         vals.update({
             'app_name': app.name,
             'app_code': app.code,
+            'app_bdd': app.bdd,
             'app_instances_path': app.instances_path,
             'app_full_archivepath': vals['config_archive_path'] + '/' + app.type_id.name + '-' + app.code,
+            'app_full_hostpath': vals['config_services_hostpath'] + '/' + app.type_id.name + '-' + app.code,
+            'app_full_localpath': vals['apptype_localpath'] and vals['apptype_localpath'] + '/' + app.type_id.name + '-' + app.code or '',
             'app_build_directory': app.build_directory,
             'app_poweruser_name': app.poweruser_name,
             'app_poweruser_password': app.poweruser_password,
             'app_poweruser_email': app.poweruser_email,
             'app_current_version': app.current_version,
             'app_computed_version': computed_version,
-            'app_buildfile': app.buildfile
+            'app_buildfile': app.buildfile,
+            'app_options': options
         })
 
         return vals
+
 
 
     def build(self, cr, uid, ids, context=None):
@@ -334,6 +382,15 @@ class saas_application(osv.osv):
             version = current_version + '.' + now.strftime('%Y%m%d.%H%M')
             version_obj.create(cr, uid, {'application_id': app.id, 'name': version}, context=context)
 
+
+class saas_application_option(osv.osv):
+    _name = 'saas.application.option'
+
+    _columns = {
+        'application_id': fields.many2one('saas.application', 'Application', ondelete="cascade", required=True),
+        'name': fields.many2one('saas.application.type.option', 'Option', required=True),
+        'value': fields.text('Value'),
+    }
 
 class saas_application_version(osv.osv):
     _name = 'saas.application.version'
@@ -360,8 +417,12 @@ class saas_application_version(osv.osv):
         vals.update(self.pool.get('saas.application').get_vals(cr, uid, app_version.application_id.id, context=context))
 
         vals.update({
+            'app_version_id': app_version.id,
             'app_version_name': app_version.name,
             'app_version_full_archivepath': vals['app_full_archivepath'] + '/' + app_version.name,
+            'app_version_full_archivepath_targz': vals['app_full_archivepath'] + '/' + app_version.name + '.tar.gz',
+            'app_version_full_hostpath': vals['app_full_hostpath'] + '/' + app_version.name,
+            'app_version_full_localpath': vals['app_full_localpath'] + '/' + app_version.name,
         })
 
         return vals
@@ -788,11 +849,15 @@ class saas_container(osv.osv):
         'image_id': fields.many2one('saas.image', 'Image', required=True),
         'server_id': fields.many2one('saas.server', 'Server', required=True),
         'image_version_id': fields.many2one('saas.image.version', 'Image version', required=True),
-        'port_ids': fields.one2many('saas.container.port', 'container_id', 'Ports')
+        'linked_container_ids': fields.many2many('saas.container', 'saas_container_linked_rel', 'from_id', 'to_id', 'Linked container', domain="[('server_id','=',server_id)]"),
+        'port_ids': fields.one2many('saas.container.port', 'container_id', 'Ports'),
+        'volume_ids': fields.one2many('saas.container.volume', 'container_id', 'Volumes'),
+        'option_ids': fields.one2many('saas.container.option', 'container_id', 'Options'),
+        'service_ids': fields.one2many('saas.service', 'container_id', 'Services'),
     }
 
 #########TODO add contraint, image_version doit appartenir à image_id qui doit correspondre à application_id
-
+#########TODO add contraint, a container can only have one linked container of each application type
     def get_vals(self, cr, uid, id, context=None):
 
         vals = {}
@@ -801,25 +866,55 @@ class saas_container(osv.osv):
 
         vals.update(self.pool.get('saas.image.version').get_vals(cr, uid, container.image_version_id.id, context=context))
         vals.update(self.pool.get('saas.server').get_vals(cr, uid, container.server_id.id, context=context))
+        vals.update(self.pool.get('saas.application').get_vals(cr, uid, container.application_id.id, context=context))
+
+        links = {}
+        for link in  container.linked_container_ids:
+            links[link.id] = {'id': link.id, 'apptype': link.application_id.type_id.name, 'name': link.name}
 
         ports = {}
+        ssh_port = 22
         for port in container.port_ids:
             ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport}
+            if port.name == 'ssh':
+                ssh_port = port.hostport
+
+        volumes = {}
+        for volume in container.volume_ids:
+            volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'readonly': volume.readonly}
+
+        options = {}
+        for option in container.application_id.type_id.option_ids:
+            if option.type == 'container':
+                options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
+        for option in container.option_ids:
+            options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
         vals.update({
             'container_id': container.id,
             'container_name': container.name,
-            'container_ports': ports
+            'container_ports': ports,
+            'container_volumes': volumes,
+            'container_ssh_port': ssh_port,
+            'container_options': options,
+            'container_links': links,
         })
 
         return vals
 
+    def add_links(self, cr, uid, vals, context={}):
+        return vals
 
     def create(self, cr, uid, vals, context={}):
         if ('port_ids' not in vals or not vals['port_ids']) and 'image_version_id' in vals:
             vals['port_ids'] = []
             for port in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.port_ids:
                 vals['port_ids'].append((0,0,{'name':port.name,'localport':port.localport}))
+        if ('volume_ids' not in vals or not vals['volume_ids']) and 'image_version_id' in vals:
+            vals['volume_ids'] = []
+            for volume in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.volume_ids:
+                vals['volume_ids'].append((0,0,{'name':volume.name,'hostpath':volume.hostpath,'readonly':volume.readonly}))
+        vals = self.add_links(cr, uid, vals, context=context)
         res = super(saas_container, self).create(cr, uid, vals, context=context)
         context = self.create_log(cr, uid, res, 'create', context)
         vals = self.get_vals(cr, uid, res, context=context)
@@ -844,20 +939,40 @@ class saas_container_port(osv.osv):
         'hostport': fields.char('Host port', size=12),
     }
 
+class saas_container_volume(osv.osv):
+    _name = 'saas.container.volume'
+
+    _columns = {
+        'container_id': fields.many2one('saas.container', 'Container', ondelete="cascade", required=True),
+        'name': fields.char('Path', size=128, required=True),
+        'hostpath': fields.char('Host path', size=128),
+        'readonly': fields.boolean('Readonly?'),
+    }
+
+class saas_container_option(osv.osv):
+    _name = 'saas.container.option'
+
+    _columns = {
+        'container_id': fields.many2one('saas.container', 'Container', ondelete="cascade", required=True),
+        'name': fields.many2one('saas.application.type.option', 'Option', required=True),
+        'value': fields.text('Value'),
+    }
+
 class saas_service(osv.osv):
     _name = 'saas.service'
+    _inherit = ['saas.log.model']
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),
-        'application_id': fields.many2one('saas.application', 'Application', required=True),
-        'application_version_id': fields.many2one('saas.application.version', 'Version', required=True),
-        'bdd': fields.selection([('pgsql','PostgreSQL'),('mysql','MySQL')], 'BDD', required=True),
-        'database_server_id': fields.many2one('saas.server', 'Database server', required=True),
+        'application_id': fields.related('container_id', 'application_id', type='many2one', relation='saas.application', string='Application', readonly=True),
+        'application_version_id': fields.many2one('saas.application.version', 'Version', domain="[('application_id.container_ids','in',container_id)]", required=True),
+        'database_container_id': fields.many2one('saas.container', 'Database container', required=True),
         'database_password': fields.char('Database password', size=64, required=True),
-        'container_id': fields.many2one('saas.container', 'Server', required=True),
-        'port': fields.integer('Port'),
+        'container_id': fields.many2one('saas.container', 'Container', required=True),
         'prod': fields.boolean('Prod?', readonly=True),
         'skip_analytics': fields.boolean('Skip Analytics?'),
+        'option_ids': fields.one2many('saas.service.option', 'service_id', 'Options'),
+        'base_ids': fields.one2many('saas.base', 'service_id', 'Bases'),
     }
 
     _defaults = {
@@ -875,236 +990,286 @@ class saas_service(osv.osv):
 
         service = self.browse(cr, uid, id, context=context)
 
-        vals.update(self.pool.get('saas.application').get_vals(cr, uid, service.application_id.id, context=context))
+        vals.update(self.pool.get('saas.application.version').get_vals(cr, uid, service.application_version_id.id, context=context))
 
-        vals.update(self.pool.get('saas.server').get_vals(cr, uid, service.server_id.id, context=context))
-        vals.update(self.pool.get('saas.server').get_vals(cr, uid, service.database_server_id.id, type='bdd_', context=context))
+        vals.update(self.pool.get('saas.container').get_vals(cr, uid, service.container_id.id, context=context))
 
+
+        database_vals = self.pool.get('saas.container').get_vals(cr, uid, service.database_container_id.id, context=context)
         vals.update({
+            'database_id': database_vals['container_id'],
+            'database_ssh_port': database_vals['container_ssh_port'],
+            'database_server_id': database_vals['server_id'],
+            'database_server_domain': database_vals['server_domain'],
+        })
+
+        options = {}
+        for option in service.container_id.application_id.type_id.option_ids:
+            if option.type == 'service':
+                options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
+        for option in service.option_ids:
+            options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+
+        database_server = vals['database_server_domain']
+        if vals['server_id'] == vals['database_server_id'] and vals['database_id'] in vals['container_links']:
+            database_server = vals['container_links'][vals['database_id']]['name']
+
+        service_fullname = vals['container_name'] + '-' + service.name
+        vals.update({
+            'service_id': service.id,
             'service_name': service.name,
-            'service_bdd': service.bdd,
-            'service_db_user': service.name.replace('-','_'),
+            'service_fullname': service_fullname,
+            'service_db_user': service_fullname.replace('-','_'),
             'service_db_password': service.database_password,
-            'service_port': service.port,
             'service_skip_analytics': service.skip_analytics,
-            'service_version': service.version_many2one.name,
-            'service_fullpath': vals['app_instances_path'] + '_' + service.name
+            'service_full_localpath': vals['app_full_localpath'] + '/' + service.name,
+            'service_options': options,
+            'database_server': database_server
         })
 
         return vals
 
     def create(self, cr, uid, vals, context={}):
-        res = super(saas_instance, self).create(cr, uid, vals, context=context)
-
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
-
-        for instance in self.browse(cr, uid, [res], context=context):
-
-            _logger.info('Deploying instance %s', instance.name)
-
-            if 'build_name' in context:
-                archive = instance.application_id.code + '-' + context['build_name']
-            else:
-                archive = 'versions/' + instance.version_many2one.name
-
-            args = [
-                config.openerp_path + '/saas/saas/shell/deploy.sh',
-                'instance',
-                instance.application_id.type_id.name,
-                instance.application_id.code,
-                instance.name,
-                instance.application_id.instances_path,
-                instance.bdd,
-                instance.application_id.type_id.system_user,
-                instance.server_id.name,
-                instance.database_server_id.name,
-                instance.database_password,
-                archive,
-                instance.application_id.archive_path,
-                config.openerp_path,
-                str(instance.port),
-                instance.database_server_id.mysql_passwd
-            ]
-
-            _logger.info('command %s', " ".join(args))
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
-            for line in proc.stdout:
-                _logger.info(line)
-                outfile.write(line)
-
-            _logger.info('If prod, dont forget to update the workers in conf')
+        res = super(saas_service, self).create(cr, uid, vals, context=context)
+        context = self.create_log(cr, uid, res, 'create', context)
+        vals = self.get_vals(cr, uid, res, context=context)
+        self.deploy(cr, uid, vals, context=context)
+        self.end_log(cr, uid, res, context=context)
         return res
 
-    def write(self, cr, uid, ids, vals, context={}):
 
-        for instance in self.browse(cr, uid, ids, context=context):
+    def unlink(self, cr, uid, ids, context={}):
+        for service in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, service.id, context=context)
+            try:
+                self.purge(cr, uid, service.id, vals, context=context)
+            except:
+                pass    
+        return super(saas_service, self).unlink(cr, uid, ids, context=context)
 
-            if instance.prod and 'version_many2one' in vals and vals['version_many2one'] != instance.version_many2one:
-                self.upgrade(cr, uid, [instance.id], vals['version_many2one'], context=context)
 
-        return super(saas_instance, self).write(cr, uid, ids, vals, context=context)
+    # def create(self, cr, uid, vals, context={}):
+        # res = super(saas_instance, self).create(cr, uid, vals, context=context)
 
-    def unlink(self, cr, uid, ids, context=None):
+        # config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
 
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        # for instance in self.browse(cr, uid, [res], context=context):
 
-        for instance in self.browse(cr, uid, ids, context=context):
+            # _logger.info('Deploying instance %s', instance.name)
 
-            _logger.info('Removing instance %s', instance.name)
+            # if 'build_name' in context:
+                # archive = instance.application_id.code + '-' + context['build_name']
+            # else:
+                # archive = 'versions/' + instance.version_many2one.name
 
-            _logger.info('command : %s', config.openerp_path + '/saas/saas/shell/purge.sh ' + 'instance' + ' ' + instance.application_id.type_id.name  +  ' ' + instance.name + ' ' + instance.application_id.instances_path + ' ' + instance.bdd + ' ' + instance.application_id.type_id.system_user + ' ' + instance.server_id.name + ' ' + instance.database_server_id.name + ' ' + config.openerp_path)
+            # args = [
+                # config.openerp_path + '/saas/saas/shell/deploy.sh',
+                # 'instance',
+                # instance.application_id.type_id.name,
+                # instance.application_id.code,
+                # instance.name,
+                # instance.application_id.instances_path,
+                # instance.bdd,
+                # instance.application_id.type_id.system_user,
+                # instance.server_id.name,
+                # instance.database_server_id.name,
+                # instance.database_password,
+                # archive,
+                # instance.application_id.archive_path,
+                # config.openerp_path,
+                # str(instance.port),
+                # instance.database_server_id.mysql_passwd
+            # ]
 
-            proc = subprocess.Popen([config.openerp_path + '/saas/saas/shell/purge.sh', 'instance', instance.application_id.type_id.name, instance.name, instance.application_id.instances_path, instance.bdd, instance.application_id.type_id.system_user, instance.server_id.name, instance.database_server_id.name, config.openerp_path, instance.database_server_id.mysql_passwd], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # _logger.info('command %s', " ".join(args))
+            # proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-            outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
-            for line in proc.stdout:
-                _logger.info(line)
-                outfile.write(line)
+            # outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
+            # for line in proc.stdout:
+                # _logger.info(line)
+                # outfile.write(line)
 
-        return super(saas_instance, self).unlink(cr, uid, ids, context=context)
+            # _logger.info('If prod, dont forget to update the workers in conf')
+        # return res
+
+    # def write(self, cr, uid, ids, vals, context={}):
+
+        # for instance in self.browse(cr, uid, ids, context=context):
+
+            # if instance.prod and 'version_many2one' in vals and vals['version_many2one'] != instance.version_many2one:
+                # self.upgrade(cr, uid, [instance.id], vals['version_many2one'], context=context)
+
+        # return super(saas_instance, self).write(cr, uid, ids, vals, context=context)
+
+    # def unlink(self, cr, uid, ids, context=None):
+
+        # config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+
+        # for instance in self.browse(cr, uid, ids, context=context):
+
+            # _logger.info('Removing instance %s', instance.name)
+
+            # _logger.info('command : %s', config.openerp_path + '/saas/saas/shell/purge.sh ' + 'instance' + ' ' + instance.application_id.type_id.name  +  ' ' + instance.name + ' ' + instance.application_id.instances_path + ' ' + instance.bdd + ' ' + instance.application_id.type_id.system_user + ' ' + instance.server_id.name + ' ' + instance.database_server_id.name + ' ' + config.openerp_path)
+
+            # proc = subprocess.Popen([config.openerp_path + '/saas/saas/shell/purge.sh', 'instance', instance.application_id.type_id.name, instance.name, instance.application_id.instances_path, instance.bdd, instance.application_id.type_id.system_user, instance.server_id.name, instance.database_server_id.name, config.openerp_path, instance.database_server_id.mysql_passwd], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            # outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
+            # for line in proc.stdout:
+                # _logger.info(line)
+                # outfile.write(line)
+
+        # return super(saas_instance, self).unlink(cr, uid, ids, context=context)
         
         
-    def upgrade(self, cr, uid, ids, version_id, context=None):
+    # def upgrade(self, cr, uid, ids, version_id, context=None):
     
-        saas_obj = self.pool.get('saas.saas')
+        # saas_obj = self.pool.get('saas.saas')
 
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        # config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
         
-        self.save(cr, uid, ids, type='preupgrade', context=context)
+        # self.save(cr, uid, ids, type='preupgrade', context=context)
 
-        version = self.pool.get('saas.version').browse(cr, uid, version_id, context=context).name
+        # version = self.pool.get('saas.version').browse(cr, uid, version_id, context=context).name
 
-        for instance in self.browse(cr, uid, ids, context=context):
+        # for instance in self.browse(cr, uid, ids, context=context):
 
-            _logger.info('Upgrading instance %s', instance.name)
+            # _logger.info('Upgrading instance %s', instance.name)
 
-            archive = instance.application_id.code + '-prod'
-            if 'build_name' in context:
-                archive = instance.application_id.code + '-' + context['build_name']
+            # archive = instance.application_id.code + '-prod'
+            # if 'build_name' in context:
+                # archive = instance.application_id.code + '-' + context['build_name']
 
-            args = [
-                config.openerp_path + '/saas/saas/shell/upgrade.sh',
-                instance.application_id.type_id.name,
-                instance.application_id.code,
-                instance.name,
-                instance.application_id.type_id.system_user,
-                instance.server_id.name,
-                version,
-                instance.application_id.instances_path,
-                config.openerp_path,
-                instance.application_id.archive_path,
-            ]
+            # args = [
+                # config.openerp_path + '/saas/saas/shell/upgrade.sh',
+                # instance.application_id.type_id.name,
+                # instance.application_id.code,
+                # instance.name,
+                # instance.application_id.type_id.system_user,
+                # instance.server_id.name,
+                # version,
+                # instance.application_id.instances_path,
+                # config.openerp_path,
+                # instance.application_id.archive_path,
+            # ]
 
-            _logger.info('command %s', " ".join(args))
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # _logger.info('command %s', " ".join(args))
+            # proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-            outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
-            for line in proc.stdout:
-                _logger.info(line)
-                outfile.write(line)
+            # outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
+            # for line in proc.stdout:
+                # _logger.info(line)
+                # outfile.write(line)
 
-            saas_ids = saas_obj.search(cr, uid, [('instance_id', '=', instance.id)], context=context)
-            for saas in saas_obj.browse(cr, uid, saas_ids, context=context):
-                args = [
-                    config.openerp_path + '/saas/saas/apps/' + instance.application_id.type_id.name + '/upgrade.sh',
-                    'upgrade_saas',
-                    instance.application_id.code,
-                    saas.name,
-                    saas.domain_id.name,
-                    instance.name,
-                    instance.application_id.type_id.system_user,
-                    instance.server_id.name,
-                    str(instance.port),
-                    instance.application_id.type_id.admin_name,
-                    saas.admin_passwd,
-                    instance.application_id.instances_path,
-                ]
+            # saas_ids = saas_obj.search(cr, uid, [('instance_id', '=', instance.id)], context=context)
+            # for saas in saas_obj.browse(cr, uid, saas_ids, context=context):
+                # args = [
+                    # config.openerp_path + '/saas/saas/apps/' + instance.application_id.type_id.name + '/upgrade.sh',
+                    # 'upgrade_saas',
+                    # instance.application_id.code,
+                    # saas.name,
+                    # saas.domain_id.name,
+                    # instance.name,
+                    # instance.application_id.type_id.system_user,
+                    # instance.server_id.name,
+                    # str(instance.port),
+                    # instance.application_id.type_id.admin_name,
+                    # saas.admin_passwd,
+                    # instance.application_id.instances_path,
+                # ]
 
-                _logger.info('command %s', " ".join(args))
-                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                # _logger.info('command %s', " ".join(args))
+                # proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-                outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
-                for line in proc.stdout:
-                    _logger.info(line)
-                    outfile.write(line)
+                # outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
+                # for line in proc.stdout:
+                    # _logger.info(line)
+                    # outfile.write(line)
 
-        return True
+        # return True
 
-    def save(self, cr, uid, ids, saas_id=False, type='manual', context=None):
+    # def save(self, cr, uid, ids, saas_id=False, type='manual', context=None):
 
-        saas_obj = self.pool.get('saas.saas')
-        save_obj = self.pool.get('saas.save')
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        # saas_obj = self.pool.get('saas.saas')
+        # save_obj = self.pool.get('saas.save')
+        # config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
 
-        for instance in self.browse(cr, uid, ids, context=context):
+        # for instance in self.browse(cr, uid, ids, context=context):
 
-            _logger.info('Saving instance %s', instance.name)
-
-
-
-            saas_names = ''
-            if saas_id:
-                type_save = 'saas'
-                saas_ids = [saas_id]
-                for saas in saas_obj.browse(cr, uid, [saas_id], context=context):
-                    saas_names = saas.name + '.' + saas.domain_id.name
-            else:
-                type_save = 'instance'
-                saas_ids = saas_obj.search(cr, uid, [('instance_id', '=', instance.id)], context=context)
-                for saas in saas_obj.browse(cr, uid, saas_ids, context=context):
-                    if saas_names:
-                        saas_names += ','
-                    saas_names += saas.name + '.' + saas.domain_id.name
+            # _logger.info('Saving instance %s', instance.name)
 
 
-            filename = time.strftime("%Y-%m-%d")
-            if type != 'auto':
-                filename += time.strftime("-%H-%M")
-            filename += '-' + instance.server_id.name.replace(".","-") + '-' + instance.name + '-' + type
 
-            args = [
-                config.openerp_path + '/saas/saas/shell/save.sh',
-                'save_dump',
-                instance.application_id.type_id.name,
-                instance.application_id.code,
-                saas_names,
-                filename,
-                instance.server_id.name,
-                instance.database_server_id.name,
-                instance.name,
-                instance.application_id.type_id.system_user,
-                config.backup_directory,
-                instance.application_id.instances_path,
-                config.openerp_path,
-                config.ftpuser,
-                config.ftppass,
-                config.ftpserver
-            ]
-            _logger.info('command %s', " ".join(args))
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            outfile = open(config.log_path + '/save.log', "w")
-            for line in proc.stdout:
-               _logger.info(line)
-               outfile.write(line)
+            # saas_names = ''
+            # if saas_id:
+                # type_save = 'saas'
+                # saas_ids = [saas_id]
+                # for saas in saas_obj.browse(cr, uid, [saas_id], context=context):
+                    # saas_names = saas.name + '.' + saas.domain_id.name
+            # else:
+                # type_save = 'instance'
+                # saas_ids = saas_obj.search(cr, uid, [('instance_id', '=', instance.id)], context=context)
+                # for saas in saas_obj.browse(cr, uid, saas_ids, context=context):
+                    # if saas_names:
+                        # saas_names += ','
+                    # saas_names += saas.name + '.' + saas.domain_id.name
 
-            version = instance.prod and instance.version_many2one.name or False
-            save_obj.create(cr, uid, {'name': filename, 'instance_id': instance.id, 'saas_ids': [(6, 0, saas_ids)], 'version': version}, context=context)
 
-    def button_save(self, cr, uid, ids, context={}):
-        self.save(cr, uid, ids, context=context)
-        return True
+            # filename = time.strftime("%Y-%m-%d")
+            # if type != 'auto':
+                # filename += time.strftime("-%H-%M")
+            # filename += '-' + instance.server_id.name.replace(".","-") + '-' + instance.name + '-' + type
 
+            # args = [
+                # config.openerp_path + '/saas/saas/shell/save.sh',
+                # 'save_dump',
+                # instance.application_id.type_id.name,
+                # instance.application_id.code,
+                # saas_names,
+                # filename,
+                # instance.server_id.name,
+                # instance.database_server_id.name,
+                # instance.name,
+                # instance.application_id.type_id.system_user,
+                # config.backup_directory,
+                # instance.application_id.instances_path,
+                # config.openerp_path,
+                # config.ftpuser,
+                # config.ftppass,
+                # config.ftpserver
+            # ]
+            # _logger.info('command %s', " ".join(args))
+            # proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            # outfile = open(config.log_path + '/save.log', "w")
+            # for line in proc.stdout:
+               # _logger.info(line)
+               # outfile.write(line)
+
+            # version = instance.prod and instance.version_many2one.name or False
+            # save_obj.create(cr, uid, {'name': filename, 'instance_id': instance.id, 'saas_ids': [(6, 0, saas_ids)], 'version': version}, context=context)
+
+    # def button_save(self, cr, uid, ids, context={}):
+        # self.save(cr, uid, ids, context=context)
+        # return True
+
+class saas_service_option(osv.osv):
+    _name = 'saas.service.option'
+
+    _columns = {
+        'service_id': fields.many2one('saas.service', 'Service', ondelete="cascade", required=True),
+        'name': fields.many2one('saas.application.type.option', 'Option', required=True),
+        'value': fields.text('Value'),
+    }
 
 class saas_base(osv.osv):
     _name = 'saas.base'
+    _inherit = ['saas.log.model']
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),
-        'title': fields.char('Name', size=64, required=True),
+        'title': fields.char('Title', size=64, required=True),
         'domain_id': fields.many2one('saas.domain', 'Domain name', required=True),
-        'service_ids': fields.many2many('saas.service', 'saas_base_service_rel', 'base_id', 'service_id', 'Services'),
+        'service_id': fields.many2many('saas.service', 'Service', required=True),
+        'service_ids': fields.many2many('saas.service', 'saas_base_service_rel', 'base_id', 'service_id', 'Alternative Services'),
         'admin_passwd': fields.char('Admin password', size=64),
         'poweruser_name': fields.char('PowerUser name', size=64),
         'poweruser_passwd': fields.char('PowerUser password', size=64),
@@ -1118,7 +1283,8 @@ class saas_base(osv.osv):
                 ('installing','Installing'),
                 ('enabled','Enabled'),
                 ('blocked','Blocked'),
-                ('removing','Removing')],'State',readonly=True)
+                ('removing','Removing')],'State',readonly=True),
+        'option_ids': fields.one2many('saas.base.option', 'base_id', 'Options'),
     }
 
     _defaults = {
@@ -1131,7 +1297,7 @@ class saas_base(osv.osv):
         ('name_domain_uniq', 'unique (name,domain_id)', 'The name of the saas must be unique per domain !')
     ]
 
-#########TODO La liaison entre base et service est un many2many à cause du loadbalancing. Si le many2many est vide, un service est créé automatiquement
+#########TODO La liaison entre base et service est un many2many à cause du loadbalancing. Si le many2many est vide, un service est créé automatiquement. Finalement il y aura un many2one pour le principal, et un many2many pour gérer le loadbalancing
 #########Contrainte : L'application entre base et service doit être la même, de plus la bdd/host/db_user/db_password doit être la même entre tous les services d'une même base
 
     def get_vals(self, cr, uid, id, context=None):
@@ -1142,8 +1308,21 @@ class saas_base(osv.osv):
 
         vals.update(self.pool.get('saas.service').get_vals(cr, uid, base.service_id.id, context=context))
 
+        unique_name = vals['app_code'] + '-' + base.name + '-' + base.domain_id.name
+        unique_name = unique_name.replace('.','-')
+
+        options = {}
+        for option in base.service_id.container_id.application_id.type_id.option_ids:
+            if option.type == 'base':
+                options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
+        for option in base.option_ids:
+            options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+
+
         vals.update({
             'base_name': base.name,
+            'base_unique_name': unique_name,
+            'base_unique_name_': unique_name.replace('-','_'),
             'base_title': base.title,
             'base_domain': base.domain_id.name,
             'base_admin_passwd': base.admin_passwd,
@@ -1152,204 +1331,231 @@ class saas_base(osv.osv):
             'base_poweruser_email': base.poweruser_email,
             'base_build': base.build,
             'base_test': base.test,
+            'base_options': options,
         })
 
         return vals
 
-    def create(self, cr, uid, vals, context=None):
-        res = super(saas_saas, self).create(cr, uid, vals, context=context)
-
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
-
-        for saas in self.browse(cr, uid, [res], context=context):
-
-            _logger.info('Deploying saas %s', saas.name)
 
 
-            args = [
-                config.openerp_path + '/saas/saas/shell/deploy.sh',
-                'saas',
-                saas.instance_id.application_id.type_id.name,
-                saas.instance_id.application_id.code,
-                saas.domain_id.name,
-                saas.name,
-                saas.title,
-                saas.instance_id.application_id.type_id.system_user,
-                saas.instance_id.server_id.name,
-                saas.instance_id.database_server_id.name,
-                saas.instance_id.bdd,
-                saas.instance_id.database_password,
-                saas.instance_id.name,
-                str(saas.instance_id.port),
-                saas.instance_id.application_id.type_id.admin_name,
-                saas.admin_passwd,
-                saas.instance_id.application_id.type_id.admin_email,
-                saas.poweruser_name,
-                saas.poweruser_passwd,
-                saas.poweruser_email,
-                saas.build,
-                str(saas.test),
-                str(saas.instance_id.skip_analytics),
-                config.piwik_server,
-                config.piwik_password,
-                saas.instance_id.application_id.piwik_demo_id,
-                saas.instance_id.application_id.instances_path,
-                config.openerp_path,
-                config.dns_server,
-                config.shinken_server,
-                config.backup_directory,
-                saas.instance_id.database_server_id.mysql_passwd
-            ]
-
-            
-            _logger.info('command %s', args)
-            _logger.info('command %s', " ".join(args))
-
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            outfile = open(config.log_path + '/saas_' + saas.domain_id.name + '_' + saas.name + '.log', "w")
-            for line in proc.stdout:
-               _logger.info(line)
-               outfile.write(line)
-
-
-
+    def create(self, cr, uid, vals, context={}):
+        res = super(saas_base, self).create(cr, uid, vals, context=context)
+        context = self.create_log(cr, uid, res, 'create', context)
+        vals = self.get_vals(cr, uid, res, context=context)
+        self.deploy(cr, uid, res, vals, context=context)
+        self.end_log(cr, uid, res, context=context)
         return res
 
 
+    def unlink(self, cr, uid, ids, context={}):
+        for base in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, base.id, context=context)
+            self.purge(cr, uid, base.id, vals, context=context)
+        return super(saas_base, self).unlink(cr, uid, ids, context=context)
+
+    # def create(self, cr, uid, vals, context=None):
+        # res = super(saas_saas, self).create(cr, uid, vals, context=context)
+
+        # config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+
+        # for saas in self.browse(cr, uid, [res], context=context):
+
+            # _logger.info('Deploying saas %s', saas.name)
 
 
-    def unlink(self, cr, uid, ids, context=None):
+            # args = [
+                # config.openerp_path + '/saas/saas/shell/deploy.sh',
+                # 'saas',
+                # saas.instance_id.application_id.type_id.name,
+                # saas.instance_id.application_id.code,
+                # saas.domain_id.name,
+                # saas.name,
+                # saas.title,
+                # saas.instance_id.application_id.type_id.system_user,
+                # saas.instance_id.server_id.name,
+                # saas.instance_id.database_server_id.name,
+                # saas.instance_id.bdd,
+                # saas.instance_id.database_password,
+                # saas.instance_id.name,
+                # str(saas.instance_id.port),
+                # saas.instance_id.application_id.type_id.admin_name,
+                # saas.admin_passwd,
+                # saas.instance_id.application_id.type_id.admin_email,
+                # saas.poweruser_name,
+                # saas.poweruser_passwd,
+                # saas.poweruser_email,
+                # saas.build,
+                # str(saas.test),
+                # str(saas.instance_id.skip_analytics),
+                # config.piwik_server,
+                # config.piwik_password,
+                # saas.instance_id.application_id.piwik_demo_id,
+                # saas.instance_id.application_id.instances_path,
+                # config.openerp_path,
+                # config.dns_server,
+                # config.shinken_server,
+                # config.backup_directory,
+                # saas.instance_id.database_server_id.mysql_passwd
+            # ]
 
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+            
+            # _logger.info('command %s', args)
+            # _logger.info('command %s', " ".join(args))
 
-        for saas in self.browse(cr, uid, ids, context=context):
+            # proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-            _logger.info('Removing saas %s', saas.name)
-
-            args = [
-                config.openerp_path + '/saas/saas/shell/purge.sh',
-                'saas',
-                saas.instance_id.application_id.type_id.name,
-                saas.instance_id.application_id.code,
-                saas.domain_id.name,
-                saas.name,
-                saas.instance_id.application_id.type_id.system_user,
-                saas.instance_id.server_id.name,
-                saas.instance_id.database_server_id.name,
-                saas.instance_id.bdd,
-                config.piwik_server,
-                config.piwik_password,
-                saas.instance_id.application_id.instances_path,
-                config.openerp_path,
-                config.dns_server,
-                config.shinken_server,
-                saas.instance_id.database_server_id.mysql_passwd
-            ]
-
-            _logger.info('command %s', " ".join(args))
-
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            outfile = open(config.log_path + '/saas_' + saas.domain_id.name + '_' + saas.name + '.log', "w")
-            for line in proc.stdout:
-               _logger.info(line)
-               outfile.write(line)
-
-
-        return super(saas_saas, self).unlink(cr, uid, ids, context=context)
-
-    def button_save(self, cr, uid, ids, context={}):
-        instance_obj = self.pool.get('saas.service')
-        for saas in self.browse(cr, uid, ids, context=context):
-            instance_obj.save(cr, uid, [saas.instance_id.id], saas_id=saas.id, context=context)
-        return True
-
-    def send_preprod(self, cr, uid, ids, context={}):
-
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
-        saas_obj = self.pool.get('saas.saas')
-
-        for saas in self.browse(cr, uid, ids, context=context):
-
-            new_saas = 'preprod' + saas.name
-
-            saas_ids = saas_obj.search(cr, uid, [('name', '=', new_saas),('domain_id','=',saas.domain_id.id)], context=context)
-            saas_obj.unlink(cr, uid, saas_ids, context=context)
-
-            self.create(cr, uid, {
-                'name': new_saas,
-                'title': saas.title,
-                'domain_id': saas.domain_id.id,
-                'instance_id': saas.instance_id.application_id.preprod_instance_id.id,
-                'poweruser_name': saas.poweruser_name,
-                'poweruser_passwd': saas.poweruser_passwd,
-                'poweruser_email': saas.poweruser_email,
-                'build': 'none',
-                'test': saas.test,
-              }, context=context)
-
-            _logger.info('moving saas %s', saas.name)
-
-            args = [
-                config.openerp_path + '/saas/saas/shell/move.sh',
-                'move_saas',
-                saas.instance_id.application_id.type_id.name,
-                saas.instance_id.application_id.code,
-                saas.name,
-                saas.domain_id.name,
-                saas.instance_id.name,
-                saas.instance_id.server_id.name,
-                saas.instance_id.application_id.type_id.system_user,
-                saas.instance_id.database_server_id.name,
-                new_saas,
-                saas.domain_id.name,
-                saas.instance_id.application_id.preprod_instance_id.name,
-                saas.instance_id.application_id.preprod_instance_id.server_id.name,
-                saas.instance_id.application_id.type_id.system_user,
-                saas.instance_id.application_id.preprod_instance_id.database_server_id.name,
-                saas.instance_id.application_id.instances_path,
-                config.backup_directory,
-                config.openerp_path,
-
-            ]
-
-            _logger.info('command %s', " ".join(args))
-
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            outfile = open(config.log_path + '/send_preprod.log', "w")
-            for line in proc.stdout:
-               _logger.info(line)
-               outfile.write(line)
-
-            instance = saas.instance_id.application_id.preprod_instance_id
-            args = [
-                config.openerp_path + '/saas/saas/apps/' + instance.application_id.type_id.name + '/upgrade.sh',
-                'upgrade_saas',
-                instance.application_id.code,
-                new_saas,
-                saas.domain_id.name,
-                instance.name,
-                instance.application_id.type_id.system_user,
-                instance.server_id.name,
-                str(instance.port),
-                instance.application_id.type_id.admin_name,
-                saas.admin_passwd,
-                instance.application_id.instances_path,
-            ]
-
-            _logger.info('command %s', " ".join(args))
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
-            for line in proc.stdout:
-                _logger.info(line)
-                outfile.write(line)
+            # outfile = open(config.log_path + '/saas_' + saas.domain_id.name + '_' + saas.name + '.log', "w")
+            # for line in proc.stdout:
+               # _logger.info(line)
+               # outfile.write(line)
 
 
 
-        return True
+        # return res
+
+
+
+
+    # def unlink(self, cr, uid, ids, context=None):
+
+        # config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+
+        # for saas in self.browse(cr, uid, ids, context=context):
+
+            # _logger.info('Removing saas %s', saas.name)
+
+            # args = [
+                # config.openerp_path + '/saas/saas/shell/purge.sh',
+                # 'saas',
+                # saas.instance_id.application_id.type_id.name,
+                # saas.instance_id.application_id.code,
+                # saas.domain_id.name,
+                # saas.name,
+                # saas.instance_id.application_id.type_id.system_user,
+                # saas.instance_id.server_id.name,
+                # saas.instance_id.database_server_id.name,
+                # saas.instance_id.bdd,
+                # config.piwik_server,
+                # config.piwik_password,
+                # saas.instance_id.application_id.instances_path,
+                # config.openerp_path,
+                # config.dns_server,
+                # config.shinken_server,
+                # saas.instance_id.database_server_id.mysql_passwd
+            # ]
+
+            # _logger.info('command %s', " ".join(args))
+
+            # proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            # outfile = open(config.log_path + '/saas_' + saas.domain_id.name + '_' + saas.name + '.log', "w")
+            # for line in proc.stdout:
+               # _logger.info(line)
+               # outfile.write(line)
+
+
+        # return super(saas_saas, self).unlink(cr, uid, ids, context=context)
+
+    # def button_save(self, cr, uid, ids, context={}):
+        # instance_obj = self.pool.get('saas.service')
+        # for saas in self.browse(cr, uid, ids, context=context):
+            # instance_obj.save(cr, uid, [saas.instance_id.id], saas_id=saas.id, context=context)
+        # return True
+
+    # def send_preprod(self, cr, uid, ids, context={}):
+
+        # config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        # saas_obj = self.pool.get('saas.saas')
+
+        # for saas in self.browse(cr, uid, ids, context=context):
+
+            # new_saas = 'preprod' + saas.name
+
+            # saas_ids = saas_obj.search(cr, uid, [('name', '=', new_saas),('domain_id','=',saas.domain_id.id)], context=context)
+            # saas_obj.unlink(cr, uid, saas_ids, context=context)
+
+            # self.create(cr, uid, {
+                # 'name': new_saas,
+                # 'title': saas.title,
+                # 'domain_id': saas.domain_id.id,
+                # 'instance_id': saas.instance_id.application_id.preprod_instance_id.id,
+                # 'poweruser_name': saas.poweruser_name,
+                # 'poweruser_passwd': saas.poweruser_passwd,
+                # 'poweruser_email': saas.poweruser_email,
+                # 'build': 'none',
+                # 'test': saas.test,
+              # }, context=context)
+
+            # _logger.info('moving saas %s', saas.name)
+
+            # args = [
+                # config.openerp_path + '/saas/saas/shell/move.sh',
+                # 'move_saas',
+                # saas.instance_id.application_id.type_id.name,
+                # saas.instance_id.application_id.code,
+                # saas.name,
+                # saas.domain_id.name,
+                # saas.instance_id.name,
+                # saas.instance_id.server_id.name,
+                # saas.instance_id.application_id.type_id.system_user,
+                # saas.instance_id.database_server_id.name,
+                # new_saas,
+                # saas.domain_id.name,
+                # saas.instance_id.application_id.preprod_instance_id.name,
+                # saas.instance_id.application_id.preprod_instance_id.server_id.name,
+                # saas.instance_id.application_id.type_id.system_user,
+                # saas.instance_id.application_id.preprod_instance_id.database_server_id.name,
+                # saas.instance_id.application_id.instances_path,
+                # config.backup_directory,
+                # config.openerp_path,
+
+            # ]
+
+            # _logger.info('command %s', " ".join(args))
+
+            # proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            # outfile = open(config.log_path + '/send_preprod.log', "w")
+            # for line in proc.stdout:
+               # _logger.info(line)
+               # outfile.write(line)
+
+            # instance = saas.instance_id.application_id.preprod_instance_id
+            # args = [
+                # config.openerp_path + '/saas/saas/apps/' + instance.application_id.type_id.name + '/upgrade.sh',
+                # 'upgrade_saas',
+                # instance.application_id.code,
+                # new_saas,
+                # saas.domain_id.name,
+                # instance.name,
+                # instance.application_id.type_id.system_user,
+                # instance.server_id.name,
+                # str(instance.port),
+                # instance.application_id.type_id.admin_name,
+                # saas.admin_passwd,
+                # instance.application_id.instances_path,
+            # ]
+
+            # _logger.info('command %s', " ".join(args))
+            # proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            # outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
+            # for line in proc.stdout:
+                # _logger.info(line)
+                # outfile.write(line)
+
+
+
+        # return True
+
+class saas_base_option(osv.osv):
+    _name = 'saas.base.option'
+
+    _columns = {
+        'base_id': fields.many2one('saas.base', 'Base', ondelete="cascade", required=True),
+        'name': fields.many2one('saas.application.type.option', 'Option', required=True),
+        'value': fields.text('Value'),
+    }
 
 class saas_save(osv.osv):
     _name = 'saas.save'
@@ -1507,9 +1713,10 @@ class saas_config_settings(osv.osv):
     _description = 'SaaS configuration'
 
     _columns = {
-        'openerp_path': fields.char('OpenERP Path', size=128),
+        'conductor_path': fields.char('Conductor Path', size=128),
         'log_path': fields.char('SaaS Log Path', size=128),
         'archive_path': fields.char('Archive path', size=128),
+        'services_hostpath': fields.char('Host services path', size=128),
         'backup_directory': fields.char('Backup directory', size=128),
         'piwik_server': fields.char('Piwik server', size=128),
         'piwik_password': fields.char('Piwik Password', size=128),
@@ -1523,9 +1730,10 @@ class saas_config_settings(osv.osv):
     def get_vals(self, cr, uid, context=None):
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
         return {
-            'config_openerp_path': config.openerp_path,
+            'config_conductor_path': config.conductor_path,
             'config_log_path': config.log_path,
             'config_archive_path': config.archive_path,
+            'config_services_hostpath': config.services_hostpath,
             'config_backup_directory': config.backup_directory,
             'config_piwik_server': config.piwik_server,
             'config_piwik_password': config.piwik_password,

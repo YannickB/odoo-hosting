@@ -47,4 +47,11 @@ class saas_application_version(osv.osv):
             execute.execute_local(['yes | sandbox/bin/pip uninstall setuptools pip'], context, path=vals['app_version_full_archivepath'], shell=True)
             execute.execute_local(['sandbox/bin/python', 'bootstrap.py'], context, vals['app_version_full_archivepath'])
             execute.execute_local(['bin/buildout'], context, vals['app_version_full_archivepath'])
+
+            #Can't make sed work on local
+            ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
+            execute.execute(ssh, ['sed', '-i', '"s/' + vals['config_archive_path'].replace('/','\/') + '/' + vals['apptype_localpath'].replace('/','\/') + '/g"', vals['app_version_full_archivepath'] + '/bin/start_odoo'], context)
+            execute.execute(ssh, ['sed', '-i', '"s/' + vals['config_archive_path'].replace('/','\/') + '/' + vals['apptype_localpath'].replace('/','\/') + '/g"', vals['app_version_full_archivepath'] + '/bin/buildout'], context)
+            ssh.close()
+            sftp.close()
         return

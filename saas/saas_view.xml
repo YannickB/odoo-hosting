@@ -26,6 +26,7 @@
                         <field name="name"/>
                         <field name="title"/>
                         <field name="domain_id"/>
+                        <field name="service_id"/>
                         <field name="service_ids"/>
                         <field name="admin_passwd"/>
                         <field name="poweruser_name"/>
@@ -36,6 +37,13 @@
                         <button name="button_save" string="Manual Save" type="object"/>
                         <button name="send_preprod" string="Send to preprod" type="object"/>
                     </group>
+                    <field name="option_ids" colspan="4">
+                        <tree string="Options" editable="bottom">
+                            <field name="name" domain="[('apptype_id.application_ids.container_ids.service_ids','in',parent.service_id),('type','=','base')]"/>
+                            <field name="value"/>
+                        </tree>
+                    </field>
+                    <field name="log_ids" colspan="4"/>
                 </form>
             </field>
         </record>
@@ -68,17 +76,23 @@
                 <form string="Service" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <field name="application_id"/>
-                        <field name="application_version_id" domain="[('application_id','=',application_id)]"/>
                         <field name="container_id"/>
-                        <field name="database_server_id"/>
+                        <field name="application_id"/>
+                        <field name="application_version_id" domain="[('application_id.container_ids','=',container_id)]"/>
+                        <field name="database_container_id"/>
                         <field name="database_password"/>
-                        <field name="port"/>
                         <field name="skip_analytics"/>
                         <newline/>
                         <field name="prod"/>
                         <button name="button_save" string="Manual Save" type="object"/>
                     </group>
+                    <field name="option_ids" colspan="4">
+                        <tree string="Options" editable="bottom">
+                            <field name="name" domain="[('apptype_id.application_ids.container_ids','in',parent.container_id),('type','=','service')]"/>
+                            <field name="value"/>
+                        </tree>
+                    </field>
+                    <field name="log_ids" colspan="4"/>
                 </form>
             </field>
         </record>
@@ -89,7 +103,6 @@
                 <tree string="Services">
                     <field name="name"/>
                     <field name="application_id"/>
-                    <field name="bdd"/>
                     <field name="container_id"/>
                 </tree>
             </field>
@@ -117,12 +130,26 @@
                         <field name="application_id"/>
                         <field name="image_id" domain="[('application_id','=',application_id)]"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
+                        <field name="linked_container_ids"/>
                     </group>
+                    <field name="option_ids" colspan="4">
+                        <tree string="Options" editable="bottom">
+                            <field name="name" domain="[('apptype_id.application_ids','in',parent.application_id),('type','=','container')]"/>
+                            <field name="value"/>
+                        </tree>
+                    </field>
                     <field name="port_ids" colspan="4">
                         <tree string="Ports" editable="bottom">
                             <field name="name"/>
                             <field name="localport"/>
                             <field name="hostport"/>
+                        </tree>
+                    </field>
+                    <field name="volume_ids" colspan="4">
+                        <tree string="Volumes" editable="bottom">
+                            <field name="name"/>
+                            <field name="hostpath"/>
+                            <field name="readonly"/>
                         </tree>
                     </field>
                     <field name="log_ids" colspan="4"/>
@@ -280,7 +307,15 @@
                         <field name="mysql"/>
                         <field name="init_test"/>
                         <field name="standard_port"/>
+                        <field name="localpath"/>
                     </group>
+                    <field name="option_ids" colspan="4">
+                        <tree string="Options" editable="bottom">
+                            <field name="name"/>
+                            <field name="type"/>
+                            <field name="default"/>
+                        </tree>
+                    </field>
                 </form>
             </field>
         </record>
@@ -314,6 +349,7 @@
                         <field name="code"/>
                         <field name="type_id"/>
                         <field name="current_version"/>
+                        <field name="bdd"/>
 <!--                        <field name="next_instance_id"/>
                         <field name="preprod_domain_id"/>
                         <field name="preprod_server_id"/>
@@ -340,6 +376,12 @@
 <!--                        <newline/>
                         <button name="refresh_demo" string="Refresh Demo" type="object"/>-->
                     </group>
+                    <field name="option_ids" colspan="4">
+                        <tree string="Options" editable="bottom">
+                            <field name="name" domain="[('apptype_id','=',parent.type_id),('type','=','application')]"/>
+                            <field name="value"/>
+                        </tree>
+                    </field>
                     <field name="buildfile" colspan="4"/>
                     <newline/>
                     <button name="build" string="Build" type="object"/>
@@ -458,12 +500,15 @@
                     <field name="volume_ids" colspan="4">
                         <tree string="Volumes" editable="bottom">
                             <field name="name"/>
+                            <field name="hostpath"/>
+                            <field name="readonly"/>
                         </tree>
                     </field>
                     <field name="port_ids" colspan="4">
                         <tree string="Ports" editable="bottom">
                             <field name="name"/>
                             <field name="localport"/>
+                            <field name="expose"/>
                         </tree>
                     </field>
                     <button name="build" string="Build" type="object"/>
@@ -525,9 +570,10 @@
             <field name="arch" type="xml">
                 <form string="Application" version="7.0">
                     <group col="4">
-                        <field name="openerp_path" required="1"/>
+                        <field name="conductor_path" required="1"/>
                         <field name="log_path" required="1"/>
                         <field name="archive_path" required="1"/>
+                        <field name="services_hostpath" required="1"/>
                         <field name="backup_directory" required="1"/>
                         <field name="piwik_server" required="1"/>
                         <field name="piwik_password" required="1"/>
@@ -545,6 +591,8 @@
 
         <record id="saas_settings" model='saas.config.settings'>
             <field name="archive_path">/opt/archives</field>
+            <field name="services_hostpath">/opt/services</field>
+            <field name="conductor_path">/opt/openerp/saas-conductor</field>
         </record>
 
         <record id="action_saas_configuration" model="ir.actions.act_window">
@@ -568,6 +616,44 @@
           <field name="function">cron_save</field>
           <field name="args">([1])</field>
         </record> 
+
+
+
+
+        <record id="image_base" model="saas.image">
+            <field name="name">yolobase</field>
+            <field name="current_version">1.0</field>
+            <field name="dockerfile"><![CDATA[FROM debian:latest
+MAINTAINER yannick.buron@gmail.com
+
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get -qy install locales
+ENV LANGUAGE en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+RUN DEBIAN_FRONTEND=noninteractive locale-gen en_US.UTF-8
+RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
+RUN update-locale LANG=en_US.UTF-8
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim
+RUN mkdir -p /var/run/sshd
+RUN mkdir -p /var/log/supervisor
+
+
+RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/usr/sbin/sshd -D" >> /etc/supervisor/conf.d/supervisord.conf
+
+
+RUN mkdir /root/.ssh
+RUN ln -s /opt/authorized_keys /root/.ssh/authorized_keys
+
+CMD ["/usr/bin/supervisord"]
+]]></field>
+        </record>
 
     </data>
 </openerp>

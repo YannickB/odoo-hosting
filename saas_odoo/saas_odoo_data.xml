@@ -9,6 +9,13 @@
             <field name="admin_name">yodadmin</field>
             <field name="admin_email">odoo@localhost</field>
             <field name="standard_port">8069</field>
+            <field name="localpath">/opt/versions</field>
+        </record>
+        <record id="apptype_odoo_option1" model="saas.application.type.option">
+            <field name="apptype_id" ref="apptype_odoo"/>
+            <field name="name">port</field>
+            <field name="type">service</field>
+            <field name="default">8069</field>
         </record>
 
         <record id="app_odoo_ocm" model="saas.application">
@@ -30,10 +37,13 @@ anybox.recipe.openerp =
 
 [odoo]
 recipe = anybox.recipe.openerp:server
-version = git http://github.com/odoo/odoo.git odoo master
+version = git http://github.com/odoo/odoo.git odoo 8.0
+addons = git git@github.com:YannickB/community-management.git extra/community-management master
+         git git@github.com:YannickB/account-financial-tools.git extra/account-financial-tools master
 
 [versions]
 reportlab = 2.7
+pypdf = 1.13
 ]]></field>
         </record>
 
@@ -41,77 +51,83 @@ reportlab = 2.7
             <field name="name">img_odoo</field>
             <field name="application_id" ref="app_odoo_ocm"/>
             <field name="current_version">8.0</field>
+            <field name="dockerfile"><![CDATA[FROM yolobase:latest
+MAINTAINER yannick.buron@gmail.com
+
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils postgresql-client
+
+# Note: The official Debian and Ubuntu images automatically ``apt-get clean``
+# after each ``apt-get``
+
+RUN useradd -m -s /bin/bash odoo
+USER odoo
+RUN mkdir /home/odoo/.ssh
+RUN ln -s /opt/authorized_keys /home/odoo/.ssh/authorized_keys
+
+
+
+USER root
+
+RUN mkdir /opt/versions
+RUN mkdir /opt/odoo
+RUN mkdir /opt/odoo/etc
+RUN mkdir /opt/odoo/services
+RUN mkdir /opt/odoo/filestore
+RUN mkdir /opt/odoo/extra
+RUN mkdir /opt/odoo/logs
+
+RUN touch /opt/odoo/supervisor.conf
+RUN ln -s /opt/odoo/supervisor.conf /etc/supervisor/conf.d/odoo.conf
+
+RUN chown -R odoo /opt/odoo
+RUN chmod 644 /opt/odoo/supervisor.conf
+]]></field>
         </record>
         <record id="image_odoo_volume1" model="saas.image.volume">
             <field name="image_id" ref="image_odoo"/>
-            <field name="name">/etc/odoo</field>
+            <field name="name">/opt/versions</field>
+            <field name="hostpath">/opt/services</field>
+            <field name="readonly" eval="True"/>
         </record>
         <record id="image_odoo_volume2" model="saas.image.volume">
             <field name="image_id" ref="image_odoo"/>
-            <field name="name">/opt/filestore</field>
-        </record>
-        <record id="image_odoo_volume3" model="saas.image.volume">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">/opt/extra-addons</field>
+            <field name="name">/opt/odoo</field>
         </record>
         <record id="image_odoo_port1" model="saas.image.port">
             <field name="image_id" ref="image_odoo"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
+            <field name="expose" eval="True"/>
         </record>
         <record id="image_odoo_port2" model="saas.image.port">
             <field name="image_id" ref="image_odoo"/>
             <field name="name">odoo1</field>
             <field name="localport">8069</field>
+            <field name="expose" eval="True"/>
         </record>
         <record id="image_odoo_port3" model="saas.image.port">
             <field name="image_id" ref="image_odoo"/>
             <field name="name">odoo2</field>
             <field name="localport">7069</field>
+            <field name="expose" eval="True"/>
         </record>
         <record id="image_odoo_port4" model="saas.image.port">
             <field name="image_id" ref="image_odoo"/>
             <field name="name">odoo3</field>
             <field name="localport">6069</field>
+            <field name="expose" eval="True"/>
         </record>
         <record id="image_odoo_port5" model="saas.image.port">
             <field name="image_id" ref="image_odoo"/>
             <field name="name">odoo4</field>
             <field name="localport">5069</field>
+            <field name="expose" eval="True"/>
         </record>
         <record id="image_odoo_port6" model="saas.image.port">
             <field name="image_id" ref="image_odoo"/>
             <field name="name">odoo5</field>
             <field name="localport">4069</field>
-        </record>
-        <!-- I place the dockerfile after the volume/port to make sure all data are correctly loaded when the version is computed -->
-        <record id="image_odoo" model="saas.image">
-            <field name="dockerfile"><![CDATA[FROM debian
-MAINTAINER yannick.buron@gmail.com
-
-# Update the Ubuntu and PostgreSQL repository indexes
-RUN apt-get update
-
-RUN apt-get -y -qq install openssh-server python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi
-
-# Note: The official Debian and Ubuntu images automatically ``apt-get clean``
-# after each ``apt-get``
-
-RUN useradd -m -s /bin/bash openerp
-RUN mkdir /home/openerp/.ssh
-RUN ln -s /root/.ssh/authorized_keys /home/openerp/.ssh/authorized_keys
-
-
-
-USER root
-RUN echo "#!/bin/bash" >> /opt/restart_odoo.sh
-RUN echo "#!/bin/bash" >> /opt/start.sh
-RUN echo "/etc/init.d/ssh restart" >> /opt/start.sh
-RUN echo "/opt/restart_odoo.sh" >> /opt/start.sh
-RUN echo "tail -f /home/openerp/.ssh/authorized_keys" >> /opt/start.sh
-RUN chmod +x /opt/restart_odoo.sh
-RUN chmod +x /opt/start.sh
-]]></field>
+            <field name="expose" eval="True"/>
         </record>
 
     </data>

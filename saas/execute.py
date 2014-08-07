@@ -31,6 +31,7 @@ import subprocess
 import paramiko
 import os.path
 import string
+import errno
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -49,15 +50,22 @@ def ko_log(self, context):
         log_obj.write(context['saas-cr'], context['saas-uid'], context['log_id'], {'state': 'ko'}, context=context)
 
 def connect(host, port, username, context):
+    log('connect: ssh ' + username + '@' + host + ' -p ' + str(port), context)
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, port=port, username=username)
+    ssh.connect(host, port=int(port), username=username)
     sftp = ssh.open_sftp()
     return (ssh, sftp)
 
-def execute(ssh, cmd, context):
+def execute(ssh, cmd, context, stdin_arg=False):
     log('command : ' + ' '.join(cmd), context)
     stdin, stdout, stderr = ssh.exec_command(' '.join(cmd))
+    if stdin_arg:
+        for arg in stdin_arg:
+            log('command : ' + arg, context)
+            stdin.write(arg)
+            log('Done', context)
+        stdin.flush()
 #    _logger.info('stdin : %s', stdin.read())
     stdout_read = stdout.read()
     log('stdout : ' + stdout_read, context)
@@ -82,6 +90,16 @@ def execute_local(cmd, context, path=False, shell=False):
 #       log(line, context)
     os.chdir(cwd)
     return proc.stdout
+
+def exist(sftp, path):
+    try:
+        sftp.stat(path)
+    except IOError, e:
+        if e.errno == errno.ENOENT:
+            return False
+        raise
+    else:
+        return True
 
 def local_file_exist(file):
     return os.path.isfile(file)

@@ -41,66 +41,116 @@ class saas_container(osv.osv):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         container = self.browse(cr, uid, id, context=context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
-        execute.execute(ssh, ['sudo','docker', 'stop', container.name], context)
-        execute.execute(ssh, ['sudo','docker', 'rm', container.name], context)
+        execute.execute(ssh, ['sudo','docker', 'stop', vals['container_name']], context)
+        execute.execute(ssh, ['sudo','docker', 'rm', vals['container_name']], context)
         ssh.close()
         sftp.close()
         return
 
-#sudo docker run -d -P --name test img_postgres
-# class saas_service(osv.osv):
-    # _inherit = 'saas.service'
 
-    # def deploy_post_instance(self, cr, uid, vals, context=None):
-        # return
+class saas_service(osv.osv):
+    _inherit = 'saas.service'
 
 
-    # def deploy(self, cr, uid, vals, context=None):
+    def purge_pre_service(self, cr, uid, vals, context=None):
+        return
 
-        # ssh, sftp = connect(vals['service_server_name'], vals['apptype_system_user'], context=context)
+    def purge(self, cr, uid, id, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
-        # if sftp.stat(vals['service_fullpath']):
-            # _logger.error('Service already exist')
-            # return
+        self.purge_pre_service(cr, uid, vals, context)
 
-        # execute(ssh, 'mkdir ' + vals['service_fullpath'], context=context)
+        if vals['app_bdd'] != 'mysql':
+            ssh, sftp = execute.connect(vals['database_server_domain'], vals['database_ssh_port'], 'postgres', context)
+            execute.execute(ssh, ['psql', '-c', '"DROP USER ' + vals['service_db_user'] + ';"'], context)
+            ssh.close()
+            sftp.close()
 
-        # sftp.put(vals['app_archive_path']/vals['app_name']/vals['archive']/archive.tar.gz, vals['service_fullpath']/)
+            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+            execute.execute(ssh, ['sed', '-i', '"/:*:' + vals['service_db_user'] + ':/d" ~/.pgpass'], context)
+            ssh.close()
+            sftp.close()
 
-        # execute(ssh, 'cd ' + vals['service_fullpath'] + '; tar -xf archive.tar.gz -c ' + vals['service_fullpath'] + '/', context=context)
-        # execute(ssh, 'rm + ' + vals['service_fullpath'] + '/archive.tar.gz', context=context)
-        # ssh.close()
+        else:
+            ssh, sftp = execute.connect(vals['bdd_server_domain'], vals['bdd_server_ssh_port'], vals['apptype_system_user'], context)
+            execute.execute(ssh, ["mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'drop user '" + vals['service_db_user'] + ";'"], context)
+            ssh.close()
+            sftp.close()
 
-        # log('Creating database user', context=context)
+        service_ids = self.search(cr, uid, [('application_version_id', '=', vals['app_version_id']),('container_id.server_id','=',vals['server_id'])], context=context)
+        service_ids.remove(vals['service_id'])
+        if not service_ids:
+            ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
+            execute.execute(ssh, ['rm', '-rf', vals['app_version_full_hostpath']], context)
+            ssh.close()
+            sftp.close()
 
-        # _logger.info('db_type %s', vals['service_bdd'])
-        #SI postgres, create user
-        # if vals['service_bdd'] != 'mysql':
-            # ssh = connect(vals['bdd_server_domain'], 'postgres', context=context)
-            # execute(ssh, 'psql; CREATE USER ' + vals['service_db_user'] + ' WITH PASSWORD ' + vals['service_db_password'] + ' CREATEDB;\q', context=context)
-            # ssh.close()
+        return
 
-            # ssh = connect(vals['service_server_name'], vals['apptype_system_user'], context=context)
-            # execute(ssh, 'sed -i "/:*:' + vals['service_db_user'] + ':/d" ~/.pgpass', context=context)
-            # execute(ssh, 'echo "' + vals['bdd_server_domain'] + ':5432:*:' + vals['service_db_user'] + ':' +  + vals['service_db_passwd'] + '" >> ~/.pgpass', context=context)
-            # execute(ssh, 'chmod 700 ~/.pgpass', context=context)
-            # ssh.close()
 
-        # else:
-            # ssh = connect(vals['bdd_server_domain'], vals['apptype_system_user'], context=context)
-            # execute(ssh, "mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'create user '" + vals['service_db_user'] + "' identified by '" + vals['service_db_passwd'] + ";'", context=context)
-            # ssh.close()
 
-        # log('Database user created', context=context)
+class saas_base(osv.osv):
+    _inherit = 'saas.base'
 
-        # self.deploy_post_instance(cr, uid, vals, context=context)
 
-        # ssh, sftp = connect(vals['service_server_name'], vals['apptype_system_user'], context=context)
-        # if sftp.stat(vals['service_fullpath']):
-            # log('Service ok', context=context)
-        # else:
-            # log('There was an error while creating the instance', context=context)
-            # context['log_state'] == 'ko'
-            # ko_log(context=context)
-        # ssh.close()
+    def purge_post(self, cr, uid, vals, context=None):
+        return
+
+    def purge(self, cr, uid, id, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+
+
+# ssh $shinken_server << EOF
+# rm /usr/local/shinken/etc/services/$unique_name.cfg 
+# /etc/init.d/shinken reload
+# EOF
+
+# ssh $dns_server << EOF
+# sed -i "/$saas\sIN\sCNAME/d" /etc/bind/db.$domain
+# sudo /etc/init.d/bind9 reload
+# EOF
+
+
+        if vals['app_bdd'] != 'mysql':
+            ssh, sftp = execute.connect(vals['bdd_server_domain'], vals['bdd_server_ssh_port'], 'postgres', context)
+            execute.execute(ssh, "psql; update pg_database set datallowconn = 'false' where datname = '" + vals['base_unique_name_'] + "'; SELECT pg_terminate_backend(procpid) FROM pg_stat_activity WHERE datname = '" + vals['base_unique_name_'] + "'; DROP DATABASE " + vals['base_unique_name_'] + "; ;\q", context)
+            ssh.close()
+            sftp.close()
+
+        else:
+            ssh, sftp = execute.connect(vals['bdd_server_domain'], vals['bdd_server_ssh_port'], vals['apptype_system_user'], context)
+            execute.execute(ssh, ["mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'drop database '" + vals['base_unique_name_'] + ";'"], context)
+            ssh.close()
+            sftp.close()
+
+
+
+# ssh www-data@$server << EOF
+# sudo a2dissite $unique_name
+# rm /etc/apache2/sites-available/$unique_name
+# sudo /etc/init.d/apache2 reload
+# EOF
+
+        self.purge_post(cr, uid, vals, context)
+
+# if [[ $saas != 'demo' ]]
+# then
+
+####TODO This part is not crossplatform because recover the variable will be difficult. When we will move piwik, consider open the post mysql to www server ip so we can continue query it directly.
+####ssh $piwik_server << EOF
+# piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$saas.$domain' LIMIT 1")
+####EOF
+# echo piwik_id $piwik_id
+# fi
+
+# if [[ $piwik_id != '' ]]
+# then
+# ssh $piwik_server << EOF
+  # mysql piwik -u piwik -p$piwik_password -se "UPDATE piwik_site SET name = 'droped_$piwik_id'  WHERE idsite = $piwik_id;"
+  # mysql piwik -u piwik -p$piwik_password -se "DELETE FROM piwik_access WHERE idsite = $piwik_id;"
+# EOF
+# fi
+
+#}
+
 

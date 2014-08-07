@@ -40,6 +40,9 @@ ENDPORT = 50000
 class saas_container(osv.osv):
     _inherit = 'saas.container'
 
+    def deploy_post(self, cr, uid, vals, context=None):
+        return
+
     def deploy(self, cr, uid, id, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         container = self.browse(cr, uid, id, context=context)
@@ -49,70 +52,89 @@ class saas_container(osv.osv):
         nextport = STARTPORT
         for key, port in vals['container_ports'].iteritems():
             if not port['hostport']:
-                while not port['hostport'] and nextport != 48010:
+                while not port['hostport'] and nextport != ENDPORT:
                     port_ids = self.pool.get('saas.container.port').search(cr, uid, [('hostport','=',nextport),('container_id.server_id','=',vals['server_id'])], context=context)
                     if not port_ids and not execute.execute(ssh, ['netstat', '-an', '|', 'grep', str(nextport)], context):
                         self.pool.get('saas.container.port').write(cr, uid, [port['id']], {'hostport': nextport}, context=context)
                         port['hostport'] = nextport
+                        if port['name'] == 'ssh':
+                            vals['container_ssh_port'] = nextport
                     nextport += 1
                     _logger.info('nextport %s', nextport)
             _logger.info('server_id %s, hostport %s, localport %s', vals['server_ip'], port['hostport'], port['localport'])
             cmd.extend(['-p', vals['server_ip'] + ':' + str(port['hostport']) + ':' + port['localport']])
-        cmd.extend(['-v', '/opt/keys/conductor_key.pub:/root/.ssh/authorized_keys', '--name', vals['container_name'], vals['image_version_fullname']])
+        for key, volume in vals['container_volumes'].iteritems():
+            if volume['hostpath']:
+                arg =  volume['hostpath'] + ':' + volume['name']
+                if volume['readonly']:
+                    arg += ':ro'
+                cmd.extend(['-v', arg])
+        for key, link in vals['container_links'].iteritems():
+            cmd.extend(['--link', link['name'] + ':' + link['name']])
+        cmd.extend(['-v', '/opt/keys/conductor_key.pub:/opt/authorized_keys', '--name', vals['container_name'], vals['image_version_fullname']])
         execute.execute(ssh, cmd, context)
+
+        time.sleep(5)
+
+        self.deploy_post(cr, uid, vals, context)
+
+        execute.execute(ssh, ['sudo', 'docker', 'restart', vals['container_name']], context)
         ssh.close()
         sftp.close()
         return
 
-#sudo docker run -d -P --name test img_postgres
-# class saas_service(osv.osv):
-    # _inherit = 'saas.service'
+class saas_service(osv.osv):
+    _inherit = 'saas.service'
 
-    # def deploy_post_instance(self, cr, uid, vals, context=None):
-        # return
+    def deploy_post_service(self, cr, uid, vals, context=None):
+        return
 
 
-    # def deploy(self, cr, uid, vals, context=None):
+    def deploy(self, cr, uid, vals, context=None):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
 
-        # ssh, sftp = connect(vals['service_server_name'], vals['apptype_system_user'], context=context)
+        if not execute.exist(sftp, vals['app_version_full_hostpath']):
+            execute.execute(ssh, ['mkdir', '-p', vals['app_version_full_hostpath']], context)
+            sftp.put(vals['app_version_full_archivepath_targz'], vals['app_version_full_hostpath'] + '.tar.gz')
+            execute.execute(ssh, ['tar', '-xf', vals['app_version_full_hostpath'] + '.tar.gz', '-C', vals['app_version_full_hostpath']], context)
+            execute.execute(ssh, ['rm', vals['app_full_hostpath'] + '/' + vals['app_version_name'] + '.tar.gz'], context)
 
-        # if sftp.stat(vals['service_fullpath']):
-            # _logger.error('Service already exist')
-            # return
+        ssh.close()
+        sftp.close()
 
-        # execute(ssh, 'mkdir ' + vals['service_fullpath'], context=context)
+        execute.log('Creating database user', context=context)
 
-        # sftp.put(vals['app_archive_path']/vals['app_name']/vals['archive']/archive.tar.gz, vals['service_fullpath']/)
-
-        # execute(ssh, 'cd ' + vals['service_fullpath'] + '; tar -xf archive.tar.gz -c ' + vals['service_fullpath'] + '/', context=context)
-        # execute(ssh, 'rm + ' + vals['service_fullpath'] + '/archive.tar.gz', context=context)
-        # ssh.close()
-
-        # log('Creating database user', context=context)
-
-        # _logger.info('db_type %s', vals['service_bdd'])
         #SI postgres, create user
-        # if vals['service_bdd'] != 'mysql':
-            # ssh = connect(vals['bdd_server_domain'], 'postgres', context=context)
-            # execute(ssh, 'psql; CREATE USER ' + vals['service_db_user'] + ' WITH PASSWORD ' + vals['service_db_password'] + ' CREATEDB;\q', context=context)
-            # ssh.close()
+        if vals['app_bdd'] != 'mysql':
+            ssh, sftp = execute.connect(vals['database_server_domain'], vals['database_ssh_port'], 'postgres', context)
+            execute.execute(ssh, ['psql', '-c', '"CREATE USER ' + vals['service_db_user'] + ' WITH PASSWORD \'' + vals['service_db_password'] + '\' CREATEDB;"'], context)
+            ssh.close()
+            sftp.close()
 
-            # ssh = connect(vals['service_server_name'], vals['apptype_system_user'], context=context)
-            # execute(ssh, 'sed -i "/:*:' + vals['service_db_user'] + ':/d" ~/.pgpass', context=context)
-            # execute(ssh, 'echo "' + vals['bdd_server_domain'] + ':5432:*:' + vals['service_db_user'] + ':' +  + vals['service_db_passwd'] + '" >> ~/.pgpass', context=context)
-            # execute(ssh, 'chmod 700 ~/.pgpass', context=context)
-            # ssh.close()
+            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+            execute.execute(ssh, ['sed', '-i', '"/:*:' + vals['service_db_user'] + ':/d" ~/.pgpass'], context)
+            execute.execute(ssh, ['echo "' + vals['database_server_domain'] + ':5432:*:' + vals['service_db_user'] + ':' + vals['service_db_password'] + '" >> ~/.pgpass'], context)
+            execute.execute(ssh, ['chmod', '700', '~/.pgpass'], context)
+            ssh.close()
+            sftp.close()
 
-        # else:
-            # ssh = connect(vals['bdd_server_domain'], vals['apptype_system_user'], context=context)
-            # execute(ssh, "mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'create user '" + vals['service_db_user'] + "' identified by '" + vals['service_db_passwd'] + ";'", context=context)
-            # ssh.close()
+        else:
+            ssh, sftp = execute.connect(vals['bdd_server_domain'], vals['bdd_server_ssh_port'], vals['apptype_system_user'], context)
+            execute.execute(ssh, ["mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'create user '" + vals['service_db_user'] + "' identified by '" + vals['service_db_password'] + ";'"], context)
+            ssh.close()
+            sftp.close()
 
-        # log('Database user created', context=context)
+        execute.log('Database user created', context)
 
-        # self.deploy_post_instance(cr, uid, vals, context=context)
+        self.deploy_post_service(cr, uid, vals, context)
 
-        # ssh, sftp = connect(vals['service_server_name'], vals['apptype_system_user'], context=context)
+        ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
+        execute.execute(ssh, ['sudo', 'docker', 'restart', vals['container_name']], context)
+        ssh.close()
+        sftp.close()
+
+        # ssh, sftp = connect(vals['server_domain'], vals['apptype_system_user'], context=context)
         # if sftp.stat(vals['service_fullpath']):
             # log('Service ok', context=context)
         # else:
@@ -121,3 +143,140 @@ class saas_container(osv.osv):
             # ko_log(context=context)
         # ssh.close()
 
+class saas_base(osv.osv):
+    _inherit = 'saas.base'
+
+    def deploy_create_database(self, cr, uid, vals, context=None):
+        return False
+
+    def deploy_build(self, cr, uid, vals, context=None):
+        return
+
+    def deploy_post_restore(self, cr, uid, vals, context=None):
+        return
+
+    def deploy_create_poweruser(self, cr, uid, vals, context=None):
+        return
+
+    def deploy_test(self, cr, uid, vals, context=None):
+        return
+
+    def deploy_post(self, cr, uid, vals, context=None):
+        return
+
+    def deploy(self, cr, uid, vals, context=None):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        res = self.deploy_create_database(cr, uid, vals, context)
+        if not res:
+            if vals['app_bdd'] != 'mysql':
+                ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+                execute.execute(ssh, ['createdb', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], vals['base_unique_name_']], context)
+                ssh.close()
+                sftp.close()
+            # else:
+  # ssh www-data@$database_server << EOF
+    # mysql -u root -p'$mysql_password' -se "create database $unique_name_underscore;"
+    # mysql -u root -p'$mysql_password' -se "grant all on $unique_name_underscore.* to '${db_user}';"
+# EOF
+  # fi
+        log('Database created', context)
+
+        if vals['base_build'] == 'build':
+            self.deploy_build(cr, uid, vals, context)
+
+        elif vals['base_build'] == 'restore':
+            if vals['app_bdd'] != 'mysql':
+                ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+                execute.execute(ssh, ['pg_restore', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], '--no-owner', '-Fc', '-d', vals['base_unique_name_'], vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
+                ssh.close()
+                sftp.close()
+            else:
+                ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+                execute.execute(ssh, ['mysql', '-h', vals['bdd_server_domain'], '-u', vals['service_db_user'], '-p' + vals['bdd_server_mysql_passwd'], vals['base_unique_name_'], '<', vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
+                ssh.close()
+                sftp.close()
+
+            self.deploy_post_restore(cr, uid, vals, context)
+
+        if vals['base_build'] != 'none':
+            if vals['app_admin_name'] != vals['base_poweruser_name']:
+                self.deploy_create_poweruser(cr, uid, vals, context)
+
+            if vals['base_test']:
+                self.deploy_test(cr, uid, vals, context)
+
+        self.deploy_post(cr, uid, vals, context)
+
+
+  # if [[ $skip_analytics != True ]]
+  # then
+
+    # if [[ $saas != 'demo' ]]
+    # then
+    # ssh $piwik_server << EOF
+      # mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_site (name, main_url, ts_created, timezone, currency) VALUES ('$domain_name.wikicompare.info', 'http://$domain_name.wikicompare.info', NOW(), 'Europe/Paris', 'EUR');"
+# EOF
+
+    # piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$domain_name.wikicompare.info' LIMIT 1")
+    # ssh $piwik_server << EOF
+      # mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_access (login, idsite, access) VALUES ('anonymous', $piwik_id, 'view');"
+# EOF
+    # else
+    # piwik_id=$piwik_demo_id
+    # fi
+
+    # $openerp_path/saas/saas/apps/$application_type/deploy.sh post_piwik $application $domain $instance $saas $system_user $server $piwik_id $piwik_server $instances_path
+
+  # fi
+
+# fi
+
+
+# scp $openerp_path/saas/saas/apps/$application_type/apache.config www-data@$server:/etc/apache2/sites-available/$unique_name
+
+##escape='\$1'
+# $openerp_path/saas/saas/apps/$application_type/deploy.sh prepare_apache $application $saas $instance $domain $server $port $unique_name $instances_path
+
+# ssh www-data@$server << EOF
+  # sudo a2ensite $unique_name
+  # sudo /etc/init.d/apache2 reload
+# EOF
+
+
+# ssh $dns_server << EOF
+  # sed -i "/$saas\sIN\sCNAME/d" /etc/bind/db.$domain
+  # echo "$saas IN CNAME $server." >> /etc/bind/db.$domain
+  # sudo /etc/init.d/bind9 reload
+# EOF
+
+
+# scp $openerp_path/saas/saas/shell/shinken.config $shinken_server:/usr/local/shinken/etc/services/${unique_name}.cfg
+
+# directory=$backup_directory/control_backups/`date +%Y-%m-%d`-${server}-${instance}-auto
+# directory=${directory//./-}
+
+# ssh $shinken_server << EOF
+  # sed -i 's/UNIQUE_NAME/${unique_name}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
+  # sed -i 's/APPLICATION/${application}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
+  # sed -i 's/SERVER/${server}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
+  # sed -i 's/INSTANCE/${instance}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
+  # sed -i 's/SAAS/${saas}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
+  # sed -i 's/DOMAIN/${domain}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
+  # /etc/init.d/shinken reload
+# EOF
+
+
+# if ssh $shinken_server stat $directory \> /dev/null 2\>\&1
+# then
+  # echo Shinken save already set
+# else
+# ssh $shinken_server << EOF
+  # mkdir $directory
+  # mkdir $directory/$instance
+  # echo 'lorem ipsum' > $directory/$instance/lorem.txt
+# EOF
+# fi
+
+# ssh $shinken_server << EOF
+# echo 'lorem ipsum' > $directory/$unique_name_underscore.sql
+# EOF
