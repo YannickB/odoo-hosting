@@ -29,6 +29,7 @@ import time
 from datetime import datetime, timedelta
 import subprocess
 import openerp.addons.saas.execute as execute
+import erppeek
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -51,6 +52,19 @@ class saas_container(osv.osv):
 class saas_service(osv.osv):
     _inherit = 'saas.service'
 
+    def get_vals(self, cr, uid, id, context=None):
+
+        vals = super(saas_service, self).get_vals(cr, uid, id, context=context)
+
+        service = self.browse(cr, uid, id, context=context)
+
+        if 'port' in vals['service_options'] and vals['service_options']['port']['value'] in vals['container_ports']:
+            port = vals['container_ports'][vals['service_options']['port']['value']]
+            vals['service_options']['port']['localport'] = port['localport']
+            vals['service_options']['port']['hostport'] = port['hostport']
+            
+        return vals
+
     def deploy_post_service(self, cr, uid, vals, context):
         super(saas_service, self).deploy_post_service(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
@@ -69,7 +83,7 @@ class saas_service(osv.osv):
             execute.execute(ssh, ['sed', '-i', 's/DATABASE_SERVER/' + vals['database_server'] + '/g', config_file], context)
             execute.execute(ssh, ['sed', '-i', 's/DBUSER/' + vals['service_db_user'] + '/g', config_file], context)
             execute.execute(ssh, ['sed', '-i', 's/DATABASE_PASSWORD/' + vals['service_db_password'] + '/g', config_file], context)
-            execute.execute(ssh, ['sed', '-i', 's/PORT/' + vals['service_options']['port']['value'] + '/g', config_file], context)
+            execute.execute(ssh, ['sed', '-i', 's/PORT/' + vals['service_options']['port']['localport'] + '/g', config_file], context)
 
             execute.execute(ssh, ['echo "[program:' + vals['service_name'] + ']" >> /opt/odoo/supervisor.conf'], context)
             execute.execute(ssh, ['echo "command=su odoo -c \'/opt/odoo/services/' + vals['service_name'] + '/parts/odoo/odoo.py -c ' + config_file  + '\'" >> /opt/odoo/supervisor.conf'], context)
@@ -89,12 +103,25 @@ class saas_base(osv.osv):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
             ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
-            execute.execute(ssh, ['mkdir', '-p', '/opt/filestore/' + vals['base_unique_base_']], context)
+            execute.execute(ssh, ['mkdir', '-p', '/opt/odoo/filestore/' + vals['base_unique_name_']], context)
+            ssh.close()
+            sftp.close()
             if vals['base_build'] == 'build':
-                cmd = ['/usr/local/bin/erppeek', '--server', 'http://' + vals['server_domain'] + ':' + vals['service_port'], ';']
-                cmd.extend(["client.create_database('" + vals['service_db_password'] + "', '" + vals['base_unique_name_'] + "', demo=" + vals['base_test'] + ", lang='fr_FR', user_password='" + vals['base_admin_passwd'] + "')"])
-                cmd.extend(['exit'])
-                execute.execute(ssh, cmd, context)
+
+#I had to go in /usr/local/lib/python2.7/dist-packages/erppeek.py and replace def create_database line 610. More specifically, db.create and db.get_progress used here aren't working anymore, see why in odoo/services/db.py, check dispatch function.
+#    def create_database(self, passwd, database, demo=False, lang='en_US',
+#                        user_password='admin'):
+#        thread_id = self.db.create_database(passwd, database, demo, lang, user_password)
+#        self.login('admin', user_password,
+#                       database=database)
+
+                execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "')", context)
+                client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'])
+                execute.log("client.create_database('" + vals['service_db_password'] + "','" + vals['base_unique_name_'] + "'," + "demo=" + str(vals['base_test']) + "," + "lang='" + vals['base_lang'] + "'," + "user_password='" + vals['base_admin_passwd'] + "')", context)
+                client.create_database(vals['service_db_password'], vals['base_unique_name_'], demo=vals['base_test'], lang=vals['base_lang'], user_password=vals['base_admin_passwd'])
+#                cmd = ['/usr/local/bin/erppeek', '--server', 'http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport']]
+#                stdin = ["client.create_database('" + vals['service_db_password'] + "', '" + vals['base_unique_name_'] + "', demo=" + str(vals['base_test']) + ", lang='fr_FR', user_password='" + vals['base_admin_passwd'] + "')"]
+#                execute.execute_local(cmd, context, stdin_arg=stdin)
                 return True
         return res
 
@@ -102,31 +129,60 @@ class saas_base(osv.osv):
         res = super(saas_base, self).deploy_build(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
-            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
-            cmd_connect = ['/usr/local/bin/erppeek', '--server', 'http://' + vals['server_domain'] + ':' + vals['service_port'], '-u', vals['apptype_admin_name'], '-p', vals['base_admin_passwd'], '-d', vals['base_unique_name_'], ';']
-            cmd = cmd_connect
-            cmd.extend(["client.install('account_accountant', 'account_chart_install', 'l10n_fr')"])
-            cmd.extend(["client.execute('account.chart.template', 'install_chart', 'l10n_fr', 'l10n_fr_pcg_chart_template', 1, 1)"])
-            cmd.extend(["client.install('community')"])
-            cmd.extend(['exit'])
-            execute.execute(ssh, cmd, context)
+            execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user='admin', password=" + vals['base_admin_passwd'] + ")", context)
+            client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user='admin', password=vals['base_admin_passwd'])
 
-            cmd = cmd_connect
-            cmd.extend(["extended_group_id = client.search('res.groups', [('name','=','Technical Features')])[0]"])
-            cmd.extend(["model('res.groups').write([extended_group_id], {'users': [(4, 1)]})"])
-            cmd.extend(['exit'])
-            extended_group_id = execute.execute(ssh, cmd, context)
+            execute.log("extended_group_id = client.model('ir.model.data').get_object_reference('base', 'group_no_one')[1]", context)
+            extended_group_id = client.model('ir.model.data').get_object_reference('base', 'group_no_one')[1]
+            execute.log("client.model('res.groups').write([" + str(extended_group_id) + "], {'users': [(4, 1)]})", context)
+            client.model('res.groups').write([extended_group_id], {'users': [(4, 1)]})
+
+            if vals['app_options']['default_account_chart']['value'] or vals['base_options']['account_chart']['value']:
+                account_chart = vals['base_options']['account_chart']['value'] or vals['app_options']['default_account_chart']['value']
+                execute.log("client.install('account_accountant', 'account_chart_install', '" + account_chart + "')", context)
+                client.install('account_accountant', 'account_chart_install', account_chart)
+                execute.log("client.execute('account.chart.template', 'install_chart', '" + account_chart + "', '" +  account_chart + "_pcg_chart_template', 1, 1)", context)
+                client.execute('account.chart.template', 'install_chart', account_chart, account_chart + '_pcg_chart_template', 1, 1)
+
+            if vals['app_options']['install_modules']['value']:
+                modules = vals['app_options']['install_modules']['value'].split(',')
+                for module in modules:
+                    execute.log("client.install(" + module + ")", context)
+                    client.install(module)
 
         return
+
+
+    def deploy_create_poweruser(self, cr, uid, vals, context=None):
+        res = super(saas_base, self).deploy_create_poweruser(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if vals['apptype_name'] == 'odoo':
+            if vals['base_poweruser_name'] and vals['base_poweruser_email'] and vals['apptype_admin_name'] != vals['base_poweruser_name']:
+                execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user='admin', password=" + vals['base_admin_passwd'] + ")", context)
+                client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user='admin', password=vals['base_admin_passwd'])
+
+                execute.log("user_id = client.model('res.users').create({'login':'" + vals['base_poweruser_email'] + "', 'name':'" +  vals['base_poweruser_name'] + "', 'email':'" + vals['base_poweruser_email'] + "', 'password':'" + vals['base_poweruser_password'] + "'})", context)
+                user = client.model('res.users').create({'login': vals['base_poweruser_email'], 'name': vals['base_poweruser_name'], 'email': vals['base_poweruser_email'], 'password': vals['base_poweruser_password']})
+
+                if vals['app_options']['poweruser_group']['value']:
+                    group = vals['app_options']['poweruser_group']['value'].split('.')
+                    execute.log("group_id = client.model('ir.model.data').get_object_reference('" + group[0] + "','" + group[1] + "')[1]", context)
+                    group_id = client.model('ir.model.data').get_object_reference(group[0], group[1])[1]
+                    execute.log("client.model('res.groups').write([" + str(group_id) + "], {'users': [(4, " + str(user.id) + ")]})", context)
+                    client.model('res.groups').write([group_id], {'users': [(4, user.id)]})
+        return res
+
 
     def deploy_test(self, cr, uid, vals, context=None):
         res = super(saas_base, self).deploy_test(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
-            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
-            cmd_connect = ['/usr/local/bin/erppeek', '--server', 'http://' + vals['server_domain'] + ':' + vals['service_port'], '-u', vals['apptype_admin_name'], '-p', vals['base_admin_passwd'], '-d', vals['base_unique_name_'], ';']
-            cmd.extend(["client.install('community_blog', 'community_crm', 'community_event', 'community_forum', 'community_marketplace', 'community_project')"])
-            cmd.extend(['exit'])
-            execute.execute(ssh, cmd, context)
+            execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user='admin', password=" + vals['base_admin_passwd'] + ")", context)
+            client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user='admin', password=vals['base_admin_passwd'])
+            if vals['app_options']['test_install_modules']['value']:
+                modules = vals['app_options']['test_install_modules']['value'].split(',')
+                for module in modules:
+                    execute.log("client.install(" + module + ")", context)
+                    client.install(module)
 
         return

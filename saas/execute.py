@@ -32,6 +32,7 @@ import paramiko
 import os.path
 import string
 import errno
+import random
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -111,4 +112,7 @@ def execute_write_file(file, string, context):
     f = open(file, 'w')
     f.write(string)
     f.close()
+
+def generate_random_password(size):
+    return ''.join(random.choice(string.ascii_uppercase  + string.ascii_lowercase + string.digits) for _ in range(size))
 

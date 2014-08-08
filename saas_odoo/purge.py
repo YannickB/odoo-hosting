@@ -61,6 +61,6 @@ class saas_base(osv.osv):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
             ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
-            execute.execute(ssh, ['rm', '-rf', '/opt/filestore/' + vals['base_unique_base_']], context)
+            execute.execute(ssh, ['rm', '-rf', '/opt/odoo/filestore/' + vals['base_unique_name_']], context)
             ssh.close()
             sftp.close()

@@ -6,16 +6,41 @@
         <record id="apptype_odoo" model="saas.application.type">
             <field name="name">odoo</field>
             <field name="system_user">odoo</field>
-            <field name="admin_name">yodadmin</field>
+            <field name="admin_name">admin</field>
             <field name="admin_email">odoo@localhost</field>
             <field name="standard_port">8069</field>
             <field name="localpath">/opt/versions</field>
         </record>
         <record id="apptype_odoo_option1" model="saas.application.type.option">
             <field name="apptype_id" ref="apptype_odoo"/>
+            <field name="name">default_account_chart</field>
+            <field name="type">application</field>
+        </record>
+        <record id="apptype_odoo_option2" model="saas.application.type.option">
+            <field name="apptype_id" ref="apptype_odoo"/>
+            <field name="name">account_chart</field>
+            <field name="type">base</field>
+        </record>
+        <record id="apptype_odoo_option3" model="saas.application.type.option">
+            <field name="apptype_id" ref="apptype_odoo"/>
+            <field name="name">install_modules</field>
+            <field name="type">application</field>
+        </record>
+        <record id="apptype_odoo_option4" model="saas.application.type.option">
+            <field name="apptype_id" ref="apptype_odoo"/>
+            <field name="name">test_install_modules</field>
+            <field name="type">application</field>
+        </record>
+        <record id="apptype_odoo_option5" model="saas.application.type.option">
+            <field name="apptype_id" ref="apptype_odoo"/>
+            <field name="name">poweruser_group</field>
+            <field name="type">application</field>
+        </record>
+        <record id="apptype_odoo_option6" model="saas.application.type.option">
+            <field name="apptype_id" ref="apptype_odoo"/>
             <field name="name">port</field>
             <field name="type">service</field>
-            <field name="default">8069</field>
+            <field name="default">odoo1</field>
         </record>
 
         <record id="app_odoo_ocm" model="saas.application">
@@ -45,6 +70,26 @@ addons = git git@github.com:YannickB/community-management.git extra/community-ma
 reportlab = 2.7
 pypdf = 1.13
 ]]></field>
+        </record>
+        <record id="app_odoo_option1" model="saas.application.option">
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="name" ref="apptype_odoo_option1"/>
+            <field name="value">l10n_fr</field>
+        </record>
+        <record id="app_odoo_option3" model="saas.application.option">
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="name" ref="apptype_odoo_option3"/>
+            <field name="value">community</field>
+        </record>
+        <record id="app_odoo_option4" model="saas.application.option">
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="name" ref="apptype_odoo_option4"/>
+            <field name="value">community_blog,community_crm,community_event,community_forum,community_marketplace,community_project,l10n_fr_centralbank</field>
+        </record>
+        <record id="app_odoo_option5" model="saas.application.option">
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="name" ref="apptype_odoo_option5"/>
+            <field name="value">community.group_community_administrator</field>
         </record>
 
         <record id="image_odoo" model="saas.image">

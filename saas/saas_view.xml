@@ -34,6 +34,7 @@
                         <field name="poweruser_email"/>
                         <field name="build"/>
                         <field name="test"/>
+                        <field name="lang"/>
                         <button name="button_save" string="Manual Save" type="object"/>
                         <button name="send_preprod" string="Send to preprod" type="object"/>
                     </group>
@@ -417,6 +418,7 @@
                         <field name="name"/>
                         <field name="application_id"/>
                     </group>
+                    <button name="build_database" string="Build Database" type="object"/> <!-- TODO Click on this button to generate a build-appcode.yolo-consulting.net, dump the base and save in the archive file so it can be use later by restore method. Then drop build-appcode.yolo-consulting.net.-->
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>

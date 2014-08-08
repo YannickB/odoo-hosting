@@ -112,8 +112,10 @@ class saas_base(osv.osv):
 
 
         if vals['app_bdd'] != 'mysql':
-            ssh, sftp = execute.connect(vals['bdd_server_domain'], vals['bdd_server_ssh_port'], 'postgres', context)
-            execute.execute(ssh, "psql; update pg_database set datallowconn = 'false' where datname = '" + vals['base_unique_name_'] + "'; SELECT pg_terminate_backend(procpid) FROM pg_stat_activity WHERE datname = '" + vals['base_unique_name_'] + "'; DROP DATABASE " + vals['base_unique_name_'] + "; ;\q", context)
+            ssh, sftp = execute.connect(vals['database_server_domain'], vals['database_ssh_port'], 'postgres', context)
+            execute.execute(ssh, ['psql', '-c', '"update pg_database set datallowconn = \'false\' where datname = \'' + vals['base_unique_name_'] + '\'; SELECT pg_terminate_backend(procpid) FROM pg_stat_activity WHERE datname = \'' + vals['base_unique_name_'] + '\';"'], context)
+            execute.execute(ssh, ['dropdb', vals['base_unique_name_']], context)
+
             ssh.close()
             sftp.close()
 

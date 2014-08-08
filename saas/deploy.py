@@ -179,8 +179,7 @@ class saas_base(osv.osv):
     # mysql -u root -p'$mysql_password' -se "grant all on $unique_name_underscore.* to '${db_user}';"
 # EOF
   # fi
-        log('Database created', context)
-
+        execute.log('Database created', context)
         if vals['base_build'] == 'build':
             self.deploy_build(cr, uid, vals, context)
 
@@ -199,8 +198,7 @@ class saas_base(osv.osv):
             self.deploy_post_restore(cr, uid, vals, context)
 
         if vals['base_build'] != 'none':
-            if vals['app_admin_name'] != vals['base_poweruser_name']:
-                self.deploy_create_poweruser(cr, uid, vals, context)
+            self.deploy_create_poweruser(cr, uid, vals, context)
 
             if vals['base_test']:
                 self.deploy_test(cr, uid, vals, context)

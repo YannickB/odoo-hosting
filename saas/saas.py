@@ -28,6 +28,7 @@ from openerp.tools.translate import _
 import time
 from datetime import datetime, timedelta
 import subprocess
+import execute
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -1268,7 +1269,7 @@ class saas_base(osv.osv):
         'name': fields.char('Name', size=64, required=True),
         'title': fields.char('Title', size=64, required=True),
         'domain_id': fields.many2one('saas.domain', 'Domain name', required=True),
-        'service_id': fields.many2many('saas.service', 'Service', required=True),
+        'service_id': fields.many2one('saas.service', 'Service', required=True),
         'service_ids': fields.many2many('saas.service', 'saas_base_service_rel', 'base_id', 'service_id', 'Alternative Services'),
         'admin_passwd': fields.char('Admin password', size=64),
         'poweruser_name': fields.char('PowerUser name', size=64),
@@ -1279,6 +1280,7 @@ class saas_base(osv.osv):
                  ('build','Build'),
                  ('restore','Restore')],'Build?'),
         'test': fields.boolean('Test?'),
+        'lang': fields.selection([('en_US','en_US'),('fr_FR','fr_FR')], 'Language', required=True),
         'state': fields.selection([
                 ('installing','Installing'),
                 ('enabled','Enabled'),
@@ -1289,8 +1291,9 @@ class saas_base(osv.osv):
 
     _defaults = {
       'build': 'restore',
-      'admin_passwd': '#g00gle!',
-      'poweruser_passwd': '#g00gle!'
+      'admin_passwd': execute.generate_random_password(20),
+      'poweruser_passwd': execute.generate_random_password(12),
+      'lang': 'en_US'
     }
 
     _sql_constraints = [
@@ -1327,10 +1330,11 @@ class saas_base(osv.osv):
             'base_domain': base.domain_id.name,
             'base_admin_passwd': base.admin_passwd,
             'base_poweruser_name': base.poweruser_name,
-            'base_poweruser_passwd': base.poweruser_passwd,
+            'base_poweruser_password': base.poweruser_passwd,
             'base_poweruser_email': base.poweruser_email,
             'base_build': base.build,
             'base_test': base.test,
+            'base_lang': base.lang,
             'base_options': options,
         })
 
@@ -1342,7 +1346,11 @@ class saas_base(osv.osv):
         res = super(saas_base, self).create(cr, uid, vals, context=context)
         context = self.create_log(cr, uid, res, 'create', context)
         vals = self.get_vals(cr, uid, res, context=context)
-        self.deploy(cr, uid, res, vals, context=context)
+        try:
+            self.deploy(cr, uid, vals, context)
+        except:
+            self.unlink(cr, uid, [res], context=context)
+            raise
         self.end_log(cr, uid, res, context=context)
         return res
 
