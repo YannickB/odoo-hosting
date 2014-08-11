@@ -37,15 +37,43 @@ _logger = logging.getLogger(__name__)
 STARTPORT = 48000
 ENDPORT = 50000
 
+class saas_domain(osv.osv):
+    _inherit = 'saas.domain'
+
+    def deploy(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        ssh, sftp = execute.connect(vals['dns_server_domain'], vals['dns_ssh_port'], 'root', context)
+        sftp.put(vals['config_conductor_path'] + '/saas/saas/res/bind.config', vals['domain_configfile'])
+        execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['domain_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/IP/' + vals['dns_server_ip'] + '/g"', vals['domain_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        ssh.close()
+        sftp.close()
+
+class saas_server(osv.osv):
+    _inherit = 'saas.server'
+
+    def deploy(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        _logger.info('test %s', vals['shinken_server_domain'])
+        if 'shinken_server_domain' in vals:
+            ssh, sftp = execute.connect(vals['shinken_server_domain'], vals['shinken_ssh_port'], 'root', context)
+            sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/server-shinken.config', vals['server_shinken_configfile'])
+            execute.execute(ssh, ['sed', '-i', '"s/NAME/' + vals['server_domain'] + '/g"', vals['server_shinken_configfile']], context)
+            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
+            ssh.close()
+            sftp.close()
+
+
 class saas_container(osv.osv):
     _inherit = 'saas.container'
 
     def deploy_post(self, cr, uid, vals, context=None):
         return
 
-    def deploy(self, cr, uid, id, vals, context={}):
+    def deploy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        container = self.browse(cr, uid, id, context=context)
+        #container = self.browse(cr, uid, id, context=context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
 
         cmd = ['sudo','docker', 'run', '-d']
@@ -164,6 +192,9 @@ class saas_base(osv.osv):
     def deploy_post(self, cr, uid, vals, context=None):
         return
 
+    def deploy_prepare_apache(self, cr, uid, vals, context=None):
+        return
+
     def deploy(self, cr, uid, vals, context=None):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         res = self.deploy_create_database(cr, uid, vals, context)
@@ -179,31 +210,32 @@ class saas_base(osv.osv):
     # mysql -u root -p'$mysql_password' -se "grant all on $unique_name_underscore.* to '${db_user}';"
 # EOF
   # fi
-        execute.log('Database created', context)
-        if vals['base_build'] == 'build':
-            self.deploy_build(cr, uid, vals, context)
 
-        elif vals['base_build'] == 'restore':
-            if vals['app_bdd'] != 'mysql':
-                ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
-                execute.execute(ssh, ['pg_restore', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], '--no-owner', '-Fc', '-d', vals['base_unique_name_'], vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
-                ssh.close()
-                sftp.close()
-            else:
-                ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
-                execute.execute(ssh, ['mysql', '-h', vals['bdd_server_domain'], '-u', vals['service_db_user'], '-p' + vals['bdd_server_mysql_passwd'], vals['base_unique_name_'], '<', vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
-                ssh.close()
-                sftp.close()
+        # execute.log('Database created', context)
+        # if vals['base_build'] == 'build':
+            # self.deploy_build(cr, uid, vals, context)
 
-            self.deploy_post_restore(cr, uid, vals, context)
+        # elif vals['base_build'] == 'restore':
+            # if vals['app_bdd'] != 'mysql':
+                # ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+                # execute.execute(ssh, ['pg_restore', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], '--no-owner', '-Fc', '-d', vals['base_unique_name_'], vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
+                # ssh.close()
+                # sftp.close()
+            # else:
+                # ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+                # execute.execute(ssh, ['mysql', '-h', vals['bdd_server_domain'], '-u', vals['service_db_user'], '-p' + vals['bdd_server_mysql_passwd'], vals['base_unique_name_'], '<', vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
+                # ssh.close()
+                # sftp.close()
 
-        if vals['base_build'] != 'none':
-            self.deploy_create_poweruser(cr, uid, vals, context)
+            # self.deploy_post_restore(cr, uid, vals, context)
 
-            if vals['base_test']:
-                self.deploy_test(cr, uid, vals, context)
+        # if vals['base_build'] != 'none':
+            # self.deploy_create_poweruser(cr, uid, vals, context)
 
-        self.deploy_post(cr, uid, vals, context)
+            # if vals['base_test']:
+                # self.deploy_test(cr, uid, vals, context)
+
+        # self.deploy_post(cr, uid, vals, context)
 
 
   # if [[ $skip_analytics != True ]]
@@ -229,40 +261,37 @@ class saas_base(osv.osv):
 
 # fi
 
-
-# scp $openerp_path/saas/saas/apps/$application_type/apache.config www-data@$server:/etc/apache2/sites-available/$unique_name
-
-##escape='\$1'
-# $openerp_path/saas/saas/apps/$application_type/deploy.sh prepare_apache $application $saas $instance $domain $server $port $unique_name $instances_path
-
-# ssh www-data@$server << EOF
-  # sudo a2ensite $unique_name
-  # sudo /etc/init.d/apache2 reload
-# EOF
+        ssh, sftp = execute.connect(vals['proxy_server_domain'], vals['proxy_ssh_port'], 'root', context)
+        sftp.put(vals['config_conductor_path'] + '/saas/saas_' + vals['apptype_name'] + '/res/apache.config', vals['base_apache_configfile'])
+        self.deploy_prepare_apache(cr, uid, vals, context)
+        execute.execute(ssh, ['a2ensite', vals['base_unique_name']], context)
+        execute.execute(ssh, ['/etc/init.d/apache2', 'reload'], context)
+        ssh.close()
+        sftp.close()
 
 
-# ssh $dns_server << EOF
-  # sed -i "/$saas\sIN\sCNAME/d" /etc/bind/db.$domain
-  # echo "$saas IN CNAME $server." >> /etc/bind/db.$domain
-  # sudo /etc/init.d/bind9 reload
-# EOF
+        ssh, sftp = execute.connect(vals['dns_server_domain'], vals['dns_ssh_port'], 'root', context)
+        execute.execute(ssh, ['sed', '-i', '"/' + vals['base_name'] + '\sIN\sCNAME/d"', vals['domain_configfile']], context)
+        execute.execute(ssh, ['echo "' + vals['base_name'] + ' IN CNAME ' + vals['proxy_server_domain'] + '" >> ' + vals['domain_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        ssh.close()
+        sftp.close()
 
+        ssh, sftp = execute.connect(vals['shinken_server_domain'], vals['shinken_ssh_port'], 'root', context)
+        sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/base-shinken.config', vals['base_shinken_configfile'])
+        execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['base_unique_name'] + '/g"', vals['base_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/APPLICATION/' + vals['app_name'] + '/g"', vals['base_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/SERVER/' + vals['server_domain'] + '/g"', vals['base_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/SERVICE/' + vals['service_name'] + '/g"', vals['base_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_shinken_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
+        ssh.close()
+        sftp.close()
 
-# scp $openerp_path/saas/saas/shell/shinken.config $shinken_server:/usr/local/shinken/etc/services/${unique_name}.cfg
 
 # directory=$backup_directory/control_backups/`date +%Y-%m-%d`-${server}-${instance}-auto
 # directory=${directory//./-}
-
-# ssh $shinken_server << EOF
-  # sed -i 's/UNIQUE_NAME/${unique_name}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
-  # sed -i 's/APPLICATION/${application}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
-  # sed -i 's/SERVER/${server}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
-  # sed -i 's/INSTANCE/${instance}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
-  # sed -i 's/SAAS/${saas}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
-  # sed -i 's/DOMAIN/${domain}/g' /usr/local/shinken/etc/services/${unique_name}.cfg
-  # /etc/init.d/shinken reload
-# EOF
-
 
 # if ssh $shinken_server stat $directory \> /dev/null 2\>\&1
 # then

@@ -34,12 +34,35 @@ import execute
 import logging
 _logger = logging.getLogger(__name__)
 
+class saas_domain(osv.osv):
+    _inherit = 'saas.domain'
+
+    def purge(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        ssh, sftp = execute.connect(vals['dns_server_domain'], vals['dns_ssh_port'], 'root', context)
+        execute.execute(ssh, ['rm', vals['domain_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        ssh.close()
+        sftp.close()
+
+class saas_server(osv.osv):
+    _inherit = 'saas.server'
+
+    def purge(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if 'shinken_server_domain' in vals:
+            ssh, sftp = execute.connect(vals['shinken_server_domain'], vals['shinken_ssh_port'], 'root', context)
+            execute.execute(ssh, ['rm', vals['server_shinken_configfile']], context)
+            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
+            ssh.close()
+            sftp.close()
+
 class saas_container(osv.osv):
     _inherit = 'saas.container'
 
-    def purge(self, cr, uid, id, vals, context={}):
+    def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        container = self.browse(cr, uid, id, context=context)
+#        container = self.browse(cr, uid, id, context=context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
         execute.execute(ssh, ['sudo','docker', 'stop', vals['container_name']], context)
         execute.execute(ssh, ['sudo','docker', 'rm', vals['container_name']], context)
@@ -96,20 +119,28 @@ class saas_base(osv.osv):
     def purge_post(self, cr, uid, vals, context=None):
         return
 
-    def purge(self, cr, uid, id, vals, context={}):
+    def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
+        ssh, sftp = execute.connect(vals['shinken_server_domain'], vals['shinken_ssh_port'], 'root', context)
+        execute.execute(ssh, ['rm', vals['base_shinken_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
+        ssh.close()
+        sftp.close()
 
-# ssh $shinken_server << EOF
-# rm /usr/local/shinken/etc/services/$unique_name.cfg 
-# /etc/init.d/shinken reload
-# EOF
 
-# ssh $dns_server << EOF
-# sed -i "/$saas\sIN\sCNAME/d" /etc/bind/db.$domain
-# sudo /etc/init.d/bind9 reload
-# EOF
+        ssh, sftp = execute.connect(vals['dns_server_domain'], vals['dns_ssh_port'], 'root', context)
+        execute.execute(ssh, ['sed', '-i', '"/' + vals['base_name'] + '\sIN\sCNAME/d"', vals['domain_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        ssh.close()
+        sftp.close()
 
+        ssh, sftp = execute.connect(vals['proxy_server_domain'], vals['proxy_ssh_port'], 'root', context)
+        execute.execute(ssh, ['a2dissite', vals['base_unique_name']], context)
+        execute.execute(ssh, ['rm', vals['base_apache_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/apache2', 'reload'], context)
+        ssh.close()
+        sftp.close()
 
         if vals['app_bdd'] != 'mysql':
             ssh, sftp = execute.connect(vals['database_server_domain'], vals['database_ssh_port'], 'postgres', context)
@@ -124,14 +155,6 @@ class saas_base(osv.osv):
             execute.execute(ssh, ["mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'drop database '" + vals['base_unique_name_'] + ";'"], context)
             ssh.close()
             sftp.close()
-
-
-
-# ssh www-data@$server << EOF
-# sudo a2dissite $unique_name
-# rm /etc/apache2/sites-available/$unique_name
-# sudo /etc/init.d/apache2 reload
-# EOF
 
         self.purge_post(cr, uid, vals, context)
 

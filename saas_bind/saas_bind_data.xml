@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_bind" model="saas.application.type">
+            <field name="name">bind</field>
+            <field name="system_user">bind</field>
+            <field name="admin_name">admin</field>
+            <field name="admin_email">admin@localhost</field>
+            <field name="standard_port">53</field>
+        </record>
+
+        <record id="app_bind" model="saas.application">
+            <field name="name">bind</field>
+            <field name="code">bind</field>
+            <field name="current_version">1</field>
+            <field name="type_id" ref="apptype_bind"/>
+        </record>
+
+
+        <record id="image_bind" model="saas.image">
+            <field name="name">img_bind</field>
+            <field name="application_id" ref="app_bind"/>
+            <field name="current_version">1</field>
+            <field name="dockerfile"><![CDATA[FROM yolobase:latest
+MAINTAINER yannick.buron@gmail.com
+
+
+
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install bind9
+
+mkdir -m 0775 -p /var/run/named
+chown root:bind /var/run/named
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:bind]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/usr/sbin/named -u bind -g" >> /etc/supervisor/conf.d/supervisord.conf
+
+
+#USER bind
+
+#RUN mkdir ~/.ssh
+#RUN ln -s /opt/authorized_keys ~/.ssh/authorized_keys
+
+USER root
+]]></field>
+        </record>
+        <record id="image_bind_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_bind"/>
+            <field name="name">/etc/bind</field>
+        </record>
+        <record id="image_bind_port1" model="saas.image.port">
+            <field name="image_id" ref="image_bind"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose" eval="True"/>
+        </record>
+        <record id="image_bind_port2" model="saas.image.port">
+            <field name="image_id" ref="image_bind"/>
+            <field name="name">bind</field>
+            <field name="localport">53</field>
+            <field name="expose" eval="True"/>
+        </record>
+
+    </data>
+</openerp>

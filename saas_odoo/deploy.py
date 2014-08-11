@@ -186,3 +186,17 @@ class saas_base(osv.osv):
                     client.install(module)
 
         return
+
+
+    def deploy_prepare_apache(self, cr, uid, vals, context=None):
+        res = super(saas_base, self).deploy_prepare_apache(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if vals['apptype_name'] == 'odoo':
+            ssh, sftp = execute.connect(vals['proxy_server_domain'], vals['proxy_ssh_port'], 'root', context)
+            execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_apache_configfile']], context)
+            execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_apache_configfile']], context)
+            execute.execute(ssh, ['sed', '-i', '"s/SERVER/' + vals['server_domain'] + '/g"', vals['base_apache_configfile']], context)
+            execute.execute(ssh, ['sed', '-i', '"s/PORT/' + vals['service_options']['port']['hostport'] + '/g"', vals['base_apache_configfile']], context)
+            ssh.close()
+            sftp.close()
+        return

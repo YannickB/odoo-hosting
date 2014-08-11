@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_proxy" model="saas.application.type">
+            <field name="name">proxy</field>
+            <field name="system_user">www-data</field>
+            <field name="admin_name">admin</field>
+            <field name="admin_email">admin@localhost</field>
+            <field name="standard_port">80</field>
+        </record>
+
+        <record id="app_proxy" model="saas.application">
+            <field name="name">proxy</field>
+            <field name="code">proxy</field>
+            <field name="current_version">2</field>
+            <field name="type_id" ref="apptype_proxy"/>
+        </record>
+
+    </data>
+</openerp>

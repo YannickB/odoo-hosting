@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_shinken" model="saas.application.type">
+            <field name="name">shinken</field>
+            <field name="system_user">shinken</field>
+            <field name="admin_name">admin</field>
+            <field name="admin_email">admin@localhost</field>
+            <field name="standard_port">7767</field>
+        </record>
+
+        <record id="app_shinken" model="saas.application">
+            <field name="name">shinken</field>
+            <field name="code">shinken</field>
+            <field name="current_version">1</field>
+            <field name="type_id" ref="apptype_shinken"/>
+        </record>
+
+
+        <record id="image_shinken" model="saas.image">
+            <field name="name">img_shinken</field>
+            <field name="application_id" ref="app_shinken"/>
+            <field name="current_version">1</field>
+            <field name="dockerfile"><![CDATA[FROM yolobase:latest
+MAINTAINER yannick.buron@gmail.com
+
+
+
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install curl nagios-nrpe-plugin lsb-release
+
+# Install Shinken from the installation script
+RUN export TERM=xterm
+RUN curl -L http://install.shinken-monitoring.org | /bin/bash
+
+ADD ./saas/saas_shinken/res/general-shinken.config /usr/local/shinken/etc/services/yolo.cfg
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:shinken]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/etc/init.d/shinken start" >> /etc/supervisor/conf.d/supervisord.conf
+
+
+#USER shinken
+
+#RUN mkdir ~/.ssh
+#RUN ln -s /opt/authorized_keys ~/.ssh/authorized_keys
+
+USER root
+]]></field>
+        </record>
+        <record id="image_shinken_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_shinken"/>
+            <field name="name">/usr/local/shinken/etc</field>
+        </record>
+        <record id="image_shinken_port1" model="saas.image.port">
+            <field name="image_id" ref="image_shinken"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose" eval="True"/>
+        </record>
+        <record id="image_shinken_port2" model="saas.image.port">
+            <field name="image_id" ref="image_shinken"/>
+            <field name="name">shinken</field>
+            <field name="localport">7767</field>
+            <field name="expose" eval="True"/>
+        </record>
+
+    </data>
+</openerp>

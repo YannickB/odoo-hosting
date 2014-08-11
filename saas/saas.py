@@ -43,7 +43,7 @@ class saas_log(osv.osv):
             model_obj = self.pool.get(log.model)
             record = model_obj.browse(cr, uid, log.res_id, context=context)
             res[log.id] = ''
-            if record and 'name' in record and record.name:
+            if record and hasattr(record, 'name'):
                 res[log.id] = record.name
         return res
 
@@ -62,12 +62,6 @@ class saas_log(osv.osv):
     }
 
     _order = 'create_date desc'
-
-    def unlink(self, cr, uid, ids, context=None):
-        log_obj = self.pool.get('saas.log')
-        log_ids = log_obj.search(cr, uid, [('model','=',self._name),('res_id','in',ids)],context=context)
-        log_obj.unlink(cr, uid, log_ids, context=context)
-        return super(saas_log, self).unlink(cr, uid, ids, context=context)
 
 class saas_log_model(osv.AbstractModel):
     _name = 'saas.log.model'
@@ -99,6 +93,20 @@ class saas_log_model(osv.AbstractModel):
             if log.state == 'unfinished' and context['log_model'] == self._name and context['log_res_id'] == id:
                 log_obj.write(cr, uid, [context['log_id']], {'state': 'ok'}, context=context)
 
+    def reinstall(self, cr, uid, ids, context=None):
+        for record in self.browse(cr, uid, ids, context=context):
+            context = self.create_log(cr, uid, record.id, 'reinstall', context)
+            vals = self.get_vals(cr, uid, record.id, context=context)
+            self.purge(cr, uid, vals, context=context)
+            self.deploy(cr, uid, vals, context=context)
+            self.end_log(cr, uid, record.id, context=context)
+
+    def unlink(self, cr, uid, ids, context=None):
+        log_obj = self.pool.get('saas.log')
+        log_ids = log_obj.search(cr, uid, [('model','=',self._name),('res_id','in',ids)],context=context)
+        log_obj.unlink(cr, uid, log_ids, context=context)
+        return super(saas_log_model, self).unlink(cr, uid, ids, context=context)
+
 class saas_image(osv.osv):
     _name = 'saas.image'
 
@@ -112,12 +120,14 @@ class saas_image(osv.osv):
         'version_ids': fields.one2many('saas.image.version','image_id', 'Versions'),
     }
 
-    def get_vals(self, cr, uid, id, context=None):
+    def get_vals(self, cr, uid, id, context={}):
 
         vals = {}
 
         image = self.browse(cr, uid, id, context=context)
 
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
+        vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
 
         ports = {}
         for port in image.port_ids:
@@ -198,6 +208,7 @@ class saas_image_version(osv.osv):
             'image_version_fullname': image_version.image_id.name + ':' + image_version.name,
         })
 
+
         return vals
 
     def create(self, cr, uid, vals, context=None):
@@ -220,10 +231,42 @@ class saas_image_version(osv.osv):
 
 class saas_domain(osv.osv):
     _name = 'saas.domain'
+    _inherit = ['saas.log.model']
 
     _columns = {
         'name': fields.char('Domain name', size=64, required=True)
     }
+
+    def get_vals(self, cr, uid, id, context=None):
+
+        vals = {}
+
+        domain = self.browse(cr, uid, id, context=context)
+
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
+        vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
+
+        vals.update({
+            'domain_name': domain.name,
+            'domain_configfile': '/etc/bind/db.' + domain.name,
+        })
+
+        return vals
+
+    def create(self, cr, uid, vals, context=None):
+        res = super(saas_domain, self).create(cr, uid, vals, context=context)
+        context = self.create_log(cr, uid, res, 'create', context)
+        vals = self.get_vals(cr, uid, res, context=context)
+        self.deploy(cr, uid, vals, context=context)
+        self.end_log(cr, uid, res, context=context)
+        return res 
+
+
+    def unlink(self, cr, uid, ids, context=None):
+        for domain in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, domain.id, context=context)
+            self.purge(cr, uid, vals, context=context)
+        return super(saas_domain, self).unlink(cr, uid, ids, context=context)
 
 
 class saas_application_type(osv.osv):
@@ -242,7 +285,7 @@ class saas_application_type(osv.osv):
         'application_ids': fields.one2many('saas.application', 'type_id', 'Applications'),
     }
 
-    def get_vals(self, cr, uid, id, context=None):
+    def get_vals(self, cr, uid, id, context={}):
 
         vals = {}
 
@@ -820,6 +863,7 @@ class saas_application_version(osv.osv):
 
 class saas_server(osv.osv):
     _name = 'saas.server'
+    _inherit = ['saas.log.model']
 
     _columns = {
         'name': fields.char('Domain name', size=64, required=True),
@@ -828,17 +872,39 @@ class saas_server(osv.osv):
         'mysql_passwd': fields.char('MySQL Passwd', size=64),
     }
 
-    def get_vals(self, cr, uid, id, type='', context=None):
+    def get_vals(self, cr, uid, id, type='', context={}):
 
         server = self.browse(cr, uid, id, context=context)
+        vals ={}
 
-        return {
+        if 'from_config' not in context:
+            config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
+            vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
+
+        vals.update({
             type + 'server_id': server.id,
             type + 'server_domain': server.name,
             type + 'server_ip': server.ip,
             type + 'server_ssh_port': int(server.ssh_port),
             type + 'server_mysql_passwd': server.mysql_passwd,
-        }
+            type + 'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + server.name + '.cfg'
+        })
+        return vals
+
+
+    def create(self, cr, uid, vals, context={}):
+        res = super(saas_server, self).create(cr, uid, vals, context=context)
+        context = self.create_log(cr, uid, res, 'create', context)
+        vals = self.get_vals(cr, uid, res, context=context)
+        self.deploy(cr, uid, vals, context=context)
+        self.end_log(cr, uid, res, context=context)
+        return res
+
+    def unlink(self, cr, uid, ids, context={}):
+        for server in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, server.id, context=context)
+            self.purge(cr, uid, vals, context=context)
+        return super(saas_server, self).unlink(cr, uid, ids, context=context)
 
 class saas_container(osv.osv):
     _name = 'saas.container'
@@ -859,15 +925,17 @@ class saas_container(osv.osv):
 
 #########TODO add contraint, image_version doit appartenir à image_id qui doit correspondre à application_id
 #########TODO add contraint, a container can only have one linked container of each application type
-    def get_vals(self, cr, uid, id, context=None):
+    def get_vals(self, cr, uid, id, context={}):
 
         vals = {}
 
         container = self.browse(cr, uid, id, context=context)
 
-        vals.update(self.pool.get('saas.image.version').get_vals(cr, uid, container.image_version_id.id, context=context))
+        if 'from_config' not in context:
+            vals.update(self.pool.get('saas.image.version').get_vals(cr, uid, container.image_version_id.id, context=context))
+            vals.update(self.pool.get('saas.application').get_vals(cr, uid, container.application_id.id, context=context))
         vals.update(self.pool.get('saas.server').get_vals(cr, uid, container.server_id.id, context=context))
-        vals.update(self.pool.get('saas.application').get_vals(cr, uid, container.application_id.id, context=context))
+
 
         links = {}
         for link in  container.linked_container_ids:
@@ -919,14 +987,14 @@ class saas_container(osv.osv):
         res = super(saas_container, self).create(cr, uid, vals, context=context)
         context = self.create_log(cr, uid, res, 'create', context)
         vals = self.get_vals(cr, uid, res, context=context)
-        self.deploy(cr, uid, res, vals, context=context)
+        self.deploy(cr, uid, vals, context=context)
         self.end_log(cr, uid, res, context=context)
         return res
 
     def unlink(self, cr, uid, ids, context={}):
         for container in self.browse(cr, uid, ids, context=context):
             vals = self.get_vals(cr, uid, container.id, context=context)
-            self.purge(cr, uid, container.id, vals, context=context)
+            self.purge(cr, uid, vals, context=context)
         return super(saas_container, self).unlink(cr, uid, ids, context=context)
 
 
@@ -1271,6 +1339,7 @@ class saas_base(osv.osv):
         'domain_id': fields.many2one('saas.domain', 'Domain name', required=True),
         'service_id': fields.many2one('saas.service', 'Service', required=True),
         'service_ids': fields.many2many('saas.service', 'saas_base_service_rel', 'base_id', 'service_id', 'Alternative Services'),
+        'proxy_id': fields.many2one('saas.container', 'Proxy', required=True),
         'admin_passwd': fields.char('Admin password', size=64),
         'poweruser_name': fields.char('PowerUser name', size=64),
         'poweruser_passwd': fields.char('PowerUser password', size=64),
@@ -1309,10 +1378,19 @@ class saas_base(osv.osv):
 
         base = self.browse(cr, uid, id, context=context)
 
+        vals.update(self.pool.get('saas.domain').get_vals(cr, uid, base.domain_id.id, context=context))
         vals.update(self.pool.get('saas.service').get_vals(cr, uid, base.service_id.id, context=context))
 
         unique_name = vals['app_code'] + '-' + base.name + '-' + base.domain_id.name
         unique_name = unique_name.replace('.','-')
+
+        proxy_vals = self.pool.get('saas.container').get_vals(cr, uid, base.proxy_id.id, context=context)
+        vals.update({
+            'proxy_id': proxy_vals['container_id'],
+            'proxy_ssh_port': proxy_vals['container_ssh_port'],
+            'proxy_server_id': proxy_vals['server_id'],
+            'proxy_server_domain': proxy_vals['server_domain'],
+        })
 
         options = {}
         for option in base.service_id.container_id.application_id.type_id.option_ids:
@@ -1336,6 +1414,8 @@ class saas_base(osv.osv):
             'base_test': base.test,
             'base_lang': base.lang,
             'base_options': options,
+            'base_apache_configfile': '/etc/apache2/sites-available/' + unique_name,
+            'base_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg'
         })
 
         return vals
@@ -1358,7 +1438,7 @@ class saas_base(osv.osv):
     def unlink(self, cr, uid, ids, context={}):
         for base in self.browse(cr, uid, ids, context=context):
             vals = self.get_vals(cr, uid, base.id, context=context)
-            self.purge(cr, uid, base.id, vals, context=context)
+            self.purge(cr, uid, vals, context=context)
         return super(saas_base, self).unlink(cr, uid, ids, context=context)
 
     # def create(self, cr, uid, vals, context=None):
@@ -1728,16 +1808,40 @@ class saas_config_settings(osv.osv):
         'backup_directory': fields.char('Backup directory', size=128),
         'piwik_server': fields.char('Piwik server', size=128),
         'piwik_password': fields.char('Piwik Password', size=128),
-        'dns_server': fields.char('DNS Server', size=128),
-        'shinken_server': fields.char('Shinken Server', size=128),
+        'dns_id': fields.many2one('saas.container', 'DNS Server'),
+        'shinken_id': fields.many2one('saas.container', 'Shinken Server'),
         'ftpuser': fields.char('FTP User', size=64),
         'ftppass': fields.char('FTP Pass', size=64),
         'ftpserver': fields.char('FTP Server', size=64),
     }
 
-    def get_vals(self, cr, uid, context=None):
+    def get_vals(self, cr, uid, context={}):
+        context['from_config'] = True
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
-        return {
+
+        vals = {}
+
+        if config.dns_id:
+            dns_vals = self.pool.get('saas.container').get_vals(cr, uid, config.dns_id.id, context=context)
+            vals.update({
+                'dns_id': dns_vals['container_id'],
+                'dns_ssh_port': dns_vals['container_ssh_port'],
+                'dns_server_id': dns_vals['server_id'],
+                'dns_server_domain': dns_vals['server_domain'],
+                'dns_server_ip': dns_vals['server_ip'],
+            })
+
+        if config.shinken_id:
+            shinken_vals = self.pool.get('saas.container').get_vals(cr, uid, config.shinken_id.id, context=context)
+            vals.update({
+                'shinken_id': shinken_vals['container_id'],
+                'shinken_ssh_port': shinken_vals['container_ssh_port'],
+                'shinken_server_id': shinken_vals['server_id'],
+                'shinken_server_domain': shinken_vals['server_domain'],
+                'shinken_server_ip': shinken_vals['server_ip'],
+            })
+
+        vals.update({
             'config_conductor_path': config.conductor_path,
             'config_log_path': config.log_path,
             'config_archive_path': config.archive_path,
@@ -1745,12 +1849,11 @@ class saas_config_settings(osv.osv):
             'config_backup_directory': config.backup_directory,
             'config_piwik_server': config.piwik_server,
             'config_piwik_password': config.piwik_password,
-            'config_dns_server': config.dns_server,
-            'config_shinken_server': config.shinken_server,
             'config_ftpuser': config.ftpuser,
             'config_ftppass': config.ftppass,
             'config_ftpserver': config.ftpserver,
-        }
+        })
+        return vals
 
 
     def cron_save(self, cr, uid, ids, context={}):

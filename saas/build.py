@@ -49,10 +49,8 @@ class saas_image_version(osv.osv):
     def build(self, cr, uid, id, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 #        version = self.browse(cr, uid, id, context=context)
-        if execute.local_file_exist('/tmp/saas-conductor/Dockerfile'):
-            execute.execute_local(['rm', '/tmp/saas-conductor/Dockerfile'], context)
-        if not execute.local_dir_exist('/tmp/saas-conductor'):
-            execute.execute_local(['mkdir', '/tmp/saas-conductor'], context)
+        execute.execute_local(['mkdir', '-p','/opt/build/saas-conductor'], context)
+        execute.execute_local(['cp', '-R', vals['config_conductor_path'] + '/saas', '/opt/build/saas-conductor/saas'], context)
 
         dockerfile = vals['image_dockerfile']
         volumes = '['
@@ -67,10 +65,10 @@ class saas_image_version(osv.osv):
         if ports:
             dockerfile += '\nEXPOSE ' + ports
 
-        execute.execute_write_file('/tmp/saas-conductor/Dockerfile', dockerfile, context)
-        execute.execute_local(['sudo','docker', 'build', '-t', vals['image_version_fullname'],'/tmp/saas-conductor'], context)
+        execute.execute_write_file('/opt/build/saas-conductor/Dockerfile', dockerfile, context)
+        execute.execute_local(['sudo','docker', 'build', '-t', vals['image_version_fullname'],'/opt/build/saas-conductor'], context)
         execute.execute_local(['sudo','docker', 'tag', vals['image_version_fullname'], vals['image_name'] + ':latest'], context)
-        execute.execute_local(['rm', '/tmp/saas-conductor/Dockerfile'], context)
+        execute.execute_local(['rm', '-rf', '/opt/build/saas-conductor'], context)
         return
 
     def purge(self, cr, uid, id, vals, context={}):
