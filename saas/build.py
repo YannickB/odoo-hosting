@@ -53,11 +53,8 @@ class saas_image_version(osv.osv):
         execute.execute_local(['cp', '-R', vals['config_conductor_path'] + '/saas', '/opt/build/saas-conductor/saas'], context)
 
         dockerfile = vals['image_dockerfile']
-        volumes = '['
         for key, volume in vals['image_volumes'].iteritems():
-            volumes += '"' + volume['name'] + '",'
-        volumes += ']'
-        dockerfile += '\nVOLUME ' + volumes
+            dockerfile += '\nVOLUME ' + volume['name']
 
         ports = ''
         for key, port in vals['image_ports'].iteritems():
@@ -70,6 +67,10 @@ class saas_image_version(osv.osv):
         execute.execute_local(['sudo','docker', 'tag', vals['image_version_fullname'], vals['image_name'] + ':latest'], context)
         execute.execute_local(['rm', '-rf', '/opt/build/saas-conductor'], context)
         return
+
+#In case of problems with ssh authentification
+# - Make sure the /opt/keys belong to root:root with 700 rights
+# - Make sure the user in the container can access the keys, and if possible make the key belong to the user with 700 rights
 
     def purge(self, cr, uid, id, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})

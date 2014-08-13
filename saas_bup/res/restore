@@ -1,0 +1,33 @@
+#!/bin/bash
+IFS=","
+
+
+for path in $3
+do
+ echo $path
+ rm -rf $path/*
+done
+
+directory=/tmp/bup-restore/$1/archive
+archive=/tmp/bup-restore/$1/archive.tar.gz
+
+ssh bup-server << EOF
+  mkdir -p $directory
+  bup restore -C $directory $1/$2
+  tar czf $archive -C $directory/$2 .
+EOF
+
+mkdir -p $directory
+scp -qr bup-server:$archive $archive
+tar -xf $archive -C $directory
+
+for path in $directory/*
+do
+ echo $path
+ cp -R $path /
+done
+rm -rf /tmp/bup-restore/$1
+
+ssh bup-server << EOF
+  rm -rf /tmp/bup-restore/$1
+EOF

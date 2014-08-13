@@ -153,8 +153,19 @@
                             <field name="name"/>
                             <field name="hostpath"/>
                             <field name="readonly"/>
+                            <field name="nosave"/>
                         </tree>
                     </field>
+                    <group col="4">
+                        <field name="save_repository_id"/>
+                        <field name="time_between_save"/>
+                        <field name="saverepo_change"/>
+                        <field name="saverepo_expiration"/>
+                        <newline/>
+                        <field name="date_next_save"/>
+                        <field name="save_comment"/>
+                    </group>
+                    <button name="save" string="Save" type="object"/>
                     <button name="reinstall" string="Reinstall" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
@@ -212,23 +223,70 @@
             </field>
         </record>
 
-        <record id="action_saas_save_form" model="ir.actions.act_window">
-            <field name="name">Saves</field>
+        <record id="action_saas_save_repository_form" model="ir.actions.act_window">
+            <field name="name">Save Repositories</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.save</field>
+            <field name="res_model">saas.save.repository</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_save_form" id="menu_action_saas_save_form" parent="menu_saas_saas"/>
+        <menuitem action="action_saas_save_repository_form" id="menu_action_saas_save_repository_form" parent="menu_saas_saas"/>
 
-        <record id="view_saas_save_form" model="ir.ui.view">
-            <field name="name">saas.save.form</field>
-            <field name="model">saas.save</field>
+        <record id="view_saas_save_repository_form" model="ir.ui.view">
+            <field name="name">saas.save.repository.form</field>
+            <field name="model">saas.save.repository</field>
+            <field name="arch" type="xml">
+                <form string="Save Repository" version="7.0">
+                    <group col="4">
+                      <field name="name"/>
+                      <field name="type"/>
+                      <field name="date_change"/>
+                      <field name="date_expiration"/>
+                    </group>
+                    <notebook>
+                        <page string="Container" attrs="{'invisible':[('type','!=','container')]}">
+                            <group col="4">
+                              <field name="container_name"/>
+                              <field name="container_server"/>
+                            </group>  
+                        </page>
+                     </notebook>
+                    <field name="save_ids" colspan="4"/>
+                </form>
+            </field>
+        </record>
+        <record id="view_saas_save_repository_tree" model="ir.ui.view">
+            <field name="name">saas.save.repository.tree</field>
+            <field name="model">saas.save.repository</field>
+            <field name="arch" type="xml">
+                <tree string="Save Repository">
+                    <field name="name"/>
+                    <field name='type'/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_saas_save_save_form" model="ir.actions.act_window">
+            <field name="name">Saves</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">saas.save.save</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_saas_save_save_form" id="menu_action_saas_save_save_form" parent="menu_saas_saas"/>
+
+        <record id="view_saas_save_save_form" model="ir.ui.view">
+            <field name="name">saas.save.save.form</field>
+            <field name="model">saas.save.save</field>
             <field name="arch" type="xml">
                 <form string="Save" version="7.0">
                     <group col="4">
                       <field name="name"/>
-                      <field name="instance_id"/>
+                      <field name="type" invisible="1"/>
+                      <field name="repo_id"/>
+                      <field name="now_bup"/>
+                      <field name='comment'/>
+<!--                      <field name="instance_id"/>
                       <field name="saas_ids"/>
                       <field name="create_date"/>
                       <field name="version"/>
@@ -237,22 +295,38 @@
                       <newline/>
                       <field name="restore_instance_id" domain="[('application_id','=',application_id)]"/>
                       <field name="restore_prefix"/>
-                      <field name="restore_saas_ids" domain="[('id','in',saas_ids[0][2])]"/>
-                      <button name="restore" string="Restore SaaS" type="object"/>
+                      <field name="restore_saas_ids" domain="[('id','in',saas_ids[0][2])]"/>-->
                     </group>
+                    <notebook>
+                        <page string="Container" attrs="{'invisible':[('type','!=','container')]}">
+                            <group col="4">
+                              <field name="container_id"/>
+                              <field name="container_app"/>
+                              <field name="container_img"/>
+                              <field name="container_img_version"/>
+                              <field name="container_ports"/>
+                              <field name="container_options"/>
+                              <field name="container_volumes_comma"/>
+                              <field name="container_volumes"/>
+                            </group>  
+                       </page>
+                    </notebook>
+                    <button name="restore" string="Restore" type="object"/>
+                    <field name="log_ids" colspan="4"/>
                 </form>
             </field>
         </record>
-        <record id="view_saas_save_tree" model="ir.ui.view">
-            <field name="name">saas.save.tree</field>
-            <field name="model">saas.save</field>
+        <record id="view_saas_save_save_tree" model="ir.ui.view">
+            <field name="name">saas.save.save.tree</field>
+            <field name="model">saas.save.save</field>
             <field name="arch" type="xml">
                 <tree string="Save">
                     <field name="name"/>
-                    <field name='instance_id'/>
+                    <field name='comment'/>
+<!--                    <field name='instance_id'/>
                     <field name="saas_ids"/>
                     <field name="create_date"/>
-                    <field name="version"/>
+                    <field name="version"/>-->
                 </tree>
             </field>
         </record>
@@ -381,6 +455,13 @@
                         <field name="version_preprod"/>
                         <field name="version_test"/>
                         <field name="version_dev"/>
+                        <newline/>
+                        <field name="container_time_between_save"/>
+                        <field name="base_time_between_save"/>
+                        <field name="container_saverepo_change"/>
+                        <field name="base_saverepo_change"/>
+                        <field name="container_saverepo_expiration"/>
+                        <field name="base_saverepo_expiration"/>
 <!--                        <newline/>
                         <button name="refresh_demo" string="Refresh Demo" type="object"/>-->
                     </group>
@@ -511,6 +592,7 @@
                             <field name="name"/>
                             <field name="hostpath"/>
                             <field name="readonly"/>
+                            <field name="nosave"/>
                         </tree>
                     </field>
                     <field name="port_ids" colspan="4">
@@ -588,6 +670,7 @@
                         <field name="piwik_password" required="1"/>
                         <field name="dns_id" required="1"/>
                         <field name="shinken_id" required="1"/>
+                        <field name="bup_id" required="1"/>
                         <field name="ftpuser" required="1"/>
                         <field name="ftppass" required="1"/>
                         <field name="ftpserver" required="1"/>

@@ -107,6 +107,13 @@ class saas_container(osv.osv):
         self.deploy_post(cr, uid, vals, context)
 
         execute.execute(ssh, ['sudo', 'docker', 'restart', vals['container_name']], context)
+
+        execute.execute_write_file('/home/saas-conductor/.ssh/config', 'Host ' + vals['container_fullname'], context)
+        execute.execute_write_file('/home/saas-conductor/.ssh/config', '\n  HostName ' + vals['server_domain'], context)
+        execute.execute_write_file('/home/saas-conductor/.ssh/config', '\n  Port ' + str(vals['container_ssh_port']), context)
+        execute.execute_write_file('/home/saas-conductor/.ssh/config', '\n  User root', context)
+        execute.execute_write_file('/home/saas-conductor/.ssh/config', '\n#' + vals['container_fullname'] + '\n', context)
+
         ssh.close()
         sftp.close()
         return
@@ -211,31 +218,31 @@ class saas_base(osv.osv):
 # EOF
   # fi
 
-        # execute.log('Database created', context)
-        # if vals['base_build'] == 'build':
-            # self.deploy_build(cr, uid, vals, context)
+        execute.log('Database created', context)
+        if vals['base_build'] == 'build':
+            self.deploy_build(cr, uid, vals, context)
 
-        # elif vals['base_build'] == 'restore':
-            # if vals['app_bdd'] != 'mysql':
-                # ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
-                # execute.execute(ssh, ['pg_restore', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], '--no-owner', '-Fc', '-d', vals['base_unique_name_'], vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
-                # ssh.close()
-                # sftp.close()
-            # else:
-                # ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
-                # execute.execute(ssh, ['mysql', '-h', vals['bdd_server_domain'], '-u', vals['service_db_user'], '-p' + vals['bdd_server_mysql_passwd'], vals['base_unique_name_'], '<', vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
-                # ssh.close()
-                # sftp.close()
+        elif vals['base_build'] == 'restore':
+            if vals['app_bdd'] != 'mysql':
+                ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+                execute.execute(ssh, ['pg_restore', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], '--no-owner', '-Fc', '-d', vals['base_unique_name_'], vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
+                ssh.close()
+                sftp.close()
+            else:
+                ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+                execute.execute(ssh, ['mysql', '-h', vals['bdd_server_domain'], '-u', vals['service_db_user'], '-p' + vals['bdd_server_mysql_passwd'], vals['base_unique_name_'], '<', vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
+                ssh.close()
+                sftp.close()
 
-            # self.deploy_post_restore(cr, uid, vals, context)
+            self.deploy_post_restore(cr, uid, vals, context)
 
-        # if vals['base_build'] != 'none':
-            # self.deploy_create_poweruser(cr, uid, vals, context)
+        if vals['base_build'] != 'none':
+            self.deploy_create_poweruser(cr, uid, vals, context)
 
-            # if vals['base_test']:
-                # self.deploy_test(cr, uid, vals, context)
+            if vals['base_test']:
+                self.deploy_test(cr, uid, vals, context)
 
-        # self.deploy_post(cr, uid, vals, context)
+        self.deploy_post(cr, uid, vals, context)
 
 
   # if [[ $skip_analytics != True ]]

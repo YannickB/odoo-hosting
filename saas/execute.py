@@ -37,18 +37,24 @@ import random
 import logging
 _logger = logging.getLogger(__name__)
 
+
 def log(message, context):
     message = filter(lambda x: x in string.printable, message)
     _logger.info(message)
-    if 'log_id' in context:
-        log_obj = context['saas-self'].pool.get('saas.log')
-        log = log_obj.browse(context['saas-cr'], context['saas-uid'], context['log_id'], context=context)
-        log_obj.write(context['saas-cr'], context['saas-uid'], context['log_id'], {'log': (log.log or '') + message + '\n'}, context=context)
+    log_obj = context['saas-self'].pool.get('saas.log')
+    if 'logs' in context:
+        for model, model_vals in context['logs'].iteritems():
+            for res_id, vals in context['logs'][model].iteritems():
+                log = log_obj.browse(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], context=context)
+                log_obj.write(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], {'log': (log.log or '') + message + '\n'}, context=context)
 
 def ko_log(self, context):
-    if 'log_id' in context:
-        log_obj = context['saas-self'].pool.get('saas.log')
-        log_obj.write(context['saas-cr'], context['saas-uid'], context['log_id'], {'state': 'ko'}, context=context)
+    log_obj = context['saas-self'].pool.get('saas.log')
+    if 'logs' in context:
+        for model, model_vals in context['logs'].iteritems():
+            for res_id, vals in context['logs'][model].iteritems():
+                log_obj.write(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], {'state': 'ko'}, context=context)
+
 
 def connect(host, port, username, context):
     log('connect: ssh ' + username + '@' + host + ' -p ' + str(port), context)
@@ -109,7 +115,7 @@ def local_dir_exist(file):
     return os.path.isdir(file)
 
 def execute_write_file(file, string, context):
-    f = open(file, 'w')
+    f = open(file, 'a')
     f.write(string)
     f.close()
 

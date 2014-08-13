@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_bup" model="saas.application.type">
+            <field name="name">bup</field>
+            <field name="system_user">bup</field>
+            <field name="admin_name">admin</field>
+            <field name="admin_email">admin@localhost</field>
+            <field name="standard_port">22</field>
+        </record>
+
+        <record id="app_bup" model="saas.application">
+            <field name="name">Bup server</field>
+            <field name="code">bup</field>
+            <field name="current_version">1</field>
+            <field name="type_id" ref="apptype_bup"/>
+            <field name="container_time_between_save">60</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="base_time_between_save">60</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
+        </record>
+
+
+        <record id="image_bup" model="saas.image">
+            <field name="name">img_bup</field>
+            <field name="application_id" ref="app_bup"/>
+            <field name="current_version">1</field>
+            <field name="dockerfile"><![CDATA[FROM yolobase:latest
+MAINTAINER yannick.buron@gmail.com
+
+
+
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron
+
+RUN git clone git://github.com/bup/bup /opt/bup
+RUN make -C /opt/bup
+RUN make install -C /opt/bup
+
+RUN useradd -m -s /bin/bash bup
+USER bup
+RUN mkdir /home/bup/.ssh
+#RUN touch /home/bup/.ssh/authorized_keys
+RUN mkdir /home/bup/.bup
+RUN chmod -R 700 /home/bup/.ssh
+RUN touch /home/bup/.hushlogin
+
+USER root
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:cron]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=cron -f" >> /etc/supervisor/conf.d/supervisord.conf
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:bup-web]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=su bup -c 'bup web :8080'" >> /etc/supervisor/conf.d/supervisord.conf
+
+RUN echo "* * * * * root supervisorctl restart bup-web" >> /etc/crontab
+
+ADD ./saas/saas_bup/res/save /opt/save
+ADD ./saas/saas_bup/res/restore /opt/restore
+RUN chmod +x /opt/save
+RUN chmod +x /opt/restore
+
+]]></field>
+        </record>
+        <record id="image_bup_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_bup"/>
+            <field name="name">/home/bup/.bup</field>
+            <field name="hostpath">/opt/bup</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_bup_volume2" model="saas.image.volume">
+            <field name="image_id" ref="image_bup"/>
+            <field name="name">/home/bup/.ssh/authorized_keys</field>
+            <field name="hostpath">/opt/keys/bup/bup_key.pub</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_bup_port1" model="saas.image.port">
+            <field name="image_id" ref="image_bup"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose" eval="True"/>
+        </record>
+        <record id="image_bup_port2" model="saas.image.port">
+            <field name="image_id" ref="image_bup"/>
+            <field name="name">bup-web</field>
+            <field name="localport">8080</field>
+            <field name="expose" eval="True"/>
+        </record>
+
+    </data>
+</openerp>

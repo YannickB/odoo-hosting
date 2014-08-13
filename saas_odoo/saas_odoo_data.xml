@@ -70,6 +70,12 @@ addons = git git@github.com:YannickB/community-management.git extra/community-ma
 reportlab = 2.7
 pypdf = 1.13
 ]]></field>
+            <field name="container_time_between_save">60</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="base_time_between_save">60</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
         </record>
         <record id="app_odoo_option1" model="saas.application.option">
             <field name="application_id" ref="app_odoo_ocm"/>

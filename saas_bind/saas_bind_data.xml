@@ -16,6 +16,12 @@
             <field name="code">bind</field>
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_bind"/>
+            <field name="container_time_between_save">60</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="base_time_between_save">60</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
         </record>
 
 

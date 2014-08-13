@@ -68,6 +68,11 @@ class saas_container(osv.osv):
         execute.execute(ssh, ['sudo','docker', 'rm', vals['container_name']], context)
         ssh.close()
         sftp.close()
+
+        ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
+        execute.execute(ssh, ['sed', '-i', "'/Host " + vals['container_fullname'] + "/,/#" + vals['container_fullname'] + "\\n/d'", '/home/saas-conductor/.ssh/config'], context)
+        ssh.close()
+        sftp.close()
         return
 
 

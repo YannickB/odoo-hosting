@@ -29,6 +29,7 @@ import time
 from datetime import datetime, timedelta
 import subprocess
 import execute
+import ast
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -54,7 +55,9 @@ class saas_log(osv.osv):
         'action': fields.char('Action', size=64),
         'log': fields.text('log'),
         'state': fields.selection([('unfinished','Not finished'),('ok','Ok'),('ko','Ko')], 'State', required=True),
-        'create_date': fields.datetime('Date'),
+        'create_date': fields.datetime('Launch Date'),
+        'finish_date': fields.datetime('Finish Date'),
+        'expiration_date': fields.datetime('Expiration Date'),
     }
 
     _defaults = {
@@ -80,18 +83,25 @@ class saas_log_model(osv.AbstractModel):
         log_id = log_obj.create(cr, uid, {'model': self._name, 'res_id': id, 'action': action}, context=context)
         if context == None:
             context = {}
-        context['log_model'] = self._name
-        context['log_res_id'] = id
-        context['log_id'] = log_id
-        context['log_log'] = ''
+        if not 'logs' in context:
+            context['logs'] = {}
+        if not self._name in context['logs']:
+            context['logs'][self._name] = {}
+        if not id in context['logs'][self._name]:
+            log_id = log_obj.create(cr, uid, {'model': self._name, 'res_id': id, 'action': action}, context=context)
+            context['logs'][self._name][id] = {}
+            context['logs'][self._name][id]['log_model'] = self._name
+            context['logs'][self._name][id]['log_res_id'] = id
+            context['logs'][self._name][id]['log_id'] = log_id
+            context['logs'][self._name][id]['log_log'] = ''
         return context
 
     def end_log(self, cr, uid, id, context=None):
         log_obj = self.pool.get('saas.log')
-        if 'log_id' in  context:
-            log = log_obj.browse(cr, uid, context['log_id'], context=context)
-            if log.state == 'unfinished' and context['log_model'] == self._name and context['log_res_id'] == id:
-                log_obj.write(cr, uid, [context['log_id']], {'state': 'ok'}, context=context)
+        if 'logs' in  context:
+            log = log_obj.browse(cr, uid, context['logs'][self._name][id]['log_id'], context=context)
+            if log.state == 'unfinished':
+                log_obj.write(cr, uid, [context['logs'][self._name][id]['log_id']], {'state': 'ok'}, context=context)
 
     def reinstall(self, cr, uid, ids, context=None):
         for record in self.browse(cr, uid, ids, context=context):
@@ -170,6 +180,7 @@ class saas_image_volume(osv.osv):
         'name': fields.char('Path', size=128, required=True),
         'hostpath': fields.char('Host path', size=128),
         'readonly': fields.boolean('Readonly?'),
+        'nosave': fields.boolean('No save?'),
     }
 
 
@@ -365,6 +376,12 @@ class saas_application(osv.osv):
         'version_ids': fields.one2many('saas.application.version', 'application_id', 'Versions'),
         'buildfile': fields.text('Build File'),
         'container_ids': fields.one2many('saas.container', 'application_id', 'Containers'),
+        'container_time_between_save': fields.integer('Minutes between each container save', required=True),
+        'container_saverepo_change': fields.integer('Days before container saverepo change', required=True),
+        'container_saverepo_expiration': fields.integer('Days before container saverepo expiration', required=True),
+        'base_time_between_save': fields.integer('Minutes between each base save', required=True),
+        'base_saverepo_change': fields.integer('Days before base saverepo change', required=True),
+        'base_saverepo_expiration': fields.integer('Days before base saverepo expiration', required=True),
     }
 
     _defaults = {
@@ -861,6 +878,183 @@ class saas_application_version(osv.osv):
             # self.write(cr, uid, [app.id], {'demo_saas_id': demo_id}, context=context)
         ########## return True
 
+
+class saas_save_repository(osv.osv):
+    _name = 'saas.save.repository'
+
+    _columns = {
+        'name': fields.char('Name', size=128, required=True),
+        'type': fields.selection([('container','Container'),('base','Base')], 'Name', required=True),
+        'date_change': fields.date('Change Date'),
+        'date_expiration': fields.date('Expiration Date'),
+        'container_name': fields.char('Container Name', size=64),
+        'container_server': fields.char('Container Server', size=128),
+        'save_ids': fields.one2many('saas.save.save', 'repo_id', 'Saves'),
+    }
+
+    _order = 'create_date desc'
+
+    def get_vals(self, cr, uid, id, context={}):
+
+        vals = {}
+
+        repo = self.browse(cr, uid, id, context=context)
+
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
+        vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
+
+        vals.update({
+            'saverepo_id': repo.id,
+            'saverepo_name': repo.name,
+            'saverepo_type': repo.type,
+            'saverepo_date_change': repo.date_change,
+            'saverepo_date_expiration': repo.date_expiration,
+            'saverepo_container_name': repo.container_name,
+            'saverepo_container_server': repo.container_server,
+        })
+
+        return vals
+
+    def unlink(self, cr, uid, ids, context={}):
+        for repo in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, repo.id, context=context)
+            self.purge(cr, uid, vals, context=context)
+        return super(saas_save_repository, self).unlink(cr, uid, ids, context=context)
+
+class saas_save_save(osv.osv):
+    _name = 'saas.save.save'
+    _inherit = ['saas.log.model']
+
+    _columns = {
+        'name': fields.char('Name', size=64, required=True),
+        'type': fields.related('repo_id','type', type='char', size=64, readonly=True),
+        'repo_id': fields.many2one('saas.save.repository', 'Repository', ondelete='cascade', required=True),
+        'comment': fields.text('Comment'),
+        'now_bup': fields.char('Now bup', size=64),
+        'container_id': fields.many2one('saas.container', 'Container'),
+        'container_volumes_comma': fields.text('Container Volumes comma'),
+        'container_app': fields.char('Container Application', size=64),
+        'container_img': fields.char('Container Image', size=64),
+        'container_img_version': fields.char('Container Image Version', size=64),
+        'container_ports': fields.text('Container Ports'),
+        'container_volumes': fields.text('Container Volumes'),
+        'container_volumes_comma': fields.text('Container Volumes comma'),
+        'container_options': fields.text('Container Options'),
+#        'saas_ids': fields.many2many('saas.saas', 'saas_saas_save_rel', 'save_id', 'saas_id', 'SaaS', readonly=True),
+#        'instance_id': fields.many2one('saas.service', 'Instance'),
+#        'application_id': fields.related('instance_id','application_id', type='many2one', relation='saas.application', string='Application'),
+        'create_date': fields.datetime('Create Date'),
+#        'version': fields.char('Version', size=64),
+#        'restore_instance_id': fields.many2one('saas.service', 'Target instance for restore'),
+#        'restore_saas_ids': fields.many2many('saas.saas', 'saas_saas_save_restore_rel', 'save_id', 'saas_id', 'SaaS to restore'),
+#        'restore_prefix': fields.char('Restore prefix (optional)', size=64),
+    }
+
+    _order = 'create_date desc'
+
+    def get_vals(self, cr, uid, id, context={}):
+        vals = {}
+
+        save = self.browse(cr, uid, id, context=context)
+
+        vals.update(self.pool.get('saas.save.repository').get_vals(cr, uid, save.repo_id.id, context=context))
+
+        vals.update({
+            'save_id': save.id,
+            'save_name': save.name,
+            'save_now_bup': save.now_bup,
+            'save_now_epoch': (datetime.strptime(save.now_bup, "%Y-%m-%d-%H%M%S") - datetime(1970,1,1)).total_seconds(),
+            'save_container_volumes': save.container_volumes_comma
+        })
+        return vals
+
+    def create(self, cr, uid, vals, context={}):
+        res = super(saas_save_save, self).create(cr, uid, vals, context=context)
+        context = self.create_log(cr, uid, res, 'create', context)
+        vals = self.get_vals(cr, uid, res, context=context)
+        self.deploy(cr, uid, vals, context=context)
+        self.end_log(cr, uid, res, context=context)
+        return res
+
+    def restore(self, cr, uid, ids, context={}):
+        container_obj = self.pool.get('saas.container')
+        server_obj = self.pool.get('saas.server')
+        application_obj = self.pool.get('saas.application')
+        image_obj = self.pool.get('saas.image')
+        image_version_obj = self.pool.get('saas.image.version')
+        for save in self.browse(cr, uid, ids, context=context):
+            context = self.create_log(cr, uid, save.id, 'restore', context)
+
+            img_ids = image_obj.search(cr, uid, [('name','=',save.container_img)], context=context)
+            if not img_ids:
+                raise osv.except_osv(_('Error!'),_("Couldn't find image " + save.container_img + ", aborting restoration."))
+            img_version_ids = image_version_obj.search(cr, uid, [('name','=',save.container_img_version)], context=context)
+            upgrade = True
+            if not img_version_ids:
+                execute.log("Warning, couldn't find the image version, using latest", context)
+                upgrade = False
+                versions = image_obj.browse(cr, uid, img_ids[0], context=context).version_ids
+                if not versions: 
+                    raise osv.except_osv(_('Error!'),_("Couldn't find versions for image " + save.container_img + ", aborting restoration."))
+                img_version_ids = [versions[0].id]
+
+            if not save.container_id:
+                container_ids = container_obj.search(cr, uid, [('name','=',save.repo_id.container_name),('server_id.name','=',save.repo_id.container_server)], context=context)
+
+                if not container_ids:
+                    server_ids = server_obj.search(cr, uid, [('name','=',save.repo_id.container_server)], context=context)
+                    if not server_ids:
+                        raise osv.except_osv(_('Error!'),_("Couldn't find server " + save.repo_id.container_server + ", aborting restoration."))
+                    app_ids = application_obj.search(cr, uid, [('code','=',save.container_app)], context=context)
+                    if not app_ids:
+                        raise osv.except_osv(_('Error!'),_("Couldn't find application " + save.container_app + ", aborting restoration."))
+ 
+                    ports = []
+                    for port, port_vals in ast.literal_eval(save.container_ports).iteritems():
+                        del port_vals['id']
+                        ports.append((0,0,port_vals))
+                    volumes = []
+                    for volume, volume_vals in ast.literal_eval(save.container_volumes).iteritems():
+                        del volume_vals['id']
+                        volumes.append((0,0,volume_vals))
+                    options = []
+                    for option, option_vals in ast.literal_eval(save.container_options).iteritems():
+                        del option_vals['id']
+                        options.append((0,0,option_vals))
+                    container_vals = {
+                        'name': save.repo_id.container_name,
+                        'server_id': server_ids[0],
+                        'application_id': app_ids[0],
+                        'image_id': img_ids[0],
+                        'image_version_id': img_version_ids[0],
+                        'port_ids': ports,
+                        'volume_ids': volumes,
+                        'option_ids': options,
+                    }
+                    container_id = container_obj.create(cr, uid, container_vals, context=context)
+
+                else:
+                    container_id = container_ids[0]
+            else:
+                container_id = save.container_id.id
+
+            if upgrade:
+                container_obj.write(cr, uid, [container_id], {'image_version_ids': img_version_ids[0]}, context=context)
+
+            context['container_save_comment'] = 'Before restore ' + save.name
+            container_obj.save(cr, uid, [container_id], context=context)
+
+            vals = self.get_vals(cr, uid, save.id, context=context)
+
+            context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+            ssh, sftp = execute.connect(vals['saverepo_container_server'], 22, 'root', context)
+            execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['saverepo_container_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', vals['saverepo_name'], vals['save_now_bup'], vals['save_container_volumes']], context)
+            ssh.close()
+            sftp.close()
+
+        return True
+
+
 class saas_server(osv.osv):
     _name = 'saas.server'
     _inherit = ['saas.log.model']
@@ -916,6 +1110,12 @@ class saas_container(osv.osv):
         'image_id': fields.many2one('saas.image', 'Image', required=True),
         'server_id': fields.many2one('saas.server', 'Server', required=True),
         'image_version_id': fields.many2one('saas.image.version', 'Image version', required=True),
+        'save_repository_id': fields.many2one('saas.save.repository', 'Save repository'),
+        'time_between_save': fields.integer('Minutes between each save'),
+        'saverepo_change': fields.integer('Days before saverepo change'),
+        'saverepo_expiration': fields.integer('Days before saverepo expiration'),
+        'date_next_save': fields.datetime('Next save planned'),
+        'save_comment': fields.text('Save Comment'),
         'linked_container_ids': fields.many2many('saas.container', 'saas_container_linked_rel', 'from_id', 'to_id', 'Linked container', domain="[('server_id','=',server_id)]"),
         'port_ids': fields.one2many('saas.container.port', 'container_id', 'Ports'),
         'volume_ids': fields.one2many('saas.container.volume', 'container_id', 'Volumes'),
@@ -926,14 +1126,35 @@ class saas_container(osv.osv):
 #########TODO add contraint, image_version doit appartenir à image_id qui doit correspondre à application_id
 #########TODO add contraint, a container can only have one linked container of each application type
     def get_vals(self, cr, uid, id, context={}):
-
+        repo_obj = self.pool.get('saas.save.repository')
         vals = {}
 
         container = self.browse(cr, uid, id, context=context)
 
+        now = datetime.now()
+        if not container.save_repository_id:
+            repo_ids = repo_obj.search(cr, uid, [('container_name','=',container.name),('container_server','=',container.server_id.name)], context=context)
+            if repo_ids:
+                self.write(cr, uid, [container.id], {'save_repository_id': repo_ids[0]}, context=context)
+                container = self.browse(cr, uid, id, context=context)
+
+        if not container.save_repository_id or datetime.strptime(container.save_repository_id.date_change, "%Y-%m-%d") < now or False:
+            repo_vals ={
+                'name': now.strftime("%Y-%m-%d") + '_' + container.name + '_' + container.server_id.name,
+                'type': 'container',
+                'date_change': (now + timedelta(days=container.saverepo_change or container.application_id.container_saverepo_change)).strftime("%Y-%m-%d"),
+                'date_expiration': (now + timedelta(days=container.saverepo_expiration or container.application_id.container_saverepo_expiration)).strftime("%Y-%m-%d"),
+                'container_name': container.name,
+                'container_server': container.server_id.name,
+            }
+            repo_id = repo_obj.create(cr, uid, repo_vals, context=context)
+            self.write(cr, uid, [container.id], {'save_repository_id': repo_id}, context=context)
+            container = self.browse(cr, uid, id, context=context)
+
         if 'from_config' not in context:
             vals.update(self.pool.get('saas.image.version').get_vals(cr, uid, container.image_version_id.id, context=context))
             vals.update(self.pool.get('saas.application').get_vals(cr, uid, container.application_id.id, context=context))
+            vals.update(self.pool.get('saas.save.repository').get_vals(cr, uid, container.save_repository_id.id, context=context))
         vals.update(self.pool.get('saas.server').get_vals(cr, uid, container.server_id.id, context=context))
 
 
@@ -949,8 +1170,13 @@ class saas_container(osv.osv):
                 ssh_port = port.hostport
 
         volumes = {}
+        volumes_save = ''
+        first = True
         for volume in container.volume_ids:
-            volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'readonly': volume.readonly}
+            volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'readonly': volume.readonly,'nosave': volume.nosave}
+            if not volume.nosave:
+                volumes_save += not first and ',' or '' + volume.name
+                first = False
 
         options = {}
         for option in container.application_id.type_id.option_ids:
@@ -962,8 +1188,10 @@ class saas_container(osv.osv):
         vals.update({
             'container_id': container.id,
             'container_name': container.name,
+            'container_fullname': container.name + '_' + vals['server_domain'],
             'container_ports': ports,
             'container_volumes': volumes,
+            'container_volumes_save': volumes_save,
             'container_ssh_port': ssh_port,
             'container_options': options,
             'container_links': links,
@@ -982,7 +1210,7 @@ class saas_container(osv.osv):
         if ('volume_ids' not in vals or not vals['volume_ids']) and 'image_version_id' in vals:
             vals['volume_ids'] = []
             for volume in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.volume_ids:
-                vals['volume_ids'].append((0,0,{'name':volume.name,'hostpath':volume.hostpath,'readonly':volume.readonly}))
+                vals['volume_ids'].append((0,0,{'name':volume.name,'hostpath':volume.hostpath,'readonly':volume.readonly,'nosave':volume.nosave}))
         vals = self.add_links(cr, uid, vals, context=context)
         res = super(saas_container, self).create(cr, uid, vals, context=context)
         context = self.create_log(cr, uid, res, 'create', context)
@@ -991,11 +1219,62 @@ class saas_container(osv.osv):
         self.end_log(cr, uid, res, context=context)
         return res
 
+    def write(self, cr, uid, ids, vals, context={}):
+        version_obj = self.pool.get('saas.image.version')
+        save_obj = self.pool.get('saas.save.save')
+        if 'image_version_id' in vals:
+            for container in self.browse(cr, uid, ids, context=context):
+                if container.image_version_id != vals['image_version_id']:
+                    context = self.create_log(cr, uid, container.id, 'upgrade version', context)
+                    new_version = version_obj.browse(cr, uid, vals['image_version_id'], context=context)
+                    context['container_save_comment'] = 'Before upgrade from ' + container.image_version_id.name + ' to ' + new_version.name
+                    save_id = self.save(cr, uid, [container.id], context=context)[container.id]
+        res = super(saas_container, self).write(cr, uid, ids, vals, context=context)
+        if 'image_version_id' in vals:
+            for container in self.browse(cr, uid, ids, context=context):
+                if container.image_version_id != vals['image_version_id']:
+                    self.reinstall(cr, uid, [container.id], context=context)
+                    save_obj.restore(cr, uid, [save_id], context=context)
+                    self.end_log(cr, uid, container.id, context=context)
+        return res
+
     def unlink(self, cr, uid, ids, context={}):
+        context['container_save_comment'] = 'Before unlink'
+        self.save(cr, uid, ids, context=context)
         for container in self.browse(cr, uid, ids, context=context):
             vals = self.get_vals(cr, uid, container.id, context=context)
             self.purge(cr, uid, vals, context=context)
         return super(saas_container, self).unlink(cr, uid, ids, context=context)
+
+    def save(self, cr, uid, ids, context={}):
+
+        save_obj = self.pool.get('saas.save.save')
+
+        res = {}
+        for container in self.browse(cr, uid, ids, context=context):
+            context = self.create_log(cr, uid, container.id, 'save', context)
+            vals = self.get_vals(cr, uid, container.id, context=context)
+            save_vals = {
+                'name': vals['now_bup'] + '_' + vals['container_fullname'],
+                'repo_id': vals['saverepo_id'],
+                'comment': 'container_save_comment' in context and context['container_save_comment'] or container.save_comment or 'Manual',
+                'now_bup': vals['now_bup'],
+                'container_id': vals['container_id'],
+                'container_volumes_comma': vals['container_volumes_save'],
+                'container_app': vals['app_code'],
+                'container_img': vals['image_name'],
+                'container_img_version': vals['image_version_name'],
+                'container_ports': str(vals['container_ports']),
+                'container_volumes': str(vals['container_volumes']),
+                'container_options': str(vals['container_options']),
+            }
+            res[container.id] = save_obj.create(cr, uid, save_vals, context=context)
+            next = (datetime.now() + timedelta(minutes=container.time_between_save or container.application_id.container_time_between_save)).strftime("%Y-%m-%d")
+            self.write(cr, uid, [container.id], {'save_comment': False, 'date_next_save': next}, context=context)
+            self.end_log(cr, uid, container.id, context=context)
+        return res
+
+
 
 
 class saas_container_port(osv.osv):
@@ -1016,6 +1295,7 @@ class saas_container_volume(osv.osv):
         'name': fields.char('Path', size=128, required=True),
         'hostpath': fields.char('Host path', size=128),
         'readonly': fields.boolean('Readonly?'),
+        'nosave': fields.boolean('No save?'),
     }
 
 class saas_container_option(osv.osv):
@@ -1645,155 +1925,6 @@ class saas_base_option(osv.osv):
         'value': fields.text('Value'),
     }
 
-class saas_save(osv.osv):
-    _name = 'saas.save'
-
-    _columns = {
-        'name': fields.char('Name', size=64, required=True),
-        'saas_ids': fields.many2many('saas.saas', 'saas_saas_save_rel', 'save_id', 'saas_id', 'SaaS', readonly=True),
-        'instance_id': fields.many2one('saas.service', 'Instance'),
-        'application_id': fields.related('instance_id','application_id', type='many2one', relation='saas.application', string='Application'),
-        'create_date': fields.datetime('Create Date'),
-        'version': fields.char('Version', size=64),
-        'restore_instance_id': fields.many2one('saas.service', 'Target instance for restore'),
-        'restore_saas_ids': fields.many2many('saas.saas', 'saas_saas_save_restore_rel', 'save_id', 'saas_id', 'SaaS to restore'),
-        'restore_prefix': fields.char('Restore prefix (optional)', size=64),
-    }
-
-    _order = 'create_date desc'
-
-
-    def unlink(self, cr, uid, ids, context=None):
-
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
-
-        for save in self.browse(cr, uid, ids, context=context):
-
-            _logger.info('Removing save %s', save.name)
-
-            args = [
-                config.openerp_path + '/saas/saas/shell/save.sh',
-                'save_remove',
-                save.name,
-                config.backup_directory,
-                config.shinken_server,
-                config.ftpuser,
-                config.ftppass,
-                config.ftpserver
-            ]
-
-            _logger.info('command %s', " ".join(args))
-
-            proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-            outfile = open(config.log_path + '/save_remove.log', "w")
-            for line in proc.stdout:
-               _logger.info(line)
-               outfile.write(line)
-
-        return super(saas_save, self).unlink(cr, uid, ids, context=context)
-
-    def restore(self, cr, uid, ids, context={}):
-
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
-
-        saas_obj = self.pool.get('saas.saas')
-        instance_obj = self.pool.get('saas.service')
-
-        for save in self.browse(cr, uid, ids, context=context):
-            if not save.restore_instance_id:
-                raise osv.except_osv(_('Error!'),_("You need to specify a the target instance!"))
-
-            for saas in save.restore_saas_ids:
-
-                instance_obj.save(cr, uid, [saas.instance_id.id], saas_id=saas.id, type='prerestore', context=context)
-
-                from_saas_name = saas.name
-                to_saas_name = save.restore_prefix and save.restore_prefix + from_saas_name or from_saas_name
-                domain = saas.domain_id.name
-                instance = save.restore_instance_id
-
-                vals = {
-                  'name': to_saas_name,
-                  'title': saas.title,
-                  'domain_id': saas.domain_id.id,
-                  'instance_id': instance.id,
-                  'poweruser_name': saas.poweruser_name,
-                  'poweruser_passwd': saas.poweruser_passwd,
-                  'poweruser_email': saas.poweruser_email,
-                  'build': 'none',
-                  'test': saas.test,
-                }
-
-                save_ids = []
-                if not save.restore_prefix:
-                    save_ids = self.search(cr, uid, [('saas_ids','in',saas.id)], context=context)
-                    saas_obj.unlink(cr, uid, [saas.id], context=context)
-
-                saas_id = saas_obj.create(cr, uid, vals, context=context)
-
-                if save_ids:
-                    self.write(cr, uid, save_ids, {'saas_ids': [(4, saas_id)]}, context=context)
-                    self.write(cr, uid, [save.id], {'restore_saas_ids': [(4, saas_id)]}, context=context)
-
-                args = [
-                    config.openerp_path + '/saas/saas/shell/restore.sh',
-                    'restore_saas',
-                    instance.application_id.type_id.name,
-                    instance.application_id.code,
-                    from_saas_name,
-                    to_saas_name,
-                    domain,
-                    instance.name,
-                    instance.server_id.name,
-                    instance.application_id.type_id.system_user,
-                    instance.database_server_id.name,
-                    save.name, 
-                    instance.application_id.instances_path,
-                    config.backup_directory,
-                    config.shinken_server,
-                    config.openerp_path,
-                    config.ftpuser,
-                    config.ftppass,
-                    config.ftpserver
-                ]
-
-                _logger.info('command %s', " ".join(args))
-
-                proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-                outfile = open(config.log_path + '/restore.log', "w")
-                for line in proc.stdout:
-                   _logger.info(line)
-                   outfile.write(line)
-
-                version = instance.prod and instance.version_many2one.name or False
-                if save.version != version:
-                    args = [
-                        config.openerp_path + '/saas/saas/apps/' + instance.application_id.type_id.name + '/upgrade.sh',
-                        'upgrade_saas',
-                        instance.application_id.code,
-                        to_saas.name,
-                        domain,
-                        instance.name,
-                        instance.application_id.type_id.system_user,
-                        instance.server_id.name,
-                        instance.port,
-                        instance.application_id.type_id.admin_name,
-                        to_saas.admin_password,
-                        instance.application_id.instances_path,
-                    ]
-
-                    _logger.info('command %s', " ".join(args))
-                    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-                    outfile = open(config.log_path + '/instance_' + instance.name + '.log', "w")
-                    for line in proc.stdout:
-                        _logger.info(line)
-                        outfile.write(line)
-
-
-        return True
 
 
 class saas_config_settings(osv.osv):
@@ -1810,6 +1941,7 @@ class saas_config_settings(osv.osv):
         'piwik_password': fields.char('Piwik Password', size=128),
         'dns_id': fields.many2one('saas.container', 'DNS Server'),
         'shinken_id': fields.many2one('saas.container', 'Shinken Server'),
+        'bup_id': fields.many2one('saas.container', 'BUP Server'),
         'ftpuser': fields.char('FTP User', size=64),
         'ftppass': fields.char('FTP Pass', size=64),
         'ftpserver': fields.char('FTP Server', size=64),
@@ -1841,6 +1973,18 @@ class saas_config_settings(osv.osv):
                 'shinken_server_ip': shinken_vals['server_ip'],
             })
 
+        if config.bup_id:
+            bup_vals = self.pool.get('saas.container').get_vals(cr, uid, config.bup_id.id, context=context)
+            vals.update({
+                'bup_id': bup_vals['container_id'],
+                'bup_ssh_port': bup_vals['container_ssh_port'],
+                'bup_server_id': bup_vals['server_id'],
+                'bup_server_domain': bup_vals['server_domain'],
+                'bup_server_ip': bup_vals['server_ip'],
+            })
+        del context['from_config']
+
+        now = datetime.now()
         vals.update({
             'config_conductor_path': config.conductor_path,
             'config_log_path': config.log_path,
@@ -1852,6 +1996,9 @@ class saas_config_settings(osv.osv):
             'config_ftpuser': config.ftpuser,
             'config_ftppass': config.ftppass,
             'config_ftpserver': config.ftpserver,
+            'now_date': now.strftime("%Y-%m-%d"),
+            'now_hour': now.strftime("%H-%M"),
+            'now_bup': now.strftime("%Y-%m-%d-%H%M%S"),
         })
         return vals
 
@@ -1900,4 +2047,5 @@ class saas_config_settings(osv.osv):
         save_obj.unlink(cr, uid, save_ids, context=context)
 
         return True
-##########TODO : purge all log > X days
+##########TODO : purge all log date_expiration < time
+##########TODO : remove all saverepo date_expiration < time
