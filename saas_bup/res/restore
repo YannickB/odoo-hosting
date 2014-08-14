@@ -21,6 +21,8 @@ mkdir -p $directory
 scp -qr bup-server:$archive $archive
 tar -xf $archive -C $directory
 
+rm $directory/backup-date
+
 for path in $directory/*
 do
  echo $path

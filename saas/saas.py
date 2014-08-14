@@ -80,7 +80,6 @@ class saas_log_model(osv.AbstractModel):
         if 'log_id' in context:
             return context
         log_obj = self.pool.get('saas.log')
-        log_id = log_obj.create(cr, uid, {'model': self._name, 'res_id': id, 'action': action}, context=context)
         if context == None:
             context = {}
         if not 'logs' in context:
@@ -927,7 +926,7 @@ class saas_save_save(osv.osv):
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),
-        'type': fields.related('repo_id','type', type='char', size=64, readonly=True),
+        'type': fields.related('repo_id','type', type='char', size=64, string='Type', readonly=True),
         'repo_id': fields.many2one('saas.save.repository', 'Repository', ondelete='cascade', required=True),
         'comment': fields.text('Comment'),
         'now_bup': fields.char('Now bup', size=64),
@@ -940,6 +939,10 @@ class saas_save_save(osv.osv):
         'container_volumes': fields.text('Container Volumes'),
         'container_volumes_comma': fields.text('Container Volumes comma'),
         'container_options': fields.text('Container Options'),
+        'container_name': fields.related('repo_id', 'container_name', type='char', string='Container Name', size=64, readonly=True),
+        'container_server': fields.related('repo_id', 'container_server', type='char', string='Container Server', size=64, readonly=True),
+        'container_restore_to_name': fields.char('Restore to (Name)', size=64),
+        'container_restore_to_server_id': fields.many2one('saas.server', 'Restore to (Server)'),
 #        'saas_ids': fields.many2many('saas.saas', 'saas_saas_save_rel', 'save_id', 'saas_id', 'SaaS', readonly=True),
 #        'instance_id': fields.many2one('saas.service', 'Instance'),
 #        'application_id': fields.related('instance_id','application_id', type='many2one', relation='saas.application', string='Application'),
@@ -964,7 +967,9 @@ class saas_save_save(osv.osv):
             'save_name': save.name,
             'save_now_bup': save.now_bup,
             'save_now_epoch': (datetime.strptime(save.now_bup, "%Y-%m-%d-%H%M%S") - datetime(1970,1,1)).total_seconds(),
-            'save_container_volumes': save.container_volumes_comma
+            'save_container_volumes': save.container_volumes_comma,
+            'save_container_restore_to_name': save.container_restore_to_name or vals['saverepo_container_name'],
+            'save_container_restore_to_server': save.container_restore_to_server_id.name or vals['saverepo_container_server'],
         })
         return vals
 
@@ -984,6 +989,7 @@ class saas_save_save(osv.osv):
         image_version_obj = self.pool.get('saas.image.version')
         for save in self.browse(cr, uid, ids, context=context):
             context = self.create_log(cr, uid, save.id, 'restore', context)
+            vals = self.get_vals(cr, uid, save.id, context=context)
 
             img_ids = image_obj.search(cr, uid, [('name','=',save.container_img)], context=context)
             if not img_ids:
@@ -992,19 +998,20 @@ class saas_save_save(osv.osv):
             upgrade = True
             if not img_version_ids:
                 execute.log("Warning, couldn't find the image version, using latest", context)
+                #We do not want to force the upgrade if we had to use latest
                 upgrade = False
                 versions = image_obj.browse(cr, uid, img_ids[0], context=context).version_ids
                 if not versions: 
                     raise osv.except_osv(_('Error!'),_("Couldn't find versions for image " + save.container_img + ", aborting restoration."))
                 img_version_ids = [versions[0].id]
 
-            if not save.container_id:
-                container_ids = container_obj.search(cr, uid, [('name','=',save.repo_id.container_name),('server_id.name','=',save.repo_id.container_server)], context=context)
+            if save.container_restore_to_name or not save.container_id:
+                container_ids = container_obj.search(cr, uid, [('name','=',vals['save_container_restore_to_name']),('server_id.name','=',vals['save_container_restore_to_server'])], context=context)
 
                 if not container_ids:
-                    server_ids = server_obj.search(cr, uid, [('name','=',save.repo_id.container_server)], context=context)
+                    server_ids = server_obj.search(cr, uid, [('name','=',vals['save_container_restore_to_server'])], context=context)
                     if not server_ids:
-                        raise osv.except_osv(_('Error!'),_("Couldn't find server " + save.repo_id.container_server + ", aborting restoration."))
+                        raise osv.except_osv(_('Error!'),_("Couldn't find server " + vals['save_container_restore_to_server'] + ", aborting restoration."))
                     app_ids = application_obj.search(cr, uid, [('code','=',save.container_app)], context=context)
                     if not app_ids:
                         raise osv.except_osv(_('Error!'),_("Couldn't find application " + save.container_app + ", aborting restoration."))
@@ -1022,7 +1029,7 @@ class saas_save_save(osv.osv):
                         del option_vals['id']
                         options.append((0,0,option_vals))
                     container_vals = {
-                        'name': save.repo_id.container_name,
+                        'name': vals['save_container_restore_to_name'],
                         'server_id': server_ids[0],
                         'application_id': app_ids[0],
                         'image_id': img_ids[0],
@@ -1045,13 +1052,16 @@ class saas_save_save(osv.osv):
             container_obj.save(cr, uid, [container_id], context=context)
 
             vals = self.get_vals(cr, uid, save.id, context=context)
-
+            vals_container = container_obj.get_vals(cr, uid, container_id, context=context)
+            container_obj.stop(cr, uid, vals_container, context)
             context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
             ssh, sftp = execute.connect(vals['saverepo_container_server'], 22, 'root', context)
             execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['saverepo_container_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', vals['saverepo_name'], vals['save_now_bup'], vals['save_container_volumes']], context)
             ssh.close()
             sftp.close()
-
+            container_obj.start(cr, uid, vals_container, context)
+            self.write(cr, uid, [save.id], {'container_restore_to_name': False, 'container_restore_to_server_id': False}, context=context)
+            self.end_log(cr, uid, save.id, context=context)
         return True
 
 
@@ -1175,7 +1185,7 @@ class saas_container(osv.osv):
         for volume in container.volume_ids:
             volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'readonly': volume.readonly,'nosave': volume.nosave}
             if not volume.nosave:
-                volumes_save += not first and ',' or '' + volume.name
+                volumes_save += (not first and ',' or '') + volume.name
                 first = False
 
         options = {}
@@ -1185,16 +1195,18 @@ class saas_container(osv.osv):
         for option in container.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
+        unique_name = container.name + '_' + vals['server_domain']
         vals.update({
             'container_id': container.id,
             'container_name': container.name,
-            'container_fullname': container.name + '_' + vals['server_domain'],
+            'container_fullname': unique_name,
             'container_ports': ports,
             'container_volumes': volumes,
             'container_volumes_save': volumes_save,
             'container_ssh_port': ssh_port,
             'container_options': options,
             'container_links': links,
+            'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg'
         })
 
         return vals
@@ -1234,6 +1246,7 @@ class saas_container(osv.osv):
             for container in self.browse(cr, uid, ids, context=context):
                 if container.image_version_id != vals['image_version_id']:
                     self.reinstall(cr, uid, [container.id], context=context)
+                    container_vals = self.get_vals(cr, uid, container.id, context=context)
                     save_obj.restore(cr, uid, [save_id], context=context)
                     self.end_log(cr, uid, container.id, context=context)
         return res
@@ -1247,13 +1260,16 @@ class saas_container(osv.osv):
         return super(saas_container, self).unlink(cr, uid, ids, context=context)
 
     def save(self, cr, uid, ids, context={}):
-
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         save_obj = self.pool.get('saas.save.save')
 
         res = {}
         for container in self.browse(cr, uid, ids, context=context):
             context = self.create_log(cr, uid, container.id, 'save', context)
             vals = self.get_vals(cr, uid, container.id, context=context)
+            if not 'bup_server_domain' in vals:
+                execute.log('The bup isnt configured in conf, skipping save container', context)
+                return
             save_vals = {
                 'name': vals['now_bup'] + '_' + vals['container_fullname'],
                 'repo_id': vals['saverepo_id'],
@@ -1269,11 +1285,10 @@ class saas_container(osv.osv):
                 'container_options': str(vals['container_options']),
             }
             res[container.id] = save_obj.create(cr, uid, save_vals, context=context)
-            next = (datetime.now() + timedelta(minutes=container.time_between_save or container.application_id.container_time_between_save)).strftime("%Y-%m-%d")
+            next = (datetime.now() + timedelta(minutes=container.time_between_save or container.application_id.container_time_between_save)).strftime("%Y-%m-%d %H:%M:%S")
             self.write(cr, uid, [container.id], {'save_comment': False, 'date_next_save': next}, context=context)
             self.end_log(cr, uid, container.id, context=context)
         return res
-
 
 
 
@@ -1942,6 +1957,7 @@ class saas_config_settings(osv.osv):
         'dns_id': fields.many2one('saas.container', 'DNS Server'),
         'shinken_id': fields.many2one('saas.container', 'Shinken Server'),
         'bup_id': fields.many2one('saas.container', 'BUP Server'),
+        'home_directory': fields.char('Home directory', size=128),
         'ftpuser': fields.char('FTP User', size=64),
         'ftppass': fields.char('FTP Pass', size=64),
         'ftpserver': fields.char('FTP Server', size=64),
@@ -1957,6 +1973,7 @@ class saas_config_settings(osv.osv):
             dns_vals = self.pool.get('saas.container').get_vals(cr, uid, config.dns_id.id, context=context)
             vals.update({
                 'dns_id': dns_vals['container_id'],
+                'dns_fullname': dns_vals['container_fullname'],
                 'dns_ssh_port': dns_vals['container_ssh_port'],
                 'dns_server_id': dns_vals['server_id'],
                 'dns_server_domain': dns_vals['server_domain'],
@@ -1967,6 +1984,7 @@ class saas_config_settings(osv.osv):
             shinken_vals = self.pool.get('saas.container').get_vals(cr, uid, config.shinken_id.id, context=context)
             vals.update({
                 'shinken_id': shinken_vals['container_id'],
+                'shinken_fullname': shinken_vals['container_fullname'],
                 'shinken_ssh_port': shinken_vals['container_ssh_port'],
                 'shinken_server_id': shinken_vals['server_id'],
                 'shinken_server_domain': shinken_vals['server_domain'],
@@ -1977,6 +1995,7 @@ class saas_config_settings(osv.osv):
             bup_vals = self.pool.get('saas.container').get_vals(cr, uid, config.bup_id.id, context=context)
             vals.update({
                 'bup_id': bup_vals['container_id'],
+                'bup_fullname': bup_vals['container_fullname'],
                 'bup_ssh_port': bup_vals['container_ssh_port'],
                 'bup_server_id': bup_vals['server_id'],
                 'bup_server_domain': bup_vals['server_domain'],
@@ -1993,6 +2012,7 @@ class saas_config_settings(osv.osv):
             'config_backup_directory': config.backup_directory,
             'config_piwik_server': config.piwik_server,
             'config_piwik_password': config.piwik_password,
+            'config_home_directory': config.home_directory,
             'config_ftpuser': config.ftpuser,
             'config_ftppass': config.ftppass,
             'config_ftpserver': config.ftpserver,
@@ -2001,6 +2021,40 @@ class saas_config_settings(osv.osv):
             'now_bup': now.strftime("%Y-%m-%d-%H%M%S"),
         })
         return vals
+
+    def reset_keys(self, cr, uid, ids, context={}):
+        container_ids = container_obj.search(cr, uid, [], context=context)
+        for container in container_obj.browse(cr, uid, container_ids, context=context):
+            container_obj.reset_key(cr, uid, container.id, context=context)
+
+
+    def reset_bup_key(self, cr, uid, ids, context={}):
+        container_obj = self.pool.get('saas.container')
+        server_obj = self.pool.get('saas.server')
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        vals = self.get_vals(cr, uid, context=context)
+
+        if not 'key_already_reset' in context:
+            container_obj.reset_key(cr, uid, [vals['bup_id']], context=context)
+
+        server_ids = server_obj.search(cr, uid, [], context=context)
+        for server in server_obj.browse(cr, uid, server_ids, context=context):
+            server_vals = server_obj.get_vals(cr, uid, server.id, context=context)
+            ssh, sftp = execute.connect(server_vals['server_domain'], server_vals['server_ssh_port'], 'root', context)
+            sftp.put(vals['config_home_directory'] + '/keys/' + vals['bup_fullname'], '/opt/keys/bup/bup_key')
+            sftp.put(vals['config_home_directory'] + '/keys/' + vals['bup_fullname'] + '.pub', '/opt/keys/bup/bup_key.pub')
+            execute.execute(ssh, ['rm /opt/keys/bup/config'], context)
+            execute.execute(ssh, ['echo "Host bup-server" >> /opt/keys/bup/config'], context)
+            execute.execute(ssh, ['echo "    Hostname ' + vals['bup_server_domain'] + '" >> /opt/keys/bup/config'], context)
+            execute.execute(ssh, ['echo "    Port ' + vals['bup_ssh_port'] + '" >> /opt/keys/bup/config'], context)
+            execute.execute(ssh, ['echo "    User bup" >> /opt/keys/bup/config'], context)
+            execute.execute(ssh, ['echo "    IdentityFile /root/.ssh/bup_key" >> /opt/keys/bup/config'], context)
+            execute.execute(ssh, ['chown -R root:root /opt/keys/bup'], context)
+            execute.execute(ssh, ['chmod -R 700 /opt/keys/bup'], context)
+
+            ssh.close()
+            sftp.close()
+
 
 
     def cron_save(self, cr, uid, ids, context={}):

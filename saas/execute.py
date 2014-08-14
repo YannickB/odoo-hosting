@@ -56,11 +56,28 @@ def ko_log(self, context):
                 log_obj.write(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], {'state': 'ko'}, context=context)
 
 
-def connect(host, port, username, context):
-    log('connect: ssh ' + username + '@' + host + ' -p ' + str(port), context)
+def connect(host, port=False, username=False, context={}):
+    log('connect: ssh ' + (username and username + '@' or '') + host + (port and ' -p ' + str(port) or ''), context)
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(host, port=int(port), username=username)
+
+    ssh_config = paramiko.SSHConfig()
+    user_config_file = os.path.expanduser("~/.ssh/config")
+    if os.path.exists(user_config_file):
+        with open(user_config_file) as f:
+            ssh_config.parse(f)
+    user_config = ssh_config.lookup(host)
+
+    identityfile = None
+    if 'identityfile' in user_config:
+        host = user_config['hostname']
+        identityfile = user_config['identityfile']
+        if not username:
+            username = user_config['user']
+        if not port:
+            port = user_config['port']
+
+    ssh.connect(host, port=int(port), username=username, key_filename=identityfile)
     sftp = ssh.open_sftp()
     return (ssh, sftp)
 

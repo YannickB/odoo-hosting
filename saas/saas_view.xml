@@ -167,6 +167,8 @@
                     </group>
                     <button name="save" string="Save" type="object"/>
                     <button name="reinstall" string="Reinstall" type="object"/>
+                    <button name="reset_key" string="Reset Key" type="object"/>
+                    <button name="reset_shinken" string="Reset Shinken" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -300,18 +302,23 @@
                     <notebook>
                         <page string="Container" attrs="{'invisible':[('type','!=','container')]}">
                             <group col="4">
-                              <field name="container_id"/>
-                              <field name="container_app"/>
-                              <field name="container_img"/>
-                              <field name="container_img_version"/>
-                              <field name="container_ports"/>
-                              <field name="container_options"/>
-                              <field name="container_volumes_comma"/>
-                              <field name="container_volumes"/>
+                                <field name="container_id"/>
+                                <field name="container_app"/>
+                                <field name="container_img"/>
+                                <field name="container_img_version"/>
+                                <field name="container_ports"/>
+                                <field name="container_options"/>
+                                <field name="container_volumes_comma"/>
+                                <field name="container_volumes"/>
+                                <label string="Restore"/>
+                                <field name="container_name"/>
+                                <field name="container_server"/>
+                                <field name="container_restore_to_name"/>
+                                <field name="container_restore_to_server_id"/>
+                                <button name="restore" string="Restore" type="object"/>
                             </group>  
                        </page>
                     </notebook>
-                    <button name="restore" string="Restore" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -668,15 +675,18 @@
                         <field name="backup_directory" required="1"/>
                         <field name="piwik_server" required="1"/>
                         <field name="piwik_password" required="1"/>
-                        <field name="dns_id" required="1"/>
-                        <field name="shinken_id" required="1"/>
-                        <field name="bup_id" required="1"/>
+                        <field name="home_directory" required="1"/>
+                        <field name="dns_id"/>
+                        <field name="shinken_id"/>
+                        <field name="bup_id"/>
                         <field name="ftpuser" required="1"/>
                         <field name="ftppass" required="1"/>
                         <field name="ftpserver" required="1"/>
-                        <newline/>
-                        <button name="cron_save" string="Save All" type="object"/>
                     </group>
+                    <button name="cron_save" string="Save All" type="object"/>
+                    <button name="cron_upload_save" string="Upload Save" type="object"/>
+                    <button name="reset_keys" string="Reset Keys" type="object"/>
+                    <button name="reset_bup_key" string="Reset Bup Key" type="object"/>
                 </form>
             </field>
         </record>
@@ -685,6 +695,10 @@
             <field name="archive_path">/opt/archives</field>
             <field name="services_hostpath">/opt/services</field>
             <field name="conductor_path">/opt/openerp/saas-conductor</field>
+            <field name="home_directory">/home/saas-conductor</field>
+            <field name="ftpuser">sd-34468</field>
+            <field name="ftppass">psSLW9K9DrzX2lQ</field>
+            <field name="ftpserver">dedibackup-dc3.online.net</field>
         </record>
 
         <record id="action_saas_configuration" model="ir.actions.act_window">
@@ -738,7 +752,6 @@ RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/usr/sbin/sshd -D" >> /etc/supervisor/conf.d/supervisord.conf
-
 
 RUN mkdir /root/.ssh
 RUN ln -s /opt/authorized_keys /root/.ssh/authorized_keys

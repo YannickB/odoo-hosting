@@ -40,6 +40,6 @@ class saas_container(osv.osv):
         super(saas_container, self).deploy_post(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'postgres':
-            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+            ssh, sftp = execute.connect(vals['container_fullname'], context=context)
             execute.execute(ssh, ['echo "host all  all    ' + vals['container_options']['network']['value'] + ' md5" >> /etc/postgresql/' + vals['app_current_version'] + '/main/pg_hba.conf'], context)
             execute.execute(ssh, ['echo "listen_addresses=\'' + vals['container_options']['listen']['value'] + '\'" >> /etc/postgresql/' + vals['app_current_version'] + '/main/postgresql.conf'], context)

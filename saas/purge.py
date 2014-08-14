@@ -51,7 +51,7 @@ class saas_server(osv.osv):
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if 'shinken_server_domain' in vals:
-            ssh, sftp = execute.connect(vals['shinken_server_domain'], vals['shinken_ssh_port'], 'root', context)
+            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
             execute.execute(ssh, ['rm', vals['server_shinken_configfile']], context)
             execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
             ssh.close()
@@ -69,10 +69,8 @@ class saas_container(osv.osv):
         ssh.close()
         sftp.close()
 
-        ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
-        execute.execute(ssh, ['sed', '-i', "'/Host " + vals['container_fullname'] + "/,/#" + vals['container_fullname'] + "\\n/d'", '/home/saas-conductor/.ssh/config'], context)
-        ssh.close()
-        sftp.close()
+        self.purge_shinken(cr, uid, vals, context=context)
+        self.purge_key(cr, uid, vals, context=context)
         return
 
 

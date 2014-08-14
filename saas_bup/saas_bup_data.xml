@@ -36,7 +36,7 @@ MAINTAINER yannick.buron@gmail.com
 
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp
 
 RUN git clone git://github.com/bup/bup /opt/bup
 RUN make -C /opt/bup
@@ -45,7 +45,7 @@ RUN make install -C /opt/bup
 RUN useradd -m -s /bin/bash bup
 USER bup
 RUN mkdir /home/bup/.ssh
-#RUN touch /home/bup/.ssh/authorized_keys
+RUN ln -s /opt/authorized_keys /home/bup/.ssh/authorized_keys
 RUN mkdir /home/bup/.bup
 RUN chmod -R 700 /home/bup/.ssh
 RUN touch /home/bup/.hushlogin
@@ -64,8 +64,10 @@ RUN echo "* * * * * root supervisorctl restart bup-web" >> /etc/crontab
 
 ADD ./saas/saas_bup/res/save /opt/save
 ADD ./saas/saas_bup/res/restore /opt/restore
+ADD ./saas/saas_bup/res/upload /opt/upload
 RUN chmod +x /opt/save
 RUN chmod +x /opt/restore
+RUN chmod +x /opt/upload
 
 ]]></field>
         </record>
@@ -75,12 +77,12 @@ RUN chmod +x /opt/restore
             <field name="hostpath">/opt/bup</field>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_bup_volume2" model="saas.image.volume">
+<!--        <record id="image_bup_volume2" model="saas.image.volume">
             <field name="image_id" ref="image_bup"/>
             <field name="name">/home/bup/.ssh/authorized_keys</field>
             <field name="hostpath">/opt/keys/bup/bup_key.pub</field>
             <field name="nosave" eval="True"/>
-        </record>
+        </record>-->
         <record id="image_bup_port1" model="saas.image.port">
             <field name="image_id" ref="image_bup"/>
             <field name="name">ssh</field>

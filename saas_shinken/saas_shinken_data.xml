@@ -29,7 +29,7 @@
             <field name="name">img_shinken</field>
             <field name="application_id" ref="app_shinken"/>
             <field name="current_version">1</field>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
+            <field name="dockerfile"><![CDATA[FROM img_bup:latest
 MAINTAINER yannick.buron@gmail.com
 
 
@@ -43,6 +43,8 @@ RUN export TERM=xterm
 RUN curl -L http://install.shinken-monitoring.org | /bin/bash
 
 ADD ./saas/saas_shinken/res/general-shinken.config /usr/local/shinken/etc/services/yolo.cfg
+ADD ./saas/saas_shinken/res/control_backup.sh /opt/control_backup.sh
+RUN chmod 777 /opt/control_backup.sh
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:shinken]" >> /etc/supervisor/conf.d/supervisord.conf

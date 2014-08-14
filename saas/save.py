@@ -40,7 +40,7 @@ class saas_save_repository(osv.osv):
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        ssh, sftp = execute.connect(vals['bup_server_domain'], vals['bup_ssh_port'], 'root', context)
+        ssh, sftp = execute.connect(vals['bup_fullname'], context=context)
         execute.execute(ssh, ['git', '--git-dir=/home/bup/.bup', 'branch', '-D', vals['saverepo_name']], context)
         ssh.close()
         sftp.close()
@@ -61,3 +61,38 @@ class saas_save_save(osv.osv):
 
         return
 
+class saas_config_settings(osv.osv):
+    _inherit = 'saas.config.settings'
+
+    def cron_upload_save(self, cr, uid, ids, context={}):
+        container_obj = self.pool.get('saas.container')
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+
+        container_ids = container_obj.search(cr, uid, [], context=context)
+        context['container_save_comment'] = 'Save before upload_save'
+        container_obj.save(cr, uid, container_ids, context=context)
+
+        vals = self.get_vals(cr, uid, context=context)
+
+        ssh, sftp = execute.connect(vals['bup_fullname'], username='bup', context=context)
+        execute.execute(ssh, ['bup', 'fsck', '-g'], context)
+        execute.execute(ssh, ['bup', 'fsck', '-r'], context)
+        execute.execute(ssh, ['tar', 'czf', '/home/bup/bup.tar.gz', '-C', '/home/bup/.bup', '.'], context)
+        execute.execute(ssh, ['/opt/upload', vals['config_ftpuser'], vals['config_ftppass'], vals['config_ftpserver']], context)
+        execute.execute(ssh, ['rm', '/home/bup/bup.tar.gz'], context)
+        ssh.close()
+        sftp.close()
+
+
+        ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
+        execute.execute(ssh, ['rm', '-rf', '/opt/control-bup'], context)
+        execute.execute(ssh, ['mkdir', '-p', '/opt/control-bup/bup'], context)
+        execute.execute(ssh, ['ncftpget', '-u', vals['config_ftpuser'], '-p' + vals['config_ftppass'], vals['config_ftpserver'], '/opt/control-bup', '/bup.tar.gz'], context)
+        execute.execute(ssh, ['tar', '-xf', '/opt/control-bup/bup.tar.gz', '-C', '/opt/control-bup/bup'], context)
+
+        for container in container_obj.browse(cr, uid, container_ids, context=context):
+            container_vals = container_obj.get_vals(cr, uid, container.id, context=context)
+            execute.execute(ssh, ['export BUP_DIR=/opt/control-bup/bup; bup restore -C /opt/control-bup/restore/' + container_vals['container_fullname'] + ' ' + container_vals['saverepo_name'] + '/latest'], context)
+        execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)
+        ssh.close()
+        sftp.close()

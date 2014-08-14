@@ -8,6 +8,7 @@ do
   echo $path
   cp -R --parents $path /tmp/$1
 done
+echo `date +%Y-%m-%d` > /tmp/$1/backup-date
 bup index /tmp/$1
 bup save -r bup-server: -n $1 -d $2 --strip /tmp/$1
 rm -rf /tmp/$1
