@@ -45,33 +45,6 @@ class saas_domain(osv.osv):
         ssh.close()
         sftp.close()
 
-class saas_server(osv.osv):
-    _inherit = 'saas.server'
-
-    def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if 'shinken_server_domain' in vals:
-            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-            execute.execute(ssh, ['rm', vals['server_shinken_configfile']], context)
-            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-            ssh.close()
-            sftp.close()
-
-class saas_container(osv.osv):
-    _inherit = 'saas.container'
-
-    def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-#        container = self.browse(cr, uid, id, context=context)
-        ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
-        execute.execute(ssh, ['sudo','docker', 'stop', vals['container_name']], context)
-        execute.execute(ssh, ['sudo','docker', 'rm', vals['container_name']], context)
-        ssh.close()
-        sftp.close()
-
-        self.purge_shinken(cr, uid, vals, context=context)
-        self.purge_key(cr, uid, vals, context=context)
-        return
 
 
 class saas_service(osv.osv):
@@ -112,73 +85,4 @@ class saas_service(osv.osv):
             sftp.close()
 
         return
-
-
-
-class saas_base(osv.osv):
-    _inherit = 'saas.base'
-
-
-    def purge_post(self, cr, uid, vals, context=None):
-        return
-
-    def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-
-        ssh, sftp = execute.connect(vals['shinken_server_domain'], vals['shinken_ssh_port'], 'root', context)
-        execute.execute(ssh, ['rm', vals['base_shinken_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-        ssh.close()
-        sftp.close()
-
-
-        ssh, sftp = execute.connect(vals['dns_server_domain'], vals['dns_ssh_port'], 'root', context)
-        execute.execute(ssh, ['sed', '-i', '"/' + vals['base_name'] + '\sIN\sCNAME/d"', vals['domain_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
-        ssh.close()
-        sftp.close()
-
-        ssh, sftp = execute.connect(vals['proxy_server_domain'], vals['proxy_ssh_port'], 'root', context)
-        execute.execute(ssh, ['a2dissite', vals['base_unique_name']], context)
-        execute.execute(ssh, ['rm', vals['base_apache_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/apache2', 'reload'], context)
-        ssh.close()
-        sftp.close()
-
-        if vals['app_bdd'] != 'mysql':
-            ssh, sftp = execute.connect(vals['database_server_domain'], vals['database_ssh_port'], 'postgres', context)
-            execute.execute(ssh, ['psql', '-c', '"update pg_database set datallowconn = \'false\' where datname = \'' + vals['base_unique_name_'] + '\'; SELECT pg_terminate_backend(procpid) FROM pg_stat_activity WHERE datname = \'' + vals['base_unique_name_'] + '\';"'], context)
-            execute.execute(ssh, ['dropdb', vals['base_unique_name_']], context)
-
-            ssh.close()
-            sftp.close()
-
-        else:
-            ssh, sftp = execute.connect(vals['bdd_server_domain'], vals['bdd_server_ssh_port'], vals['apptype_system_user'], context)
-            execute.execute(ssh, ["mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'drop database '" + vals['base_unique_name_'] + ";'"], context)
-            ssh.close()
-            sftp.close()
-
-        self.purge_post(cr, uid, vals, context)
-
-# if [[ $saas != 'demo' ]]
-# then
-
-####TODO This part is not crossplatform because recover the variable will be difficult. When we will move piwik, consider open the post mysql to www server ip so we can continue query it directly.
-####ssh $piwik_server << EOF
-# piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$saas.$domain' LIMIT 1")
-####EOF
-# echo piwik_id $piwik_id
-# fi
-
-# if [[ $piwik_id != '' ]]
-# then
-# ssh $piwik_server << EOF
-  # mysql piwik -u piwik -p$piwik_password -se "UPDATE piwik_site SET name = 'droped_$piwik_id'  WHERE idsite = $piwik_id;"
-  # mysql piwik -u piwik -p$piwik_password -se "DELETE FROM piwik_access WHERE idsite = $piwik_id;"
-# EOF
-# fi
-
-#}
-
 
