@@ -69,7 +69,7 @@ class saas_service(osv.osv):
         super(saas_service, self).deploy_post_service(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
-            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+            ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['ln', '-s', vals['app_version_full_localpath'], '/opt/odoo/services/' + vals['service_name']], context)
             execute.execute(ssh, ['mkdir', '/opt/odoo/extra/' + vals['service_name']], context)
 
@@ -102,7 +102,7 @@ class saas_base(osv.osv):
         res = super(saas_base, self).deploy_create_database(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
-            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+            ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['mkdir', '-p', '/opt/odoo/filestore/' + vals['base_unique_name_']], context)
             ssh.close()
             sftp.close()
@@ -192,11 +192,38 @@ class saas_base(osv.osv):
         res = super(saas_base, self).deploy_prepare_apache(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
-            ssh, sftp = execute.connect(vals['proxy_server_domain'], vals['proxy_ssh_port'], 'root', context)
+            ssh, sftp = execute.connect(vals['proxy_fullname'], context=context)
             execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_apache_configfile']], context)
             execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_apache_configfile']], context)
             execute.execute(ssh, ['sed', '-i', '"s/SERVER/' + vals['server_domain'] + '/g"', vals['base_apache_configfile']], context)
             execute.execute(ssh, ['sed', '-i', '"s/PORT/' + vals['service_options']['port']['hostport'] + '/g"', vals['base_apache_configfile']], context)
+            ssh.close()
+            sftp.close()
+        return
+
+class saas_save_save(osv.osv):
+    _inherit = 'saas.save.save'
+
+
+    def deploy_base(self, cr, uid, vals, context=None):
+        res = super(saas_save_save, self).deploy_base(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if vals['apptype_name'] == 'odoo':
+            ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+#            execute.execute(ssh, ['mkdir', '-p', '/base-backup/' + vals['saverepo_name'] + '/filestore'], context)
+            execute.execute(ssh, ['cp', '-R', '/opt/odoo/filestore/' + vals['base_unique_name_'], '/base-backup/' + vals['saverepo_name'] + '/filestore'], context)
+            ssh.close()
+            sftp.close()
+        return
+
+
+    def restore_base(self, cr, uid, vals, context=None):
+        res = super(saas_save_save, self).restore_base(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if vals['apptype_name'] == 'odoo':
+            ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+            execute.execute(ssh, ['rm', '-rf', '/opt/odoo/filestore/' + vals['base_unique_name_']], context)
+            execute.execute(ssh, ['cp', '-R', '/base-backup/' + vals['saverepo_name'] + '/filestore', '/opt/odoo/filestore/' + vals['base_unique_name_']], context)
             ssh.close()
             sftp.close()
         return

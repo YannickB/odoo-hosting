@@ -132,6 +132,10 @@ RUN ln -s /opt/odoo/supervisor.conf /etc/supervisor/conf.d/odoo.conf
 
 RUN chown -R odoo /opt/odoo
 RUN chmod 644 /opt/odoo/supervisor.conf
+
+RUN mkdir /base-backup
+RUN chown -R odoo /base-backup
+VOLUME /base-backup
 ]]></field>
         </record>
         <record id="image_odoo_volume1" model="saas.image.volume">
@@ -139,6 +143,7 @@ RUN chmod 644 /opt/odoo/supervisor.conf
             <field name="name">/opt/versions</field>
             <field name="hostpath">/opt/services</field>
             <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
         </record>
         <record id="image_odoo_volume2" model="saas.image.volume">
             <field name="image_id" ref="image_odoo"/>

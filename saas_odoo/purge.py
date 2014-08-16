@@ -41,7 +41,7 @@ class saas_service(osv.osv):
         super(saas_service, self).purge_pre_service(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
-            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+            ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['rm', '/opt/odoo/etc/' + vals['service_name'] + '.config'], context)
             execute.execute(ssh, ['sed', '-i', '"/program:' + vals['service_name']  + '/d"', '/opt/odoo/supervisor.conf'], context)
             execute.execute(ssh, ['sed', '-i', '"/\/opt\/odoo\/services\/'  + vals['service_name']  + '/d"', '/opt/odoo/supervisor.conf'], context)
@@ -60,7 +60,7 @@ class saas_base(osv.osv):
         super(saas_base, self).purge_post(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
-            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+            ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['rm', '-rf', '/opt/odoo/filestore/' + vals['base_unique_name_']], context)
             ssh.close()
             sftp.close()

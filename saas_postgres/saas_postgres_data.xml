@@ -65,14 +65,17 @@ USER root
         <record id="image_postgres_volume1" model="saas.image.volume">
             <field name="image_id" ref="image_postgres"/>
             <field name="name">/etc/postgresql</field>
+            <field name="user">postgres</field>
         </record>
         <record id="image_postgres_volume2" model="saas.image.volume">
             <field name="image_id" ref="image_postgres"/>
             <field name="name">/var/log/postgresql</field>
+            <field name="user">postgres</field>
         </record>
         <record id="image_postgres_volume3" model="saas.image.volume">
             <field name="image_id" ref="image_postgres"/>
             <field name="name">/var/lib/postgresql</field>
+            <field name="user">postgres</field>
         </record>
         <record id="image_postgres_port1" model="saas.image.port">
             <field name="image_id" ref="image_postgres"/>

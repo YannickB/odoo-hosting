@@ -1,10 +1,7 @@
 #!/bin/bash
 
 
-
-container_name=$1
-
-directory=/opt/control-bup/restore/$container_name/latest
+directory=/opt/control-bup/restore/$2/latest
 
 date=`date +%Y-%m-%d`
 date_save=`cat $directory/backup-date`
@@ -21,13 +18,16 @@ then
   exit 2
 fi
 
+if [[ $1 == 'base' ]]
+then
 
+  if [[ ! (-s "${directory}/${2}.dump")  ]]
+  then
+    echo "The database file ${2}.dump is empty."
+    exit 2
+  fi
 
-# if [[ ! (-s "${1/_/-}.wikicompare.info-wikicompare_${1}.sql" || -s "${unique_name_underscore}.sql")  ]]
-# then
-  # echo "The database file ${unique_name_underscore}.sql is empty."
-  # exit 2
-# fi
+fi
 
-echo "Backup of ${container_name} OK"
+echo "Backup of ${2} OK"
 exit 0

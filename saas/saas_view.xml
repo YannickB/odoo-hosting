@@ -26,6 +26,7 @@
                         <field name="name"/>
                         <field name="title"/>
                         <field name="domain_id"/>
+                        <field name="application_id"/>
                         <field name="service_id"/>
                         <field name="service_ids"/>
                         <field name="proxy_id"/>
@@ -36,8 +37,7 @@
                         <field name="build"/>
                         <field name="test"/>
                         <field name="lang"/>
-                        <button name="button_save" string="Manual Save" type="object"/>
-                        <button name="send_preprod" string="Send to preprod" type="object"/>
+                        <field name="nosave"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -45,7 +45,20 @@
                             <field name="value"/>
                         </tree>
                     </field>
+                    <group col="4">
+                        <field name="save_repository_id"/>
+                        <field name="time_between_save"/>
+                        <field name="saverepo_change"/>
+                        <field name="saverepo_expiration"/>
+                        <newline/>
+                        <field name="date_next_save"/>
+                        <field name="save_comment"/>
+                    </group>
+                    <button name="save" string="Save" type="object"/>
                     <button name="reinstall" string="Reinstall" type="object"/>
+                    <button name="reset_proxy" string="Reset Proxy" type="object"/>
+                    <button name="reset_bind" string="Reset DNS" type="object"/>
+                    <button name="reset_shinken" string="Reset Shinken" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -95,6 +108,7 @@
                             <field name="value"/>
                         </tree>
                     </field>
+                    <button name="reinstall" string="Reinstall" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -152,6 +166,7 @@
                         <tree string="Volumes" editable="bottom">
                             <field name="name"/>
                             <field name="hostpath"/>
+                            <field name="user"/>
                             <field name="readonly"/>
                             <field name="nosave"/>
                         </tree>
@@ -252,6 +267,12 @@
                               <field name="container_server"/>
                             </group>  
                         </page>
+                        <page string="Base" attrs="{'invisible':[('type','!=','base')]}">
+                            <group col="4">
+                              <field name="base_name"/>
+                              <field name="base_domain"/>
+                            </group>  
+                        </page>
                      </notebook>
                     <field name="save_ids" colspan="4"/>
                 </form>
@@ -300,7 +321,7 @@
                       <field name="restore_saas_ids" domain="[('id','in',saas_ids[0][2])]"/>-->
                     </group>
                     <notebook>
-                        <page string="Container" attrs="{'invisible':[('type','!=','container')]}">
+                        <page string="Container">
                             <group col="4">
                                 <field name="container_id"/>
                                 <field name="container_app"/>
@@ -310,15 +331,49 @@
                                 <field name="container_options"/>
                                 <field name="container_volumes_comma"/>
                                 <field name="container_volumes"/>
-                                <label string="Restore"/>
-                                <field name="container_name"/>
-                                <field name="container_server"/>
-                                <field name="container_restore_to_name"/>
-                                <field name="container_restore_to_server_id"/>
-                                <button name="restore" string="Restore" type="object"/>
+                            </group>  
+                       </page>
+                        <page string="Service" attrs="{'invisible':[('type','!=','base')]}">
+                            <group col="4">
+                                <field name="service_id"/>
+                                <field name="service_name"/>
+                                <field name="service_database_id"/>
+                                <field name="service_options"/>
+                            </group>  
+                       </page>
+                        <page string="Base" attrs="{'invisible':[('type','!=','base')]}">
+                            <group col="4">
+                                <field name="base_id"/>
+                                <field name="base_title"/>
+                                <field name="base_proxy_id"/>
+                                <field name="base_app_version"/>
+                                <field name="base_admin_passwd"/>
+                                <field name="base_poweruser_name"/>
+                                <field name="base_poweruser_password"/>
+                                <field name="base_poweruser_email"/>
+                                <field name="base_build"/>
+                                <field name="base_test"/>
+                                <field name="base_lang"/>
+                                <field name="base_nosave"/>
+                                <field name="base_options"/>
                             </group>  
                        </page>
                     </notebook>
+                    <group col="4">
+                      <separator string="Restore"/>
+                      <newline/>
+                      <field name="container_name" attrs="{'invisible':[('type','!=','container')]}"/>
+                      <field name="container_server" attrs="{'invisible':[('type','!=','container')]}"/>
+                      <field name="base_container_name" readonly="1" attrs="{'invisible':[('type','!=','base')]}"/>
+                      <field name="base_container_server" readonly="1" attrs="{'invisible':[('type','!=','base')]}"/>
+                      <field name="container_restore_to_name"/>
+                      <field name="container_restore_to_server_id"/>
+                      <field name="base_name" attrs="{'invisible':[('type','!=','base')]}"/>
+                      <field name="base_domain" attrs="{'invisible':[('type','!=','base')]}"/>
+                      <field name="base_restore_to_name" attrs="{'invisible':[('type','!=','base')]}"/>
+                      <field name="base_restore_to_domain_id" attrs="{'invisible':[('type','!=','base')]}"/>
+                    </group>
+                    <button name="restore" string="Restore" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -329,6 +384,7 @@
             <field name="arch" type="xml">
                 <tree string="Save">
                     <field name="name"/>
+                    <field name='type'/>
                     <field name='comment'/>
 <!--                    <field name='instance_id'/>
                     <field name="saas_ids"/>
@@ -598,6 +654,7 @@
                         <tree string="Volumes" editable="bottom">
                             <field name="name"/>
                             <field name="hostpath"/>
+                            <field name="user"/>
                             <field name="readonly"/>
                             <field name="nosave"/>
                         </tree>

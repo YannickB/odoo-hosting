@@ -34,8 +34,6 @@ import execute
 import logging
 _logger = logging.getLogger(__name__)
 
-STARTPORT = 48000
-ENDPORT = 50000
 
 class saas_domain(osv.osv):
     _inherit = 'saas.domain'
@@ -60,6 +58,7 @@ class saas_service(osv.osv):
 
     def deploy(self, cr, uid, vals, context=None):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        self.purge(cr, uid, vals, context=context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
 
         if not execute.exist(sftp, vals['app_version_full_hostpath']):
@@ -75,14 +74,14 @@ class saas_service(osv.osv):
 
         #SI postgres, create user
         if vals['app_bdd'] != 'mysql':
-            ssh, sftp = execute.connect(vals['database_server_domain'], vals['database_ssh_port'], 'postgres', context)
+            ssh, sftp = execute.connect(vals['database_fullname'], username='postgres', context=context)
             execute.execute(ssh, ['psql', '-c', '"CREATE USER ' + vals['service_db_user'] + ' WITH PASSWORD \'' + vals['service_db_password'] + '\' CREATEDB;"'], context)
             ssh.close()
             sftp.close()
 
-            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+            ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['sed', '-i', '"/:*:' + vals['service_db_user'] + ':/d" ~/.pgpass'], context)
-            execute.execute(ssh, ['echo "' + vals['database_server_domain'] + ':5432:*:' + vals['service_db_user'] + ':' + vals['service_db_password'] + '" >> ~/.pgpass'], context)
+            execute.execute(ssh, ['echo "' + vals['database_server'] + ':5432:*:' + vals['service_db_user'] + ':' + vals['service_db_password'] + '" >> ~/.pgpass'], context)
             execute.execute(ssh, ['chmod', '700', '~/.pgpass'], context)
             ssh.close()
             sftp.close()

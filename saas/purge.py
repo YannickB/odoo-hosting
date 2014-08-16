@@ -54,18 +54,18 @@ class saas_service(osv.osv):
     def purge_pre_service(self, cr, uid, vals, context=None):
         return
 
-    def purge(self, cr, uid, id, vals, context={}):
+    def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
         self.purge_pre_service(cr, uid, vals, context)
 
         if vals['app_bdd'] != 'mysql':
-            ssh, sftp = execute.connect(vals['database_server_domain'], vals['database_ssh_port'], 'postgres', context)
+            ssh, sftp = execute.connect(vals['database_fullname'], username='postgres', context=context)
             execute.execute(ssh, ['psql', '-c', '"DROP USER ' + vals['service_db_user'] + ';"'], context)
             ssh.close()
             sftp.close()
 
-            ssh, sftp = execute.connect(vals['server_domain'], vals['container_ssh_port'], vals['apptype_system_user'], context)
+            ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['sed', '-i', '"/:*:' + vals['service_db_user'] + ':/d" ~/.pgpass'], context)
             ssh.close()
             sftp.close()

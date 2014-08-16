@@ -34,6 +34,9 @@ import execute
 import logging
 _logger = logging.getLogger(__name__)
 
+STARTPORT = 48000
+ENDPORT = 50000
+
 class saas_server(osv.osv):
     _name = 'saas.server'
     _inherit = ['saas.log.model']
@@ -172,7 +175,7 @@ class saas_container(osv.osv):
         volumes_save = ''
         first = True
         for volume in container.volume_ids:
-            volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'readonly': volume.readonly,'nosave': volume.nosave}
+            volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'user': volume.user,'readonly': volume.readonly,'nosave': volume.nosave}
             if not volume.nosave:
                 volumes_save += (not first and ',' or '') + volume.name
                 first = False
@@ -211,7 +214,7 @@ class saas_container(osv.osv):
         if ('volume_ids' not in vals or not vals['volume_ids']) and 'image_version_id' in vals:
             vals['volume_ids'] = []
             for volume in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.volume_ids:
-                vals['volume_ids'].append((0,0,{'name':volume.name,'hostpath':volume.hostpath,'readonly':volume.readonly,'nosave':volume.nosave}))
+                vals['volume_ids'].append((0,0,{'name':volume.name,'hostpath':volume.hostpath,'user':volume.user,'readonly':volume.readonly,'nosave':volume.nosave}))
         vals = self.add_links(cr, uid, vals, context=context)
         res = super(saas_container, self).create(cr, uid, vals, context=context)
         context = self.create_log(cr, uid, res, 'create', context)
@@ -228,7 +231,7 @@ class saas_container(osv.osv):
                 if container.image_version_id != vals['image_version_id']:
                     context = self.create_log(cr, uid, container.id, 'upgrade version', context)
                     new_version = version_obj.browse(cr, uid, vals['image_version_id'], context=context)
-                    context['container_save_comment'] = 'Before upgrade from ' + container.image_version_id.name + ' to ' + new_version.name
+                    context['save_comment'] = 'Before upgrade from ' + container.image_version_id.name + ' to ' + new_version.name
                     save_id = self.save(cr, uid, [container.id], context=context)[container.id]
         res = super(saas_container, self).write(cr, uid, ids, vals, context=context)
         if 'image_version_id' in vals:
@@ -241,7 +244,7 @@ class saas_container(osv.osv):
         return res
 
     def unlink(self, cr, uid, ids, context={}):
-        context['container_save_comment'] = 'Before unlink'
+        context['save_comment'] = 'Before unlink'
         self.save(cr, uid, ids, context=context)
         for container in self.browse(cr, uid, ids, context=context):
             vals = self.get_vals(cr, uid, container.id, context=context)
@@ -262,7 +265,7 @@ class saas_container(osv.osv):
             save_vals = {
                 'name': vals['now_bup'] + '_' + vals['container_fullname'],
                 'repo_id': vals['saverepo_id'],
-                'comment': 'container_save_comment' in context and context['container_save_comment'] or container.save_comment or 'Manual',
+                'comment': 'save_comment' in context and context['save_comment'] or container.save_comment or 'Manual',
                 'now_bup': vals['now_bup'],
                 'container_id': vals['container_id'],
                 'container_volumes_comma': vals['container_volumes_save'],
@@ -295,7 +298,7 @@ class saas_container(osv.osv):
 
     def deploy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        #container = self.browse(cr, uid, id, context=context)
+        self.purge(cr, uid, vals, context=context)
 
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
 
@@ -339,16 +342,7 @@ class saas_container(osv.osv):
         ssh.close()
         sftp.close()
 
-        if not 'shinken_server_domain' in vals:
-            execute.log('The shinken isnt configured in conf, skipping placing dummy save in shinken', context)
-        else:
-            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-            execute.execute(ssh, ['mkdir', '-p', '/opt/control-bup/restore/' + vals['container_fullname'] + '/latest'], context)
-            execute.execute(ssh, ['echo "' + vals['now_date'] + '" >> /opt/control-bup/restore/' + vals['container_fullname'] + '/latest/backup-date'], context)
-            execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)
-            ssh.close()
-            sftp.close()
-            self.deploy_shinken(cr, uid, vals, context=context)
+        self.deploy_shinken(cr, uid, vals, context=context)
 
         return
 
@@ -395,7 +389,13 @@ class saas_container(osv.osv):
         self.purge_shinken(cr, uid, vals, context=context)
         ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
         sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/container-shinken.config', vals['container_shinken_configfile'])
+        execute.execute(ssh, ['sed', '-i', '"s/TYPE/container/g"', vals['container_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['container_fullname'] + '/g"', vals['container_shinken_configfile']], context)
+
+        execute.execute(ssh, ['mkdir', '-p', '/opt/control-bup/restore/' + vals['container_fullname'] + '/latest'], context)
+        execute.execute(ssh, ['echo "' + vals['now_date'] + '" >> /opt/control-bup/restore/' + vals['container_fullname'] + '/latest/backup-date'], context)
+        execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)
+
         execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
         ssh.close()
         sftp.close()
@@ -462,6 +462,7 @@ class saas_container_volume(osv.osv):
         'container_id': fields.many2one('saas.container', 'Container', ondelete="cascade", required=True),
         'name': fields.char('Path', size=128, required=True),
         'hostpath': fields.char('Host path', size=128),
+        'user': fields.char('System User', size=64),
         'readonly': fields.boolean('Readonly?'),
         'nosave': fields.boolean('No save?'),
     }

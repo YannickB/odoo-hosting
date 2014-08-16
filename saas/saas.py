@@ -178,6 +178,7 @@ class saas_image_volume(osv.osv):
         'image_id': fields.many2one('saas.image', 'Image', ondelete="cascade", required=True),
         'name': fields.char('Path', size=128, required=True),
         'hostpath': fields.char('Host path', size=128),
+        'user': fields.char('System User', size=64),
         'readonly': fields.boolean('Readonly?'),
         'nosave': fields.boolean('No save?'),
     }
@@ -920,6 +921,7 @@ class saas_service(osv.osv):
         database_vals = self.pool.get('saas.container').get_vals(cr, uid, service.database_container_id.id, context=context)
         vals.update({
             'database_id': database_vals['container_id'],
+            'database_fullname': database_vals['container_fullname'],
             'database_ssh_port': database_vals['container_ssh_port'],
             'database_server_id': database_vals['server_id'],
             'database_server_domain': database_vals['server_domain'],
@@ -964,7 +966,7 @@ class saas_service(osv.osv):
         for service in self.browse(cr, uid, ids, context=context):
             vals = self.get_vals(cr, uid, service.id, context=context)
             try:
-                self.purge(cr, uid, service.id, vals, context=context)
+                self.purge(cr, uid, vals, context=context)
             except:
                 pass    
         return super(saas_service, self).unlink(cr, uid, ids, context=context)
@@ -1299,13 +1301,18 @@ class saas_config_settings(osv.osv):
 
     def cron_upload_save(self, cr, uid, ids, context={}):
         container_obj = self.pool.get('saas.container')
+        base_obj = self.pool.get('saas.base')
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
-        container_ids = container_obj.search(cr, uid, [], context=context)
-        context['container_save_comment'] = 'Save before upload_save'
-        container_obj.save(cr, uid, container_ids, context=context)
-
         vals = self.get_vals(cr, uid, context=context)
+
+
+        context['save_comment'] = 'Save before upload_save'
+        container_ids = container_obj.search(cr, uid, [], context=context)
+        container_obj.save(cr, uid, container_ids, context=context)
+        base_ids = base_obj.search(cr, uid, [], context=context)
+        base_obj.save(cr, uid, base_ids, context=context)
+
 
         ssh, sftp = execute.connect(vals['bup_fullname'], username='bup', context=context)
         execute.execute(ssh, ['bup', 'fsck', '-g'], context)
@@ -1326,6 +1333,9 @@ class saas_config_settings(osv.osv):
         for container in container_obj.browse(cr, uid, container_ids, context=context):
             container_vals = container_obj.get_vals(cr, uid, container.id, context=context)
             execute.execute(ssh, ['export BUP_DIR=/opt/control-bup/bup; bup restore -C /opt/control-bup/restore/' + container_vals['container_fullname'] + ' ' + container_vals['saverepo_name'] + '/latest'], context)
+        for base in base_obj.browse(cr, uid, base_ids, context=context):
+            base_vals = base_obj.get_vals(cr, uid, base.id, context=context)
+            execute.execute(ssh, ['export BUP_DIR=/opt/control-bup/bup; bup restore -C /opt/control-bup/restore/' + base_vals['base_unique_name_'] + ' ' + base_vals['saverepo_name'] + '/latest'], context)
         execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)
         ssh.close()
         sftp.close()
