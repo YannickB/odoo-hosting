@@ -23,22 +23,8 @@
             <field name="default">*</field>
         </record>
 
-        <record id="app_postgres" model="saas.application">
-            <field name="name">postgres</field>
-            <field name="code">postgres</field>
-            <field name="current_version">9.1</field>
-            <field name="type_id" ref="apptype_postgres"/>
-            <field name="container_time_between_save">60</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="base_time_between_save">60</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-        </record>
-
         <record id="image_postgres" model="saas.image">
             <field name="name">img_postgres</field>
-            <field name="application_id" ref="app_postgres"/>
             <field name="current_version">9.1</field>
             <field name="dockerfile"><![CDATA[FROM yolobase:latest
 MAINTAINER yannick.buron@gmail.com
@@ -89,6 +75,18 @@ USER root
             <field name="localport">5432</field>
         </record>
 
-
+        <record id="app_postgres" model="saas.application">
+            <field name="name">postgres</field>
+            <field name="code">postgres</field>
+            <field name="current_version">9.1</field>
+            <field name="type_id" ref="apptype_postgres"/>
+            <field name="default_image_id" ref="image_postgres"/>
+            <field name="container_time_between_save">60</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="base_time_between_save">60</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
+        </record>
     </data>
 </openerp>

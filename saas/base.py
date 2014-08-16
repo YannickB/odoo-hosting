@@ -35,9 +35,57 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
+class saas_domain(osv.osv):
+    _name = 'saas.domain'
+    _inherit = ['saas.model']
+
+    _columns = {
+        'name': fields.char('Domain name', size=64, required=True)
+    }
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(name)', 'Name must be unique!'),
+    ]
+
+    def get_vals(self, cr, uid, id, context=None):
+
+        vals = {}
+
+        domain = self.browse(cr, uid, id, context=context)
+
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
+        vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
+
+        vals.update({
+            'domain_name': domain.name,
+            'domain_configfile': '/etc/bind/db.' + domain.name,
+        })
+
+        return vals
+
+
+
+    def deploy(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        ssh, sftp = execute.connect(vals['dns_server_domain'], vals['dns_ssh_port'], 'root', context)
+        sftp.put(vals['config_conductor_path'] + '/saas/saas/res/bind.config', vals['domain_configfile'])
+        execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['domain_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/IP/' + vals['dns_server_ip'] + '/g"', vals['domain_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        ssh.close()
+        sftp.close()
+
+    def purge(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        ssh, sftp = execute.connect(vals['dns_server_domain'], vals['dns_ssh_port'], 'root', context)
+        execute.execute(ssh, ['rm', vals['domain_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        ssh.close()
+        sftp.close()
+
 class saas_base(osv.osv):
     _name = 'saas.base'
-    _inherit = ['saas.log.model']
+    _inherit = ['saas.model']
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),
@@ -80,8 +128,22 @@ class saas_base(osv.osv):
     }
 
     _sql_constraints = [
-        ('name_domain_uniq', 'unique (name,domain_id)', 'The name of the saas must be unique per domain !')
+        ('name_uniq', 'unique (name,domain_id)', 'Name must be unique per domain !')
     ]
+
+    def _check_application(self, cr, uid, ids, context=None):
+        for b in self.browse(cr, uid, ids, context=context):
+            if b.application_id.id != b.service_id.application_id.id:
+                return False
+            for s in b.service_ids:
+                if b.application_id.id != s.application_id.id:
+                    return False
+        return True
+
+    _constraints = [
+        (_check_application, "The application of base must be the same than the application of service." , ['service_id','service_ids']),
+    ]
+
 
 #########TODO La liaison entre base et service est un many2many à cause du loadbalancing. Si le many2many est vide, un service est créé automatiquement. Finalement il y aura un many2one pour le principal, et un many2many pour gérer le loadbalancing
 #########Contrainte : L'application entre base et service doit être la même, de plus la bdd/host/db_user/db_password doit être la même entre tous les services d'une même base
@@ -162,26 +224,10 @@ class saas_base(osv.osv):
 
 
 
-    def create(self, cr, uid, vals, context={}):
-        res = super(saas_base, self).create(cr, uid, vals, context=context)
-        context = self.create_log(cr, uid, res, 'create', context)
-        vals = self.get_vals(cr, uid, res, context=context)
-        try:
-            self.deploy(cr, uid, vals, context)
-        except:
-            context['nosave'] = True
-            self.unlink(cr, uid, [res], context=context)
-            raise
-        self.end_log(cr, uid, res, context=context)
-        return res
-
 
     def unlink(self, cr, uid, ids, context={}):
         context['save_comment'] = 'Before unlink'
         self.save(cr, uid, ids, context=context)
-        for base in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, base.id, context=context)
-            self.purge(cr, uid, vals, context=context)
         return super(saas_base, self).unlink(cr, uid, ids, context=context)
 
     def save(self, cr, uid, ids, context={}):
@@ -486,3 +532,6 @@ class saas_base_option(osv.osv):
         'value': fields.text('Value'),
     }
 
+    _sql_constraints = [
+        ('name_uniq', 'unique(base_id,name)', 'Option name must be unique per base!'),
+    ]

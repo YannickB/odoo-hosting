@@ -11,23 +11,8 @@
             <field name="standard_port">7767</field>
         </record>
 
-        <record id="app_shinken" model="saas.application">
-            <field name="name">shinken</field>
-            <field name="code">shinken</field>
-            <field name="current_version">1</field>
-            <field name="type_id" ref="apptype_shinken"/>
-            <field name="container_time_between_save">60</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="base_time_between_save">60</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-        </record>
-
-
         <record id="image_shinken" model="saas.image">
             <field name="name">img_shinken</field>
-            <field name="application_id" ref="app_shinken"/>
             <field name="current_version">1</field>
             <field name="dockerfile"><![CDATA[FROM img_bup:latest
 MAINTAINER yannick.buron@gmail.com
@@ -75,6 +60,22 @@ USER root
             <field name="localport">7767</field>
             <field name="expose" eval="True"/>
         </record>
+
+
+        <record id="app_shinken" model="saas.application">
+            <field name="name">shinken</field>
+            <field name="code">shinken</field>
+            <field name="current_version">1</field>
+            <field name="type_id" ref="apptype_shinken"/>
+            <field name="default_image_id" ref="image_shinken"/>
+            <field name="container_time_between_save">60</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="base_time_between_save">60</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
+        </record>
+
 
     </data>
 </openerp>

@@ -1,0 +1,279 @@
+# -*- coding: utf-8 -*-
+##############################################################################
+#
+#    Author: Yannick Buron
+#    Copyright 2013 Yannick Buron
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+##############################################################################
+
+
+from openerp import netsvc
+from openerp import pooler
+from openerp.osv import fields, osv, orm
+from openerp.tools.translate import _
+
+import time
+from datetime import datetime, timedelta
+import subprocess
+import paramiko
+import execute
+
+import logging
+_logger = logging.getLogger(__name__)
+
+
+class saas_application_type(osv.osv):
+    _name = 'saas.application.type'
+
+    _columns = {
+        'name': fields.char('Name', size=64, required=True),
+        'system_user': fields.char('System User', size=64, required=True),
+        'admin_name': fields.char('Admin name', size=64, required=True),
+        'admin_email': fields.char('Admin email', size=64, required=True),
+        'mysql': fields.boolean('Can have mysql?'),
+        'init_test': fields.boolean('Demo mode must be set at database creation?'),
+        'standard_port': fields.char('Standard port', size=12),
+        'localpath': fields.char('Localpath', size=128),
+        'option_ids': fields.one2many('saas.application.type.option', 'apptype_id', 'Options'),
+        'application_ids': fields.one2many('saas.application', 'type_id', 'Applications'),
+    }
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(name)', 'Name must be unique!'),
+    ]
+
+    def get_vals(self, cr, uid, id, context={}):
+
+        vals = {}
+
+        apptype = self.browse(cr, uid, id, context=context)
+
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
+        vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
+
+        options = {
+            'application': {},
+            'container': {},
+            'service': {},
+            'base': {}
+        }
+        for option in apptype.option_ids:
+            options[option.type][option.name] = {'id': option.id, 'name': option.name, 'type': option.type, 'default': option.default}
+
+        vals.update({
+            'apptype_name': apptype.name,
+            'apptype_system_user': apptype.system_user,
+            'apptype_admin_name': apptype.admin_name,
+            'apptype_admin_email': apptype.admin_email,
+            'apptype_mysql': apptype.mysql,
+            'apptype_init_test': apptype.init_test,
+            'apptype_localpath': apptype.localpath,
+            'apptype_options': options
+        })
+
+        return vals
+
+class saas_application_type_option(osv.osv):
+    _name = 'saas.application.type.option'
+
+    _columns = {
+        'apptype_id': fields.many2one('saas.application.type', 'Application Type', ondelete="cascade", required=True),
+        'name': fields.char('Name', size=64, required=True),
+        'type': fields.selection([('application','Application'),('container','Container'),('service','Service'),('base','Base')], 'Type', required=True),
+        'default': fields.text('Default value'),
+    }
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(apptype_id,name)', 'Options name must be unique per apptype!'),
+    ]
+
+
+class saas_application(osv.osv):
+    _name = 'saas.application'
+
+    _columns = {
+        'name': fields.char('Name', size=64, required=True),
+        'code': fields.char('Code', size=4, required=True),
+        'type_id': fields.many2one('saas.application.type', 'Type', required=True),
+        'current_version': fields.char('Current version', size=64, required=True),
+        'bdd': fields.selection([('pgsql','PostgreSQL'),('mysql','MySQL')], 'BDD', required=True),
+        # 'next_instance_id': fields.many2one('saas.service', 'Next instance'),
+        'default_image_id': fields.many2one('saas.image', 'Default Image', required=True),
+        'instances_path': fields.char('Instances path', size=128),
+        'build_directory': fields.char('Build directory', size=128),
+        'poweruser_name': fields.char('PowerUser Name', size=64),
+        'poweruser_password': fields.char('PowerUser Password', size=64),
+        'poweruser_email': fields.char('PowerUser Email', size=64),
+        'piwik_demo_id': fields.char('Piwik Demo ID', size=64),
+        'version_prod': fields.char('Version Prod', size=64),
+        'version_preprod': fields.char('Version Preprod', size=64),
+        'version_test': fields.char('Version Test', size=64),
+        'version_dev': fields.char('Version Dev', size=64),
+        'option_ids': fields.one2many('saas.application.option', 'application_id', 'Options'),
+        'version_ids': fields.one2many('saas.application.version', 'application_id', 'Versions'),
+        'buildfile': fields.text('Build File'),
+        'container_ids': fields.one2many('saas.container', 'application_id', 'Containers'),
+        'container_time_between_save': fields.integer('Minutes between each container save', required=True),
+        'container_saverepo_change': fields.integer('Days before container saverepo change', required=True),
+        'container_saverepo_expiration': fields.integer('Days before container saverepo expiration', required=True),
+        'base_time_between_save': fields.integer('Minutes between each base save', required=True),
+        'base_saverepo_change': fields.integer('Days before base saverepo change', required=True),
+        'base_saverepo_expiration': fields.integer('Days before base saverepo expiration', required=True),
+    }
+
+    _defaults = {
+        'bdd': 'pgsql',
+    }
+
+    _sql_constraints = [
+        ('code_uniq', 'unique(code)', 'Code must be unique!'),
+    ]
+
+    def get_vals(self, cr, uid, id, context=None):
+
+        vals = {}
+
+        app = self.browse(cr, uid, id, context=context)
+
+        vals.update(self.pool.get('saas.application.type').get_vals(cr, uid, app.type_id.id, context=context))
+
+        now = datetime.now()
+        computed_version = app.current_version + '.' + now.strftime('%Y%m%d.%H%M')
+
+        options = {}
+        for option in app.type_id.option_ids:
+            if option.type == 'application':
+                options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
+        for option in app.option_ids:
+            options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+
+
+        vals.update({
+            'app_name': app.name,
+            'app_code': app.code,
+            'app_bdd': app.bdd,
+            'app_instances_path': app.instances_path,
+            'app_full_archivepath': vals['config_archive_path'] + '/' + app.type_id.name + '-' + app.code,
+            'app_full_hostpath': vals['config_services_hostpath'] + '/' + app.type_id.name + '-' + app.code,
+            'app_full_localpath': vals['apptype_localpath'] and vals['apptype_localpath'] + '/' + app.type_id.name + '-' + app.code or '',
+            'app_build_directory': app.build_directory,
+            'app_poweruser_name': app.poweruser_name,
+            'app_poweruser_password': app.poweruser_password,
+            'app_poweruser_email': app.poweruser_email,
+            'app_current_version': app.current_version,
+            'app_computed_version': computed_version,
+            'app_buildfile': app.buildfile,
+            'app_options': options
+        })
+
+        return vals
+
+
+    def get_current_version(self, cr, uid, obj, context=None):
+        return False
+
+    def build(self, cr, uid, ids, context=None):
+        version_obj = self.pool.get('saas.application.version')
+
+        for app in self.browse(cr, uid, ids, context={}):
+            if not app.buildfile:
+                continue
+            current_version = self.get_current_version(cr, uid, app, context)
+            if current_version:
+                self.write(cr, uid, [app.id], {'current_version': current_version}, context=context)
+            current_version = current_version or app.current_version
+            now = datetime.now()
+            version = current_version + '.' + now.strftime('%Y%m%d.%H%M')
+            version_obj.create(cr, uid, {'application_id': app.id, 'name': version}, context=context)
+
+
+class saas_application_option(osv.osv):
+    _name = 'saas.application.option'
+
+    _columns = {
+        'application_id': fields.many2one('saas.application', 'Application', ondelete="cascade", required=True),
+        'name': fields.many2one('saas.application.type.option', 'Option', required=True),
+        'value': fields.text('Value'),
+    }
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(application_id,name)', 'Option name must be unique per application!'),
+    ]
+
+class saas_application_version(osv.osv):
+    _name = 'saas.application.version'
+    _inherit = ['saas.model']
+
+    _columns = {
+        'name': fields.char('Name', size=64, required=True),
+        'application_id': fields.many2one('saas.application', 'Application', required=True),
+        'service_ids': fields.one2many('saas.service','application_version_id', 'Services'),
+    }
+
+    _sql_constraints = [
+        ('name_app_uniq', 'unique (name,application_id)', 'The name of the version must be unique per application !')
+    ]
+
+    _order = 'create_date desc'
+
+    def get_vals(self, cr, uid, id, context=None):
+
+        vals = {}
+
+        app_version = self.browse(cr, uid, id, context=context)
+
+        vals.update(self.pool.get('saas.application').get_vals(cr, uid, app_version.application_id.id, context=context))
+
+        vals.update({
+            'app_version_id': app_version.id,
+            'app_version_name': app_version.name,
+            'app_version_full_archivepath': vals['app_full_archivepath'] + '/' + app_version.name,
+            'app_version_full_archivepath_targz': vals['app_full_archivepath'] + '/' + app_version.name + '.tar.gz',
+            'app_version_full_hostpath': vals['app_full_hostpath'] + '/' + app_version.name,
+            'app_version_full_localpath': vals['app_full_localpath'] + '/' + app_version.name,
+        })
+
+        return vals
+
+
+    def unlink(self, cr, uid, ids, context=None):
+        for app in self.browse(cr, uid, ids, context=context):
+            if app.service_ids:
+                raise osv.except_osv(_('Inherit error!'),_("A service is linked to this application version, you can't delete it!"))
+        return super(saas_application_version, self).unlink(cr, uid, ids, context=context)
+
+
+    def build_application(self, cr, uid, vals, context):
+        return
+
+    def deploy(self, cr, uid, vals, context):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if not execute.local_dir_exist(vals['app_full_archivepath']):
+            execute.execute_local(['mkdir', vals['app_full_archivepath']], context)
+        if execute.local_dir_exist(vals['app_version_full_archivepath']):
+            execute.execute_local(['rm', '-rf', vals['app_version_full_archivepath']], context)
+        execute.execute_local(['mkdir', vals['app_version_full_archivepath']], context)
+        execute.execute_local(['mkdir', '-p', vals['app_version_full_archivepath'] + '/extra'], context)
+        self.build_application(cr, uid, vals, context)
+        execute.execute_write_file(vals['app_version_full_archivepath'] + '/VERSION.txt', vals['app_version_name'], context)
+        execute.execute_local(['pwd'], context, path=vals['app_version_full_archivepath'])
+        execute.execute_local(['tar', 'czf', vals['app_version_full_archivepath_targz'], '-C', vals['app_full_archivepath'] + '/' + vals['app_version_name'], '.'], context)
+
+
+    def purge(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        execute.execute_local(['sudo','rm', '-rf', vals['app_version_full_archivepath']], context)
+        execute.execute_local(['sudo','rm', vals['app_version_full_archivepath_targz']], context)

@@ -144,8 +144,8 @@
                     <group col="4">
                         <field name="name"/>
                         <field name="server_id"/>
-                        <field name="application_id"/>
-                        <field name="image_id" domain="['|',('application_id','=',application_id),('application_id','=',False)]"/>
+                        <field name="application_id" on_change="onchange_application_id(application_id)"/>
+                        <field name="image_id"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
                         <field name="linked_container_ids"/>
                     </group>
@@ -222,8 +222,9 @@
                         <field name="ip"/>
                         <field name="ssh_port"/>
                         <field name="mysql_passwd"/>
-                        <button name="reinstall" string="Reinstall" type="object"/>
                     </group>
+                    <button name="reinstall" string="Reinstall" type="object"/>
+                    <button name="start_containers" string="Start Containers" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -495,6 +496,7 @@
                         <field name="type_id"/>
                         <field name="current_version"/>
                         <field name="bdd"/>
+                        <field name="default_image_id"/>
 <!--                        <field name="next_instance_id"/>
                         <field name="preprod_domain_id"/>
                         <field name="preprod_server_id"/>
@@ -607,6 +609,7 @@
                         <field name="name"/>
                         <field name="action"/>
                         <field name="create_date"/>
+                        <field name="expiration_date"/>
                         <newline/>
                         <field name="log" colspan="4"/>
                         <field name="state"/>
@@ -646,7 +649,6 @@
                 <form string="Image" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <field name="application_id"/>
                         <field name="current_version"/>
                     </group>
                     <field name="dockerfile" colspan="4"/>
@@ -677,7 +679,6 @@
             <field name="arch" type="xml">
                 <tree string="Images">
                     <field name="name"/>
-                    <field name="application_id"/>
                     <field name="current_version"/>
                 </tree>
             </field>
@@ -740,10 +741,13 @@
                         <field name="ftppass" required="1"/>
                         <field name="ftpserver" required="1"/>
                     </group>
-                    <button name="cron_save" string="Save All" type="object"/>
-                    <button name="cron_upload_save" string="Upload Save" type="object"/>
+                    <button name="cron_daily" string="Launch daily cron" type="object"/>
+                    <button name="upload_save" string="Upload Save" type="object"/>
                     <button name="reset_keys" string="Reset Keys" type="object"/>
                     <button name="reset_bup_key" string="Reset Bup Key" type="object"/>
+                    <button name="purge_expired_saverepo" string="Purge expired SaveRepo" type="object"/>
+                    <button name="purge_expired_logs" string="Purge Expired Logs" type="object"/>
+                    <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
                 </form>
             </field>
         </record>
@@ -769,17 +773,27 @@
         <menuitem id="menu_saas_admin_configuration" parent="menu_saas_configuration"
             sequence="15" action="action_saas_configuration"/>
 
-        <record id="save_saas_scheduler" model="ir.cron">
-          <field name="name">Save SaaS Scheduler</field>
+        <record id="save_saas_daily_scheduler" model="ir.cron">
+          <field name="name">SaaS Daily Cron</field>
           <field eval="1" name="interval_number"/>
           <field name="interval_type">days</field>
           <field eval="-1" name="numbercall"/>
           <field eval="0" name="doall"/>
           <field name="model">saas.config.settings</field>
-          <field name="function">cron_save</field>
+          <field name="function">cron_daily</field>
           <field name="args">([1])</field>
         </record> 
 
+        <record id="save_saas_nextsaves_scheduler" model="ir.cron">
+          <field name="name">SaaS Next Saves</field>
+          <field eval="30" name="interval_number"/>
+          <field name="interval_type">minutes</field>
+          <field eval="-1" name="numbercall"/>
+          <field eval="0" name="doall"/>
+          <field name="model">saas.config.settings</field>
+          <field name="function">launch_next_saves</field>
+          <field name="args">([1])</field>
+        </record> 
 
 
 

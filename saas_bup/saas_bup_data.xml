@@ -11,23 +11,8 @@
             <field name="standard_port">22</field>
         </record>
 
-        <record id="app_bup" model="saas.application">
-            <field name="name">Bup server</field>
-            <field name="code">bup</field>
-            <field name="current_version">1</field>
-            <field name="type_id" ref="apptype_bup"/>
-            <field name="container_time_between_save">60</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="base_time_between_save">60</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-        </record>
-
-
         <record id="image_bup" model="saas.image">
             <field name="name">img_bup</field>
-            <field name="application_id" ref="app_bup"/>
             <field name="current_version">1</field>
             <field name="dockerfile"><![CDATA[FROM yolobase:latest
 MAINTAINER yannick.buron@gmail.com
@@ -94,6 +79,20 @@ RUN chmod +x /opt/upload
             <field name="name">bup-web</field>
             <field name="localport">8080</field>
             <field name="expose" eval="True"/>
+        </record>
+
+        <record id="app_bup" model="saas.application">
+            <field name="name">Bup server</field>
+            <field name="code">bup</field>
+            <field name="current_version">1</field>
+            <field name="type_id" ref="apptype_bup"/>
+            <field name="default_image_id" ref="image_bup"/>
+            <field name="container_time_between_save">60</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="base_time_between_save">60</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
         </record>
 
     </data>

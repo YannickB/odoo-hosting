@@ -38,6 +38,112 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
+class saas_log(osv.osv):
+    _name = 'saas.log'
+
+    def _get_name(self, cr, uid, ids, field_name, arg, context=None):
+        res = {}
+        for log in self.browse(cr, uid, ids, context=context):
+            model_obj = self.pool.get(log.model)
+            record = model_obj.browse(cr, uid, log.res_id, context=context)
+            res[log.id] = ''
+            if record and hasattr(record, 'name'):
+                res[log.id] = record.name
+        return res
+
+    _columns = {
+        'model': fields.char('Related Document Model', size=128, select=1),
+        'res_id': fields.integer('Related Document ID', select=1),
+        'name': fields.function(_get_name, type="char", size=128, string='Name'),
+        'action': fields.char('Action', size=64),
+        'log': fields.text('log'),
+        'state': fields.selection([('unfinished','Not finished'),('ok','Ok'),('ko','Ko')], 'State', required=True),
+        'create_date': fields.datetime('Launch Date'),
+        'finish_date': fields.datetime('Finish Date'),
+        'expiration_date': fields.datetime('Expiration Date'),
+    }
+
+    _defaults = {
+        'state': 'unfinished'
+    }
+
+    _order = 'create_date desc'
+
+class saas_model(osv.AbstractModel):
+    _name = 'saas.model'
+
+    _log_expiration_days = 30
+
+    _columns = {
+        'log_ids': fields.one2many('saas.log', 'res_id',
+            domain=lambda self: [('model', '=', self._name)],
+            auto_join=True,
+            string='Logs'),
+    }
+
+    def create_log(self, cr, uid, id, action, context):
+        if 'log_id' in context:
+            return context
+        log_obj = self.pool.get('saas.log')
+        if context == None:
+            context = {}
+        if not 'logs' in context:
+            context['logs'] = {}
+        if not self._name in context['logs']:
+            context['logs'][self._name] = {}
+        now = datetime.now()
+        if not id in context['logs'][self._name]:
+            expiration_date = (now + timedelta(days=self._log_expiration_days)).strftime("%Y-%m-%d")
+            log_id = log_obj.create(cr, uid, {'model': self._name, 'res_id': id, 'action': action,'expiration_date':expiration_date}, context=context)
+            context['logs'][self._name][id] = {}
+            context['logs'][self._name][id]['log_model'] = self._name
+            context['logs'][self._name][id]['log_res_id'] = id
+            context['logs'][self._name][id]['log_id'] = log_id
+            context['logs'][self._name][id]['log_log'] = ''
+        return context
+
+    def end_log(self, cr, uid, id, context=None):
+        log_obj = self.pool.get('saas.log')
+        if 'logs' in  context:
+            log = log_obj.browse(cr, uid, context['logs'][self._name][id]['log_id'], context=context)
+            if log.state == 'unfinished':
+                log_obj.write(cr, uid, [context['logs'][self._name][id]['log_id']], {'state': 'ok'}, context=context)
+
+    def reinstall(self, cr, uid, ids, context=None):
+        for record in self.browse(cr, uid, ids, context=context):
+            context = self.create_log(cr, uid, record.id, 'reinstall', context)
+            vals = self.get_vals(cr, uid, record.id, context=context)
+            self.purge(cr, uid, vals, context=context)
+            self.deploy(cr, uid, vals, context=context)
+            self.end_log(cr, uid, record.id, context=context)
+
+    def create(self, cr, uid, vals, context=None):
+        res = super(saas_model, self).create(cr, uid, vals, context=context)
+        context = self.create_log(cr, uid, res, 'create', context)
+        vals = self.get_vals(cr, uid, res, context=context)
+        try:
+            self.deploy(cr, uid, vals, context)
+        except:
+            context['nosave'] = True
+            self.unlink(cr, uid, [res], context=context)
+            raise
+        self.end_log(cr, uid, res, context=context)
+        return res 
+
+    def unlink(self, cr, uid, ids, context=None):
+        for record in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, service.id, context=context)
+            try:
+                self.purge(cr, uid, vals, context=context)
+            except:
+                pass   
+        res = super(saas_model, self).unlink(cr, uid, ids, context=context)
+        log_obj = self.pool.get('saas.log')
+        log_ids = log_obj.search(cr, uid, [('model','=',self._name),('res_id','in',ids)],context=context)
+        log_obj.unlink(cr, uid, log_ids, context=context)
+        return res
+
+
 def log(message, context):
     message = filter(lambda x: x in string.printable, message)
     _logger.info(message)

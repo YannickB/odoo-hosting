@@ -16,6 +16,7 @@
             <field name="code">proxy</field>
             <field name="current_version">2</field>
             <field name="type_id" ref="apptype_proxy"/>
+            <field name="default_image_id" ref="image_apache"/>
             <field name="container_time_between_save">60</field>
             <field name="container_saverepo_change">30</field>
             <field name="container_saverepo_expiration">90</field>

@@ -92,7 +92,7 @@ class saas_save_repository(osv.osv):
 
 class saas_save_save(osv.osv):
     _name = 'saas.save.save'
-    _inherit = ['saas.log.model']
+    _inherit = ['saas.model']
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),

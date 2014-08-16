@@ -39,7 +39,7 @@ ENDPORT = 50000
 
 class saas_server(osv.osv):
     _name = 'saas.server'
-    _inherit = ['saas.log.model']
+    _inherit = ['saas.model']
 
     _columns = {
         'name': fields.char('Domain name', size=64, required=True),
@@ -47,6 +47,10 @@ class saas_server(osv.osv):
         'ssh_port': fields.char('SSH port', size=12, required=True),
         'mysql_passwd': fields.char('MySQL Passwd', size=64),
     }
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(name)', 'Name must be unique!'),
+    ]
 
     def get_vals(self, cr, uid, id, type='', context={}):
 
@@ -68,19 +72,13 @@ class saas_server(osv.osv):
         return vals
 
 
-    def create(self, cr, uid, vals, context={}):
-        res = super(saas_server, self).create(cr, uid, vals, context=context)
-        context = self.create_log(cr, uid, res, 'create', context)
-        vals = self.get_vals(cr, uid, res, context=context)
-        self.deploy(cr, uid, vals, context=context)
-        self.end_log(cr, uid, res, context=context)
-        return res
-
-    def unlink(self, cr, uid, ids, context={}):
+    def start_containers(self, cr, uid, ids, context={}):
+        container_obj = self.pool.get('saas.container')
         for server in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, server.id, context=context)
-            self.purge(cr, uid, vals, context=context)
-        return super(saas_server, self).unlink(cr, uid, ids, context=context)
+            container_ids = container_obj.search(cr, uid, [('server_id', '=', server.id)], context=context)
+            for container in container_obj.browse(cr, uid, container_ids, context=context):
+                vals = container_obj.get_vals(cr, uid, container.id, context=context)
+                container_obj.start(cr, uid, vals, context=context)
 
     def deploy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
@@ -104,7 +102,7 @@ class saas_server(osv.osv):
 
 class saas_container(osv.osv):
     _name = 'saas.container'
-    _inherit = ['saas.log.model']
+    _inherit = ['saas.model']
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),
@@ -125,8 +123,43 @@ class saas_container(osv.osv):
         'service_ids': fields.one2many('saas.service', 'container_id', 'Services'),
     }
 
-#########TODO add contraint, image_version doit appartenir à image_id qui doit correspondre à application_id
-#########TODO add contraint, a container can only have one linked container of each application type
+    _sql_constraints = [
+        ('name_uniq', 'unique(server_id,name)', 'Name must be unique per server!'),
+    ]
+
+    def _check_image(self, cr, uid, ids, context=None):
+        for c in self.browse(cr, uid, ids, context=context):
+            if c.image_id.id != c.image_version_id.image_id.id:
+                return False
+        return True
+
+    def _check_links(self, cr, uid, ids, context=None):
+        for c in self.browse(cr, uid, ids, context=context):
+            links = {}
+            for l in c.linked_container_ids:
+                apptype = l.application_id.type_id.name
+                if apptype in links:
+                    return False
+                links[apptype] = apptype
+        return True
+
+    _constraints = [
+        (_check_image, "The image of image version must be the same than the image of container." , ['image_id','image_version_id']),
+        (_check_links, "The image of image version must be the same than the image of container." , ['image_id','image_version_id']),
+    ]
+
+    def onchange_application_id(self, cr, uid, ids, application_id=False, context=None):
+        result = {}
+        if application_id:
+            application = self.pool.get('saas.application').browse(cr, uid, application_id, context=context)
+            result = {'value': {
+                    'image_id': application.default_image_id.id,
+                    'image_version_id': application.default_image_id.version_ids[0].id,
+                    }
+                }
+        return result
+
+
     def get_vals(self, cr, uid, id, context={}):
         repo_obj = self.pool.get('saas.save.repository')
         vals = {}
@@ -216,12 +249,7 @@ class saas_container(osv.osv):
             for volume in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.volume_ids:
                 vals['volume_ids'].append((0,0,{'name':volume.name,'hostpath':volume.hostpath,'user':volume.user,'readonly':volume.readonly,'nosave':volume.nosave}))
         vals = self.add_links(cr, uid, vals, context=context)
-        res = super(saas_container, self).create(cr, uid, vals, context=context)
-        context = self.create_log(cr, uid, res, 'create', context)
-        vals = self.get_vals(cr, uid, res, context=context)
-        self.deploy(cr, uid, vals, context=context)
-        self.end_log(cr, uid, res, context=context)
-        return res
+        return super(saas_container, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
         version_obj = self.pool.get('saas.image.version')
@@ -246,9 +274,6 @@ class saas_container(osv.osv):
     def unlink(self, cr, uid, ids, context={}):
         context['save_comment'] = 'Before unlink'
         self.save(cr, uid, ids, context=context)
-        for container in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, container.id, context=context)
-            self.purge(cr, uid, vals, context=context)
         return super(saas_container, self).unlink(cr, uid, ids, context=context)
 
     def save(self, cr, uid, ids, context={}):
@@ -348,7 +373,6 @@ class saas_container(osv.osv):
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-#        container = self.browse(cr, uid, id, context=context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
         execute.execute(ssh, ['sudo','docker', 'stop', vals['container_name']], context)
         execute.execute(ssh, ['sudo','docker', 'rm', vals['container_name']], context)
@@ -455,6 +479,10 @@ class saas_container_port(osv.osv):
         'hostport': fields.char('Host port', size=12),
     }
 
+    _sql_constraints = [
+        ('name_uniq', 'unique(container_id,name)', 'Port name must be unique per container!'),
+    ]
+
 class saas_container_volume(osv.osv):
     _name = 'saas.container.volume'
 
@@ -467,6 +495,10 @@ class saas_container_volume(osv.osv):
         'nosave': fields.boolean('No save?'),
     }
 
+    _sql_constraints = [
+        ('name_uniq', 'unique(container_id,name)', 'Volume name must be unique per container!'),
+    ]
+
 class saas_container_option(osv.osv):
     _name = 'saas.container.option'
 
@@ -476,4 +508,6 @@ class saas_container_option(osv.osv):
         'value': fields.text('Value'),
     }
 
-
+    _sql_constraints = [
+        ('name_uniq', 'unique(container_id,name)', 'Option name must be unique per container!'),
+    ]

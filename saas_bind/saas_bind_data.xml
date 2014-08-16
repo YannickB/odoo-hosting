@@ -11,23 +11,8 @@
             <field name="standard_port">53</field>
         </record>
 
-        <record id="app_bind" model="saas.application">
-            <field name="name">bind</field>
-            <field name="code">bind</field>
-            <field name="current_version">1</field>
-            <field name="type_id" ref="apptype_bind"/>
-            <field name="container_time_between_save">60</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="base_time_between_save">60</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-        </record>
-
-
         <record id="image_bind" model="saas.image">
             <field name="name">img_bind</field>
-            <field name="application_id" ref="app_bind"/>
             <field name="current_version">1</field>
             <field name="dockerfile"><![CDATA[FROM yolobase:latest
 MAINTAINER yannick.buron@gmail.com
@@ -69,6 +54,21 @@ USER root
             <field name="name">bind</field>
             <field name="localport">53</field>
             <field name="expose" eval="True"/>
+        </record>
+
+
+        <record id="app_bind" model="saas.application">
+            <field name="name">bind</field>
+            <field name="code">bind</field>
+            <field name="current_version">1</field>
+            <field name="type_id" ref="apptype_bind"/>
+            <field name="default_image_id" ref="image_bind"/>
+            <field name="container_time_between_save">60</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="base_time_between_save">60</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
         </record>
 
     </data>
