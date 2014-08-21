@@ -123,6 +123,7 @@ class saas_image_port(osv.osv):
         'name': fields.char('Name', size=64, required=True),
         'localport': fields.char('Local port', size=12, required=True),
         'expose': fields.boolean('Expose?'),
+        'udp': fields.boolean('UDP?'),
     }
 
     _sql_constraints = [

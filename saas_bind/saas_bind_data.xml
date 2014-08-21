@@ -54,6 +54,7 @@ USER root
             <field name="name">bind</field>
             <field name="localport">53</field>
             <field name="expose" eval="True"/>
+            <field name="udp" eval="True"/>
         </record>
 
 

@@ -43,6 +43,7 @@ class saas_config_settings(osv.osv):
 
     _columns = {
         'conductor_path': fields.char('Conductor Path', size=128),
+        'email_sysadmin': fields.char('Email SysAdmin', size=128),
         'log_path': fields.char('SaaS Log Path', size=128),
         'archive_path': fields.char('Archive path', size=128),
         'services_hostpath': fields.char('Host services path', size=128),
@@ -56,6 +57,8 @@ class saas_config_settings(osv.osv):
         'ftpuser': fields.char('FTP User', size=64),
         'ftppass': fields.char('FTP Pass', size=64),
         'ftpserver': fields.char('FTP Server', size=64),
+        'mailchimp_username': fields.char('MailChimp Username', size=64),
+        'mailchimp_apikey': fields.char('MailChimp API Key', size=64),
     }
 
     def get_vals(self, cr, uid, context={}):
@@ -101,6 +104,7 @@ class saas_config_settings(osv.osv):
         now = datetime.now()
         vals.update({
             'config_conductor_path': config.conductor_path,
+            'config_email_sysadmin': config.email_sysadmin,
             'config_log_path': config.log_path,
             'config_archive_path': config.archive_path,
             'config_services_hostpath': config.services_hostpath,
@@ -111,6 +115,8 @@ class saas_config_settings(osv.osv):
             'config_ftpuser': config.ftpuser,
             'config_ftppass': config.ftppass,
             'config_ftpserver': config.ftpserver,
+            'config_mailchimp_username': config.mailchimp_username,
+            'config_mailchimp_apikey': config.mailchimp_apikey,
             'now_date': now.strftime("%Y-%m-%d"),
             'now_hour': now.strftime("%H-%M"),
             'now_hour_regular': now.strftime("%H:%M:%S"),
@@ -168,8 +174,8 @@ class saas_config_settings(osv.osv):
 
 
         ssh, sftp = execute.connect(vals['bup_fullname'], username='bup', context=context)
-        execute.execute(ssh, ['bup', 'fsck', '-g'], context)
         execute.execute(ssh, ['bup', 'fsck', '-r'], context)
+        execute.execute(ssh, ['bup', 'fsck', '-g'], context)
         execute.execute(ssh, ['tar', 'czf', '/home/bup/bup.tar.gz', '-C', '/home/bup/.bup', '.'], context)
         execute.execute(ssh, ['/opt/upload', vals['config_ftpuser'], vals['config_ftppass'], vals['config_ftpserver']], context)
         execute.execute(ssh, ['rm', '/home/bup/bup.tar.gz'], context)

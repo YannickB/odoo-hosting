@@ -106,12 +106,13 @@ class saas_application(osv.osv):
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),
-        'code': fields.char('Code', size=4, required=True),
+        'code': fields.char('Code', size=10, required=True),
         'type_id': fields.many2one('saas.application.type', 'Type', required=True),
         'current_version': fields.char('Current version', size=64, required=True),
         'bdd': fields.selection([('pgsql','PostgreSQL'),('mysql','MySQL')], 'BDD', required=True),
         # 'next_instance_id': fields.many2one('saas.service', 'Next instance'),
         'default_image_id': fields.many2one('saas.image', 'Default Image', required=True),
+        'linked_local_containers': fields.char('Linked Local Containers', size=128),
         'instances_path': fields.char('Instances path', size=128),
         'build_directory': fields.char('Build directory', size=128),
         'poweruser_name': fields.char('PowerUser Name', size=64),

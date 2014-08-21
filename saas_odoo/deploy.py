@@ -35,19 +35,19 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class saas_container(osv.osv):
-    _inherit = 'saas.container'
-    def add_links(self, cr, uid, vals, context={}):
-        res = super(saas_container, self).add_links(cr, uid, vals, context=context)
-        if 'application_id' in vals and 'server_id' in vals:
-            application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
-            if application.type_id.name == 'odoo':
-                if not 'linked_container_ids' in vals:
-                    vals['linked_container_ids'] = []
-                container_ids = self.search(cr, uid, [('application_id.type_id.name','=','postgres'),('server_id','=',vals['server_id'])], context=context)
-                for container in self.browse(cr, uid, container_ids, context=context):
-                    vals['linked_container_ids'].append((4,container.id))
-        return vals
+# class saas_container(osv.osv):
+#     _inherit = 'saas.container'
+#     def add_links(self, cr, uid, vals, context={}):
+#         res = super(saas_container, self).add_links(cr, uid, vals, context=context)
+#         if 'application_id' in vals and 'server_id' in vals:
+#             application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
+#             if application.type_id.name == 'odoo':
+#                 if not 'linked_container_ids' in vals:
+#                     vals['linked_container_ids'] = []
+#                 container_ids = self.search(cr, uid, [('application_id.type_id.name','=','postgres'),('server_id','=',vals['server_id'])], context=context)
+#                 for container in self.browse(cr, uid, container_ids, context=context):
+#                     vals['linked_container_ids'].append((4,container.id))
+#         return vals
 
 class saas_service(osv.osv):
     _inherit = 'saas.service'
@@ -200,6 +200,66 @@ class saas_base(osv.osv):
             ssh.close()
             sftp.close()
         return
+
+
+    def deploy_bind(self, cr, uid, vals, context={}):
+        res = super(saas_base, self).deploy_bind(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if not 'dns_server_domain' in vals:
+            execute.log('The dns isnt configured in conf, skipping purge container bind', context)
+            return
+        ssh, sftp = execute.connect(vals['dns_fullname'], context=context)
+        execute.execute(ssh, ['echo "IN MX 1 ' + vals['mail_server_domain'] + '." >> ' + vals['domain_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        ssh.close()
+        sftp.close()
+        return res
+
+
+    def purge_bind(self, cr, uid, vals, context={}):
+        res = super(saas_base, self).purge_bind(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if not 'dns_server_domain' in vals:
+            execute.log('The dns isnt configured in conf, skipping purge container bind', context)
+            return
+        ssh, sftp = execute.connect(vals['dns_fullname'], context=context)
+        execute.execute(ssh, ['sed', '-i', '"/' + vals['base_name'] + '\sMX\s1/d"', vals['domain_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        ssh.close()
+        sftp.close()
+        return res
+
+    def deploy_mail(self, cr, uid, vals, context={}):
+        res = super(saas_base, self).deploy_mail(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user='admin', password=" + vals['base_admin_passwd'] + ")", context)
+        client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user='admin', password=vals['base_admin_passwd'])
+        execute.log("server_id = client.model('ir.model.data').get_object_reference('base', 'ir_mail_server_localhost0')[1]", context)
+        server_id = client.model('ir.model.data').get_object_reference('base', 'ir_mail_server_localhost0')[1]
+        execute.log("client.model('ir.mail_server').write([" + str(server_id) + "], {'name': 'postfix', 'smtp_host': 'postfix'})", context)
+        client.model('ir.mail_server').write([server_id], {'name': 'postfix', 'smtp_host': 'postfix'})
+
+        ssh, sftp = execute.connect(vals['mail_fullname'], context=context)
+        execute.execute(ssh, ['echo "@' + vals['base_fulldomain'] + ' ' + vals['base_unique_name_'] + '@localhost" >> /etc/postfix/virtual_aliases'], context)
+        execute.execute(ssh, ["echo '" + vals['base_unique_name_'] + ": \"|openerp_mailgate.py --host=" + vals['server_domain'] + " --port=" + vals['service_options']['port']['hostport'] + " -u 1 -p " + vals['base_admin_passwd'] + " -d " + vals['base_unique_name_'] + "\"' >> /etc/aliases"], context)
+        execute.execute(ssh, ['newaliases'], context)
+        execute.execute(ssh, ['/etc/init.d/postfix', 'reload'], context)
+        ssh.close()
+        sftp.close()
+        return res
+
+
+    def purge_mail(self, cr, uid, vals, context={}):
+        res = super(saas_base, self).purge_mail(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        ssh, sftp = execute.connect(vals['mail_fullname'], context=context)
+        execute.execute(ssh, ['sed', '-i', '"/@' + vals['base_fulldomain'] + '/d"', '/etc/postfix/virtual_aliases'], context)
+        execute.execute(ssh, ['sed', '-i', '"/d\s' + vals['base_unique_name_'] + '/d"', '/etc/aliases'], context)
+        execute.execute(ssh, ['newaliases'], context)
+        execute.execute(ssh, ['/etc/init.d/postfix', 'reload'], context)
+        ssh.close()
+        sftp.close()
+        return res
 
 class saas_save_save(osv.osv):
     _inherit = 'saas.save.save'

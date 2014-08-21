@@ -132,7 +132,7 @@ class saas_model(osv.AbstractModel):
 
     def unlink(self, cr, uid, ids, context=None):
         for record in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, service.id, context=context)
+            vals = self.get_vals(cr, uid, record.id, context=context)
             try:
                 self.purge(cr, uid, vals, context=context)
             except:

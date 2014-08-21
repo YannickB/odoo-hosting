@@ -30,6 +30,7 @@
                         <field name="service_id"/>
                         <field name="service_ids"/>
                         <field name="proxy_id"/>
+                        <field name="mail_id"/>
                         <field name="admin_passwd"/>
                         <field name="poweruser_name"/>
                         <field name="poweruser_passwd"/>
@@ -59,6 +60,7 @@
                     <button name="reset_proxy" string="Reset Proxy" type="object"/>
                     <button name="reset_bind" string="Reset DNS" type="object"/>
                     <button name="reset_shinken" string="Reset Shinken" type="object"/>
+                    <button name="reset_mail" string="Reset Mail" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -160,6 +162,7 @@
                             <field name="name"/>
                             <field name="localport"/>
                             <field name="hostport"/>
+                            <field name="udp"/>
                         </tree>
                     </field>
                     <field name="volume_ids" colspan="4">
@@ -497,6 +500,7 @@
                         <field name="current_version"/>
                         <field name="bdd"/>
                         <field name="default_image_id"/>
+                        <field name="linked_local_containers"/>
 <!--                        <field name="next_instance_id"/>
                         <field name="preprod_domain_id"/>
                         <field name="preprod_server_id"/>
@@ -666,6 +670,7 @@
                             <field name="name"/>
                             <field name="localport"/>
                             <field name="expose"/>
+                            <field name="udp"/>
                         </tree>
                     </field>
                     <button name="build" string="Build" type="object"/>
@@ -727,6 +732,7 @@
                 <form string="Application" version="7.0">
                     <group col="4">
                         <field name="conductor_path" required="1"/>
+                        <field name="email_sysadmin" required="1"/>
                         <field name="log_path" required="1"/>
                         <field name="archive_path" required="1"/>
                         <field name="services_hostpath" required="1"/>
@@ -740,6 +746,8 @@
                         <field name="ftpuser" required="1"/>
                         <field name="ftppass" required="1"/>
                         <field name="ftpserver" required="1"/>
+                        <field name="mailchimp_username" required="1"/>
+                        <field name="mailchimp_apikey" required="1"/>
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
                     <button name="upload_save" string="Upload Save" type="object"/>
@@ -754,6 +762,7 @@
 
         <record id="saas_settings" model='saas.config.settings'>
             <field name="archive_path">/opt/archives</field>
+            <field name="email_sysadmin">yannick.buron@gmail.com</field>
             <field name="services_hostpath">/opt/services</field>
             <field name="conductor_path">/opt/openerp/saas-conductor</field>
             <field name="home_directory">/home/saas-conductor</field>
@@ -813,9 +822,14 @@ RUN DEBIAN_FRONTEND=noninteractive locale-gen en_US.UTF-8
 RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
 RUN update-locale LANG=en_US.UTF-8
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils
+#/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix container.
+#Be cautious to any application which also use it.
 RUN mkdir -p /var/run/sshd
 RUN mkdir -p /var/log/supervisor
+RUN rm /usr/bin/mail
+RUN ln -s /usr/sbin/ssmtp /usr/bin/mail
+#RUN echo "" > /etc/ssmtp/ssmtp.conf
 
 
 RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf

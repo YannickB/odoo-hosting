@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_postfix" model="saas.application.type">
+            <field name="name">postfix</field>
+            <field name="system_user">postfix</field>
+            <field name="admin_name">postfix</field>
+            <field name="admin_email">postfix@localhost</field>
+            <field name="standard_port">25</field>
+        </record>
+
+        <record id="image_postfix" model="saas.image">
+            <field name="name">img_postfix</field>
+            <field name="current_version">1</field>
+            <field name="dockerfile"><![CDATA[FROM yolobase:latest
+MAINTAINER yannick.buron@gmail.com
+
+
+
+
+
+# Install Postfix.
+run echo "postfix postfix/main_mailer_type string Internet site" > preseed.txt
+run echo "postfix postfix/mailname string mail.yolo-consulting.net" >> preseed.txt
+# Use Mailbox format.
+run debconf-set-selections preseed.txt
+#run DEBIAN_FRONTEND=noninteractive apt-get install -q -y postfix
+#run postconf -e myhostname=mail.example.com
+#run postconf -e mydestination="mail.example.com, example.com, localhost.localdomain, localhost"
+#run postconf -e mail_spool_directory="/var/spool/mail/"
+#run postconf -e mailbox_command=""
+# Add a local user to receive mail at someone@example.com, with a delivery directory
+# (for the Mailbox format).
+#run useradd -s /bin/bash someone
+#run mkdir /var/spool/mail/someone
+#run chown someone:mail /var/spool/mail/someone
+#add etc-aliases.txt /etc/aliases
+#run chown root:root /etc/aliases
+#run newaliases
+
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install postfix mailutils libsasl2-2 ca-certificates libsasl2-modules
+
+RUN touch /etc/postfix/virtual_aliases
+RUN echo "virtual_alias_maps = hash:/etc/postfix/virtual_aliases" >> /etc/postfix/main.cf
+RUN postmap /etc/postfix/virtual_aliases
+RUN mkdir /etc/aliases-dir
+RUN mv /etc/aliases /etc/aliases-dir/aliases
+RUN ln -s /etc/aliases-dir/aliases /etc/aliases
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "[program:syslog-ng]" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "command=/etc/init.d/syslog-ng start" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:postfix]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/etc/init.d/postfix start" >> /etc/supervisor/conf.d/supervisord.conf
+
+ADD ./saas/saas_postfix/res/openerp_mailgate.py /bin/openerp_mailgate.py
+
+
+USER root
+]]></field>
+        </record>
+        <record id="image_postfix_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_postfix"/>
+            <field name="name">/etc/postfix</field>
+        </record>
+        <record id="image_postfix_volume2" model="saas.image.volume">
+            <field name="image_id" ref="image_postfix"/>
+            <field name="name">/etc/aliases-dir</field>
+        </record>
+        <record id="image_postfix_port1" model="saas.image.port">
+            <field name="image_id" ref="image_postfix"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose" eval="True"/>
+        </record>
+        <record id="image_postfix_port2" model="saas.image.port">
+            <field name="image_id" ref="image_postfix"/>
+            <field name="name">postfix</field>
+            <field name="localport">25</field>
+            <field name="expose" eval="True"/>
+        </record>
+
+        <record id="app_postfix" model="saas.application">
+            <field name="name">postfix</field>
+            <field name="code">postfix</field>
+            <field name="current_version">1</field>
+            <field name="type_id" ref="apptype_postfix"/>
+            <field name="default_image_id" ref="image_postfix"/>
+            <field name="container_time_between_save">60</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="base_time_between_save">60</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
+        </record>
+    </data>
+</openerp>

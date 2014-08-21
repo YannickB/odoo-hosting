@@ -67,17 +67,25 @@ class saas_domain(osv.osv):
 
     def deploy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        ssh, sftp = execute.connect(vals['dns_server_domain'], vals['dns_ssh_port'], 'root', context)
+        ssh, sftp = execute.connect(vals['dns_fullname'], username='root', context=context)
         sftp.put(vals['config_conductor_path'] + '/saas/saas/res/bind.config', vals['domain_configfile'])
         execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['domain_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/IP/' + vals['dns_server_ip'] + '/g"', vals['domain_configfile']], context)
+        execute.execute(ssh, ["echo 'zone \"" + vals['domain_name'] + "\" {' >> /etc/bind/named.conf"], context)
+        execute.execute(ssh, ['echo "type master;" >> /etc/bind/named.conf'], context)
+        execute.execute(ssh, ['echo "allow-transfer {213.186.33.199;};" >> /etc/bind/named.conf'], context)
+        execute.execute(ssh, ["echo 'file \"/etc/bind/db." + vals['domain_name'] + "\";' >> /etc/bind/named.conf"], context)
+        execute.execute(ssh, ['echo "notify yes;" >> /etc/bind/named.conf'], context)
+        execute.execute(ssh, ['echo "};" >> /etc/bind/named.conf'], context)
+        execute.execute(ssh, ['echo "//END ' + vals['domain_name'] + '\n" >> /etc/bind/named.conf'], context)
         execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
         ssh.close()
         sftp.close()
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        ssh, sftp = execute.connect(vals['dns_server_domain'], vals['dns_ssh_port'], 'root', context)
+        ssh, sftp = execute.connect(vals['dns_fullname'], username='root', context=context)
+        execute.execute(ssh, ['sed', '-i', "'/zone\s\"" + vals['domain_name'] + "\"/,/END\s" + vals['domain_name'] + "/d'", '/etc/bind/named.conf'], context)
         execute.execute(ssh, ['rm', vals['domain_configfile']], context)
         execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
         ssh.close()
@@ -95,6 +103,7 @@ class saas_base(osv.osv):
         'service_id': fields.many2one('saas.service', 'Service', required=True),
         'service_ids': fields.many2many('saas.service', 'saas_base_service_rel', 'base_id', 'service_id', 'Alternative Services'),
         'proxy_id': fields.many2one('saas.container', 'Proxy', required=True),
+        'mail_id': fields.many2one('saas.container', 'Mail', required=True),
         'admin_passwd': fields.char('Admin password', size=64),
         'poweruser_name': fields.char('PowerUser name', size=64),
         'poweruser_passwd': fields.char('PowerUser password', size=64),
@@ -145,8 +154,8 @@ class saas_base(osv.osv):
     ]
 
 
-#########TODO La liaison entre base et service est un many2many à cause du loadbalancing. Si le many2many est vide, un service est créé automatiquement. Finalement il y aura un many2one pour le principal, et un many2many pour gérer le loadbalancing
-#########Contrainte : L'application entre base et service doit être la même, de plus la bdd/host/db_user/db_password doit être la même entre tous les services d'une même base
+#########TODO La liaison entre base et service est un many2many ï¿½ cause du loadbalancing. Si le many2many est vide, un service est crï¿½ï¿½ automatiquement. Finalement il y aura un many2one pour le principal, et un many2many pour gï¿½rer le loadbalancing
+#########Contrainte : L'application entre base et service doit ï¿½tre la mï¿½me, de plus la bdd/host/db_user/db_password doit ï¿½tre la mï¿½me entre tous les services d'une mï¿½me base
 
     def get_vals(self, cr, uid, id, context=None):
         repo_obj = self.pool.get('saas.save.repository')
@@ -190,6 +199,15 @@ class saas_base(osv.osv):
             'proxy_server_id': proxy_vals['server_id'],
             'proxy_server_domain': proxy_vals['server_domain'],
         })
+        
+        mail_vals = self.pool.get('saas.container').get_vals(cr, uid, base.mail_id.id, context=context)
+        vals.update({
+            'mail_id': mail_vals['container_id'],
+            'mail_fullname': mail_vals['container_fullname'],
+            'mail_ssh_port': mail_vals['container_ssh_port'],
+            'mail_server_id': mail_vals['server_id'],
+            'mail_server_domain': mail_vals['server_domain'],
+        })
 
         options = {}
         for option in base.service_id.container_id.application_id.type_id.option_ids:
@@ -203,6 +221,7 @@ class saas_base(osv.osv):
             'base_id': base.id,
             'base_name': base.name,
             'base_fullname': unique_name,
+            'base_fulldomain': base.name + '.' + base.domain_id.name,
             'base_unique_name': unique_name,
             'base_unique_name_': unique_name.replace('-','_'),
             'base_title': base.title,
@@ -283,11 +302,25 @@ class saas_base(osv.osv):
             self.end_log(cr, uid, base.id, context=context)
         return res
 
+    def reset_proxy(self, cr, uid, ids, context={}):
+        for container in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, container.id, context=context)
+            self.deploy_proxy(cr, uid, vals, context=context)
+
+    def reset_bind(self, cr, uid, ids, context={}):
+        for container in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, container.id, context=context)
+            self.deploy_bind(cr, uid, vals, context=context)
+
     def reset_shinken(self, cr, uid, ids, context={}):
         for container in self.browse(cr, uid, ids, context=context):
             vals = self.get_vals(cr, uid, container.id, context=context)
             self.deploy_shinken(cr, uid, vals, context=context)
 
+    def reset_mail(self, cr, uid, ids, context={}):
+        for container in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, container.id, context=context)
+            self.deploy_mail(cr, uid, vals, context=context)
 
 
     def deploy_create_database(self, cr, uid, vals, context=None):
@@ -467,8 +500,7 @@ class saas_base(osv.osv):
             return
         self.purge_bind(cr, uid, vals, context=context)
         ssh, sftp = execute.connect(vals['dns_fullname'], context=context)
-        execute.execute(ssh, ['sed', '-i', '"/' + vals['base_name'] + '\sIN\sCNAME/d"', vals['domain_configfile']], context)
-        execute.execute(ssh, ['echo "' + vals['base_name'] + ' IN CNAME ' + vals['proxy_server_domain'] + '" >> ' + vals['domain_configfile']], context)
+        execute.execute(ssh, ['echo "' + vals['base_name'] + ' IN CNAME ' + vals['proxy_server_domain'] + '." >> ' + vals['domain_configfile']], context)
         execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
         ssh.close()
         sftp.close()
@@ -520,6 +552,16 @@ class saas_base(osv.osv):
         execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
         ssh.close()
         sftp.close()
+        
+        
+        
+    def deploy_mail(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        self.purge_mail(cr, uid, vals, context=context)
+
+
+    def purge_mail(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
 
 

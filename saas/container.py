@@ -200,7 +200,7 @@ class saas_container(osv.osv):
         ports = {}
         ssh_port = 22
         for port in container.port_ids:
-            ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport}
+            ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport, 'udp': port.udp}
             if port.name == 'ssh':
                 ssh_port = port.hostport
 
@@ -236,19 +236,29 @@ class saas_container(osv.osv):
 
         return vals
 
-    def add_links(self, cr, uid, vals, context={}):
-        return vals
+    # def add_links(self, cr, uid, vals, context={}):
+    #     return vals
 
     def create(self, cr, uid, vals, context={}):
         if ('port_ids' not in vals or not vals['port_ids']) and 'image_version_id' in vals:
             vals['port_ids'] = []
             for port in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.port_ids:
-                vals['port_ids'].append((0,0,{'name':port.name,'localport':port.localport}))
+                if port.expose:
+                    vals['port_ids'].append((0,0,{'name':port.name,'localport':port.localport,'udp':port.udp}))
         if ('volume_ids' not in vals or not vals['volume_ids']) and 'image_version_id' in vals:
             vals['volume_ids'] = []
             for volume in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.volume_ids:
                 vals['volume_ids'].append((0,0,{'name':volume.name,'hostpath':volume.hostpath,'user':volume.user,'readonly':volume.readonly,'nosave':volume.nosave}))
-        vals = self.add_links(cr, uid, vals, context=context)
+        if 'application_id' in vals and 'server_id' in vals:
+            application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
+            if not 'linked_container_ids' in vals:
+                vals['linked_container_ids'] = []
+            if application.linked_local_containers:
+                for type in application.linked_local_containers.split(','):
+                    container_ids = self.search(cr, uid, [('name','=',type),('server_id','=',vals['server_id'])], context=context)
+                    for container in self.browse(cr, uid, container_ids, context=context):
+                        vals['linked_container_ids'].append((4,container.id))
+        # vals = self.add_links(cr, uid, vals, context=context)
         return super(saas_container, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
@@ -341,7 +351,10 @@ class saas_container(osv.osv):
                     nextport += 1
                     _logger.info('nextport %s', nextport)
             _logger.info('server_id %s, hostport %s, localport %s', vals['server_ip'], port['hostport'], port['localport'])
-            cmd.extend(['-p', vals['server_ip'] + ':' + str(port['hostport']) + ':' + port['localport']])
+            udp = ''
+            if port['udp']:
+                udp = '/udp'
+            cmd.extend(['-p', vals['server_ip'] + ':' + str(port['hostport']) + ':' + port['localport'] + udp])
         for key, volume in vals['container_volumes'].iteritems():
             if volume['hostpath']:
                 arg =  volume['hostpath'] + ':' + volume['name']
@@ -366,6 +379,18 @@ class saas_container(osv.osv):
 
         ssh.close()
         sftp.close()
+
+        for key, links in vals['container_links'].iteritems():
+            if links['name'] == 'postfix':
+                time.sleep(3)
+                ssh, sftp = execute.connect(vals['container_fullname'], context=context)
+                execute.execute(ssh, ['echo "root=' + vals['config_email_sysadmin'] + '" > /etc/ssmtp/ssmtp.conf'], context)
+                execute.execute(ssh, ['echo "mailhub=postfix:25" >> /etc/ssmtp/ssmtp.conf'], context)
+                execute.execute(ssh, ['echo "rewriteDomain=' + vals['container_fullname'] + '" >> /etc/ssmtp/ssmtp.conf'], context)
+                execute.execute(ssh, ['echo "hostname=' + vals['container_fullname'] + '" >> /etc/ssmtp/ssmtp.conf'], context)
+                execute.execute(ssh, ['echo "FromLineOverride=YES" >> /etc/ssmtp/ssmtp.conf'], context)
+                ssh.close()
+                sftp.close()
 
         self.deploy_shinken(cr, uid, vals, context=context)
 
@@ -477,6 +502,7 @@ class saas_container_port(osv.osv):
         'name': fields.char('Name', size=64, required=True),
         'localport': fields.char('Local port', size=12, required=True),
         'hostport': fields.char('Host port', size=12),
+        'udp': fields.boolean('UDP?'),
     }
 
     _sql_constraints = [

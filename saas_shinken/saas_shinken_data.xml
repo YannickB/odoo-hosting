@@ -68,6 +68,7 @@ USER root
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_shinken"/>
             <field name="default_image_id" ref="image_shinken"/>
+            <field name="linked_local_containers">postfix</field>
             <field name="container_time_between_save">60</field>
             <field name="container_saverepo_change">30</field>
             <field name="container_saverepo_expiration">90</field>
