@@ -27,7 +27,7 @@
                         <field name="title"/>
                         <field name="domain_id"/>
                         <field name="application_id"/>
-                        <field name="service_id"/>
+                        <field name="service_id" required="0"/>
                         <field name="service_ids"/>
                         <field name="proxy_id"/>
                         <field name="mail_id"/>
@@ -149,11 +149,11 @@
                 <form string="Container" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <field name="server_id"/>
                         <field name="application_id" on_change="onchange_application_id(application_id)"/>
+                        <field name="server_id"/>
+                        <field name="linked_container_ids" widget="many2many_tags"/>
                         <field name="image_id"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
-                        <field name="linked_container_ids"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -509,7 +509,9 @@
                         <field name="bdd"/>
                         <field name="default_image_id"/>
                         <field name="linked_local_containers"/>
-<!--                        <field name="next_instance_id"/>
+                        <field name="next_server_id"/>
+                        <field name="next_database_id"/>
+<!--
                         <field name="preprod_domain_id"/>
                         <field name="preprod_server_id"/>
                         <field name="preprod_bdd_server_id"/>

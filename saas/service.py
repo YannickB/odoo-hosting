@@ -39,6 +39,13 @@ class saas_service(osv.osv):
     _name = 'saas.service'
     _inherit = ['saas.model']
 
+
+    def name_get(self,cr,uid,ids,context=None):
+        res=[]
+        for service in self.browse(cr, uid, ids, context=context):
+            res.append((service.id,service.name + '[' + service.container_id.name + ']'))
+        return res
+
     _columns = {
         'name': fields.char('Name', size=64, required=True),
         'application_id': fields.related('container_id', 'application_id', type='many2one', relation='saas.application', string='Application', readonly=True),
@@ -54,7 +61,7 @@ class saas_service(osv.osv):
 
     _defaults = {
       'prod': True,
-      'database_password': '#g00gle!'
+      'database_password': execute.generate_random_password(20),
     }
 
     _sql_constraints = [
@@ -127,6 +134,11 @@ class saas_service(osv.osv):
 
         return vals
 
+    def unlink(self, cr, uid, ids, context={}):
+        base_obj = self.pool.get('saas.base')
+        for service in self.browse(cr, uid, ids, context=context):
+            base_obj.unlink(cr, uid, [b.id for b in service.base_ids], context=context)
+        return super(saas_service, self).unlink(cr, uid, ids, context=context)
 
     def deploy_post_service(self, cr, uid, vals, context=None):
         return

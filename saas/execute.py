@@ -92,6 +92,7 @@ class saas_model(osv.AbstractModel):
         if not self._name in context['logs']:
             context['logs'][self._name] = {}
         now = datetime.now()
+        #_logger.info('start log model %s, res %s', self._name, id)
         if not id in context['logs'][self._name]:
             expiration_date = (now + timedelta(days=self._log_expiration_days)).strftime("%Y-%m-%d")
             log_id = log_obj.create(cr, uid, {'model': self._name, 'res_id': id, 'action': action,'expiration_date':expiration_date}, context=context)
@@ -104,6 +105,7 @@ class saas_model(osv.AbstractModel):
 
     def end_log(self, cr, uid, id, context=None):
         log_obj = self.pool.get('saas.log')
+        #_logger.info('end log model %s, res %s', self._name, id)
         if 'logs' in  context:
             log = log_obj.browse(cr, uid, context['logs'][self._name][id]['log_id'], context=context)
             if log.state == 'unfinished':
@@ -130,7 +132,7 @@ class saas_model(osv.AbstractModel):
         self.end_log(cr, uid, res, context=context)
         return res 
 
-    def unlink(self, cr, uid, ids, context=None):
+    def unlink(self, cr, uid, ids, context={}):
         for record in self.browse(cr, uid, ids, context=context):
             vals = self.get_vals(cr, uid, record.id, context=context)
             try:
@@ -138,6 +140,10 @@ class saas_model(osv.AbstractModel):
             except:
                 pass   
         res = super(saas_model, self).unlink(cr, uid, ids, context=context)
+        #Security to prevent log to write in a removed saas.log
+        for id in ids:
+            if 'logs' in context and self._name in context['logs'] and id in context['logs'][self._name]:
+                del context['logs'][self._name][id]
         log_obj = self.pool.get('saas.log')
         log_ids = log_obj.search(cr, uid, [('model','=',self._name),('res_id','in',ids)],context=context)
         log_obj.unlink(cr, uid, log_ids, context=context)
@@ -148,6 +154,7 @@ def log(message, context):
     message = filter(lambda x: x in string.printable, message)
     _logger.info(message)
     log_obj = context['saas-self'].pool.get('saas.log')
+    #_logger.info('context.log %s', context['logs'])
     if 'logs' in context:
         for model, model_vals in context['logs'].iteritems():
             for res_id, vals in context['logs'][model].iteritems():

@@ -153,6 +153,7 @@ class saas_container(osv.osv):
         if application_id:
             application = self.pool.get('saas.application').browse(cr, uid, application_id, context=context)
             result = {'value': {
+                    'server_id': application.next_server_id.id,
                     'image_id': application.default_image_id.id,
                     'image_version_id': application.default_image_id.version_ids[0].id,
                     }
@@ -282,6 +283,9 @@ class saas_container(osv.osv):
         return res
 
     def unlink(self, cr, uid, ids, context={}):
+        service_obj = self.pool.get('saas.service')
+        for container in self.browse(cr, uid, ids, context=context):
+            service_obj.unlink(cr, uid, [s.id for s in container.service_ids], context=context)
         context['save_comment'] = 'Before unlink'
         self.save(cr, uid, ids, context=context)
         return super(saas_container, self).unlink(cr, uid, ids, context=context)

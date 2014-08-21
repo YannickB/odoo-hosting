@@ -255,7 +255,42 @@ class saas_base(osv.osv):
 
         return vals
 
-
+    def create(self, cr, uid, vals, context={}):
+        if (not 'service_id' in vals) or (not vals['service_id']):
+            application_obj = self.pool.get('saas.application')
+            domain_obj = self.pool.get('saas.domain')
+            container_obj = self.pool.get('saas.container')
+            service_obj = self.pool.get('saas.service')
+            if 'application_id' not in vals or not vals['application_id']:
+                raise osv.except_osv(_('Error!'),_("You need to specify the application of the base."))
+            application = application_obj.browse(cr, uid, vals['application_id'], context=context)
+            if not application.next_server_id:
+                raise osv.except_osv(_('Error!'),_("You need to specify the next server in application for the container autocreate."))
+            if not application.next_database_id:
+                raise osv.except_osv(_('Error!'),_("You need to specify the next database in application for the service autocreate."))
+            if not application.default_image_id.version_ids:
+                raise osv.except_osv(_('Error!'),_("No version for the image linked to the application, abandoning container autocreate..."))
+            if not application.version_ids:
+                raise osv.except_osv(_('Error!'),_("No version for the application, abandoning service autocreate..."))
+            if 'domain_id' not in vals or not vals['domain_id']:
+                raise osv.except_osv(_('Error!'),_("You need to specify the domain of the base."))
+            domain = domain_obj.browse(cr, uid, vals['domain_id'], context=context)
+            container_vals = {
+                'name': vals['name'] + '_' + domain.name.replace('.','_').replace('-','_'),
+                'server_id': application.next_server_id.id,
+                'application_id': application.id,
+                'image_id': application.default_image_id.id,
+                'image_version_id': application.default_image_id.version_ids[0].id,
+            }
+            container_id = container_obj.create(cr, uid, container_vals, context=context)
+            service_vals = {
+                'name': 'production',
+                'container_id': container_id,
+                'database_container_id': application.next_database_id.id,
+                'application_version_id': application.version_ids[0].id,
+            }
+            vals['service_id'] = service_obj.create(cr, uid, service_vals, context=context)
+        return super(saas_base, self).create(cr, uid, vals, context=context)
 
 
     def unlink(self, cr, uid, ids, context={}):
