@@ -36,9 +36,13 @@
                         <field name="poweruser_passwd"/>
                         <field name="poweruser_email"/>
                         <field name="build"/>
+                        <field name="ssl_only"/>
                         <field name="test"/>
                         <field name="lang"/>
                         <field name="nosave"/>
+                        <newline/>
+                        <field name="cert_key"/>
+                        <field name="cert_cert"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -418,8 +422,12 @@
                 <form string="Domain" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <button name="reinstall" string="Reinstall" type="object"/>
+                        <field name="organisation"/>
+                        <newline/>
+                        <field name="cert_key"/>
+                        <field name="cert_cert"/>
                     </group>
+                    <button name="reinstall" string="Reinstall" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -857,10 +865,12 @@ RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install apache2
 
+RUN a2enmod ssl
 RUN a2enmod proxy
 RUN a2enmod proxy_http
 RUN a2enmod headers
 RUN echo "ServerName proxy.yolo-consulting.net" >> /etc/apache2/apache2.conf
+RUN echo "NameVirtualHost *:443" >> /etc/apache2/ports.conf
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:apache]" >> /etc/supervisor/conf.d/supervisord.conf
@@ -891,6 +901,12 @@ USER root
             <field name="image_id" ref="image_apache"/>
             <field name="name">apache</field>
             <field name="localport">80</field>
+            <field name="expose" eval="True"/>
+        </record>
+        <record id="image_apache_port3" model="saas.image.port">
+            <field name="image_id" ref="image_apache"/>
+            <field name="name">apache-ssl</field>
+            <field name="localport">443</field>
             <field name="expose" eval="True"/>
         </record>
 

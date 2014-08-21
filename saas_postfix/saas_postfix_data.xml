@@ -57,6 +57,7 @@ RUN echo "[program:postfix]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/etc/init.d/postfix start" >> /etc/supervisor/conf.d/supervisord.conf
 
 ADD ./saas/saas_postfix/res/openerp_mailgate.py /bin/openerp_mailgate.py
+RUN chmod +x /bin/openerp_mailgate.py
 
 
 USER root

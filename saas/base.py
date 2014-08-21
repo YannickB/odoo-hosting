@@ -40,7 +40,10 @@ class saas_domain(osv.osv):
     _inherit = ['saas.model']
 
     _columns = {
-        'name': fields.char('Domain name', size=64, required=True)
+        'name': fields.char('Domain name', size=64, required=True),
+        'organisation': fields.char('Organisation', size=64, required=True),
+        'cert_key': fields.text('Wildcard Cert Key'),
+        'cert_cert': fields.text('Wildcart Cert'),
     }
 
     _sql_constraints = [
@@ -58,7 +61,10 @@ class saas_domain(osv.osv):
 
         vals.update({
             'domain_name': domain.name,
+            'domain_organisation': domain.organisation,
             'domain_configfile': '/etc/bind/db.' + domain.name,
+            'domain_certkey': domain.cert_key,
+            'domain_certcert': domain.cert_cert,
         })
 
         return vals
@@ -77,7 +83,7 @@ class saas_domain(osv.osv):
         execute.execute(ssh, ["echo 'file \"/etc/bind/db." + vals['domain_name'] + "\";' >> /etc/bind/named.conf"], context)
         execute.execute(ssh, ['echo "notify yes;" >> /etc/bind/named.conf'], context)
         execute.execute(ssh, ['echo "};" >> /etc/bind/named.conf'], context)
-        execute.execute(ssh, ['echo "//END ' + vals['domain_name'] + '\n" >> /etc/bind/named.conf'], context)
+        execute.execute(ssh, ['echo "//END ' + vals['domain_name'] + '" >> /etc/bind/named.conf'], context)
         execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
         ssh.close()
         sftp.close()
@@ -102,8 +108,8 @@ class saas_base(osv.osv):
         'domain_id': fields.many2one('saas.domain', 'Domain name', required=True),
         'service_id': fields.many2one('saas.service', 'Service', required=True),
         'service_ids': fields.many2many('saas.service', 'saas_base_service_rel', 'base_id', 'service_id', 'Alternative Services'),
-        'proxy_id': fields.many2one('saas.container', 'Proxy', required=True),
-        'mail_id': fields.many2one('saas.container', 'Mail', required=True),
+        'proxy_id': fields.many2one('saas.container', 'Proxy'),
+        'mail_id': fields.many2one('saas.container', 'Mail'),
         'admin_passwd': fields.char('Admin password', size=64),
         'poweruser_name': fields.char('PowerUser name', size=64),
         'poweruser_passwd': fields.char('PowerUser password', size=64),
@@ -112,6 +118,7 @@ class saas_base(osv.osv):
                  ('none','No action'),
                  ('build','Build'),
                  ('restore','Restore')],'Build?'),
+        'ssl_only': fields.boolean('SSL Only?'),
         'test': fields.boolean('Test?'),
         'lang': fields.selection([('en_US','en_US'),('fr_FR','fr_FR')], 'Language', required=True),
         'state': fields.selection([
@@ -127,6 +134,8 @@ class saas_base(osv.osv):
         'date_next_save': fields.datetime('Next save planned'),
         'save_comment': fields.text('Save Comment'),
         'nosave': fields.boolean('No save?'),
+        'cert_key': fields.text('Cert Key'),
+        'cert_cert': fields.text('Cert'),
     }
 
     _defaults = {
@@ -191,23 +200,25 @@ class saas_base(osv.osv):
         unique_name = vals['app_code'] + '-' + base.name + '-' + base.domain_id.name
         unique_name = unique_name.replace('.','-')
 
-        proxy_vals = self.pool.get('saas.container').get_vals(cr, uid, base.proxy_id.id, context=context)
-        vals.update({
-            'proxy_id': proxy_vals['container_id'],
-            'proxy_fullname': proxy_vals['container_fullname'],
-            'proxy_ssh_port': proxy_vals['container_ssh_port'],
-            'proxy_server_id': proxy_vals['server_id'],
-            'proxy_server_domain': proxy_vals['server_domain'],
-        })
-        
-        mail_vals = self.pool.get('saas.container').get_vals(cr, uid, base.mail_id.id, context=context)
-        vals.update({
-            'mail_id': mail_vals['container_id'],
-            'mail_fullname': mail_vals['container_fullname'],
-            'mail_ssh_port': mail_vals['container_ssh_port'],
-            'mail_server_id': mail_vals['server_id'],
-            'mail_server_domain': mail_vals['server_domain'],
-        })
+        if base.proxy_id:
+            proxy_vals = self.pool.get('saas.container').get_vals(cr, uid, base.proxy_id.id, context=context)
+            vals.update({
+                'proxy_id': proxy_vals['container_id'],
+                'proxy_fullname': proxy_vals['container_fullname'],
+                'proxy_ssh_port': proxy_vals['container_ssh_port'],
+                'proxy_server_id': proxy_vals['server_id'],
+                'proxy_server_domain': proxy_vals['server_domain'],
+            })
+
+        if base.mail_id:
+            mail_vals = self.pool.get('saas.container').get_vals(cr, uid, base.mail_id.id, context=context)
+            vals.update({
+                'mail_id': mail_vals['container_id'],
+                'mail_fullname': mail_vals['container_fullname'],
+                'mail_ssh_port': mail_vals['container_ssh_port'],
+                'mail_server_id': mail_vals['server_id'],
+                'mail_server_domain': mail_vals['server_domain'],
+            })
 
         options = {}
         for option in base.service_id.container_id.application_id.type_id.option_ids:
@@ -231,6 +242,9 @@ class saas_base(osv.osv):
             'base_poweruser_password': base.poweruser_passwd,
             'base_poweruser_email': base.poweruser_email,
             'base_build': base.build,
+            'base_sslonly': base.ssl_only,
+            'base_certkey': base.cert_key,
+            'base_certcert': base.cert_cert,
             'base_test': base.test,
             'base_lang': base.lang,
             'base_nosave': base.nosave,
@@ -475,9 +489,23 @@ class saas_base(osv.osv):
     def deploy_proxy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         self.purge_proxy(cr, uid, vals, context=context)
+        if not vals['base_sslonly']:
+            file = 'apache.config'
+        else:
+            file = 'apache-sslonly.config'
         ssh, sftp = execute.connect(vals['proxy_fullname'], context=context)
-        sftp.put(vals['config_conductor_path'] + '/saas/saas_' + vals['apptype_name'] + '/res/apache.config', vals['base_apache_configfile'])
+        sftp.put(vals['config_conductor_path'] + '/saas/saas_' + vals['apptype_name'] + '/res/' + file, vals['base_apache_configfile'])
         self.deploy_prepare_apache(cr, uid, vals, context)
+        cert_file = '/etc/ssl/certs/' + vals['base_name'] + '.' + vals['domain_name'] + '.crt'
+        key_file = '/etc/ssl/private/' + vals['base_name'] + '.' + vals['domain_name'] + '.key'
+        if vals['base_certcert'] and vals['base_certkey']:
+            execute.execute(ssh, ['echo', '"' + vals['base_certcert'] + '"', '>', cert_file], context)
+            execute.execute(ssh, ['echo', '"' + vals['base_certkey'] + '"', '>', key_file], context)
+        elif vals['domain_certcert'] and vals['domain_certkey']:
+            execute.execute(ssh, ['echo', '"' + vals['domain_certcert'] + '"', '>', cert_file], context)
+            execute.execute(ssh, ['echo', '"' + vals['domain_certkey'] + '"', '>', key_file], context)
+        else:
+            execute.execute(ssh, ['openssl', 'req', '-x509', '-nodes', '-days', '365', '-newkey', 'rsa:2048', '-out', cert_file, ' -keyout',  key_file, '-subj', '"/C=FR/L=Paris/O=' + vals['domain_organisation'] + '/CN=' + vals['base_name'] + '.' + vals['domain_name'] + '"'], context)
         execute.execute(ssh, ['a2ensite', vals['base_unique_name']], context)
         execute.execute(ssh, ['/etc/init.d/apache2', 'reload'], context)
         ssh.close()
@@ -489,6 +517,8 @@ class saas_base(osv.osv):
         ssh, sftp = execute.connect(vals['proxy_fullname'], context=context)
         execute.execute(ssh, ['a2dissite', vals['base_unique_name']], context)
         execute.execute(ssh, ['rm', vals['base_apache_configfile']], context)
+        execute.execute(ssh, ['rm', '/etc/ssl/certs/' + vals['base_name'] + '.' + vals['domain_name'] + '.*'], context)
+        execute.execute(ssh, ['rm', '/etc/ssl/private/' + vals['base_name'] + '.' + vals['domain_name'] + '.*'], context)
         execute.execute(ssh, ['/etc/init.d/apache2', 'reload'], context)
         ssh.close()
         sftp.close()
