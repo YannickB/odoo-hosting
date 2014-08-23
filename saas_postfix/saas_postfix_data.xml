@@ -75,13 +75,13 @@ USER root
             <field name="image_id" ref="image_postfix"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
         <record id="image_postfix_port2" model="saas.image.port">
             <field name="image_id" ref="image_postfix"/>
             <field name="name">postfix</field>
             <field name="localport">25</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
 
         <record id="app_postfix" model="saas.application">

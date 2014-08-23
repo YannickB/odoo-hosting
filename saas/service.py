@@ -43,8 +43,26 @@ class saas_service(osv.osv):
     def name_get(self,cr,uid,ids,context=None):
         res=[]
         for service in self.browse(cr, uid, ids, context=context):
-            res.append((service.id,service.name + '[' + service.container_id.name + ']'))
+            res.append((service.id,service.name + ' [' + service.container_id.name + '_' + service.container_id.server_id.name +  ']'))
         return res
+
+    def name_search(self, cr, user, name='', args=None, operator='ilike', context=None, limit=100):
+        if not args:
+            args = []
+        # container_obj = self.pool.get('saas.container')
+        if name:
+            #
+            # container_ids = container_obj.search(cr, user, ['|',('name','=',name),('domain_id.name','=',name)]+ args, limit=limit, context=context)
+            # if container_ids:
+            #     containers = self.browse(cr, user, container_ids, context=context)
+            #     ids = [s.id for s in containers.service_ids]
+            # else
+            ids = self.search(cr, user, ['|',('name','like',name),'|',('container_id.name','like',name),('container_id.server_id.name','like',name)]+ args, limit=limit, context=context)
+        else:
+            ids = self.search(cr, user, args, limit=limit, context=context)
+        result = self.name_get(cr, user, ids, context=context)
+        return result
+
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),
@@ -53,14 +71,15 @@ class saas_service(osv.osv):
         'database_container_id': fields.many2one('saas.container', 'Database container', required=True),
         'database_password': fields.char('Database password', size=64, required=True),
         'container_id': fields.many2one('saas.container', 'Container', required=True),
-        'prod': fields.boolean('Prod?', readonly=True),
         'skip_analytics': fields.boolean('Skip Analytics?'),
         'option_ids': fields.one2many('saas.service.option', 'service_id', 'Options'),
         'base_ids': fields.one2many('saas.base', 'service_id', 'Bases'),
+        'parent_id': fields.many2one('saas.service', 'Parent Service'),
+        'sub_service_name': fields.char('Subservice Name', size=64),
+        'custom_version': fields.boolean('Custom Version?'),
     }
 
     _defaults = {
-      'prod': True,
       'database_password': execute.generate_random_password(20),
     }
 
@@ -127,12 +146,33 @@ class saas_service(osv.osv):
             'service_db_user': service_fullname.replace('-','_'),
             'service_db_password': service.database_password,
             'service_skip_analytics': service.skip_analytics,
-            'service_full_localpath': vals['app_full_localpath'] + '/' + service.name,
+            'service_full_localpath': vals['apptype_localpath_services'] + '/' + service.name,
             'service_options': options,
-            'database_server': database_server
+            'database_server': database_server,
+            'service_subservice_name': service.sub_service_name,
+            'service_custom_version': service.custom_version
         })
 
         return vals
+
+
+    def write(self, cr, uid, ids, vals, context={}):
+        if 'application_version_id' in vals:
+            services_old = []
+            for service in self.browse(cr, uid, ids, context=context):
+                services_old.append(self.get_vals(cr, uid, service.id, context=context))
+        res = super(saas_service, self).write(cr, uid, ids, vals, context=context)
+        if 'application_version_id' in vals:
+            for service_vals in services_old:
+                self.check_files(cr, uid, service_vals, context=context)
+        _logger.info('vals %s', vals)
+        if 'application_version_id' in vals or 'custom_version' in vals:
+            for service in self.browse(cr, uid, ids, context=context):
+                _logger.info('deploy files')
+                vals = self.get_vals(cr, uid, service.id, context=context)
+                self.deploy_files(cr, uid, vals, context=context)
+        return res
+
 
     def unlink(self, cr, uid, ids, context={}):
         base_obj = self.pool.get('saas.base')
@@ -140,23 +180,63 @@ class saas_service(osv.osv):
             base_obj.unlink(cr, uid, [b.id for b in service.base_ids], context=context)
         return super(saas_service, self).unlink(cr, uid, ids, context=context)
 
+    def install_formation(self, cr, uid, ids, context={}):
+        self.write(cr, uid, ids, {'sub_service_name': 'formation'}, context=context)
+        self.install_subservice(cr, uid, ids, context=context)
+
+    def install_test(self, cr, uid, ids, context={}):
+        self.write(cr, uid, ids, {'sub_service_name': 'test'}, context=context)
+        self.install_subservice(cr, uid, ids, context=context)
+
+    def install_subservice(self, cr, uid, ids, context={}):
+        base_obj = self.pool.get('saas.base')
+        for service in self.browse(cr, uid, ids, context=context):
+            if not service.sub_service_name or service.sub_service_name == service.name:
+                continue
+            service_ids = self.search(cr, uid, [('name','=',service.sub_service_name),('container_id','=',service.container_id.id)],context=context)
+            self.unlink(cr, uid, service_ids,context=context)
+            options = []
+            type_ids = self.pool.get('saas.application.type.option').search(cr, uid, [('apptype_id','=',service.container_id.application_id.type_id.id),('name','=','port')], context=context)
+            if type_ids:
+                if service.sub_service_name == 'formation':
+                    options =[(0,0,{'name': type_ids[0], 'value': 'port-formation'})]
+                if service.sub_service_name == 'test':
+                    options = [(0,0,{'name': type_ids[0], 'value': 'port-test'})]
+            service_vals = {
+                'name': service.sub_service_name,
+                'container_id': service.container_id.id,
+                'database_container_id': service.database_container_id.id,
+                'application_version_id': service.application_version_id.id,
+                'parent_id': service.id,
+                'option_ids': options
+            }
+            service_id = self.create(cr, uid, service_vals, context=context)
+            for base in service.base_ids:
+                base_obj._reset_base(cr, uid, [base.id], base_name=service.sub_service_name + '-' + base.name, service_id=service_id)
+        self.write(cr, uid, ids, {'sub_service_name': False}, context=context)
+
+
+    def deploy_to_parent(self, cr, uid, ids, context={}):
+        for service in  self.browse(cr, uid, ids, context=context):
+            if not service.parent_id:
+                continue
+            vals = {}
+            if not service.parent_id.custom_version:
+                vals['application_version_id'] = service.application_version_id.id
+            else:
+                context['files_from_service'] = service.name
+                vals['custom_version'] = True
+            _logger.info('vals %s', vals)
+            self.write(cr, uid, [service.parent_id.id], vals, context=context)
+
     def deploy_post_service(self, cr, uid, vals, context=None):
         return
 
 
     def deploy(self, cr, uid, vals, context=None):
+        container_obj = self.pool.get('saas.container')
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         self.purge(cr, uid, vals, context=context)
-        ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
-
-        if not execute.exist(sftp, vals['app_version_full_hostpath']):
-            execute.execute(ssh, ['mkdir', '-p', vals['app_version_full_hostpath']], context)
-            sftp.put(vals['app_version_full_archivepath_targz'], vals['app_version_full_hostpath'] + '.tar.gz')
-            execute.execute(ssh, ['tar', '-xf', vals['app_version_full_hostpath'] + '.tar.gz', '-C', vals['app_version_full_hostpath']], context)
-            execute.execute(ssh, ['rm', vals['app_full_hostpath'] + '/' + vals['app_version_name'] + '.tar.gz'], context)
-
-        ssh.close()
-        sftp.close()
 
         execute.log('Creating database user', context=context)
 
@@ -182,12 +262,12 @@ class saas_service(osv.osv):
 
         execute.log('Database user created', context)
 
+        self.deploy_files(cr, uid, vals, context=context)
         self.deploy_post_service(cr, uid, vals, context)
 
-        ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
-        execute.execute(ssh, ['sudo', 'docker', 'restart', vals['container_name']], context)
-        ssh.close()
-        sftp.close()
+        container_obj.restart(cr, uid, vals, context=context)
+
+        time.sleep(3)
 
         # ssh, sftp = connect(vals['server_domain'], vals['apptype_system_user'], context=context)
         # if sftp.stat(vals['service_fullpath']):
@@ -204,7 +284,7 @@ class saas_service(osv.osv):
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-
+        self.purge_files(cr, uid, vals, context=context)
         self.purge_pre_service(cr, uid, vals, context)
 
         if vals['app_bdd'] != 'mysql':
@@ -224,6 +304,11 @@ class saas_service(osv.osv):
             ssh.close()
             sftp.close()
 
+        return
+
+
+    def check_files(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         service_ids = self.search(cr, uid, [('application_version_id', '=', vals['app_version_id']),('container_id.server_id','=',vals['server_id'])], context=context)
         service_ids.remove(vals['service_id'])
         if not service_ids:
@@ -232,7 +317,46 @@ class saas_service(osv.osv):
             ssh.close()
             sftp.close()
 
-        return
+
+    def deploy_files(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        base_obj = self.pool.get('saas.base')
+        self.purge_files(cr, uid, vals, context=context)
+        ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
+
+        if not execute.exist(sftp, vals['app_version_full_hostpath']):
+            execute.execute(ssh, ['mkdir', '-p', vals['app_version_full_hostpath']], context)
+            sftp.put(vals['app_version_full_archivepath_targz'], vals['app_version_full_hostpath'] + '.tar.gz')
+            execute.execute(ssh, ['tar', '-xf', vals['app_version_full_hostpath'] + '.tar.gz', '-C', vals['app_version_full_hostpath']], context)
+            execute.execute(ssh, ['rm', vals['app_full_hostpath'] + '/' + vals['app_version_name'] + '.tar.gz'], context)
+
+        ssh.close()
+        sftp.close()
+
+        ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+        if 'files_from_service' in context:
+            execute.execute(ssh, ['cp', '-R', vals['apptype_localpath_services'] + '/' + context['files_from_service'], vals['service_full_localpath']], context)
+        elif vals['service_custom_version']:
+            execute.execute(ssh, ['cp', '-R', vals['app_version_full_localpath'], vals['service_full_localpath']], context)
+        else:
+            execute.execute(ssh, ['ln', '-s', vals['app_version_full_localpath'], vals['service_full_localpath']], context)
+        service = self.browse(cr, uid, vals['service_id'], context=context)
+        for base in service.base_ids:
+            base_obj.save(cr, uid, [base.id], context=context)
+            base_vals = base_obj.get_vals(cr, uid, base.id, context=context)
+            base_obj.update_base(cr, uid, base_vals, context=context)
+
+        ssh.close()
+        sftp.close()
+
+    def purge_files(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+        execute.execute(ssh, ['rm', '-rf', vals['service_full_localpath']], context)
+        ssh.close()
+        sftp.close()
+
+        self.check_files(cr, uid, vals, context=context)
 
 
 class saas_service_option(osv.osv):

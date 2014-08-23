@@ -45,7 +45,7 @@ class saas_service(osv.osv):
             execute.execute(ssh, ['rm', '/opt/odoo/etc/' + vals['service_name'] + '.config'], context)
             execute.execute(ssh, ['sed', '-i', '"/program:' + vals['service_name']  + '/d"', '/opt/odoo/supervisor.conf'], context)
             execute.execute(ssh, ['sed', '-i', '"/\/opt\/odoo\/services\/'  + vals['service_name']  + '/d"', '/opt/odoo/supervisor.conf'], context)
-            execute.execute(ssh, ['rm', '/opt/odoo/services/' + vals['service_name']], context)
+            # execute.execute(ssh, ['rm', '/opt/odoo/services/' + vals['service_name']], context)
             execute.execute(ssh, ['rm', '-rf', '/opt/odoo/extra/' + vals['service_name']], context)
 
             ssh.close()

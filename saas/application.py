@@ -47,6 +47,7 @@ class saas_application_type(osv.osv):
         'init_test': fields.boolean('Demo mode must be set at database creation?'),
         'standard_port': fields.char('Standard port', size=12),
         'localpath': fields.char('Localpath', size=128),
+        'localpath_services': fields.char('Localpath Services', size=128),
         'option_ids': fields.one2many('saas.application.type.option', 'apptype_id', 'Options'),
         'application_ids': fields.one2many('saas.application', 'type_id', 'Applications'),
     }
@@ -81,6 +82,7 @@ class saas_application_type(osv.osv):
             'apptype_mysql': apptype.mysql,
             'apptype_init_test': apptype.init_test,
             'apptype_localpath': apptype.localpath,
+            'apptype_localpath_services': apptype.localpath_services,
             'apptype_options': options
         })
 

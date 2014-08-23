@@ -28,7 +28,7 @@
                         <field name="domain_id"/>
                         <field name="application_id"/>
                         <field name="service_id" required="0"/>
-                        <field name="service_ids"/>
+                        <field name="service_ids" widget="many2many_tags"/>
                         <field name="proxy_id"/>
                         <field name="mail_id"/>
                         <field name="admin_passwd"/>
@@ -36,13 +36,17 @@
                         <field name="poweruser_passwd"/>
                         <field name="poweruser_email"/>
                         <field name="build"/>
-                        <field name="ssl_only"/>
-                        <field name="test"/>
                         <field name="lang"/>
+                        <field name="ssl_only"/>
                         <field name="nosave"/>
+                        <field name="test"/>
+                        <field name="reset_each_day"/>
                         <newline/>
                         <field name="cert_key"/>
                         <field name="cert_cert"/>
+                        <newline/>
+                        <field name="parent_id"/>
+                        <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -65,6 +69,7 @@
                     <button name="reset_bind" string="Reset DNS" type="object"/>
                     <button name="reset_shinken" string="Reset Shinken" type="object"/>
                     <button name="reset_mail" string="Reset Mail" type="object"/>
+                    <button name="reset_bases" string="Reset Bases" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -103,10 +108,18 @@
                         <field name="application_version_id" domain="[('application_id.container_ids','=',container_id)]"/>
                         <field name="database_container_id"/>
                         <field name="database_password"/>
-                        <field name="skip_analytics"/>
                         <newline/>
-                        <field name="prod"/>
-                        <button name="button_save" string="Manual Save" type="object"/>
+                        <field name="custom_version"/>
+                        <newline/>
+                        <field name="parent_id"/>
+                        <button name="deploy_to_parent" string="Deploy to parent" type="object" attrs="{'invisible': [('parent_id','=', False)]}"/>
+                    </group>
+                    <group col="4" attrs="{'invisible': [('parent_id','!=', False)]}">
+                        <button name="install_formation" string="Install Formation" type="object"/>
+                        <button name="install_test" string="Install Test" type="object"/>
+                        <newline/>
+                        <field name="sub_service_name"/>
+                        <button name="install_subservice" string="Install Subservice" type="object"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -154,6 +167,7 @@
                         <field name="linked_container_ids" widget="many2many_tags"/>
                         <field name="image_id"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
+                        <field name="nosave"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -166,6 +180,7 @@
                             <field name="name"/>
                             <field name="localport"/>
                             <field name="hostport"/>
+                            <field name="expose"/>
                             <field name="udp"/>
                         </tree>
                     </field>
@@ -189,6 +204,8 @@
                     </group>
                     <button name="save" string="Save" type="object"/>
                     <button name="reinstall" string="Reinstall" type="object"/>
+                    <button name="button_stop" string="Stop" type="object"/>
+                    <button name="button_start" string="Start" type="object"/>
                     <button name="reset_key" string="Reset Key" type="object"/>
                     <button name="reset_shinken" string="Reset Shinken" type="object"/>
                     <field name="log_ids" colspan="4"/>
@@ -205,6 +222,7 @@
                     <field name="application_id"/>
                     <field name="image_id"/>
                     <field name="image_version_id"/>
+                    <field name="ports"/>
                 </tree>
             </field>
         </record>
@@ -232,6 +250,7 @@
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
                     <button name="start_containers" string="Start Containers" type="object"/>
+                    <button name="stop_containers" string="Stop Containers" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -465,6 +484,7 @@
                         <field name="init_test"/>
                         <field name="standard_port"/>
                         <field name="localpath"/>
+                        <field name="localpath_services"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -897,19 +917,19 @@ USER root
             <field name="image_id" ref="image_apache"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
         <record id="image_apache_port2" model="saas.image.port">
             <field name="image_id" ref="image_apache"/>
             <field name="name">apache</field>
             <field name="localport">80</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
         <record id="image_apache_port3" model="saas.image.port">
             <field name="image_id" ref="image_apache"/>
             <field name="name">apache-ssl</field>
             <field name="localport">443</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
 
     </data>

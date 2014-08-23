@@ -222,10 +222,17 @@ class saas_config_settings(osv.osv):
         base_ids = base_obj.search(cr, uid, [('date_next_save','!=',False),('date_next_save','<',vals['now_date'] + ' ' + vals['now_hour_regular'])], context=context)
         base_obj.save(cr, uid, base_ids, context=context)
 
+
+    def reset_bases(self, cr, uid, ids, context={}):
+        base_obj = self.pool.get('saas.base')
+        base_ids = base_obj.search(cr, uid, [('reset_each_day','=',True)], context=context)
+        base_obj.reinstall(cr, uid, base_ids, context=context)
+
     def cron_daily(self, cr, uid, ids, context={}):
         self.reset_keys(cr, uid, [], context=context)
         self.upload_save(cr, uid, [], context=context)
         self.purge_expired_saverepo(cr, uid, [], context=context)
         self.purge_expired_logs(cr, uid, [], context=context)
         self.launch_next_saves(cr, uid, [], context=context)
+        self.reset_bases(cr, uid, [], context=context)
         return True

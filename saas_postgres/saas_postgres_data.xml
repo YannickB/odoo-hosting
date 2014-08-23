@@ -67,7 +67,7 @@ USER root
             <field name="image_id" ref="image_postgres"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
         <record id="image_postgres_port2" model="saas.image.port">
             <field name="image_id" ref="image_postgres"/>
@@ -81,10 +81,10 @@ USER root
             <field name="current_version">9.1</field>
             <field name="type_id" ref="apptype_postgres"/>
             <field name="default_image_id" ref="image_postgres"/>
-            <field name="container_time_between_save">60</field>
+            <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>
             <field name="container_saverepo_expiration">90</field>
-            <field name="base_time_between_save">60</field>
+            <field name="base_time_between_save">9999</field>
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>
         </record>

@@ -70,7 +70,7 @@ class saas_service(osv.osv):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
             ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
-            execute.execute(ssh, ['ln', '-s', vals['app_version_full_localpath'], '/opt/odoo/services/' + vals['service_name']], context)
+            # execute.execute(ssh, ['ln', '-s', vals['app_version_full_localpath'], '/opt/odoo/services/' + vals['service_name']], context)
             execute.execute(ssh, ['mkdir', '/opt/odoo/extra/' + vals['service_name']], context)
 
             config_file = '/opt/odoo/etc/' + vals['service_name'] + '.config'
@@ -150,7 +150,38 @@ class saas_base(osv.osv):
                     execute.log("client.install(" + module + ")", context)
                     client.install(module)
 
-        return
+        return res
+
+    def deploy_post(self, cr, uid, vals, context=None):
+        res = super(saas_base, self).deploy_post(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if vals['apptype_name'] == 'odoo':
+            execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user='admin', password=" + vals['base_admin_passwd'] + ")", context)
+            client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user='admin', password=vals['base_admin_passwd'])
+
+
+            execute.log("company_id = client.model('ir.model.data').get_object_reference('base', 'main_company')[1]", context)
+            company_id = client.model('ir.model.data').get_object_reference('base', 'main_company')[1]
+            execute.log("client.model('res.company').write([" + str(company_id) + "], {'name':" + vals['base_title'] + "})", context)
+            client.model('res.company').write([company_id], {'name': vals['base_title']})
+
+            execute.log("config_ids = client.model('ir.config_parameter').search([('key','=','web.base.url')])", context)
+            config_ids = client.model('ir.config_parameter').search([('key','=','web.base.url')])
+            if config_ids:
+                execute.log("client.model('ir.config_parameter').write(" + str(config_ids) + ", {'value': 'http://" + vals['base_fulldomain'] + "})", context)
+                client.model('ir.config_parameter').write(config_ids, {'value': 'http://' + vals['base_fulldomain']})
+            else:
+                execute.log("client.model('ir.config_parameter').create({'key': 'web.base.url', 'value': 'http://" + vals['base_fulldomain'] + "})", context)
+                client.model('ir.config_parameter').create({'key': 'web.base.url', 'value': 'http://' + vals['base_fulldomain']})
+
+            execute.log("config_ids = client.model('ir.config_parameter').search([('key','=','ir_attachment.location')])", context)
+            config_ids = client.model('ir.config_parameter').search([('key','=','ir_attachment.location')])
+            if config_ids:
+                execute.log("client.model('ir.config_parameter').write(" + str(config_ids) + ", {'value': 'file:///filestore'})", context)
+                client.model('ir.config_parameter').write(config_ids, {'value': 'file:///filestore'})
+            else:
+                execute.log("client.model('ir.config_parameter').create({'key': 'ir_attachment.location', 'value': 'file:///filestore'})", context)
+                client.model('ir.config_parameter').create({'key': 'ir_attachment.location', 'value': 'file:///filestore'})
 
 
     def deploy_create_poweruser(self, cr, uid, vals, context=None):
@@ -249,6 +280,40 @@ class saas_base(osv.osv):
         execute.execute(ssh, ['/etc/init.d/postfix', 'reload'], context)
         ssh.close()
         sftp.close()
+        return res
+
+    def post_reset(self, cr, uid, vals, context=None):
+        res = super(saas_base, self).deploy_mail(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user='admin', password=" + vals['base_admin_passwd'] + ")", context)
+        client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user='admin', password=vals['base_admin_passwd'])
+        execute.log("server_id = client.model('ir.model.data').get_object_reference('base', 'ir_mail_server_localhost0')[1]", context)
+        server_id = client.model('ir.model.data').get_object_reference('base', 'ir_mail_server_localhost0')[1]
+        execute.log("client.model('ir.mail_server').write([" + str(server_id) + "], {'smtp_host': 'mail.disabled.lol'})", context)
+        client.model('ir.mail_server').write([server_id], {'smtp_host': 'mail.disabled.lol'})
+
+        execute.log("cron_ids = client.model('ir.cron').search(['|',('active','=',True),('active','=',False)])", context)
+        cron_ids = client.model('ir.cron').search(['|',('active','=',True),('active','=',False)])
+        execute.log("client.model('ir.cron').write(" + str(cron_ids) +", {'active': False})", context)
+        client.model('ir.cron').write(cron_ids, {'active': False})
+
+        ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+        execute.execute(ssh, ['cp', '-R', '/opt/odoo/filestore/' + vals['base_parent_unique_name_'], '/opt/odoo/filestore/' + vals['base_unique_name_']], context)
+        ssh.close()
+        sftp.close()
+
+        return res
+
+
+    def update_base(self, cr, uid, vals, context=None):
+        res = super(saas_base, self).update_base(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user='admin', password=" + vals['base_admin_passwd'] + ")", context)
+        client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user='admin', password=vals['base_admin_passwd'])
+        execute.log("module_ids = client.model('ir.module.module').search([('state','in',['installed','to upgrade'])])", context)
+        module_ids = client.model('ir.module.module').search([('state','in',['installed','to upgrade'])])
+        execute.log("client.model('ir.module.module').button_upgrade(" + str(module_ids) + ")", context)
+        client.model('ir.module.module').button_upgrade(module_ids)
         return res
 
 class saas_save_save(osv.osv):

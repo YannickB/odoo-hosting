@@ -117,6 +117,7 @@ class saas_save_save(osv.osv):
         'base_title': fields.char('Title', size=64),
         'base_app_version': fields.char('Application Version', size=64),
         'base_proxy_id': fields.many2one('saas.container', 'Proxy Container'),
+        'base_mail_id': fields.many2one('saas.container', 'Mail Container'),
         'base_container_name': fields.char('Container', size=64),
         'base_container_server': fields.char('Server', size=64),
         'base_admin_passwd': fields.char('Admin passwd', size=64),
@@ -152,6 +153,7 @@ class saas_save_save(osv.osv):
         vals.update({
             'save_id': save.id,
             'save_name': save.name,
+            'save_comment': save.comment,
             'save_now_bup': save.now_bup,
             'save_now_epoch': (datetime.strptime(save.now_bup, "%Y-%m-%d-%H%M%S") - datetime(1970,1,1)).total_seconds(),
             'save_base_id': save.base_id.id,
@@ -162,14 +164,6 @@ class saas_save_save(osv.osv):
             'save_base_restore_to_domain': save.base_restore_to_domain_id.name or vals['saverepo_base_domain'],
         })
         return vals
-
-    def create(self, cr, uid, vals, context={}):
-        res = super(saas_save_save, self).create(cr, uid, vals, context=context)
-        context = self.create_log(cr, uid, res, 'create', context)
-        vals = self.get_vals(cr, uid, res, context=context)
-        self.deploy(cr, uid, vals, context=context)
-        self.end_log(cr, uid, res, context=context)
-        return res
 
     def restore_base(self, cr, uid, vals, context=None):
         return
@@ -268,6 +262,7 @@ class saas_save_save(osv.osv):
                 sftp.close()
                 container_obj.restart(cr, uid, vals_container, context)
                 self.end_log(cr, uid, save.id, context=context)
+                res = container_id
 
 
             else:
@@ -321,6 +316,7 @@ class saas_save_save(osv.osv):
                             'domain_id': domain_ids[0],
                             'title': save.base_title,
                             'proxy_id': save.base_proxy_id.id,
+                            'mail_id': save.base_mail_id.id,
                             'admin_passwd': save.base_admin_passwd,
                             'poweruser_name': save.base_poweruser_name,
                             'poweruser_passwd': save.base_poweruser_password,
@@ -357,30 +353,41 @@ class saas_save_save(osv.osv):
                 base_obj.purge_db(cr, uid, base_vals, context=context)
                 ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
                 execute.execute(ssh, ['createdb', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
-                execute.execute(ssh, ['cat', '/base-backup/' + vals['saverepo_name'] + '/' + base_vals['base_unique_name_'] + '.dump', '|', 'psql', '-q', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
+                dumpfile = base_vals['base_unique_name_'] + '.dump'
+                if 'restore_dumpfile' in context:
+                    dumpfile = context['restore_dumpfile']
+                execute.execute(ssh, ['cat', '/base-backup/' + vals['saverepo_name'] + '/' + dumpfile, '|', 'psql', '-q', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
 
                 self.restore_base(cr, uid, base_vals, context=context)
 
-#                execute.execute(ssh, ['rm', '-rf', '/base-backup/' + vals['saverepo_name']], context)
+                base_obj.deploy_proxy(cr, uid, base_vals, context=context)
+                base_obj.deploy_bind(cr, uid, base_vals, context=context)
+                base_obj.deploy_shinken(cr, uid, base_vals, context=context)
+                base_obj.deploy_mail(cr, uid, base_vals, context=context)
+
+                execute.execute(ssh, ['rm', '-rf', '/base-backup/' + vals['saverepo_name']], context)
                 ssh.close()
                 sftp.close()
 
                 self.end_log(cr, uid, save.id, context=context)
+                res = base_id
             self.write(cr, uid, [save.id], {'container_restore_to_name': False, 'container_restore_to_server_id': False, 'base_restore_to_name': False, 'base_restore_to_domain_id': False}, context=context)
 
-        return True
+        return res
 
     def deploy_base(self, cr, uid, vals, context=None):
         return
 
     def deploy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        execute.log('Saving ' + vals['save_name'], context)
+        execute.log('Comment: ' + vals['save_comment'], context)
 
         if vals['saverepo_type'] == 'base':
             base_vals = self.pool.get('saas.base').get_vals(cr, uid, vals['save_base_id'], context=context)
             ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['mkdir', '-p', '/base-backup/' + vals['saverepo_name']], context)
-            execute.execute(ssh, ['pg_dump', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_'], '>', '/base-backup/' + vals['saverepo_name'] + '/' + base_vals['base_unique_name_'] + '.dump'], context)
+            execute.execute(ssh, ['pg_dump', '-O', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_'], '>', '/base-backup/' + vals['saverepo_name'] + '/' + base_vals['base_unique_name_'] + '.dump'], context)
             ssh.close()
             sftp.close()
             self.deploy_base(cr, uid, base_vals, context=context)
@@ -393,7 +400,7 @@ class saas_save_save(osv.osv):
         if vals['saverepo_type'] == 'base':
             base_vals = self.pool.get('saas.base').get_vals(cr, uid, vals['save_base_id'], context=context)
             ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
-#            execute.execute(ssh, ['rm', '-rf', '/base-backup/*'], context)
+            execute.execute(ssh, ['rm', '-rf', '/base-backup/' + vals['saverepo_name']], context)
             ssh.close()
             sftp.close()
 

@@ -122,8 +122,12 @@ class saas_image_port(osv.osv):
         'image_id': fields.many2one('saas.image', 'Image', ondelete="cascade", required=True),
         'name': fields.char('Name', size=64, required=True),
         'localport': fields.char('Local port', size=12, required=True),
-        'expose': fields.boolean('Expose?'),
+        'expose': fields.selection([('internet','Internet'),('local','Local'),('none','None')],'Expose?', required=True),
         'udp': fields.boolean('UDP?'),
+    }
+
+    _defaults = {
+        'expose': 'none'
     }
 
     _sql_constraints = [

@@ -134,8 +134,10 @@ class saas_base(osv.osv):
         'date_next_save': fields.datetime('Next save planned'),
         'save_comment': fields.text('Save Comment'),
         'nosave': fields.boolean('No save?'),
+        'reset_each_day': fields.boolean('Reset each day?'),
         'cert_key': fields.text('Cert Key'),
         'cert_cert': fields.text('Cert'),
+        'parent_id': fields.many2one('saas.base','Parent Base')
     }
 
     _defaults = {
@@ -304,8 +306,8 @@ class saas_base(osv.osv):
 
         res = {}
         for base in self.browse(cr, uid, ids, context=context):
-            if 'nosave' in context or base.nosave:
-                execute.log('The bup isnt configured in conf, skipping save base', context)
+            if 'nosave' in context or (base.nosave and not 'forcesave' in context):
+                execute.log('This base shall not be saved or the bup isnt configured in conf, skipping save base', context)
                 continue
             context = self.create_log(cr, uid, base.id, 'save', context)
             vals = self.get_vals(cr, uid, base.id, context=context)
@@ -333,6 +335,7 @@ class saas_base(osv.osv):
                 'base_title': vals['base_title'],
                 'base_app_version': vals['app_version_name'],
                 'base_proxy_id': vals['proxy_id'],
+                'base_mail_id': vals['mail_id'],
                 'base_container_name': vals['container_name'],
                 'base_container_server': vals['server_domain'],
                 'base_admin_passwd': vals['base_admin_passwd'],
@@ -372,6 +375,33 @@ class saas_base(osv.osv):
             self.deploy_mail(cr, uid, vals, context=context)
 
 
+    def reset_base(self, cr, uid, ids, context={}):
+        self._reset_base(cr, uid,ids, context=context)
+
+    def post_reset(self, cr, uid, vals, context=None):
+        return
+
+    def _reset_base(self, cr, uid, ids, base_name=False, service_id=False, context={}):
+        save_obj = self.pool.get('saas.save.save')
+        for base in self.browse(cr, uid, ids, context=context):
+            base_parent_id = base.parent_id and base.parent_id.id or base.id
+            vals_parent = self.get_vals(cr, uid, base_parent_id, context=context)
+            context['forcesave'] = True
+            save_id = self.save(cr, uid, [base_parent_id], context=context)[base_parent_id]
+            vals = {'base_id': base.id, 'base_restore_to_name': base.name, 'base_restore_to_domain_id': base.domain_id.id, 'service_id': base.service_id.id, 'base_nosave': True}
+            if base_name:
+                vals = {'base_id': False, 'base_restore_to_name': base_name, 'base_restore_to_domain_id': base.domain_id.id, 'service_id': service_id, 'base_nosave': True}
+            save_obj.write(cr, uid, [save_id], vals)
+            context['restore_dumpfile'] = vals_parent['base_unique_name_'] + '.dump'
+            base_id = save_obj.restore(cr, uid, [save_id], context=context)
+            self.write(cr, uid, [base_id], {'parent_id': base_parent_id}, context=context)
+            vals = self.get_vals(cr, uid, base_id, context=context)
+            vals['base_parent_unique_name_'] = vals_parent['base_unique_name_']
+            self.update_base(cr, uid, vals, context=context)
+            self.post_reset(cr, uid, vals, context=context)
+            self.deploy_post(cr, uid, vals, context=context)
+
+
     def deploy_create_database(self, cr, uid, vals, context=None):
         return False
 
@@ -397,7 +427,9 @@ class saas_base(osv.osv):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         self.purge(cr, uid, vals, context=context)
 
-#        if 'base_restoration' not in context:
+        if 'base_restoration' in context:
+            return
+
         res = self.deploy_create_database(cr, uid, vals, context)
         if not res:
             if vals['app_bdd'] != 'mysql':
@@ -412,31 +444,31 @@ class saas_base(osv.osv):
 # EOF
   # fi
 
-            # execute.log('Database created', context)
-            # if vals['base_build'] == 'build':
-                # self.deploy_build(cr, uid, vals, context)
+        execute.log('Database created', context)
+        if vals['base_build'] == 'build':
+            self.deploy_build(cr, uid, vals, context)
 
-            # elif vals['base_build'] == 'restore':
-                # if vals['app_bdd'] != 'mysql':
-                    # ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
-                    # execute.execute(ssh, ['pg_restore', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], '--no-owner', '-Fc', '-d', vals['base_unique_name_'], vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
-                    # ssh.close()
-                    # sftp.close()
-                # else:
-                    # ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
-                    # execute.execute(ssh, ['mysql', '-h', vals['bdd_server_domain'], '-u', vals['service_db_user'], '-p' + vals['bdd_server_mysql_passwd'], vals['base_unique_name_'], '<', vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
-                    # ssh.close()
-                    # sftp.close()
+        elif vals['base_build'] == 'restore':
+            if vals['app_bdd'] != 'mysql':
+                ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+                execute.execute(ssh, ['pg_restore', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], '--no-owner', '-Fc', '-d', vals['base_unique_name_'], vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
+                ssh.close()
+                sftp.close()
+            else:
+                ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+                execute.execute(ssh, ['mysql', '-h', vals['bdd_server_domain'], '-u', vals['service_db_user'], '-p' + vals['bdd_server_mysql_passwd'], vals['base_unique_name_'], '<', vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
+                ssh.close()
+                sftp.close()
 
-                # self.deploy_post_restore(cr, uid, vals, context)
+            self.deploy_post_restore(cr, uid, vals, context)
 
-            # if vals['base_build'] != 'none':
-                # self.deploy_create_poweruser(cr, uid, vals, context)
+        if vals['base_build'] != 'none':
+            self.deploy_create_poweruser(cr, uid, vals, context)
 
-                # if vals['base_test']:
-                    # self.deploy_test(cr, uid, vals, context)
+            if vals['base_test']:
+                self.deploy_test(cr, uid, vals, context)
 
-            # self.deploy_post(cr, uid, vals, context)
+        self.deploy_post(cr, uid, vals, context)
 
 
   # if [[ $skip_analytics != True ]]
@@ -466,6 +498,7 @@ class saas_base(osv.osv):
         self.deploy_proxy(cr, uid, vals, context=context)
         self.deploy_bind(cr, uid, vals, context=context)
         self.deploy_shinken(cr, uid, vals, context=context)
+        self.deploy_mail(cr, uid, vals, context=context)
 
 
 
@@ -495,6 +528,7 @@ class saas_base(osv.osv):
         self.purge_shinken(cr, uid, vals, context=context)
         self.purge_bind(cr, uid, vals, context=context)
         self.purge_proxy(cr, uid, vals, context=context)
+        self.purge_mail(cr, uid, vals, context=context)
 
         self.purge_db(cr, uid, vals, context=context)
 
@@ -519,6 +553,9 @@ class saas_base(osv.osv):
 # fi
 
 #}
+
+    def update_base(self, cr, uid, vals, context=None):
+        return
 
 
     def deploy_proxy(self, cr, uid, vals, context={}):
@@ -597,8 +634,8 @@ class saas_base(osv.osv):
         execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_shinken_configfile']], context)
 
         execute.execute(ssh, ['mkdir', '-p', '/opt/control-bup/restore/' + vals['base_unique_name_'] + '/latest'], context)
-        execute.execute(ssh, ['echo "' + vals['now_date'] + '" >> /opt/control-bup/restore/' + vals['base_unique_name_'] + '/latest/backup-date'], context)
-        execute.execute(ssh, ['echo "lorem ipsum" >> /opt/control-bup/restore/' + vals['base_unique_name_'] + '/latest/' + vals['base_unique_name_'] + '.dump'], context)
+        execute.execute(ssh, ['echo "' + vals['now_date'] + '" > /opt/control-bup/restore/' + vals['base_unique_name_'] + '/latest/backup-date'], context)
+        execute.execute(ssh, ['echo "lorem ipsum" > /opt/control-bup/restore/' + vals['base_unique_name_'] + '/latest/' + vals['base_unique_name_'] + '.dump'], context)
         execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)
 
 

@@ -154,8 +154,8 @@ def log(message, context):
     message = filter(lambda x: x in string.printable, message)
     _logger.info(message)
     log_obj = context['saas-self'].pool.get('saas.log')
-    #_logger.info('context.log %s', context['logs'])
     if 'logs' in context:
+        # _logger.info('context.log %s', context['logs'])
         for model, model_vals in context['logs'].iteritems():
             for res_id, vals in context['logs'][model].iteritems():
                 log = log_obj.browse(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], context=context)

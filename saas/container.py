@@ -80,6 +80,14 @@ class saas_server(osv.osv):
                 vals = container_obj.get_vals(cr, uid, container.id, context=context)
                 container_obj.start(cr, uid, vals, context=context)
 
+    def stop_containers(self, cr, uid, ids, context={}):
+        container_obj = self.pool.get('saas.container')
+        for server in self.browse(cr, uid, ids, context=context):
+            container_ids = container_obj.search(cr, uid, [('server_id', '=', server.id)], context=context)
+            for container in container_obj.browse(cr, uid, container_ids, context=context):
+                vals = container_obj.get_vals(cr, uid, container.id, context=context)
+                container_obj.stop(cr, uid, vals, context=context)
+
     def deploy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         _logger.info('test %s', vals['shinken_server_domain'])
@@ -104,6 +112,18 @@ class saas_container(osv.osv):
     _name = 'saas.container'
     _inherit = ['saas.model']
 
+    def _get_ports(self, cr, uid, ids, field_name, arg, context=None):
+        res = {}
+        for container in self.browse(cr, uid, ids, context=context):
+            res[container.id] = ''
+            first = True
+            for port in container.port_ids:
+                if not first:
+                    res[container.id] += ', '
+                res[container.id] += port.name + ' : ' + port.hostport
+                first = False
+        return res
+
     _columns = {
         'name': fields.char('Name', size=64, required=True),
         'application_id': fields.many2one('saas.application', 'Application', required=True),
@@ -116,11 +136,13 @@ class saas_container(osv.osv):
         'saverepo_expiration': fields.integer('Days before saverepo expiration'),
         'date_next_save': fields.datetime('Next save planned'),
         'save_comment': fields.text('Save Comment'),
+        'nosave': fields.boolean('No Save?'),
         'linked_container_ids': fields.many2many('saas.container', 'saas_container_linked_rel', 'from_id', 'to_id', 'Linked container', domain="[('server_id','=',server_id)]"),
         'port_ids': fields.one2many('saas.container.port', 'container_id', 'Ports'),
         'volume_ids': fields.one2many('saas.container.volume', 'container_id', 'Volumes'),
         'option_ids': fields.one2many('saas.container.option', 'container_id', 'Options'),
         'service_ids': fields.one2many('saas.service', 'container_id', 'Services'),
+        'ports': fields.function(_get_ports, type='text', string='Ports'),
     }
 
     _sql_constraints = [
@@ -201,7 +223,7 @@ class saas_container(osv.osv):
         ports = {}
         ssh_port = 22
         for port in container.port_ids:
-            ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport, 'udp': port.udp}
+            ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport, 'expose': port.expose, 'udp': port.udp}
             if port.name == 'ssh':
                 ssh_port = port.hostport
 
@@ -232,6 +254,7 @@ class saas_container(osv.osv):
             'container_ssh_port': ssh_port,
             'container_options': options,
             'container_links': links,
+            'container_no_save': container.nosave,
             'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg'
         })
 
@@ -244,8 +267,8 @@ class saas_container(osv.osv):
         if ('port_ids' not in vals or not vals['port_ids']) and 'image_version_id' in vals:
             vals['port_ids'] = []
             for port in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.port_ids:
-                if port.expose:
-                    vals['port_ids'].append((0,0,{'name':port.name,'localport':port.localport,'udp':port.udp}))
+                if port.expose != 'none':
+                    vals['port_ids'].append((0,0,{'name':port.name,'localport':port.localport,'expose':port.expose,'udp':port.udp}))
         if ('volume_ids' not in vals or not vals['volume_ids']) and 'image_version_id' in vals:
             vals['volume_ids'] = []
             for volume in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.volume_ids:
@@ -265,21 +288,25 @@ class saas_container(osv.osv):
     def write(self, cr, uid, ids, vals, context={}):
         version_obj = self.pool.get('saas.image.version')
         save_obj = self.pool.get('saas.save.save')
-        if 'image_version_id' in vals:
+        flag = False
+        if 'image_version_id' in vals or 'port_ids' in vals or 'volume_ids' in vals:
+            flag = True
             for container in self.browse(cr, uid, ids, context=context):
-                if container.image_version_id != vals['image_version_id']:
-                    context = self.create_log(cr, uid, container.id, 'upgrade version', context)
+                context = self.create_log(cr, uid, container.id, 'upgrade version', context)
+                if 'image_version_id' in vals:
                     new_version = version_obj.browse(cr, uid, vals['image_version_id'], context=context)
                     context['save_comment'] = 'Before upgrade from ' + container.image_version_id.name + ' to ' + new_version.name
-                    save_id = self.save(cr, uid, [container.id], context=context)[container.id]
+                else:
+                    context['save_comment'] = 'Change on port or volumes'
+                context['forcesave'] = True
+                save_id = self.save(cr, uid, [container.id], context=context)[container.id]
         res = super(saas_container, self).write(cr, uid, ids, vals, context=context)
-        if 'image_version_id' in vals:
+        if flag:
             for container in self.browse(cr, uid, ids, context=context):
-                if container.image_version_id != vals['image_version_id']:
-                    self.reinstall(cr, uid, [container.id], context=context)
-                    container_vals = self.get_vals(cr, uid, container.id, context=context)
-                    save_obj.restore(cr, uid, [save_id], context=context)
-                    self.end_log(cr, uid, container.id, context=context)
+                self.reinstall(cr, uid, [container.id], context=context)
+                self.get_vals(cr, uid, container.id, context=context)
+                save_obj.restore(cr, uid, [save_id], context=context)
+                self.end_log(cr, uid, container.id, context=context)
         return res
 
     def unlink(self, cr, uid, ids, context={}):
@@ -290,12 +317,36 @@ class saas_container(osv.osv):
         self.save(cr, uid, ids, context=context)
         return super(saas_container, self).unlink(cr, uid, ids, context=context)
 
+    def button_stop(self, cr, uid, ids, context={}):
+        for container in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, container.id, context=context)
+            self.stop(cr, uid, vals, context=context)
+
+    def button_start(self, cr, uid, ids, context={}):
+        for container in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, container.id, context=context)
+            self.start(cr, uid, vals, context=context)
+
+    def reinstall(self, cr, uid, ids, context={}):
+        save_obj = self.pool.get('saas.save.save')
+        for container in self.browse(cr, uid, ids, context=context):
+            context['save_comment'] = 'Before reinstall'
+            context['forcesave'] = True
+            save_id = self.save(cr, uid, [container.id], context=context)[container.id]
+            super(saas_container, self).reinstall(cr, uid, [container.id], context=context)
+            save_obj.restore(cr, uid, [save_id], context=context)
+
+
+
     def save(self, cr, uid, ids, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         save_obj = self.pool.get('saas.save.save')
 
         res = {}
         for container in self.browse(cr, uid, ids, context=context):
+            if 'nosave' in context or (container.nosave and not 'forcesave' in context):
+                execute.log('This base container not be saved or the bup isnt configured in conf, skipping save container', context)
+                continue
             context = self.create_log(cr, uid, container.id, 'save', context)
             vals = self.get_vals(cr, uid, container.id, context=context)
             if not 'bup_server_domain' in vals:
@@ -375,18 +426,19 @@ class saas_container(osv.osv):
         #Run container
         execute.execute(ssh, cmd, context)
 
-        time.sleep(5)
+        time.sleep(3)
 
         self.deploy_post(cr, uid, vals, context)
 
-        execute.execute(ssh, ['sudo', 'docker', 'restart', vals['container_name']], context)
+        self.restart(cr, uid, vals, context=context)
+
+        time.sleep(3)
 
         ssh.close()
         sftp.close()
 
         for key, links in vals['container_links'].iteritems():
             if links['name'] == 'postfix':
-                time.sleep(3)
                 ssh, sftp = execute.connect(vals['container_fullname'], context=context)
                 execute.execute(ssh, ['echo "root=' + vals['config_email_sysadmin'] + '" > /etc/ssmtp/ssmtp.conf'], context)
                 execute.execute(ssh, ['echo "mailhub=postfix:25" >> /etc/ssmtp/ssmtp.conf'], context)
@@ -429,7 +481,8 @@ class saas_container(osv.osv):
     def restart(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
-        execute.execute(ssh, ['docker', 'restart', vals['container_name']], context)
+        execute.execute(ssh, ['docker', 'stop', vals['container_name']], context)
+        execute.execute(ssh, ['docker', 'start', vals['container_name']], context)
         ssh.close()
         sftp.close()
 
@@ -446,7 +499,7 @@ class saas_container(osv.osv):
         execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['container_fullname'] + '/g"', vals['container_shinken_configfile']], context)
 
         execute.execute(ssh, ['mkdir', '-p', '/opt/control-bup/restore/' + vals['container_fullname'] + '/latest'], context)
-        execute.execute(ssh, ['echo "' + vals['now_date'] + '" >> /opt/control-bup/restore/' + vals['container_fullname'] + '/latest/backup-date'], context)
+        execute.execute(ssh, ['echo "' + vals['now_date'] + '" > /opt/control-bup/restore/' + vals['container_fullname'] + '/latest/backup-date'], context)
         execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)
 
         execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
@@ -506,7 +559,12 @@ class saas_container_port(osv.osv):
         'name': fields.char('Name', size=64, required=True),
         'localport': fields.char('Local port', size=12, required=True),
         'hostport': fields.char('Host port', size=12),
+        'expose': fields.selection([('internet','Internet'),('local','Local')],'Expose?', required=True),
         'udp': fields.boolean('UDP?'),
+    }
+
+    _defaults = {
+        'expose': 'local'
     }
 
     _sql_constraints = [

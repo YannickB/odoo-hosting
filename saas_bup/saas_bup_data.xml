@@ -72,13 +72,13 @@ RUN chmod +x /opt/upload
             <field name="image_id" ref="image_bup"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
         <record id="image_bup_port2" model="saas.image.port">
             <field name="image_id" ref="image_bup"/>
             <field name="name">bup-web</field>
             <field name="localport">8080</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
 
         <record id="app_bup" model="saas.application">
@@ -87,10 +87,10 @@ RUN chmod +x /opt/upload
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_bup"/>
             <field name="default_image_id" ref="image_bup"/>
-            <field name="container_time_between_save">60</field>
+            <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>
             <field name="container_saverepo_expiration">90</field>
-            <field name="base_time_between_save">60</field>
+            <field name="base_time_between_save">9999</field>
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>
         </record>

@@ -52,13 +52,13 @@ USER root
             <field name="image_id" ref="image_shinken"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
         <record id="image_shinken_port2" model="saas.image.port">
             <field name="image_id" ref="image_shinken"/>
             <field name="name">shinken</field>
             <field name="localport">7767</field>
-            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
         </record>
 
 
@@ -69,10 +69,10 @@ USER root
             <field name="type_id" ref="apptype_shinken"/>
             <field name="default_image_id" ref="image_shinken"/>
             <field name="linked_local_containers">postfix</field>
-            <field name="container_time_between_save">60</field>
+            <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>
             <field name="container_saverepo_expiration">90</field>
-            <field name="base_time_between_save">60</field>
+            <field name="base_time_between_save">9999</field>
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>
         </record>

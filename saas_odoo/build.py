@@ -47,6 +47,7 @@ class saas_application_version(osv.osv):
             execute.execute_local(['yes | sandbox/bin/pip uninstall setuptools pip'], context, path=vals['app_version_full_archivepath'], shell=True)
             execute.execute_local(['sandbox/bin/python', 'bootstrap.py'], context, vals['app_version_full_archivepath'])
             execute.execute_local(['bin/buildout'], context, vals['app_version_full_archivepath'])
+            execute.execute_local(['ln', '-s', '/opt/odoo/filestore', vals['app_version_full_archivepath'] + '/parts/odoo/openerp/filestore'], context)
 
             #Can't make sed work on local
             ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
