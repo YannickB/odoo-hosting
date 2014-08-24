@@ -294,6 +294,13 @@ class saas_base(osv.osv):
             vals['service_id'] = service_obj.create(cr, uid, service_vals, context=context)
         return super(saas_base, self).create(cr, uid, vals, context=context)
 
+    def write(self, cr, uid, ids, vals, context={}):
+        res = super(saas_base, self).write(cr, uid, ids, vals, context=context)
+        if 'nosave' in vals:
+            for base_id in ids:
+                base_vals = self.get_vals(cr, uid, base_id, context=context)
+                self.deploy_shinken(cr, uid, base_vals, context=context)
+        return res
 
     def unlink(self, cr, uid, ids, context={}):
         context['save_comment'] = 'Before unlink'
@@ -463,10 +470,9 @@ class saas_base(osv.osv):
             self.deploy_post_restore(cr, uid, vals, context)
 
         if vals['base_build'] != 'none':
-            self.deploy_create_poweruser(cr, uid, vals, context)
-
             if vals['base_test']:
                 self.deploy_test(cr, uid, vals, context)
+            self.deploy_create_poweruser(cr, uid, vals, context)
 
         self.deploy_post(cr, uid, vals, context)
 
@@ -627,7 +633,10 @@ class saas_base(osv.osv):
             return
         self.purge_shinken(cr, uid, vals, context=context)
         ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-        sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/base-shinken.config', vals['base_shinken_configfile'])
+        file = 'base-shinken'
+        if vals['base_nosave']:
+            file = 'base-shinken-nosave'
+        sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/' + file + '.config', vals['base_shinken_configfile'])
         execute.execute(ssh, ['sed', '-i', '"s/TYPE/base/g"', vals['base_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['base_unique_name_'] + '/g"', vals['base_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_shinken_configfile']], context)

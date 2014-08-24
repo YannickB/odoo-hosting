@@ -210,6 +210,12 @@ class saas_base(osv.osv):
         if vals['apptype_name'] == 'odoo':
             execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user='admin', password=" + vals['base_admin_passwd'] + ")", context)
             client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user='admin', password=vals['base_admin_passwd'])
+
+            execute.log("demo_id = client.model('ir.model.data').get_object_reference('base', 'user_demo')[1]", context)
+            demo_id = client.model('ir.model.data').get_object_reference('base', 'user_demo')[1]
+            execute.log("client.model('res.users').write([" + str(demo_id) + "], {'login': 'demo_odoo', 'password': 'demo_odoo'})", context)
+            client.model('res.users').write([demo_id], {'login': 'demo_odoo', 'password': 'demo_odoo'})
+
             if vals['app_options']['test_install_modules']['value']:
                 modules = vals['app_options']['test_install_modules']['value'].split(',')
                 for module in modules:

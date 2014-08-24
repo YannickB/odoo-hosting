@@ -307,6 +307,10 @@ class saas_container(osv.osv):
                 self.get_vals(cr, uid, container.id, context=context)
                 save_obj.restore(cr, uid, [save_id], context=context)
                 self.end_log(cr, uid, container.id, context=context)
+        if 'nosave' in vals:
+            for container_id in ids:
+                container_vals = self.get_vals(cr, uid, container_id, context=context)
+                self.deploy_shinken(cr, uid, container_vals, context=context)
         return res
 
     def unlink(self, cr, uid, ids, context={}):
@@ -430,7 +434,7 @@ class saas_container(osv.osv):
 
         self.deploy_post(cr, uid, vals, context)
 
-        self.restart(cr, uid, vals, context=context)
+        self.start(cr, uid, vals, context=context)
 
         time.sleep(3)
 
@@ -473,19 +477,11 @@ class saas_container(osv.osv):
 
     def start(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        self.stop(cr, uid, vals, context=context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
         execute.execute(ssh, ['docker', 'start', vals['container_name']], context)
         ssh.close()
         sftp.close()
-
-    def restart(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
-        execute.execute(ssh, ['docker', 'stop', vals['container_name']], context)
-        execute.execute(ssh, ['docker', 'start', vals['container_name']], context)
-        ssh.close()
-        sftp.close()
-
 
     def deploy_shinken(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
@@ -494,7 +490,10 @@ class saas_container(osv.osv):
             return
         self.purge_shinken(cr, uid, vals, context=context)
         ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-        sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/container-shinken.config', vals['container_shinken_configfile'])
+        file = 'container-shinken'
+        if vals['container_no_save']:
+            file = 'container-shinken-nosave'
+        sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/' + file + '.config', vals['container_shinken_configfile'])
         execute.execute(ssh, ['sed', '-i', '"s/TYPE/container/g"', vals['container_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['container_fullname'] + '/g"', vals['container_shinken_configfile']], context)
 
@@ -534,7 +533,7 @@ class saas_container(osv.osv):
         if vals['container_id'] == vals['bup_id']:
             context['key_already_reset'] = True
             self.pool.get('saas.config.settings').reset_bup_key(cr, uid, [], context=context)
-        self.restart(cr, uid, vals, context=context)
+        self.start(cr, uid, vals, context=context)
 
     def purge_key(self, cr, uid, vals, context={}):
         ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)

@@ -158,7 +158,7 @@ class saas_config_settings(osv.osv):
             ssh.close()
             sftp.close()
 
-    def upload_save(self, cr, uid, ids, context={}):
+    def save_all(self, cr, uid, ids, context={}):
         container_obj = self.pool.get('saas.container')
         base_obj = self.pool.get('saas.base')
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
@@ -172,10 +172,19 @@ class saas_config_settings(osv.osv):
         base_ids = base_obj.search(cr, uid, [], context=context)
         base_obj.save(cr, uid, base_ids, context=context)
 
-
+    def save_fsck(self, cr, uid, ids, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        vals = self.get_vals(cr, uid, context=context)
         ssh, sftp = execute.connect(vals['bup_fullname'], username='bup', context=context)
         execute.execute(ssh, ['bup', 'fsck', '-r'], context)
         execute.execute(ssh, ['bup', 'fsck', '-g'], context)
+        ssh.close()
+        sftp.close()
+
+    def save_upload(self, cr, uid, ids, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        vals = self.get_vals(cr, uid, context=context)
+        ssh, sftp = execute.connect(vals['bup_fullname'], username='bup', context=context)
         execute.execute(ssh, ['tar', 'czf', '/home/bup/bup.tar.gz', '-C', '/home/bup/.bup', '.'], context)
         execute.execute(ssh, ['/opt/upload', vals['config_ftpuser'], vals['config_ftppass'], vals['config_ftpserver']], context)
         execute.execute(ssh, ['rm', '/home/bup/bup.tar.gz'], context)
@@ -183,17 +192,28 @@ class saas_config_settings(osv.osv):
         sftp.close()
 
 
+    def save_control(self, cr, uid, ids, context={}):
+        container_obj = self.pool.get('saas.container')
+        base_obj = self.pool.get('saas.base')
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        vals = self.get_vals(cr, uid, context=context)
         ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
         execute.execute(ssh, ['rm', '-rf', '/opt/control-bup'], context)
         execute.execute(ssh, ['mkdir', '-p', '/opt/control-bup/bup'], context)
         execute.execute(ssh, ['ncftpget', '-u', vals['config_ftpuser'], '-p' + vals['config_ftppass'], vals['config_ftpserver'], '/opt/control-bup', '/bup.tar.gz'], context)
         execute.execute(ssh, ['tar', '-xf', '/opt/control-bup/bup.tar.gz', '-C', '/opt/control-bup/bup'], context)
 
+        container_ids = container_obj.search(cr, uid, [], context=context)
+        base_ids = base_obj.search(cr, uid, [], context=context)
         for container in container_obj.browse(cr, uid, container_ids, context=context):
             container_vals = container_obj.get_vals(cr, uid, container.id, context=context)
+            if container_vals['container_no_save']:
+                continue
             execute.execute(ssh, ['export BUP_DIR=/opt/control-bup/bup; bup restore -C /opt/control-bup/restore/' + container_vals['container_fullname'] + ' ' + container_vals['saverepo_name'] + '/latest'], context)
         for base in base_obj.browse(cr, uid, base_ids, context=context):
             base_vals = base_obj.get_vals(cr, uid, base.id, context=context)
+            if base_vals['base_no_save']:
+                continue
             execute.execute(ssh, ['export BUP_DIR=/opt/control-bup/bup; bup restore -C /opt/control-bup/restore/' + base_vals['base_unique_name_'] + ' ' + base_vals['saverepo_name'] + '/latest'], context)
         execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)
         ssh.close()
@@ -230,7 +250,10 @@ class saas_config_settings(osv.osv):
 
     def cron_daily(self, cr, uid, ids, context={}):
         self.reset_keys(cr, uid, [], context=context)
-        self.upload_save(cr, uid, [], context=context)
+        self.save_fsck(cr, uid, [], context=context)
+        self.save_all(cr, uid, [], context=context)
+        self.save_upload(cr, uid, [], context=context)
+        self.save_control(cr, uid, [], context=context)
         self.purge_expired_saverepo(cr, uid, [], context=context)
         self.purge_expired_logs(cr, uid, [], context=context)
         self.launch_next_saves(cr, uid, [], context=context)

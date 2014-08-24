@@ -69,7 +69,6 @@
                     <button name="reset_bind" string="Reset DNS" type="object"/>
                     <button name="reset_shinken" string="Reset Shinken" type="object"/>
                     <button name="reset_mail" string="Reset Mail" type="object"/>
-                    <button name="reset_bases" string="Reset Bases" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -780,11 +779,15 @@
                         <field name="mailchimp_apikey" required="1"/>
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
-                    <button name="upload_save" string="Upload Save" type="object"/>
                     <button name="reset_keys" string="Reset Keys" type="object"/>
                     <button name="reset_bup_key" string="Reset Bup Key" type="object"/>
+                    <button name="save_all" string="Save All" type="object"/>
+                    <button name="save_fsck" string="Save fsck" type="object"/>
+                    <button name="save_upload" string="Save Upload" type="object"/>
+                    <button name="save_control" string="Save Control" type="object"/>
                     <button name="purge_expired_saverepo" string="Purge expired SaveRepo" type="object"/>
                     <button name="purge_expired_logs" string="Purge Expired Logs" type="object"/>
+                    <button name="reset_bases" string="Reset Bases" type="object"/>
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
                 </form>
             </field>

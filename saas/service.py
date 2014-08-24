@@ -265,7 +265,7 @@ class saas_service(osv.osv):
         self.deploy_files(cr, uid, vals, context=context)
         self.deploy_post_service(cr, uid, vals, context)
 
-        container_obj.restart(cr, uid, vals, context=context)
+        container_obj.start(cr, uid, vals, context=context)
 
         time.sleep(3)
 
