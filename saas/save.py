@@ -260,7 +260,7 @@ class saas_save_save(osv.osv):
                         execute.execute(ssh, ['chown', '-R', volume['user'] + ':' + volume['user'], volume['name']], context)
                 ssh.close()
                 sftp.close()
-                container_obj.restart(cr, uid, vals_container, context)
+                container_obj.start(cr, uid, vals_container, context)
                 self.end_log(cr, uid, save.id, context=context)
                 res = container_id
 

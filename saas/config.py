@@ -212,7 +212,7 @@ class saas_config_settings(osv.osv):
             execute.execute(ssh, ['export BUP_DIR=/opt/control-bup/bup; bup restore -C /opt/control-bup/restore/' + container_vals['container_fullname'] + ' ' + container_vals['saverepo_name'] + '/latest'], context)
         for base in base_obj.browse(cr, uid, base_ids, context=context):
             base_vals = base_obj.get_vals(cr, uid, base.id, context=context)
-            if base_vals['base_no_save']:
+            if base_vals['base_nosave']:
                 continue
             execute.execute(ssh, ['export BUP_DIR=/opt/control-bup/bup; bup restore -C /opt/control-bup/restore/' + base_vals['base_unique_name_'] + ' ' + base_vals['saverepo_name'] + '/latest'], context)
         execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)

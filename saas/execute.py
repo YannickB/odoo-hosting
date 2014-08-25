@@ -194,15 +194,17 @@ def connect(host, port=False, username=False, context={}):
     sftp = ssh.open_sftp()
     return (ssh, sftp)
 
-def execute(ssh, cmd, context, stdin_arg=False):
+def execute(ssh, cmd, context, stdin_arg=False,path=False):
     log('command : ' + ' '.join(cmd), context)
+    if path:
+        log('path : ' + path, context)
+        cmd.insert(0, 'cd ' + path + ';')
     stdin, stdout, stderr = ssh.exec_command(' '.join(cmd))
     if stdin_arg:
         for arg in stdin_arg:
             log('command : ' + arg, context)
             stdin.write(arg)
-            log('Done', context)
-        stdin.flush()
+            stdin.flush()
 #    _logger.info('stdin : %s', stdin.read())
     stdout_read = stdout.read()
     log('stdout : ' + stdout_read, context)

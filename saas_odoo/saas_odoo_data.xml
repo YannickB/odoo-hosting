@@ -6,9 +6,10 @@
         <record id="apptype_odoo" model="saas.application.type">
             <field name="name">odoo</field>
             <field name="system_user">odoo</field>
-            <field name="admin_name">admin</field>
+            <field name="admin_name">heathcliff</field>
             <field name="admin_email">odoo@localhost</field>
             <field name="standard_port">8069</field>
+            <field name="symlink" eval="True"/>
             <field name="localpath">/opt/versions</field>
             <field name="localpath_services">/opt/odoo/services</field>
         </record>

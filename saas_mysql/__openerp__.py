@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-{'name': 'SaaS Postgres',
+{'name': 'SaaS MySQL',
  'version': '1.0',
  'category': 'Community',
  'depends': ['base',
@@ -28,7 +28,7 @@
  'license': 'AGPL-3',
  'website': 'https://github.com/YannickB',
  'description': """
-SaaS Postgres
+SaaS MySQL
 =================
 """,
  'demo': [],

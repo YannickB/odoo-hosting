@@ -28,6 +28,7 @@ from openerp.tools.translate import _
 import time
 from datetime import datetime, timedelta
 import subprocess
+import re
 import openerp.addons.saas.execute as execute
 
 import logging
@@ -40,20 +41,15 @@ class saas_application_version(osv.osv):
     def build_application(self, cr, uid, vals, context):
         super(saas_application_version, self).build_application(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if vals['apptype_name'] == 'odoo':
-            execute.execute_local(['mkdir', '-p', vals['app_version_full_archivepath'] + '/extra'], context)
-            execute.execute_write_file(vals['app_version_full_archivepath'] + '/buildout.cfg', vals['app_buildfile'], context)
-            execute.execute_local(['wget', 'https://raw.github.com/buildout/buildout/master/bootstrap/bootstrap.py'], context, path=vals['app_version_full_archivepath'])
-            execute.execute_local(['virtualenv', 'sandbox'], context, vals['app_version_full_archivepath'])
-            execute.execute_local(['yes | sandbox/bin/pip uninstall setuptools pip'], context, path=vals['app_version_full_archivepath'], shell=True)
-            execute.execute_local(['sandbox/bin/python', 'bootstrap.py'], context, vals['app_version_full_archivepath'])
-            execute.execute_local(['bin/buildout'], context, vals['app_version_full_archivepath'])
-            execute.execute_local(['ln', '-s', '/opt/odoo/filestore', vals['app_version_full_archivepath'] + '/parts/odoo/openerp/filestore'], context)
-
-            #Can't make sed work on local
+        if vals['apptype_name'] == 'seafile':
             ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
-            execute.execute(ssh, ['sed', '-i', '"s/' + vals['config_archive_path'].replace('/','\/') + '/' + vals['apptype_localpath'].replace('/','\/') + '/g"', vals['app_version_full_archivepath'] + '/bin/start_odoo'], context)
-            execute.execute(ssh, ['sed', '-i', '"s/' + vals['config_archive_path'].replace('/','\/') + '/' + vals['apptype_localpath'].replace('/','\/') + '/g"', vals['app_version_full_archivepath'] + '/bin/buildout'], context)
+            execute.execute(ssh,['wget', '-q', 'https://bitbucket.org/haiwen/seafile/downloads/seafile-server_' + vals['app_current_version'] + '_x86-64.tar.gz'], context, path=vals['app_version_full_archivepath'])
+            execute.execute(ssh, ['tar', '-xzf', 'seafile-server_*'], context, path=vals['app_version_full_archivepath'])
+            execute.execute(ssh, ['mv', 'seafile-server-' + vals['app_current_version'] + '/*', './'], context, path=vals['app_version_full_archivepath'])
+            execute.execute(ssh, ['rm', '-rf', './*.tar.gz'], context, path=vals['app_version_full_archivepath'])
+            execute.execute(ssh, ['rm', '-rf', 'seafile-server_' + vals['app_current_version']], context, path=vals['app_version_full_archivepath'])
             ssh.close()
             sftp.close()
+
         return
+

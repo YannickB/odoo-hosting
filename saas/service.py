@@ -125,6 +125,7 @@ class saas_service(osv.osv):
             'database_ssh_port': database_vals['container_ssh_port'],
             'database_server_id': database_vals['server_id'],
             'database_server_domain': database_vals['server_domain'],
+            'database_root_password': database_vals['container_root_password'],
         })
 
         options = {}
@@ -139,14 +140,19 @@ class saas_service(osv.osv):
             database_server = vals['container_links'][vals['database_id']]['name']
 
         service_fullname = vals['container_name'] + '-' + service.name
+        db_user = service_fullname.replace('-','_')
+        if vals['app_bdd'] == 'mysql':
+            db_user = vals['container_name'][:10] + '_' + service.name[:4]
+            db_user = db_user.replace('-','_')
         vals.update({
             'service_id': service.id,
             'service_name': service.name,
             'service_fullname': service_fullname,
-            'service_db_user': service_fullname.replace('-','_'),
+            'service_db_user': db_user,
             'service_db_password': service.database_password,
             'service_skip_analytics': service.skip_analytics,
             'service_full_localpath': vals['apptype_localpath_services'] + '/' + service.name,
+            'service_full_localpath_files': vals['apptype_localpath_services'] + '/' + service.name + '/files',
             'service_options': options,
             'database_server': database_server,
             'service_subservice_name': service.sub_service_name,
@@ -255,13 +261,17 @@ class saas_service(osv.osv):
             sftp.close()
 
         else:
-            ssh, sftp = execute.connect(vals['bdd_server_domain'], vals['bdd_server_ssh_port'], vals['apptype_system_user'], context)
-            execute.execute(ssh, ["mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'create user '" + vals['service_db_user'] + "' identified by '" + vals['service_db_password'] + ";'"], context)
+            ssh, sftp = execute.connect(vals['database_fullname'], context=context)
+            execute.execute(ssh, ["mysql -u root -p'" + vals['database_root_password'] + "' -se \"create user '" + vals['service_db_user'] + "' identified by '" + vals['service_db_password'] + "';\""], context)
             ssh.close()
             sftp.close()
 
         execute.log('Database user created', context)
 
+        ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+        execute.execute(ssh, ['mkdir', '-p', vals['service_full_localpath']], context)
+        ssh.close()
+        sftp.close()
         self.deploy_files(cr, uid, vals, context=context)
         self.deploy_post_service(cr, uid, vals, context)
 
@@ -287,6 +297,11 @@ class saas_service(osv.osv):
         self.purge_files(cr, uid, vals, context=context)
         self.purge_pre_service(cr, uid, vals, context)
 
+        ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+        execute.execute(ssh, ['rm', '-rf', vals['service_full_localpath']], context)
+        ssh.close()
+        sftp.close()
+
         if vals['app_bdd'] != 'mysql':
             ssh, sftp = execute.connect(vals['database_fullname'], username='postgres', context=context)
             execute.execute(ssh, ['psql', '-c', '"DROP USER ' + vals['service_db_user'] + ';"'], context)
@@ -299,8 +314,8 @@ class saas_service(osv.osv):
             sftp.close()
 
         else:
-            ssh, sftp = execute.connect(vals['bdd_server_domain'], vals['bdd_server_ssh_port'], vals['apptype_system_user'], context)
-            execute.execute(ssh, ["mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'drop user '" + vals['service_db_user'] + ";'"], context)
+            ssh, sftp = execute.connect(vals['database_fullname'], context=context)
+            execute.execute(ssh, ["mysql -u root -p'" + vals['database_root_password'] + "' -se \"drop user " + vals['service_db_user'] + ";\""], context)
             ssh.close()
             sftp.close()
 
@@ -335,11 +350,11 @@ class saas_service(osv.osv):
 
         ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
         if 'files_from_service' in context:
-            execute.execute(ssh, ['cp', '-R', vals['apptype_localpath_services'] + '/' + context['files_from_service'], vals['service_full_localpath']], context)
-        elif vals['service_custom_version']:
-            execute.execute(ssh, ['cp', '-R', vals['app_version_full_localpath'], vals['service_full_localpath']], context)
+            execute.execute(ssh, ['cp', '-R', vals['apptype_localpath_services'] + '/' + context['files_from_service'] + '/files', vals['service_full_localpath_files']], context)
+        elif vals['service_custom_version'] or not vals['apptype_symlink']:
+            execute.execute(ssh, ['cp', '-R', vals['app_version_full_localpath'], vals['service_full_localpath_files']], context)
         else:
-            execute.execute(ssh, ['ln', '-s', vals['app_version_full_localpath'], vals['service_full_localpath']], context)
+            execute.execute(ssh, ['ln', '-s', vals['app_version_full_localpath'], vals['service_full_localpath_files']], context)
         service = self.browse(cr, uid, vals['service_id'], context=context)
         for base in service.base_ids:
             base_obj.save(cr, uid, [base.id], context=context)
@@ -352,7 +367,7 @@ class saas_service(osv.osv):
     def purge_files(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
-        execute.execute(ssh, ['rm', '-rf', vals['service_full_localpath']], context)
+        execute.execute(ssh, ['rm', '-rf', vals['service_full_localpath_files']], context)
         ssh.close()
         sftp.close()
 

@@ -28,10 +28,14 @@ from openerp.tools.translate import _
 import time
 from datetime import datetime, timedelta
 import subprocess
+import re
 import openerp.addons.saas.execute as execute
 
 import logging
 _logger = logging.getLogger(__name__)
+
+class saas_application(osv.osv):
+    _inherit = 'saas.application'
 
 
 class saas_application_version(osv.osv):
@@ -40,20 +44,29 @@ class saas_application_version(osv.osv):
     def build_application(self, cr, uid, vals, context):
         super(saas_application_version, self).build_application(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if vals['apptype_name'] == 'odoo':
-            execute.execute_local(['mkdir', '-p', vals['app_version_full_archivepath'] + '/extra'], context)
-            execute.execute_write_file(vals['app_version_full_archivepath'] + '/buildout.cfg', vals['app_buildfile'], context)
-            execute.execute_local(['wget', 'https://raw.github.com/buildout/buildout/master/bootstrap/bootstrap.py'], context, path=vals['app_version_full_archivepath'])
-            execute.execute_local(['virtualenv', 'sandbox'], context, vals['app_version_full_archivepath'])
-            execute.execute_local(['yes | sandbox/bin/pip uninstall setuptools pip'], context, path=vals['app_version_full_archivepath'], shell=True)
-            execute.execute_local(['sandbox/bin/python', 'bootstrap.py'], context, vals['app_version_full_archivepath'])
-            execute.execute_local(['bin/buildout'], context, vals['app_version_full_archivepath'])
-            execute.execute_local(['ln', '-s', '/opt/odoo/filestore', vals['app_version_full_archivepath'] + '/parts/odoo/openerp/filestore'], context)
-
-            #Can't make sed work on local
+        if vals['apptype_name'] == 'drupal':
+            execute.execute_write_file(vals['app_version_full_archivepath'] + '/drush.make', vals['app_buildfile'], context)
+            execute.execute_local(['drush', 'make', vals['app_version_full_archivepath'] + '/drush.make', './'], context, path=vals['app_version_full_archivepath'])
+            execute.execute_local(['cp', vals['config_conductor_path'] + '/saas/saas_drupal/res/wikicompare.script', vals['app_version_full_archivepath']], context)
             ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
-            execute.execute(ssh, ['sed', '-i', '"s/' + vals['config_archive_path'].replace('/','\/') + '/' + vals['apptype_localpath'].replace('/','\/') + '/g"', vals['app_version_full_archivepath'] + '/bin/start_odoo'], context)
-            execute.execute(ssh, ['sed', '-i', '"s/' + vals['config_archive_path'].replace('/','\/') + '/' + vals['apptype_localpath'].replace('/','\/') + '/g"', vals['app_version_full_archivepath'] + '/bin/buildout'], context)
+            execute.execute(ssh, ['patch', '-p0', '-d', vals['app_version_full_archivepath'] + '/sites/all/modules/revisioning/', '<', vals['config_conductor_path'] + '/saas/saas_drupal/res/patch/revisioning_postgres.patch'], context)
             ssh.close()
             sftp.close()
+            execute.execute_local(['mv', vals['app_version_full_archivepath'] + '/sites', vals['app_version_full_archivepath'] + '/sites-template'], context)
+            execute.execute_local(['ln', '-s', '../sites', vals['app_version_full_archivepath'] + '/sites'], context)
+
+
+    #
+    # if [[ $name == 'dev' ]]
+    # then
+    # patch -p0 -d $archive_path/$app/${app}-${name}/archive/sites/all/themes/wikicompare_theme/ < $openerp_path/saas/saas/apps/drupal/patch/dev_zen_rebuild_registry.patch
+    # fi
+
+
         return
+
+
+
+    def get_current_version(self, cr, uid, obj, context=None):
+
+        return False

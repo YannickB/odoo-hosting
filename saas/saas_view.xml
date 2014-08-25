@@ -482,8 +482,10 @@
                         <field name="mysql"/>
                         <field name="init_test"/>
                         <field name="standard_port"/>
+                        <field name="symlink"/>
                         <field name="localpath"/>
                         <field name="localpath_services"/>
+                        <field name="multiple_databases"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -935,5 +937,62 @@ USER root
             <field name="expose">internet</field>
         </record>
 
+        
+        <record id="image_nginx" model="saas.image">
+            <field name="name">img_nginx</field>
+            <field name="current_version">1</field>
+            <field name="dockerfile"><![CDATA[FROM yolobase:latest
+MAINTAINER yannick.buron@gmail.com
+
+
+
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install nginx
+
+# nginx config
+RUN sed -i -e"s/keepalive_timeout\s*65/keepalive_timeout 2/" /etc/nginx/nginx.conf
+RUN echo "daemon off;" >> /etc/nginx/nginx.conf
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=nginx" >> /etc/supervisor/conf.d/supervisord.conf
+
+RUN mkdir -p /var/www/.ssh
+RUN ln -s /opt/authorized_keys /var/www/.ssh/authorized_keys
+RUN chown -R www-data:www-data /var/www
+RUN chown -R www-data:www-data /var/www/.ssh
+
+USER root
+]]></field>
+        </record>
+        <record id="image_nginx_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_nginx_volume2" model="saas.image.volume">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">/var/www</field>
+        </record>
+        <record id="image_nginx_port1" model="saas.image.port">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_nginx_port2" model="saas.image.port">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">nginx</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_nginx_port3" model="saas.image.port">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">nginx-ssl</field>
+            <field name="localport">443</field>
+            <field name="expose">internet</field>
+        </record>
+
+        
     </data>
 </openerp>

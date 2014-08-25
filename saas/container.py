@@ -243,6 +243,11 @@ class saas_container(osv.osv):
         for option in container.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
+        root_password = False
+        for key, option in options.iteritems():
+            if option['name'] == 'root_password':
+                root_password = option['value']
+
         unique_name = container.name + '_' + vals['server_domain']
         vals.update({
             'container_id': container.id,
@@ -255,7 +260,8 @@ class saas_container(osv.osv):
             'container_options': options,
             'container_links': links,
             'container_no_save': container.nosave,
-            'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg'
+            'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
+            'container_root_password': root_password
         })
 
         return vals

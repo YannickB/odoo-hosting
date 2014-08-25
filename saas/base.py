@@ -229,14 +229,19 @@ class saas_base(osv.osv):
         for option in base.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
-
+        unique_name_ = unique_name.replace('-','_')
+        databases = {'single': unique_name_}
+        if vals['apptype_multiple_databases']:
+            databases = {}
+            for database in vals['apptype_multiple_databases'].split(','):
+                databases[database] = unique_name_ + '_' + database
         vals.update({
             'base_id': base.id,
             'base_name': base.name,
             'base_fullname': unique_name,
             'base_fulldomain': base.name + '.' + base.domain_id.name,
             'base_unique_name': unique_name,
-            'base_unique_name_': unique_name.replace('-','_'),
+            'base_unique_name_': unique_name_,
             'base_title': base.title,
             'base_domain': base.domain_id.name,
             'base_admin_passwd': base.admin_passwd,
@@ -252,7 +257,8 @@ class saas_base(osv.osv):
             'base_nosave': base.nosave,
             'base_options': options,
             'base_apache_configfile': '/etc/apache2/sites-available/' + unique_name,
-            'base_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg'
+            'base_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
+            'base_databases': databases,
         })
 
         return vals
@@ -439,17 +445,18 @@ class saas_base(osv.osv):
 
         res = self.deploy_create_database(cr, uid, vals, context)
         if not res:
-            if vals['app_bdd'] != 'mysql':
-                ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
-                execute.execute(ssh, ['createdb', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], vals['base_unique_name_']], context)
-                ssh.close()
-                sftp.close()
-            # else:
-  # ssh www-data@$database_server << EOF
-    # mysql -u root -p'$mysql_password' -se "create database $unique_name_underscore;"
-    # mysql -u root -p'$mysql_password' -se "grant all on $unique_name_underscore.* to '${db_user}';"
-# EOF
-  # fi
+            for key, database in vals['base_databases'].iteritems():
+                if vals['app_bdd'] != 'mysql':
+                    ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+                    execute.execute(ssh, ['createdb', '-h', vals['database_server'], '-U', vals['service_db_user'], database], context)
+                    ssh.close()
+                    sftp.close()
+                else:
+                    ssh, sftp = execute.connect(vals['database_fullname'], context=context)
+                    execute.execute(ssh, ["mysql -u root -p'" + vals['database_root_password'] + "' -se \"create database " + database + ";\""], context)
+                    execute.execute(ssh, ["mysql -u root -p'" + vals['database_root_password'] + "' -se \"grant all on " + database + ".* to '" + vals['service_db_user'] + "';\""], context)
+                    ssh.close()
+                    sftp.close()
 
         execute.log('Database created', context)
         if vals['base_build'] == 'build':
@@ -470,9 +477,11 @@ class saas_base(osv.osv):
             self.deploy_post_restore(cr, uid, vals, context)
 
         if vals['base_build'] != 'none':
+            if vals['base_poweruser_name'] and vals['base_poweruser_email'] and vals['apptype_admin_name'] != vals['base_poweruser_name']:
+                self.deploy_create_poweruser(cr, uid, vals, context)
             if vals['base_test']:
                 self.deploy_test(cr, uid, vals, context)
-            self.deploy_create_poweruser(cr, uid, vals, context)
+
 
         self.deploy_post(cr, uid, vals, context)
 
@@ -513,19 +522,19 @@ class saas_base(osv.osv):
 
     def purge_db(self, cr, uid, vals, context=None):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if vals['app_bdd'] != 'mysql':
-            ssh, sftp = execute.connect(vals['database_fullname'], username='postgres', context=context)
-            execute.execute(ssh, ['psql', '-c', '"update pg_database set datallowconn = \'false\' where datname = \'' + vals['base_unique_name_'] + '\'; SELECT pg_terminate_backend(procpid) FROM pg_stat_activity WHERE datname = \'' + vals['base_unique_name_'] + '\';"'], context)
-            execute.execute(ssh, ['dropdb', vals['base_unique_name_']], context)
+        for key, database in vals['base_databases'].iteritems():
+            if vals['app_bdd'] != 'mysql':
+                ssh, sftp = execute.connect(vals['database_fullname'], username='postgres', context=context)
+                execute.execute(ssh, ['psql', '-c', '"update pg_database set datallowconn = \'false\' where datname = \'' + database + '\'; SELECT pg_terminate_backend(procpid) FROM pg_stat_activity WHERE datname = \'' + database + '\';"'], context)
+                execute.execute(ssh, ['dropdb', database], context)
+                ssh.close()
+                sftp.close()
 
-            ssh.close()
-            sftp.close()
-
-        else:
-            ssh, sftp = execute.connect(vals['bdd_server_domain'], vals['bdd_server_ssh_port'], vals['apptype_system_user'], context)
-            execute.execute(ssh, ["mysql -u root -p'" + vals['bdd_server_mysql_password'] + "' -se 'drop database '" + vals['base_unique_name_'] + ";'"], context)
-            ssh.close()
-            sftp.close()
+            else:
+                ssh, sftp = execute.connect(vals['database_fullname'], context=context)
+                execute.execute(ssh, ["mysql -u root -p'" + vals['database_root_password'] + "' -se \"drop database " + database + ";\""], context)
+                ssh.close()
+                sftp.close()
         return
 
     def purge(self, cr, uid, vals, context={}):
@@ -572,8 +581,13 @@ class saas_base(osv.osv):
         else:
             file = 'apache-sslonly.config'
         ssh, sftp = execute.connect(vals['proxy_fullname'], context=context)
-        sftp.put(vals['config_conductor_path'] + '/saas/saas_' + vals['apptype_name'] + '/res/' + file, vals['base_apache_configfile'])
-        self.deploy_prepare_apache(cr, uid, vals, context)
+        sftp.put(vals['config_conductor_path'] + '/saas/saas_proxy/res/' + file, vals['base_apache_configfile'])
+        execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_apache_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_apache_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/SERVER/' + vals['server_domain'] + '/g"', vals['base_apache_configfile']], context)
+        if 'port' in vals['service_options']:
+            execute.execute(ssh, ['sed', '-i', '"s/PORT/' + vals['service_options']['port']['hostport'] + '/g"', vals['base_apache_configfile']], context)
+        # self.deploy_prepare_apache(cr, uid, vals, context)
         cert_file = '/etc/ssl/certs/' + vals['base_name'] + '.' + vals['domain_name'] + '.crt'
         key_file = '/etc/ssl/private/' + vals['base_name'] + '.' + vals['domain_name'] + '.key'
         if vals['base_certcert'] and vals['base_certkey']:

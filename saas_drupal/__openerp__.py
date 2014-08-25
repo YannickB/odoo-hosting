@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-{'name': 'SaaS Postgres',
+{'name': 'SaaS Drupal',
  'version': '1.0',
  'category': 'Community',
  'depends': ['base',
@@ -28,11 +28,11 @@
  'license': 'AGPL-3',
  'website': 'https://github.com/YannickB',
  'description': """
-SaaS Postgres
+SaaS Drupal
 =================
 """,
  'demo': [],
- 'data': ['saas_mysql_data.xml'
+ 'data': ['saas_seafile_data.xml'
           ],
  'installable': True,
  'application': True,

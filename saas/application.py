@@ -50,6 +50,8 @@ class saas_application_type(osv.osv):
         'localpath_services': fields.char('Localpath Services', size=128),
         'option_ids': fields.one2many('saas.application.type.option', 'apptype_id', 'Options'),
         'application_ids': fields.one2many('saas.application', 'type_id', 'Applications'),
+        'symlink': fields.boolean('Use Symlink by default?'),
+        'multiple_databases': fields.char('Multiples databases?', size=128),
     }
 
     _sql_constraints = [
@@ -83,7 +85,9 @@ class saas_application_type(osv.osv):
             'apptype_init_test': apptype.init_test,
             'apptype_localpath': apptype.localpath,
             'apptype_localpath_services': apptype.localpath_services,
-            'apptype_options': options
+            'apptype_options': options,
+            'apptype_symlink': apptype.symlink,
+            'apptype_multiple_databases': apptype.multiple_databases,
         })
 
         return vals
@@ -186,16 +190,15 @@ class saas_application(osv.osv):
         return vals
 
 
-    def get_current_version(self, cr, uid, obj, context=None):
+    def get_current_version(self, cr, uid, vals, context=None):
         return False
 
     def build(self, cr, uid, ids, context=None):
         version_obj = self.pool.get('saas.application.version')
 
         for app in self.browse(cr, uid, ids, context={}):
-            if not app.buildfile:
-                continue
-            current_version = self.get_current_version(cr, uid, app, context)
+            vals = self.get_vals(cr, uid, app.id, context=context)
+            current_version = self.get_current_version(cr, uid, vals, context)
             if current_version:
                 self.write(cr, uid, [app.id], {'current_version': current_version}, context=context)
             current_version = current_version or app.current_version
@@ -270,7 +273,6 @@ class saas_application_version(osv.osv):
         if execute.local_dir_exist(vals['app_version_full_archivepath']):
             execute.execute_local(['rm', '-rf', vals['app_version_full_archivepath']], context)
         execute.execute_local(['mkdir', vals['app_version_full_archivepath']], context)
-        execute.execute_local(['mkdir', '-p', vals['app_version_full_archivepath'] + '/extra'], context)
         self.build_application(cr, uid, vals, context)
         execute.execute_write_file(vals['app_version_full_archivepath'] + '/VERSION.txt', vals['app_version_name'], context)
         execute.execute_local(['pwd'], context, path=vals['app_version_full_archivepath'])
