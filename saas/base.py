@@ -131,6 +131,7 @@ class saas_base(osv.osv):
         'time_between_save': fields.integer('Minutes between each save'),
         'saverepo_change': fields.integer('Days before saverepo change'),
         'saverepo_expiration': fields.integer('Days before saverepo expiration'),
+        'save_expiration': fields.integer('Days before save expiration'),
         'date_next_save': fields.datetime('Next save planned'),
         'save_comment': fields.text('Save Comment'),
         'nosave': fields.boolean('No save?'),
@@ -318,18 +319,20 @@ class saas_base(osv.osv):
         save_obj = self.pool.get('saas.save.save')
 
         res = {}
+        now = datetime.now()
         for base in self.browse(cr, uid, ids, context=context):
             if 'nosave' in context or (base.nosave and not 'forcesave' in context):
-                execute.log('This base shall not be saved or the bup isnt configured in conf, skipping save base', context)
+                execute.log('This base shall not be saved or the backup isnt configured in conf, skipping save base', context)
                 continue
             context = self.create_log(cr, uid, base.id, 'save', context)
             vals = self.get_vals(cr, uid, base.id, context=context)
-            if not 'bup_server_domain' in vals:
-                execute.log('The bup isnt configured in conf, skipping save base', context)
+            if not 'backup_server_domain' in vals:
+                execute.log('The backup isnt configured in conf, skipping save base', context)
                 return
             save_vals = {
                 'name': vals['now_bup'] + '_' + vals['base_unique_name'],
                 'repo_id': vals['saverepo_id'],
+                'date_expiration': (now + timedelta(days=base.save_expiration or base.application_id.base_save_expiration)).strftime("%Y-%m-%d"),
                 'comment': 'save_comment' in context and context['save_comment'] or base.save_comment or 'Manual',
                 'now_bup': vals['now_bup'],
                 'container_id': vals['container_id'],
@@ -515,6 +518,9 @@ class saas_base(osv.osv):
         self.deploy_shinken(cr, uid, vals, context=context)
         self.deploy_mail(cr, uid, vals, context=context)
 
+        #For shinken
+        self.save(cr, uid, [vals['base_id']], context=context)
+
 
 
     def purge_post(self, cr, uid, vals, context=None):
@@ -655,16 +661,13 @@ class saas_base(osv.osv):
         execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['base_unique_name_'] + '/g"', vals['base_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_shinken_configfile']], context)
-
-        execute.execute(ssh, ['mkdir', '-p', '/opt/control-bup/restore/' + vals['base_unique_name_'] + '/latest'], context)
-        execute.execute(ssh, ['echo "' + vals['now_date'] + '" > /opt/control-bup/restore/' + vals['base_unique_name_'] + '/latest/backup-date'], context)
-        execute.execute(ssh, ['echo "lorem ipsum" > /opt/control-bup/restore/' + vals['base_unique_name_'] + '/latest/' + vals['base_unique_name_'] + '.dump'], context)
-        execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)
-
-
+        execute.execute(ssh, ['sed', '-i', '"s/METHOD/' + vals['config_restore_method'] + '/g"', vals['base_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/CONTAINER/' + vals['backup_fullname'] + '/g"', vals['base_shinken_configfile']], context)
         execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
         ssh.close()
         sftp.close()
+
+
 
 
     def purge_shinken(self, cr, uid, vals, context={}):

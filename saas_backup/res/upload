@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ncftp -u $1 -p$2 $3<< EOF
+    mv /bup.tar.gz /old.tar.gz
+    put /home/bup/bup.tar.gz
+    rm /old.tar.gz
+EOF

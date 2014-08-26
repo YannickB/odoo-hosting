@@ -137,9 +137,11 @@ class saas_application(osv.osv):
         'container_time_between_save': fields.integer('Minutes between each container save', required=True),
         'container_saverepo_change': fields.integer('Days before container saverepo change', required=True),
         'container_saverepo_expiration': fields.integer('Days before container saverepo expiration', required=True),
+        'container_save_expiration': fields.integer('Days before container save expiration', required=True),
         'base_time_between_save': fields.integer('Minutes between each base save', required=True),
         'base_saverepo_change': fields.integer('Days before base saverepo change', required=True),
         'base_saverepo_expiration': fields.integer('Days before base saverepo expiration', required=True),
+        'base_save_expiration': fields.integer('Days before base save expiration', required=True),
     }
 
     _defaults = {

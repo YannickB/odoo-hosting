@@ -134,6 +134,7 @@ class saas_container(osv.osv):
         'time_between_save': fields.integer('Minutes between each save'),
         'saverepo_change': fields.integer('Days before saverepo change'),
         'saverepo_expiration': fields.integer('Days before saverepo expiration'),
+        'save_expiration': fields.integer('Days before save expiration'),
         'date_next_save': fields.datetime('Next save planned'),
         'save_comment': fields.text('Save Comment'),
         'nosave': fields.boolean('No Save?'),
@@ -304,14 +305,10 @@ class saas_container(osv.osv):
                     context['save_comment'] = 'Before upgrade from ' + container.image_version_id.name + ' to ' + new_version.name
                 else:
                     context['save_comment'] = 'Change on port or volumes'
-                context['forcesave'] = True
-                save_id = self.save(cr, uid, [container.id], context=context)[container.id]
         res = super(saas_container, self).write(cr, uid, ids, vals, context=context)
         if flag:
             for container in self.browse(cr, uid, ids, context=context):
                 self.reinstall(cr, uid, [container.id], context=context)
-                self.get_vals(cr, uid, container.id, context=context)
-                save_obj.restore(cr, uid, [save_id], context=context)
                 self.end_log(cr, uid, container.id, context=context)
         if 'nosave' in vals:
             for container_id in ids:
@@ -340,9 +337,12 @@ class saas_container(osv.osv):
     def reinstall(self, cr, uid, ids, context={}):
         save_obj = self.pool.get('saas.save.save')
         for container in self.browse(cr, uid, ids, context=context):
-            context['save_comment'] = 'Before reinstall'
+            if not 'save_comment' in context:
+                context['save_comment'] = 'Before reinstall'
             context['forcesave'] = True
             save_id = self.save(cr, uid, [container.id], context=context)[container.id]
+            del context['forcesave']
+            context['nosave'] = True
             super(saas_container, self).reinstall(cr, uid, [container.id], context=context)
             save_obj.restore(cr, uid, [save_id], context=context)
 
@@ -353,18 +353,20 @@ class saas_container(osv.osv):
         save_obj = self.pool.get('saas.save.save')
 
         res = {}
+        now = datetime.now()
         for container in self.browse(cr, uid, ids, context=context):
             if 'nosave' in context or (container.nosave and not 'forcesave' in context):
-                execute.log('This base container not be saved or the bup isnt configured in conf, skipping save container', context)
+                execute.log('This base container not be saved or the backup isnt configured in conf, skipping save container', context)
                 continue
             context = self.create_log(cr, uid, container.id, 'save', context)
             vals = self.get_vals(cr, uid, container.id, context=context)
-            if not 'bup_server_domain' in vals:
-                execute.log('The bup isnt configured in conf, skipping save container', context)
+            if not 'backup_server_domain' in vals:
+                execute.log('The backup isnt configured in conf, skipping save container', context)
                 return
             save_vals = {
                 'name': vals['now_bup'] + '_' + vals['container_fullname'],
                 'repo_id': vals['saverepo_id'],
+                'date_expiration': (now + timedelta(days=container.save_expiration or container.application_id.container_save_expiration)).strftime("%Y-%m-%d"),
                 'comment': 'save_comment' in context and context['save_comment'] or container.save_comment or 'Manual',
                 'now_bup': vals['now_bup'],
                 'container_id': vals['container_id'],
@@ -428,7 +430,7 @@ class saas_container(osv.osv):
                 cmd.extend(['-v', arg])
         for key, link in vals['container_links'].iteritems():
             cmd.extend(['--link', link['name'] + ':' + link['name']])
-        cmd.extend(['-v', '/opt/keys/' + vals['container_fullname'] + '.pub:/opt/authorized_keys', '--name', vals['container_name'], vals['image_version_fullname']])
+        cmd.extend(['-v', '/opt/keys/' + vals['container_fullname'] + ':/opt/keys', '--name', vals['container_name'], vals['image_version_fullname']])
 
         #Deploy key now, otherwise the container will be angry to not find the key. We can't before because vals['container_ssh_port'] may not be set
         self.deploy_key(cr, uid, vals, context=context)
@@ -459,19 +461,25 @@ class saas_container(osv.osv):
                 sftp.close()
 
         self.deploy_shinken(cr, uid, vals, context=context)
+        #For shinken
+        self.save(cr, uid, [vals['container_id']], context=context)
 
         return
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
-        execute.execute(ssh, ['sudo','docker', 'stop', vals['container_name']], context)
-        execute.execute(ssh, ['sudo','docker', 'rm', vals['container_name']], context)
-        ssh.close()
-        sftp.close()
 
         self.purge_shinken(cr, uid, vals, context=context)
         self.purge_key(cr, uid, vals, context=context)
+
+        ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
+        execute.execute(ssh, ['sudo','docker', 'stop', vals['container_name']], context)
+        execute.execute(ssh, ['sudo','docker', 'rm', vals['container_name']], context)
+        execute.execute(ssh, ['rm', '-rf', '/opt/keys/' + vals['container_fullname']], context)
+        ssh.close()
+        sftp.close()
+
+
         return
 
     def stop(self, cr, uid, vals, context={}):
@@ -500,12 +508,10 @@ class saas_container(osv.osv):
         if vals['container_no_save']:
             file = 'container-shinken-nosave'
         sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/' + file + '.config', vals['container_shinken_configfile'])
+        execute.execute(ssh, ['sed', '-i', '"s/METHOD/' + vals['config_restore_method'] + '/g"', vals['container_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/TYPE/container/g"', vals['container_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/CONTAINER/' + vals['backup_fullname'] + '/g"', vals['container_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['container_fullname'] + '/g"', vals['container_shinken_configfile']], context)
-
-        execute.execute(ssh, ['mkdir', '-p', '/opt/control-bup/restore/' + vals['container_fullname'] + '/latest'], context)
-        execute.execute(ssh, ['echo "' + vals['now_date'] + '" > /opt/control-bup/restore/' + vals['container_fullname'] + '/latest/backup-date'], context)
-        execute.execute(ssh, ['chown', '-R', 'shinken:shinken', '/opt/control-bup'], context)
 
         execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
         ssh.close()
@@ -524,32 +530,63 @@ class saas_container(osv.osv):
 
     def deploy_key(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        # restart_required = False
+        # try:
+        #     ssh_container, sftp_container = execute.connect(vals['container_fullname'], context=context)
+        # except:
+        #     restart_required = True
+        #     pass
+
         self.purge_key(cr, uid, vals, context=context)
-        execute.execute_local(['ssh-keygen', '-t', 'rsa', '-C', 'yannick.buron@gmail.com', '-f', vals['config_home_directory'] + '/keys/' + vals['container_fullname'], '-N', ''], context)
+        execute.execute_local(['ssh-keygen', '-t', 'rsa', '-C', 'yannick.buron@gmail.com', '-f', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '-N', ''], context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', 'Host ' + vals['container_fullname'], context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  HostName ' + vals['server_domain'], context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  Port ' + str(vals['container_ssh_port']), context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  User root', context)
-        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  IdentityFile ~/keys/' + vals['container_fullname'], context)
+        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  IdentityFile ~/.ssh/keys/' + vals['container_fullname'], context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n#END ' + vals['container_fullname'] + '\n', context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
-        sftp.put(vals['config_home_directory'] + '/keys/' + vals['container_fullname'] + '.pub', '/opt/keys/' + vals['container_fullname'] + '.pub')
+        execute.execute(ssh, ['mkdir', '/opt/keys/' + vals['container_fullname']], context)
+        sftp.put(vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/opt/keys/' + vals['container_fullname'] + '/authorized_keys')
         ssh.close()
         sftp.close()
-        if vals['container_id'] == vals['bup_id']:
-            context['key_already_reset'] = True
-            self.pool.get('saas.config.settings').reset_bup_key(cr, uid, [], context=context)
-        self.start(cr, uid, vals, context=context)
+
+        # _logger.info('restart required %s', restart_required)
+        # if not restart_required:
+        #     execute.execute(ssh_container, ['supervisorctl', 'restart', 'sshd'], context)
+        #     ssh_container.close()
+        #     sftp_container.close()
+        # else:
+        #     self.start(cr, uid, vals, context=context)
+
+
+        if vals['apptype_name'] == 'backup':
+            if not 'shinken_server_domain' in vals:
+                execute.log('The shinken isnt configured in conf, skipping deploying backup keys in shinken', context)
+                return
+            ssh, sftp = execute.connect(vals['shinken_fullname'], username='shinken', context=context)
+            execute.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' + vals['container_fullname'] + '*'], context)
+            execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/home/shinken/.ssh/keys/' + vals['container_fullname'] + '.pub', context)
+            execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '/home/shinken/.ssh/keys/' + vals['container_fullname'], context)
+            execute.execute(ssh, ['chmod', '-R', '700', '/home/shinken/.ssh'], context)
+            execute.execute(ssh, ['sed', '-i', "'/Host " + vals['container_fullname'] + "/,/END " + vals['container_fullname'] + "/d'", '/home/shinken/.ssh/config'], context)
+            execute.execute(ssh, ['echo "Host ' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'], context)
+            execute.execute(ssh, ['echo "    Hostname ' + vals['server_domain'] + '" >> /home/shinken/.ssh/config'], context)
+            execute.execute(ssh, ['echo "    Port ' + str(vals['container_ssh_port']) + '" >> /home/shinken/.ssh/config'], context)
+            execute.execute(ssh, ['echo "    User backup" >> /home/shinken/.ssh/config'], context)
+            execute.execute(ssh, ['echo "    IdentityFile  ~/.ssh/keys/' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'], context)
+            execute.execute(ssh, ['echo "#END ' + vals['container_fullname'] +'" >> ~/.ssh/config'], context)
+
 
     def purge_key(self, cr, uid, vals, context={}):
         ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
         execute.execute(ssh, ['sed', '-i', "'/Host " + vals['container_fullname'] + "/,/END " + vals['container_fullname'] + "/d'", vals['config_home_directory'] + '/.ssh/config'], context)
         ssh.close()
         sftp.close()
-        execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/keys/' + vals['container_fullname']], context)
-        execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/keys/' + vals['container_fullname'] + '.pub'], context)
+        execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname']], context)
+        execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub'], context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
-        execute.execute(ssh, ['rm', '-rf', '/opt/keys/' + vals['container_fullname'] + '*'], context)
+        execute.execute(ssh, ['rm', '-rf', '/opt/keys/' + vals['container_fullname'] + '/authorized_keys'], context)
         ssh.close()
         sftp.close()
 

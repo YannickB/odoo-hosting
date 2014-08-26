@@ -59,6 +59,7 @@
                         <field name="time_between_save"/>
                         <field name="saverepo_change"/>
                         <field name="saverepo_expiration"/>
+                        <field name="save_expiration"/>
                         <newline/>
                         <field name="date_next_save"/>
                         <field name="save_comment"/>
@@ -197,6 +198,7 @@
                         <field name="time_between_save"/>
                         <field name="saverepo_change"/>
                         <field name="saverepo_expiration"/>
+                        <field name="save_expiration"/>
                         <newline/>
                         <field name="date_next_save"/>
                         <field name="save_comment"/>
@@ -333,8 +335,9 @@
                       <field name="name"/>
                       <field name="type" invisible="1"/>
                       <field name="repo_id"/>
-                      <field name="now_bup"/>
                       <field name='comment'/>
+                      <field name="now_bup"/>
+                      <field name="date_expiration"/>
 <!--                      <field name="instance_id"/>
                       <field name="saas_ids"/>
                       <field name="create_date"/>
@@ -412,6 +415,7 @@
                     <field name="name"/>
                     <field name='type'/>
                     <field name='comment'/>
+                    <field name='date_expiration'/>
 <!--                    <field name='instance_id'/>
                     <field name="saas_ids"/>
                     <field name="create_date"/>
@@ -562,6 +566,8 @@
                         <field name="base_saverepo_change"/>
                         <field name="container_saverepo_expiration"/>
                         <field name="base_saverepo_expiration"/>
+                        <field name="container_save_expiration"/>
+                        <field name="base_save_expiration"/>
 <!--                        <newline/>
                         <button name="refresh_demo" string="Refresh Demo" type="object"/>-->
                     </group>
@@ -773,7 +779,9 @@
                         <field name="home_directory" required="1"/>
                         <field name="dns_id"/>
                         <field name="shinken_id"/>
-                        <field name="bup_id"/>
+                        <field name="backup_id"/>
+                        <field name="backup_ids" widget="many2many_tags"/>
+                        <field name="restore_method"/>
                         <field name="ftpuser" required="1"/>
                         <field name="ftppass" required="1"/>
                         <field name="ftpserver" required="1"/>
@@ -782,12 +790,10 @@
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
                     <button name="reset_keys" string="Reset Keys" type="object"/>
-                    <button name="reset_bup_key" string="Reset Bup Key" type="object"/>
                     <button name="save_all" string="Save All" type="object"/>
                     <button name="save_fsck" string="Save fsck" type="object"/>
                     <button name="save_upload" string="Save Upload" type="object"/>
-                    <button name="save_control" string="Save Control" type="object"/>
-                    <button name="purge_expired_saverepo" string="Purge expired SaveRepo" type="object"/>
+                    <button name="purge_expired_saves" string="Purge expired Saves" type="object"/>
                     <button name="purge_expired_logs" string="Purge Expired Logs" type="object"/>
                     <button name="reset_bases" string="Reset Bases" type="object"/>
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
@@ -874,7 +880,7 @@ RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/usr/sbin/sshd -D" >> /etc/supervisor/conf.d/supervisord.conf
 
 RUN mkdir /root/.ssh
-RUN ln -s /opt/authorized_keys /root/.ssh/authorized_keys
+RUN ln -s /opt/keys/authorized_keys /root/.ssh/authorized_keys
 
 CMD ["/usr/bin/supervisord"]
 ]]></field>
@@ -904,7 +910,7 @@ RUN echo "[program:apache]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/bin/bash -c 'source /etc/apache2/envvars && exec /usr/sbin/apache2 -DFOREGROUND'" >> /etc/supervisor/conf.d/supervisord.conf
 
 RUN mkdir /var/www/.ssh
-RUN ln -s /opt/authorized_keys /var/www/.ssh/authorized_keys
+RUN ln -s /opt/keys/authorized_keys /var/www/.ssh/authorized_keys
 RUN chown -R www-data /var/www/.ssh
 
 USER root
@@ -959,7 +965,7 @@ RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=nginx" >> /etc/supervisor/conf.d/supervisord.conf
 
 RUN mkdir -p /var/www/.ssh
-RUN ln -s /opt/authorized_keys /var/www/.ssh/authorized_keys
+RUN ln -s /opt/keys/authorized_keys /var/www/.ssh/authorized_keys
 RUN chown -R www-data:www-data /var/www
 RUN chown -R www-data:www-data /var/www/.ssh
 
@@ -991,6 +997,11 @@ USER root
             <field name="name">nginx-ssl</field>
             <field name="localport">443</field>
             <field name="expose">internet</field>
+        </record>
+
+
+        <record id="backup_method_simple" model="saas.config.backup.method">
+            <field name="name">simple</field>
         </record>
 
         

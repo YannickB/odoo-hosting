@@ -84,8 +84,9 @@ class saas_save_repository(osv.osv):
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        ssh, sftp = execute.connect(vals['bup_fullname'], context=context)
-        execute.execute(ssh, ['git', '--git-dir=/home/bup/.bup', 'branch', '-D', vals['saverepo_name']], context)
+        ssh, sftp = execute.connect(vals['backup_fullname'], context=context)
+        execute.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + vals['saverepo_name']], context)
+        execute.execute(ssh, ['git', '--git-dir=/opt/backup/bup', 'branch', '-D', vals['saverepo_name']], context)
         ssh.close()
         sftp.close()
         return
@@ -98,6 +99,7 @@ class saas_save_save(osv.osv):
         'name': fields.char('Name', size=64, required=True),
         'type': fields.related('repo_id','type', type='char', size=64, string='Type', readonly=True),
         'repo_id': fields.many2one('saas.save.repository', 'Repository', ondelete='cascade', required=True),
+        'date_expiration': fields.date('Expiration Date'),
         'comment': fields.text('Comment'),
         'now_bup': fields.char('Now bup', size=64),
         'container_id': fields.many2one('saas.container', 'Container'),
@@ -150,9 +152,17 @@ class saas_save_save(osv.osv):
 
         vals.update(self.pool.get('saas.save.repository').get_vals(cr, uid, save.repo_id.id, context=context))
 
+        if save.base_id:
+            vals.update(self.pool.get('saas.base').get_vals(cr, uid, save.base_id.id, context=context))
+        elif save.service_id:
+            vals.update(self.pool.get('saas.service').get_vals(cr, uid, save.service_id.id, context=context))
+        elif save.container_id:
+            vals.update(self.pool.get('saas.container').get_vals(cr, uid, save.container_id.id, context=context))
+
         vals.update({
             'save_id': save.id,
             'save_name': save.name,
+            'saverepo_date_expiration': save.date_expiration,
             'save_comment': save.comment,
             'save_now_bup': save.now_bup,
             'save_now_epoch': (datetime.strptime(save.now_bup, "%Y-%m-%d-%H%M%S") - datetime(1970,1,1)).total_seconds(),
@@ -164,6 +174,20 @@ class saas_save_save(osv.osv):
             'save_base_restore_to_domain': save.base_restore_to_domain_id.name or vals['saverepo_base_domain'],
         })
         return vals
+
+    def unlink(self, cr, uid, ids, context={}):
+        for save in self.browse(cr, uid, ids, context=context):
+            vals = self.get_vals(cr, uid, save.id, context=context)
+            self.purge(cr, uid, vals, context=context)
+        return super(saas_save_save, self).unlink(cr, uid, ids, context=context)
+
+    def purge(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        ssh, sftp = execute.connect(vals['backup_fullname'], context=context)
+        execute.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + vals['saverepo_name'] + '/'+ vals['save_name']], context)
+        ssh.close()
+        sftp.close()
+        return
 
     def restore_base(self, cr, uid, vals, context=None):
         return
@@ -246,21 +270,22 @@ class saas_save_save(osv.osv):
 
                 vals = self.get_vals(cr, uid, save.id, context=context)
                 vals_container = container_obj.get_vals(cr, uid, container_id, context=context)
-                container_obj.stop(cr, uid, vals_container, context)
                 context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-                ssh, sftp = execute.connect(vals['saverepo_container_server'], 22, 'root', context)
-                execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['saverepo_container_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'container', vals['saverepo_name'], vals['save_now_bup'], vals['save_container_volumes']], context)
-                ssh.close()
-                sftp.close()
-                container_obj.start(cr, uid, vals_container, context)
-                time.sleep(3)
                 ssh, sftp = execute.connect(vals_container['container_fullname'], context=context)
+                execute.execute(ssh, ['supervisorctl', 'stop', 'all'], context)
+                execute.execute(ssh, ['supervisorctl', 'start', 'sshd'], context)
+                self.restore_action(cr, uid, vals, context=context)
+                # ssh, sftp = execute.connect(vals['saverepo_container_server'], 22, 'root', context)
+                # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['saverepo_container_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'container', vals['saverepo_name'], vals['save_now_bup'], vals['save_container_volumes']], context)
+                # ssh.close()
+                # sftp.close()
+                execute.execute(ssh, ['supervisorctl', 'start', 'all'], context)
+
                 for key, volume in vals_container['container_volumes'].iteritems():
                     if volume['user']:
                         execute.execute(ssh, ['chown', '-R', volume['user'] + ':' + volume['user'], volume['name']], context)
                 ssh.close()
                 sftp.close()
-                container_obj.start(cr, uid, vals_container, context)
                 self.end_log(cr, uid, save.id, context=context)
                 res = container_id
 
@@ -344,11 +369,7 @@ class saas_save_save(osv.osv):
                 vals = self.get_vals(cr, uid, save.id, context=context)
                 base_vals = base_obj.get_vals(cr, uid, base_id, context=context)
 
-                context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-                ssh, sftp = execute.connect(vals['save_container_restore_to_server'], 22, 'root', context)
-                execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'base', vals['saverepo_name'], vals['save_now_bup']], context)
-                ssh.close()
-                sftp.close()
+                self.restore_action(cr, uid, vals, context=context)
 
                 base_obj.purge_db(cr, uid, base_vals, context=context)
                 ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
@@ -375,6 +396,60 @@ class saas_save_save(osv.osv):
 
         return res
 
+    def restore_action(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        #
+        # context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        # ssh, sftp = execute.connect(vals['save_container_restore_to_server'], 22, 'root', context)
+        # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'base', vals['saverepo_name'], vals['save_now_bup']], context)
+        # ssh.close()
+        # sftp.close()
+        #
+
+        directory = '/tmp/restore-' + vals['saverepo_name']
+        ssh, sftp = execute.connect(vals['backup_fullname'], username='backup', context=context)
+        execute.send(sftp, vals['config_home_directory'] + '/.ssh/config', '/home/backup/.ssh/config', context)
+        execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/home/backup/.ssh/keys/' + vals['container_fullname'] + '.pub', context)
+        execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '/home/backup/.ssh/keys/' + vals['container_fullname'], context)
+        execute.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'], context)
+        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
+        execute.execute(ssh, ['mkdir', '-p', directory], context)
+        if vals['config_restore_method'] == 'simple':
+            execute.execute(ssh, ['cp', '-R', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name'] + '/*', directory], context)
+        if vals['config_restore_method'] == 'bup':
+            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup restore -C ' + directory + ' ' +  vals['saverepo_name'] + '/' + vals['save_now_bup']], context)
+            execute.execute(ssh, ['mv', directory + '/' + vals['save_now_bup'] + '/*', directory], context)
+            execute.execute(ssh, ['rm -rf', directory + '/' + vals['save_now_bup']], context)
+        execute.execute(ssh, ['tar', 'czf', directory + '.tar.gz', '-C', directory, '.'], context)
+        execute.execute(ssh, ['scp', '-o StrictHostKeychecking=no', directory + '.tar.gz', vals['container_fullname'] + ':' + directory + '.tar.gz'], context)
+        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
+        execute.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'], context)
+        ssh.close()
+        sftp.close()
+
+
+        ssh, sftp = execute.connect(vals['container_fullname'], context=context)
+        execute.execute(ssh, ['rm', '-rf', directory], context)
+        execute.execute(ssh, ['mkdir', directory], context)
+        execute.execute(ssh, ['tar', '-xf', directory + '.tar.gz', '-C', directory], context)
+
+        if vals['saverepo_type'] == 'container':
+            for volume in vals['save_container_volumes'].split(','):
+                execute.execute(ssh, ['rm', '-rf', volume + '/*'], context)
+        else:
+            execute.execute(ssh, ['rm', '-rf', '/base-backup/' + vals['saverepo_name']], context)
+
+
+        execute.execute(ssh, ['rm', '-rf', directory + '/backup-date'], context)
+        if vals['saverepo_type'] == 'container':
+            execute.execute(ssh, ['cp', '-R', directory + '/*', '/'], context)
+        else:
+            execute.execute(ssh, ['cp', '-R', directory, '/base-backup/' + vals['saverepo_name']], context)
+            execute.execute(ssh, ['chmod', '-R', '777', '/base-backup/' + vals['saverepo_name']], context)
+        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
+        ssh.close()
+        sftp.close()
+
     def deploy_base(self, cr, uid, vals, context=None):
         return
 
@@ -391,9 +466,64 @@ class saas_save_save(osv.osv):
             ssh.close()
             sftp.close()
             self.deploy_base(cr, uid, base_vals, context=context)
+        #
+        # ssh, sftp = execute.connect(vals['save_container_restore_to_server'], 22, 'root', context)
+        # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/save', vals['saverepo_type'], vals['saverepo_name'], str(int(vals['save_now_epoch'])), vals['save_container_volumes'] or ''], context)
+        # ssh.close()
+        # sftp.close()
 
-        ssh, sftp = execute.connect(vals['save_container_restore_to_server'], 22, 'root', context)
-        execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/save', vals['saverepo_type'], vals['saverepo_name'], str(int(vals['save_now_epoch'])), vals['save_container_volumes'] or ''], context)
+        directory = '/tmp/' + vals['saverepo_name']
+        ssh, sftp = execute.connect(vals['container_fullname'], context=context)
+        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
+        execute.execute(ssh, ['mkdir', directory], context)
+        if vals['saverepo_type'] == 'container':
+            for volume in vals['save_container_volumes'].split(','):
+                execute.execute(ssh, ['cp', '-R', '--parents', volume, directory], context)
+        else:
+            execute.execute(ssh, ['cp', '-R', '/base-backup/' + vals['saverepo_name'] + '/*', directory], context)
+
+        execute.execute(ssh, ['echo "' + vals['now_date'] + '" > ' + directory + '/backup-date'], context)
+        execute.execute(ssh, ['tar', 'czf', directory + '.tar.gz', '-C', directory, '.'], context)
+        ssh.close()
+        sftp.close()
+
+        ssh, sftp = execute.connect(vals['backup_fullname'], username='backup', context=context)
+        if vals['saverepo_type'] == 'container':
+            name = vals['container_fullname']
+        else:
+            name = vals['base_unique_name_']
+        execute.execute(ssh, ['rm', '-rf', '/opt/backup/list/' + name], context)
+        execute.execute(ssh, ['mkdir', '-p', '/opt/backup/list/' + name], context)
+        execute.execute(ssh, ['echo "' + vals['saverepo_name'] + '" > /opt/backup/list/' + name + '/repo'], context)
+
+
+        execute.send(sftp, vals['config_home_directory'] + '/.ssh/config', '/home/backup/.ssh/config', context)
+        execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/home/backup/.ssh/keys/' + vals['container_fullname'] + '.pub', context)
+        execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '/home/backup/.ssh/keys/' + vals['container_fullname'], context)
+        execute.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'], context)
+
+        execute.execute(ssh, ['rm', '-rf', directory], context)
+        execute.execute(ssh, ['mkdir', directory], context)
+        execute.execute(ssh, ['scp', '-o StrictHostKeychecking=no', vals['container_fullname'] + ':' + directory + '.tar.gz', '/tmp/'], context)
+        execute.execute(ssh, ['tar', '-xf', directory + '.tar.gz', '-C', directory], context)
+
+        for backup in  vals['config_backups']:
+            if backup == 'simple':
+                execute.execute(ssh, ['mkdir', '-p', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name']], context)
+                execute.execute(ssh, ['cp', '-R', directory + '/*', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name']], context)
+                execute.execute(ssh, ['rm', '/opt/backup/simple/' + vals['saverepo_name'] + '/latest'], context)
+                execute.execute(ssh, ['ln', '-s', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name'], '/opt/backup/simple/' + vals['saverepo_name'] + '/latest'], context)
+            if backup == 'bup':
+                execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup index ' + directory], context)
+                execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup save -n ' + vals['saverepo_name'] + ' -d ' + str(int(vals['save_now_epoch'])) + ' --strip ' + directory], context)
+        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
+        execute.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'], context)
+        ssh.close()
+        sftp.close()
+
+
+        ssh, sftp = execute.connect(vals['container_fullname'], context=context)
+        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
         ssh.close()
         sftp.close()
 

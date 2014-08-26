@@ -59,7 +59,7 @@ RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install 
 RUN useradd -m -s /bin/bash odoo
 USER odoo
 RUN mkdir /home/odoo/.ssh
-RUN ln -s /opt/authorized_keys /home/odoo/.ssh/authorized_keys
+RUN ln -s /opt/keys/authorized_keys /home/odoo/.ssh/authorized_keys
 
 
 
@@ -221,9 +221,11 @@ pypdf = 1.13
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>
             <field name="container_saverepo_expiration">90</field>
-            <field name="base_time_between_save">120</field>
+            <field name="container_save_expiration">5</field>
+            <field name="base_time_between_save">9999</field>
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>
+            <field name="base_save_expiration">5</field>
         </record>
 
     </data>

@@ -32,7 +32,7 @@ SaaS Drupal
 =================
 """,
  'demo': [],
- 'data': ['saas_seafile_data.xml'
+ 'data': ['saas_drupal_data.xml'
           ],
  'installable': True,
  'application': True,

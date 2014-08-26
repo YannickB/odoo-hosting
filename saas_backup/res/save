@@ -1,0 +1,25 @@
+#!/bin/bash
+IFS=","
+
+bup init
+mkdir /tmp/$2
+
+if [[ $1 == 'container' ]]
+then
+
+  for path in $4
+  do
+    echo $path
+    cp -R --parents $path /tmp/$2
+  done
+
+else
+
+  cp -R /base-backup/$2/* /tmp/$2
+
+fi
+
+echo `date +%Y-%m-%d` > /tmp/$2/backup-date
+bup index /tmp/$2
+bup save -r bup-server: -n $2 -d $3 --strip /tmp/$2
+rm -rf /tmp/$2

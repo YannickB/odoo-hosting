@@ -126,6 +126,9 @@ class saas_model(osv.AbstractModel):
         try:
             self.deploy(cr, uid, vals, context)
         except:
+            log('===================', context)
+            log('FAIL! Reverting...', context)
+            log('===================', context)
             context['nosave'] = True
             self.unlink(cr, uid, [res], context=context)
             raise
@@ -210,6 +213,11 @@ def execute(ssh, cmd, context, stdin_arg=False,path=False):
     log('stdout : ' + stdout_read, context)
     log('stderr : ' + stderr.read(), context)
     return stdout_read
+
+
+def send(sftp, source, destination, context):
+    log('send : ' + source + ' to ' + destination, context)
+    sftp.put(source, destination)
 
 def execute_local(cmd, context, path=False, shell=False):
     log('command : ' + ' '.join(cmd), context)

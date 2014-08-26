@@ -43,7 +43,7 @@ RUN echo "command=su postgres -c '/usr/lib/postgresql/9.1/bin/postgres -D /var/l
 USER postgres
 
 RUN mkdir /var/lib/postgresql/.ssh
-RUN ln -s /opt/authorized_keys /var/lib/postgresql/.ssh/authorized_keys
+RUN ln -s /opt/keys/authorized_keys /var/lib/postgresql/.ssh/authorized_keys
 
 USER root
 ]]></field>
@@ -84,9 +84,11 @@ USER root
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>
             <field name="container_saverepo_expiration">90</field>
+            <field name="container_save_expiration">5</field>
             <field name="base_time_between_save">9999</field>
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>
+            <field name="base_save_expiration">5</field>
         </record>
     </data>
 </openerp>

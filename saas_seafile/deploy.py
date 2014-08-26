@@ -62,6 +62,7 @@ class saas_base(osv.osv):
                           vals['base_admin_passwd'] + '\n',
                           vals['base_admin_passwd']]
             if not vals['base_options']['manual_install']['value']:
+                #Be cautious, the install may crash because of the server name (title). Use only alphanumeric, less than 15 letter without space
                 execute.execute(ssh, ['./setup-seafile-mysql.sh'],context, stdin_arg=install_args, path=vals['service_full_localpath_files'])
 
                 execute.execute(ssh, [vals['service_full_localpath_files'] + '/seafile.sh', 'start'], context)
