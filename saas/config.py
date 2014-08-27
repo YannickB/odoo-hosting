@@ -164,6 +164,10 @@ class saas_config_settings(osv.osv):
         vals = self.get_vals(cr, uid, context=context)
         ssh, sftp = execute.connect(vals['backup_fullname'], username='backup', context=context)
         execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-r'], context)
+        #http://stackoverflow.com/questions/1904860/how-to-remove-unreferenced-blobs-from-my-git-repo
+        #https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
+        #https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
+        execute.execute(ssh, ['git', 'gc', '--prune=now'], context, path='/opt/backup/bup')
         execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-g'], context)
         ssh.close()
         sftp.close()

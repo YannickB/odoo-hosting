@@ -351,7 +351,6 @@ class saas_container(osv.osv):
     def save(self, cr, uid, ids, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         save_obj = self.pool.get('saas.save.save')
-
         res = {}
         now = datetime.now()
         for container in self.browse(cr, uid, ids, context=context):
@@ -444,8 +443,6 @@ class saas_container(osv.osv):
 
         self.start(cr, uid, vals, context=context)
 
-        time.sleep(3)
-
         ssh.close()
         sftp.close()
 
@@ -496,6 +493,7 @@ class saas_container(osv.osv):
         execute.execute(ssh, ['docker', 'start', vals['container_name']], context)
         ssh.close()
         sftp.close()
+        time.sleep(3)
 
     def deploy_shinken(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
@@ -512,6 +510,8 @@ class saas_container(osv.osv):
         execute.execute(ssh, ['sed', '-i', '"s/TYPE/container/g"', vals['container_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/CONTAINER/' + vals['backup_fullname'] + '/g"', vals['container_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['container_fullname'] + '/g"', vals['container_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/HOST/' + vals['server_domain'] + '/g"', vals['container_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/PORT/' + str(vals['container_ports']['ssh']['hostport']) + '/g"', vals['container_shinken_configfile']], context)
 
         execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
         ssh.close()

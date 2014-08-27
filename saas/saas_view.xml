@@ -954,7 +954,7 @@ MAINTAINER yannick.buron@gmail.com
 
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install nginx
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install nginx openssl
 
 # nginx config
 RUN sed -i -e"s/keepalive_timeout\s*65/keepalive_timeout 2/" /etc/nginx/nginx.conf
@@ -979,6 +979,10 @@ USER root
         <record id="image_nginx_volume2" model="saas.image.volume">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">/var/www</field>
+        </record>
+        <record id="image_nginx_volume3" model="saas.image.volume">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">/etc/ssl</field>
         </record>
         <record id="image_nginx_port1" model="saas.image.port">
             <field name="image_id" ref="image_nginx"/>

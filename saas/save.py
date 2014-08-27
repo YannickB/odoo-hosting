@@ -80,7 +80,8 @@ class saas_save_repository(osv.osv):
         for repo in self.browse(cr, uid, ids, context=context):
             vals = self.get_vals(cr, uid, repo.id, context=context)
             self.purge(cr, uid, vals, context=context)
-        return super(saas_save_repository, self).unlink(cr, uid, ids, context=context)
+        res = super(saas_save_repository, self).unlink(cr, uid, ids, context=context)
+        self.pool.get('saas.config.settings').save_fsck(cr, uid, [], context=context)
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
@@ -96,7 +97,7 @@ class saas_save_save(osv.osv):
     _inherit = ['saas.model']
 
     _columns = {
-        'name': fields.char('Name', size=64, required=True),
+        'name': fields.char('Name', size=256, required=True),
         'type': fields.related('repo_id','type', type='char', size=64, string='Type', readonly=True),
         'repo_id': fields.many2one('saas.save.repository', 'Repository', ondelete='cascade', required=True),
         'date_expiration': fields.date('Expiration Date'),
@@ -150,14 +151,14 @@ class saas_save_save(osv.osv):
 
         save = self.browse(cr, uid, id, context=context)
 
-        vals.update(self.pool.get('saas.save.repository').get_vals(cr, uid, save.repo_id.id, context=context))
-
         if save.base_id:
             vals.update(self.pool.get('saas.base').get_vals(cr, uid, save.base_id.id, context=context))
         elif save.service_id:
             vals.update(self.pool.get('saas.service').get_vals(cr, uid, save.service_id.id, context=context))
         elif save.container_id:
             vals.update(self.pool.get('saas.container').get_vals(cr, uid, save.container_id.id, context=context))
+
+        vals.update(self.pool.get('saas.save.repository').get_vals(cr, uid, save.repo_id.id, context=context))
 
         vals.update({
             'save_id': save.id,
@@ -172,6 +173,7 @@ class saas_save_save(osv.osv):
             'save_container_restore_to_server': save.container_restore_to_server_id.name or save.base_container_server or vals['saverepo_container_server'],
             'save_base_restore_to_name': save.base_restore_to_name or vals['saverepo_base_name'],
             'save_base_restore_to_domain': save.base_restore_to_domain_id.name or vals['saverepo_base_domain'],
+            'save_base_dumpfile': vals['saverepo_type'] == 'base' and save.container_app + '_' + save.base_name.replace('-','_') + '_' + save.base_domain.replace('-','_').replace('.','_') + '.dump'
         })
         return vals
 
@@ -193,6 +195,7 @@ class saas_save_save(osv.osv):
         return
 
     def restore(self, cr, uid, ids, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         container_obj = self.pool.get('saas.container')
         base_obj = self.pool.get('saas.base')
         server_obj = self.pool.get('saas.server')
@@ -213,11 +216,11 @@ class saas_save_save(osv.osv):
             if not img_ids:
                 raise osv.except_osv(_('Error!'),_("Couldn't find image " + save.container_img + ", aborting restoration."))
             img_version_ids = image_version_obj.search(cr, uid, [('name','=',save.container_img_version)], context=context)
-            upgrade = True
+            # upgrade = True
             if not img_version_ids:
                 execute.log("Warning, couldn't find the image version, using latest", context)
                 #We do not want to force the upgrade if we had to use latest
-                upgrade = False
+                # upgrade = False
                 versions = image_obj.browse(cr, uid, img_ids[0], context=context).version_ids
                 if not versions: 
                     raise osv.except_osv(_('Error!'),_("Couldn't find versions for image " + save.container_img + ", aborting restoration."))
@@ -227,6 +230,7 @@ class saas_save_save(osv.osv):
                 container_ids = container_obj.search(cr, uid, [('name','=',vals['save_container_restore_to_name']),('server_id.name','=',vals['save_container_restore_to_server'])], context=context)
 
                 if not container_ids:
+                    execute.log("Can't find any corresponding container, creating a new one", context)
                     server_ids = server_obj.search(cr, uid, [('name','=',vals['save_container_restore_to_server'])], context=context)
                     if not server_ids:
                         raise osv.except_osv(_('Error!'),_("Couldn't find server " + vals['save_container_restore_to_server'] + ", aborting restoration."))
@@ -257,19 +261,26 @@ class saas_save_save(osv.osv):
                     container_id = container_obj.create(cr, uid, container_vals, context=context)
 
                 else:
+                    execute.log("A corresponding container was found", context)
                     container_id = container_ids[0]
             else:
+                execute.log("A container_id was linked in the save", context)
                 container_id = save.container_id.id
 
             if vals['saverepo_type'] == 'container':
-                if upgrade:
-                    container_obj.write(cr, uid, [container_id], {'image_version_ids': img_version_ids[0]}, context=context)
+                vals = self.get_vals(cr, uid, save.id, context=context)
+                vals_container = container_obj.get_vals(cr, uid, container_id, context=context)
+                if vals_container['image_version_id'] != img_version_ids[0]:
+                # if upgrade:
+                    container_obj.write(cr, uid, [container_id], {'image_version_id': img_version_ids[0]}, context=context)
+                    del context['forcesave']
+                    context['nosave'] = True
 
                 context['save_comment'] = 'Before restore ' + save.name
                 container_obj.save(cr, uid, [container_id], context=context)
 
-                vals = self.get_vals(cr, uid, save.id, context=context)
-                vals_container = container_obj.get_vals(cr, uid, container_id, context=context)
+                # vals = self.get_vals(cr, uid, save.id, context=context)
+                # vals_container = container_obj.get_vals(cr, uid, container_id, context=context)
                 context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
                 ssh, sftp = execute.connect(vals_container['container_fullname'], context=context)
                 execute.execute(ssh, ['supervisorctl', 'stop', 'all'], context)
@@ -279,24 +290,26 @@ class saas_save_save(osv.osv):
                 # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['saverepo_container_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'container', vals['saverepo_name'], vals['save_now_bup'], vals['save_container_volumes']], context)
                 # ssh.close()
                 # sftp.close()
-                execute.execute(ssh, ['supervisorctl', 'start', 'all'], context)
+
 
                 for key, volume in vals_container['container_volumes'].iteritems():
                     if volume['user']:
                         execute.execute(ssh, ['chown', '-R', volume['user'] + ':' + volume['user'], volume['name']], context)
+                # execute.execute(ssh, ['supervisorctl', 'start', 'all'], context)
                 ssh.close()
                 sftp.close()
+                container_obj.start(cr, uid, vals_container, context=context)
                 self.end_log(cr, uid, save.id, context=context)
                 res = container_id
 
 
             else:
-                upgrade = False
+                # upgrade = False
                 app_version_ids = application_version_obj.search(cr, uid, [('name','=',save.base_app_version),('application_id','=', app_ids[0])], context=context)
                 if not app_version_ids:
                     execute.log("Warning, couldn't find the application version, using latest", context)
                     #We do not want to force the upgrade if we had to use latest
-                    upgrade = False
+                    # upgrade = False
                     versions = application_obj.browse(cr, uid, app_version_ids[0], context=context).version_ids
                     if not versions: 
                         raise osv.except_osv(_('Error!'),_("Couldn't find versions for application " + save.container_app + ", aborting restoration."))
@@ -305,6 +318,7 @@ class saas_save_save(osv.osv):
                     service_ids = service_obj.search(cr, uid, [('name','=',save.service_name),('container_id.id','=',container_id)], context=context)
 
                     if not service_ids:
+                        execute.log("Can't find any corresponding service, creating a new one", context)
                         options = []
                         for option, option_vals in ast.literal_eval(save.service_options).iteritems():
                             del option_vals['id']
@@ -319,14 +333,17 @@ class saas_save_save(osv.osv):
                         service_id = service_obj.create(cr, uid, service_vals, context=context)
 
                     else:
+                        execute.log("A corresponding service was found", context)
                         service_id = service_ids[0]
                 else:
+                    execute.log("A service_id was linked in the save", context)
                     service_id = save.service_id.id
 
                 if save.base_restore_to_name or not save.base_id:
                     base_ids = base_obj.search(cr, uid, [('name','=',vals['save_base_restore_to_name']),('domain_id.name','=',vals['save_base_restore_to_domain'])], context=context)
 
                     if not base_ids:
+                        execute.log("Can't find any corresponding base, creating a new one", context)
                         domain_ids = domain_obj.search(cr, uid, [('name','=',vals['save_base_restore_to_domain'])], context=context)
                         if not domain_ids:
                             raise osv.except_osv(_('Error!'),_("Couldn't find domain " + vals['save_base_restore_to_domain'] + ", aborting restoration."))
@@ -356,28 +373,29 @@ class saas_save_save(osv.osv):
                         base_id = base_obj.create(cr, uid, base_vals, context=context)
 
                     else:
+                        execute.log("A corresponding base was found", context)
                         base_id = base_ids[0]
                 else:
+                    execute.log("A base_id was linked in the save", context)
                     base_id = save.base_id.id
 
-                if upgrade:
+                vals = self.get_vals(cr, uid, save.id, context=context)
+                base_vals = base_obj.get_vals(cr, uid, base_id, context=context)
+                if base_vals['app_version_id'] != app_version_ids[0]:
+                # if upgrade:
                     base_obj.write(cr, uid, [base_id], {'application_version_id': app_version_ids[0]}, context=context)
 
                 context['save_comment'] = 'Before restore ' + save.name
                 base_obj.save(cr, uid, [base_id], context=context)
 
-                vals = self.get_vals(cr, uid, save.id, context=context)
-                base_vals = base_obj.get_vals(cr, uid, base_id, context=context)
+
 
                 self.restore_action(cr, uid, vals, context=context)
 
                 base_obj.purge_db(cr, uid, base_vals, context=context)
                 ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
                 execute.execute(ssh, ['createdb', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
-                dumpfile = base_vals['base_unique_name_'] + '.dump'
-                if 'restore_dumpfile' in context:
-                    dumpfile = context['restore_dumpfile']
-                execute.execute(ssh, ['cat', '/base-backup/' + vals['saverepo_name'] + '/' + dumpfile, '|', 'psql', '-q', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
+                execute.execute(ssh, ['cat', '/base-backup/' + vals['saverepo_name'] + '/' + vals['save_base_dumpfile'], '|', 'psql', '-q', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
 
                 self.restore_base(cr, uid, base_vals, context=context)
 
@@ -420,7 +438,7 @@ class saas_save_save(osv.osv):
             execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup restore -C ' + directory + ' ' +  vals['saverepo_name'] + '/' + vals['save_now_bup']], context)
             execute.execute(ssh, ['mv', directory + '/' + vals['save_now_bup'] + '/*', directory], context)
             execute.execute(ssh, ['rm -rf', directory + '/' + vals['save_now_bup']], context)
-        execute.execute(ssh, ['tar', 'czf', directory + '.tar.gz', '-C', directory, '.'], context)
+        execute.execute(ssh, ['tar', 'cf', directory + '.tar.gz', '-C', directory, '.'], context)
         execute.execute(ssh, ['scp', '-o StrictHostKeychecking=no', directory + '.tar.gz', vals['container_fullname'] + ':' + directory + '.tar.gz'], context)
         execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
         execute.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'], context)
@@ -462,10 +480,12 @@ class saas_save_save(osv.osv):
             base_vals = self.pool.get('saas.base').get_vals(cr, uid, vals['save_base_id'], context=context)
             ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['mkdir', '-p', '/base-backup/' + vals['saverepo_name']], context)
-            execute.execute(ssh, ['pg_dump', '-O', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_'], '>', '/base-backup/' + vals['saverepo_name'] + '/' + base_vals['base_unique_name_'] + '.dump'], context)
+            execute.execute(ssh, ['pg_dump', '-O', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_'], '>', '/base-backup/' + vals['saverepo_name'] + '/' + vals['save_base_dumpfile']], context)
+            self.deploy_base(cr, uid, base_vals, context=context)
+            execute.execute(ssh, ['chmod', '-R', '777', '/base-backup/' + vals['saverepo_name']], context)
             ssh.close()
             sftp.close()
-            self.deploy_base(cr, uid, base_vals, context=context)
+
         #
         # ssh, sftp = execute.connect(vals['save_container_restore_to_server'], 22, 'root', context)
         # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/save', vals['saverepo_type'], vals['saverepo_name'], str(int(vals['save_now_epoch'])), vals['save_container_volumes'] or ''], context)
@@ -483,7 +503,8 @@ class saas_save_save(osv.osv):
             execute.execute(ssh, ['cp', '-R', '/base-backup/' + vals['saverepo_name'] + '/*', directory], context)
 
         execute.execute(ssh, ['echo "' + vals['now_date'] + '" > ' + directory + '/backup-date'], context)
-        execute.execute(ssh, ['tar', 'czf', directory + '.tar.gz', '-C', directory, '.'], context)
+        execute.execute(ssh, ['tar', 'cf', directory + '.tar.gz', '-C', directory, '.'], context)
+        execute.execute(ssh, ['chmod', '-R', '777', directory + '*'], context)
         ssh.close()
         sftp.close()
 

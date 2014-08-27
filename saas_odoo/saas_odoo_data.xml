@@ -11,7 +11,7 @@
             <field name="standard_port">8069</field>
             <field name="symlink" eval="True"/>
             <field name="localpath">/opt/versions</field>
-            <field name="localpath_services">/opt/odoo/services</field>
+            <field name="localpath_services">/opt/odoo</field>
         </record>
         <record id="apptype_odoo_option1" model="saas.application.type.option">
             <field name="apptype_id" ref="apptype_odoo"/>
@@ -51,10 +51,13 @@
             <field name="dockerfile"><![CDATA[FROM yolobase:latest
 MAINTAINER yannick.buron@gmail.com
 
+RUN echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils postgresql-client
-
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq -t wheezy-backports install wkhtmltopdf
 # Note: The official Debian and Ubuntu images automatically ``apt-get clean``
 # after each ``apt-get``
+
+echo "deb http://ftp.us.debian.org/debian wheezy-backports main" >> /etc/apt/sources.list
 
 RUN useradd -m -s /bin/bash odoo
 USER odoo
@@ -67,10 +70,6 @@ USER root
 
 RUN mkdir /opt/versions
 RUN mkdir /opt/odoo
-RUN mkdir /opt/odoo/etc
-RUN mkdir /opt/odoo/services
-RUN mkdir /opt/odoo/filestore
-RUN mkdir /opt/odoo/extra
 RUN mkdir /opt/odoo/logs
 
 RUN touch /opt/odoo/supervisor.conf
@@ -94,6 +93,12 @@ VOLUME /base-backup
         <record id="image_odoo_volume2" model="saas.image.volume">
             <field name="image_id" ref="image_odoo"/>
             <field name="name">/opt/odoo</field>
+            <field name="user">odoo</field>
+        </record>
+        <record id="image_odoo_volume3" model="saas.image.volume">
+            <field name="image_id" ref="image_odoo"/>
+            <field name="name">/home/odoo</field>
+            <field name="user">odoo</field>
         </record>
         <record id="image_odoo_port1" model="saas.image.port">
             <field name="image_id" ref="image_odoo"/>

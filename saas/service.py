@@ -171,10 +171,8 @@ class saas_service(osv.osv):
         if 'application_version_id' in vals:
             for service_vals in services_old:
                 self.check_files(cr, uid, service_vals, context=context)
-        _logger.info('vals %s', vals)
         if 'application_version_id' in vals or 'custom_version' in vals:
             for service in self.browse(cr, uid, ids, context=context):
-                _logger.info('deploy files')
                 vals = self.get_vals(cr, uid, service.id, context=context)
                 self.deploy_files(cr, uid, vals, context=context)
         return res
@@ -218,7 +216,9 @@ class saas_service(osv.osv):
             }
             service_id = self.create(cr, uid, service_vals, context=context)
             for base in service.base_ids:
-                base_obj._reset_base(cr, uid, [base.id], base_name=service.sub_service_name + '-' + base.name, service_id=service_id)
+                subbase_name = service.sub_service_name + '-' + base.name
+                context['save_comment'] = 'Duplicate base into ' + subbase_name
+                base_obj._reset_base(cr, uid, [base.id], subbase_name, service_id=service_id, context=context)
         self.write(cr, uid, ids, {'sub_service_name': False}, context=context)
 
 
@@ -232,7 +232,6 @@ class saas_service(osv.osv):
             else:
                 context['files_from_service'] = service.name
                 vals['custom_version'] = True
-            _logger.info('vals %s', vals)
             self.write(cr, uid, [service.parent_id.id], vals, context=context)
 
     def deploy_post_service(self, cr, uid, vals, context=None):
@@ -242,6 +241,7 @@ class saas_service(osv.osv):
     def deploy(self, cr, uid, vals, context=None):
         container_obj = self.pool.get('saas.container')
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+
         self.purge(cr, uid, vals, context=context)
 
         execute.log('Creating database user', context=context)
@@ -272,12 +272,11 @@ class saas_service(osv.osv):
         execute.execute(ssh, ['mkdir', '-p', vals['service_full_localpath']], context)
         ssh.close()
         sftp.close()
+
         self.deploy_files(cr, uid, vals, context=context)
         self.deploy_post_service(cr, uid, vals, context)
 
         container_obj.start(cr, uid, vals, context=context)
-
-        time.sleep(3)
 
         # ssh, sftp = connect(vals['server_domain'], vals['apptype_system_user'], context=context)
         # if sftp.stat(vals['service_fullpath']):
@@ -353,6 +352,7 @@ class saas_service(osv.osv):
             execute.execute(ssh, ['cp', '-R', vals['apptype_localpath_services'] + '/' + context['files_from_service'] + '/files', vals['service_full_localpath_files']], context)
         elif vals['service_custom_version'] or not vals['apptype_symlink']:
             execute.execute(ssh, ['cp', '-R', vals['app_version_full_localpath'], vals['service_full_localpath_files']], context)
+
         else:
             execute.execute(ssh, ['ln', '-s', vals['app_version_full_localpath'], vals['service_full_localpath_files']], context)
         service = self.browse(cr, uid, vals['service_id'], context=context)

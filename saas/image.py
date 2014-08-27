@@ -159,6 +159,7 @@ class saas_image_version(osv.osv):
         vals.update(self.pool.get('saas.image').get_vals(cr, uid, image_version.image_id.id, context=context))
 
         vals.update({
+            'image_version_id': image_version.id,
             'image_version_name': image_version.name,
             'image_version_fullname': image_version.image_id.name + ':' + image_version.name,
         })

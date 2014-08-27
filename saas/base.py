@@ -257,7 +257,7 @@ class saas_base(osv.osv):
             'base_lang': base.lang,
             'base_nosave': base.nosave,
             'base_options': options,
-            'base_apache_configfile': '/etc/apache2/sites-available/' + unique_name,
+            'base_nginx_configfile': '/etc/nginx/sites-available/' + unique_name,
             'base_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
             'base_databases': databases,
         })
@@ -307,6 +307,10 @@ class saas_base(osv.osv):
             for base_id in ids:
                 base_vals = self.get_vals(cr, uid, base_id, context=context)
                 self.deploy_shinken(cr, uid, base_vals, context=context)
+        if 'ssl_only' in vals:
+            for base_id in ids:
+                base_vals = self.get_vals(cr, uid, base_id, context=context)
+                self.deploy_proxy(cr, uid, base_vals, context=context)
         return res
 
     def unlink(self, cr, uid, ids, context={}):
@@ -402,17 +406,21 @@ class saas_base(osv.osv):
         for base in self.browse(cr, uid, ids, context=context):
             base_parent_id = base.parent_id and base.parent_id.id or base.id
             vals_parent = self.get_vals(cr, uid, base_parent_id, context=context)
+            if not 'save_comment' in context:
+                context['save_comment'] = 'Reset base'
             context['forcesave'] = True
             save_id = self.save(cr, uid, [base_parent_id], context=context)[base_parent_id]
+            del context['forcesave']
+            context['nosave'] = True
             vals = {'base_id': base.id, 'base_restore_to_name': base.name, 'base_restore_to_domain_id': base.domain_id.id, 'service_id': base.service_id.id, 'base_nosave': True}
             if base_name:
                 vals = {'base_id': False, 'base_restore_to_name': base_name, 'base_restore_to_domain_id': base.domain_id.id, 'service_id': service_id, 'base_nosave': True}
             save_obj.write(cr, uid, [save_id], vals)
-            context['restore_dumpfile'] = vals_parent['base_unique_name_'] + '.dump'
             base_id = save_obj.restore(cr, uid, [save_id], context=context)
             self.write(cr, uid, [base_id], {'parent_id': base_parent_id}, context=context)
             vals = self.get_vals(cr, uid, base_id, context=context)
             vals['base_parent_unique_name_'] = vals_parent['base_unique_name_']
+            vals['service_parent_name'] = vals_parent['service_name']
             self.update_base(cr, uid, vals, context=context)
             self.post_reset(cr, uid, vals, context=context)
             self.deploy_post(cr, uid, vals, context=context)
@@ -583,16 +591,16 @@ class saas_base(osv.osv):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         self.purge_proxy(cr, uid, vals, context=context)
         if not vals['base_sslonly']:
-            file = 'apache.config'
+            file = 'proxy.config'
         else:
-            file = 'apache-sslonly.config'
+            file = 'proxy-sslonly.config'
         ssh, sftp = execute.connect(vals['proxy_fullname'], context=context)
-        sftp.put(vals['config_conductor_path'] + '/saas/saas_proxy/res/' + file, vals['base_apache_configfile'])
-        execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_apache_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_apache_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/SERVER/' + vals['server_domain'] + '/g"', vals['base_apache_configfile']], context)
+        execute.send(sftp, vals['config_conductor_path'] + '/saas/saas_' + vals['apptype_name'] + '/res/' + file, vals['base_nginx_configfile'], context)
+        execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_nginx_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_nginx_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/SERVER/' + vals['server_domain'] + '/g"', vals['base_nginx_configfile']], context)
         if 'port' in vals['service_options']:
-            execute.execute(ssh, ['sed', '-i', '"s/PORT/' + vals['service_options']['port']['hostport'] + '/g"', vals['base_apache_configfile']], context)
+            execute.execute(ssh, ['sed', '-i', '"s/PORT/' + vals['service_options']['port']['hostport'] + '/g"', vals['base_nginx_configfile']], context)
         # self.deploy_prepare_apache(cr, uid, vals, context)
         cert_file = '/etc/ssl/certs/' + vals['base_name'] + '.' + vals['domain_name'] + '.crt'
         key_file = '/etc/ssl/private/' + vals['base_name'] + '.' + vals['domain_name'] + '.key'
@@ -604,8 +612,8 @@ class saas_base(osv.osv):
             execute.execute(ssh, ['echo', '"' + vals['domain_certkey'] + '"', '>', key_file], context)
         else:
             execute.execute(ssh, ['openssl', 'req', '-x509', '-nodes', '-days', '365', '-newkey', 'rsa:2048', '-out', cert_file, ' -keyout',  key_file, '-subj', '"/C=FR/L=Paris/O=' + vals['domain_organisation'] + '/CN=' + vals['base_name'] + '.' + vals['domain_name'] + '"'], context)
-        execute.execute(ssh, ['a2ensite', vals['base_unique_name']], context)
-        execute.execute(ssh, ['/etc/init.d/apache2', 'reload'], context)
+        execute.execute(ssh, ['ln', '-s', vals['base_nginx_configfile'], '/etc/nginx/sites-enabled/' + vals['base_unique_name']], context)
+        execute.execute(ssh, ['/etc/init.d/nginx', 'reload'], context)
         ssh.close()
         sftp.close()
 
@@ -613,11 +621,11 @@ class saas_base(osv.osv):
     def purge_proxy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         ssh, sftp = execute.connect(vals['proxy_fullname'], context=context)
-        execute.execute(ssh, ['a2dissite', vals['base_unique_name']], context)
-        execute.execute(ssh, ['rm', vals['base_apache_configfile']], context)
+        execute.execute(ssh, ['rm', '/etc/nginx/sites-enabled/' + vals['base_unique_name']], context)
+        execute.execute(ssh, ['rm', vals['base_nginx_configfile']], context)
         execute.execute(ssh, ['rm', '/etc/ssl/certs/' + vals['base_name'] + '.' + vals['domain_name'] + '.*'], context)
         execute.execute(ssh, ['rm', '/etc/ssl/private/' + vals['base_name'] + '.' + vals['domain_name'] + '.*'], context)
-        execute.execute(ssh, ['/etc/init.d/apache2', 'reload'], context)
+        execute.execute(ssh, ['/etc/init.d/nginx', 'reload'], context)
         ssh.close()
         sftp.close()
 

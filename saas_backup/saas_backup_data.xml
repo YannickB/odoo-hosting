@@ -54,9 +54,9 @@ RUN echo "command=cron -f" >> /etc/supervisor/conf.d/supervisord.conf
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:bup-web]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=su bup -c 'export BUP_DIR=/opt/backup/bup; bup web :8080'" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=su backup -c 'BUP_DIR=/opt/backup/bup bup web :8080'" >> /etc/supervisor/conf.d/supervisord.conf
 
-RUN echo "* * * * * root supervisorctl restart backup-web" >> /etc/crontab
+RUN echo "* * * * * root supervisorctl restart bup-web" >> /etc/crontab
 
 #ADD ./saas/saas_backup/res/save /opt/save
 #ADD ./saas/saas_backup/res/restore /opt/restore
