@@ -178,7 +178,7 @@ class saas_container(osv.osv):
             result = {'value': {
                     'server_id': application.next_server_id.id,
                     'image_id': application.default_image_id.id,
-                    'image_version_id': application.default_image_id.version_ids[0].id,
+                    'image_version_id': application.default_image_id.version_ids and application.default_image_id.version_ids[0].id,
                     }
                 }
         return result

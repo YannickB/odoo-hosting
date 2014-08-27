@@ -394,8 +394,17 @@ class saas_save_save(osv.osv):
 
                 base_obj.purge_db(cr, uid, base_vals, context=context)
                 ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
-                execute.execute(ssh, ['createdb', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
-                execute.execute(ssh, ['cat', '/base-backup/' + vals['saverepo_name'] + '/' + vals['save_base_dumpfile'], '|', 'psql', '-q', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
+                for key, database in base_vals['base_databases'].iteritems():
+                    if vals['app_bdd'] != 'mysql':
+                        execute.execute(ssh, ['createdb', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
+                        execute.execute(ssh, ['cat', '/base-backup/' + vals['saverepo_name'] + '/' + vals['save_base_dumpfile'], '|', 'psql', '-q', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
+                    else:
+                        ssh_mysql, sftp_mysql = execute.connect(base_vals['database_fullname'], context=context)
+                        execute.execute(ssh_mysql, ["mysql -u root -p'" + base_vals['database_root_password'] + "' -se \"create database " + database + ";\""], context)
+                        execute.execute(ssh_mysql, ["mysql -u root -p'" + base_vals['database_root_password'] + "' -se \"grant all on " + database + ".* to '" + base_vals['service_db_user'] + "';\""], context)
+                        ssh_mysql.close()
+                        sftp_mysql.close()
+                        execute.execute(ssh, ['mysql', '-h', base_vals['database_server'], '-u', base_vals['service_db_user'], '-p' + base_vals['service_db_password'], database, '<', '/base-backup/' + vals['saverepo_name'] + '/' +  database + '.dump'], context)
 
                 self.restore_base(cr, uid, base_vals, context=context)
 
@@ -480,7 +489,11 @@ class saas_save_save(osv.osv):
             base_vals = self.pool.get('saas.base').get_vals(cr, uid, vals['save_base_id'], context=context)
             ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['mkdir', '-p', '/base-backup/' + vals['saverepo_name']], context)
-            execute.execute(ssh, ['pg_dump', '-O', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_'], '>', '/base-backup/' + vals['saverepo_name'] + '/' + vals['save_base_dumpfile']], context)
+            for key, database in base_vals['base_databases'].iteritems():
+                if vals['app_bdd'] != 'mysql':
+                    execute.execute(ssh, ['pg_dump', '-O', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], database, '>', '/base-backup/' + vals['saverepo_name'] + '/' + database + '.dump'], context)
+                else:
+                    execute.execute(ssh, ['mysqldump', '-h', base_vals['database_server'], '-u', base_vals['service_db_user'], '-p' + base_vals['service_db_password'], database, '>', '/base-backup/' + vals['saverepo_name'] + '/' +  database + '.dump'], context)
             self.deploy_base(cr, uid, base_vals, context=context)
             execute.execute(ssh, ['chmod', '-R', '777', '/base-backup/' + vals['saverepo_name']], context)
             ssh.close()

@@ -26,9 +26,15 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install bind9
 mkdir -m 0775 -p /var/run/named
 chown root:bind /var/run/named
 
+#https://github.com/Supervisor/supervisor/issues/147
+#RUN echo 'trap "{ /etc/init.d/bind9 stop; exit 0; }" EXIT' >> /opt/bind_init.sh
+#RUN echo '/etc/init.d/bind9 start' >> /opt/bind_init.sh
+#RUN echo 'tail -f /dev/null' >> /opt/bind_init.sh
+#RUN chmod +x /opt/bind_init.sh
+
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:bind]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=/usr/sbin/named -u bind -g" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/etc/init.d/bind9 start" >> /etc/supervisor/conf.d/supervisord.conf
 
 
 #USER bind

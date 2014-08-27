@@ -60,7 +60,7 @@ class saas_base(osv.osv):
                      '\n']
             seahub_args = [vals['apptype_admin_email'] + '\n',
                           vals['base_admin_passwd'] + '\n',
-                          vals['base_admin_passwd']]
+                          vals['base_admin_passwd'] + '\n']
             if not vals['base_options']['manual_install']['value']:
                 #Be cautious, the install may crash because of the server name (title). Use only alphanumeric, less than 15 letter without space
                 execute.execute(ssh, ['./setup-seafile-mysql.sh'],context, stdin_arg=install_args, path=vals['service_full_localpath_files'])
@@ -74,10 +74,20 @@ class saas_base(osv.osv):
                 for arg in seahub_args:
                     execute.log(arg, context)
 
+
+        return res
+
+
+
+    def deploy_post(self, cr, uid, vals, context=None):
+        res = super(saas_base, self).deploy_post(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if vals['apptype_name'] == 'seafile':
+            ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['echo "[program:' + vals['base_unique_name'] + '-seafile]" >> /opt/seafile/supervisor.conf'], context)
-            execute.execute(ssh, ['echo "command=su seafile -c \'' + vals['service_full_localpath_files'] + '/seafile.sh\'" >> /opt/seafile/supervisor.conf'], context)
+            execute.execute(ssh, ['echo "command=su seafile -c \'' + vals['service_full_localpath_files'] + '/seafile.sh start\'" >> /opt/seafile/supervisor.conf'], context)
             execute.execute(ssh, ['echo "[program:' + vals['base_unique_name'] + '-seahub]" >> /opt/seafile/supervisor.conf'], context)
-            execute.execute(ssh, ['echo "command=su seafile -c \'' + vals['service_full_localpath_files'] + '/seahub.sh\'" >> /opt/seafile/supervisor.conf'], context)
+            execute.execute(ssh, ['echo "command=su seafile -c \'rm ' + vals['service_full_localpath_files'] + '/runtime/seahub.pid; ' + vals['service_full_localpath_files'] + '/seahub.sh start\'" >> /opt/seafile/supervisor.conf'], context)
 
             ssh.close()
             sftp.close()

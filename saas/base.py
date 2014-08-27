@@ -232,10 +232,16 @@ class saas_base(osv.osv):
 
         unique_name_ = unique_name.replace('-','_')
         databases = {'single': unique_name_}
+        databases_comma = ''
         if vals['apptype_multiple_databases']:
             databases = {}
+            first = True
             for database in vals['apptype_multiple_databases'].split(','):
+                if not first:
+                    databases_comma += ','
                 databases[database] = unique_name_ + '_' + database
+                databases_comma += databases[database]
+                first = False
         vals.update({
             'base_id': base.id,
             'base_name': base.name,
@@ -260,6 +266,7 @@ class saas_base(osv.osv):
             'base_nginx_configfile': '/etc/nginx/sites-available/' + unique_name,
             'base_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
             'base_databases': databases,
+            'base_databases_comma': databases_comma,
         })
 
         return vals
@@ -354,8 +361,8 @@ class saas_base(osv.osv):
                 'base_id': vals['base_id'],
                 'base_title': vals['base_title'],
                 'base_app_version': vals['app_version_name'],
-                'base_proxy_id': vals['proxy_id'],
-                'base_mail_id': vals['mail_id'],
+                'base_proxy_id': 'proxy_id' in vals and vals['proxy_id'],
+                'base_mail_id': 'mail_id' in vals and vals['mail_id'],
                 'base_container_name': vals['container_name'],
                 'base_container_server': vals['server_domain'],
                 'base_admin_passwd': vals['base_admin_passwd'],
@@ -589,6 +596,8 @@ class saas_base(osv.osv):
 
     def deploy_proxy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if not 'proxy_id' in vals:
+            return
         self.purge_proxy(cr, uid, vals, context=context)
         if not vals['base_sslonly']:
             file = 'proxy.config'
@@ -620,6 +629,8 @@ class saas_base(osv.osv):
 
     def purge_proxy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if not 'proxy_id' in vals:
+            return
         ssh, sftp = execute.connect(vals['proxy_fullname'], context=context)
         execute.execute(ssh, ['rm', '/etc/nginx/sites-enabled/' + vals['base_unique_name']], context)
         execute.execute(ssh, ['rm', vals['base_nginx_configfile']], context)
@@ -636,8 +647,8 @@ class saas_base(osv.osv):
             return
         self.purge_bind(cr, uid, vals, context=context)
         ssh, sftp = execute.connect(vals['dns_fullname'], context=context)
-        execute.execute(ssh, ['echo "' + vals['base_name'] + ' IN CNAME ' + vals['proxy_server_domain'] + '." >> ' + vals['domain_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        execute.execute(ssh, ['echo "' + vals['base_name'] + ' IN CNAME ' + ('proxy_server_domain' in vals and vals['proxy_server_domain'] or vals['server_domain']) + '." >> ' + vals['domain_configfile']], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'restart'], context)
         ssh.close()
         sftp.close()
 
@@ -649,7 +660,7 @@ class saas_base(osv.osv):
             return
         ssh, sftp = execute.connect(vals['dns_fullname'], context=context)
         execute.execute(ssh, ['sed', '-i', '"/' + vals['base_name'] + '\sIN\sCNAME/d"', vals['domain_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
+        execute.execute(ssh, ['/etc/init.d/bind9', 'restart'], context)
         ssh.close()
         sftp.close()
 
@@ -667,6 +678,7 @@ class saas_base(osv.osv):
         sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/' + file + '.config', vals['base_shinken_configfile'])
         execute.execute(ssh, ['sed', '-i', '"s/TYPE/base/g"', vals['base_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['base_unique_name_'] + '/g"', vals['base_shinken_configfile']], context)
+        execute.execute(ssh, ['sed', '-i', '"s/DATABASES/' + vals['base_databases_comma'] + '/g"', vals['base_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_shinken_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/METHOD/' + vals['config_restore_method'] + '/g"', vals['base_shinken_configfile']], context)

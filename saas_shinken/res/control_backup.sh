@@ -1,4 +1,5 @@
 #!/bin/bash
+IFS=","
 
 repo=( $(ssh $3 cat /opt/backup/list/$4/repo) )
 
@@ -33,14 +34,16 @@ fi
 
 if [[ $2 == 'base' ]]
 then
-
-  if ! ssh $3 "[ -s $directory/${4}.dump ]"
-  then
-    echo "The database file ${4}.dump is empty."
-    exit 2
-  fi
-
+  for database in $5
+  do
+    if ! ssh $3 "[ -s $directory/${database}.dump ]"
+    then
+      echo "The database file ${database}.dump is empty."
+      exit 2
+    fi
+  done
 fi
+
 
 
 if [[ $1 == 'bup' ]]

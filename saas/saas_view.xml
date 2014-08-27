@@ -962,7 +962,7 @@ RUN echo "daemon off;" >> /etc/nginx/nginx.conf
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=nginx" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/etc/init.d/nginx start" >> /etc/supervisor/conf.d/supervisord.conf
 
 RUN mkdir -p /var/www/.ssh
 RUN ln -s /opt/keys/authorized_keys /var/www/.ssh/authorized_keys
