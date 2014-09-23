@@ -52,7 +52,7 @@
 MAINTAINER yannick.buron@gmail.com
 
 RUN echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils postgresql-client
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-passlib python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils postgresql-client
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq -t wheezy-backports install wkhtmltopdf
 # Note: The official Debian and Ubuntu images automatically ``apt-get clean``
 # after each ``apt-get``
