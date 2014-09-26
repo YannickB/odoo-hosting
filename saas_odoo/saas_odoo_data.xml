@@ -162,6 +162,7 @@ recipe = anybox.recipe.openerp:server
 version = git http://github.com/odoo/odoo.git odoo 8.0
 addons = git git@github.com:YannickB/community-management.git extra/community-management master
          git git@github.com:YannickB/account-financial-tools.git extra/account-financial-tools master
+         git git@github.com:YannickB/odoo-hosting.git extra/odoo-hosting master
 
 [versions]
 reportlab = 2.7
