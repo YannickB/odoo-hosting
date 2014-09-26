@@ -324,7 +324,8 @@ class saas_service(osv.osv):
     def check_files(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         service_ids = self.search(cr, uid, [('application_version_id', '=', vals['app_version_id']),('container_id.server_id','=',vals['server_id'])], context=context)
-        service_ids.remove(vals['service_id'])
+	if vals['service_id'] in service_ids:
+	    service_ids.remove(vals['service_id'])
         if not service_ids:
             ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
             execute.execute(ssh, ['rm', '-rf', vals['app_version_full_hostpath']], context)
