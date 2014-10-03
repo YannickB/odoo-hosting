@@ -218,7 +218,11 @@ class saas_config_settings(osv.osv):
     def reset_bases(self, cr, uid, ids, context={}):
         base_obj = self.pool.get('saas.base')
         base_ids = base_obj.search(cr, uid, [('reset_each_day','=',True)], context=context)
-        base_obj.reinstall(cr, uid, base_ids, context=context)
+        for base in base_obj.browse(cr, uid, base_ids, context=context):
+            if base.parent_id:
+                base_obj.reset_base(cr, uid, [base.id], context=context)
+            else:
+                base_obj.reinstall(cr, uid, [base.id], context=context)
 
     def cron_daily(self, cr, uid, ids, context={}):
         self.reset_keys(cr, uid, [], context=context)
