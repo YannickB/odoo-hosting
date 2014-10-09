@@ -68,11 +68,11 @@ class saas_service(osv.osv):
         'name': fields.char('Name', size=64, required=True),
         'application_id': fields.related('container_id', 'application_id', type='many2one', relation='saas.application', string='Application', readonly=True),
         'application_version_id': fields.many2one('saas.application.version', 'Version', domain="[('application_id.container_ids','in',container_id)]", required=True),
-        'database_container_id': fields.many2one('saas.container', 'Database container', required=True),
         'database_password': fields.char('Database password', size=64, required=True),
         'container_id': fields.many2one('saas.container', 'Container', required=True),
         'skip_analytics': fields.boolean('Skip Analytics?'),
         'option_ids': fields.one2many('saas.service.option', 'service_id', 'Options'),
+        'link_ids': fields.one2many('saas.service.link', 'service_id', 'Links'),
         'base_ids': fields.one2many('saas.base', 'service_id', 'Bases'),
         'parent_id': fields.many2one('saas.service', 'Parent Service'),
         'sub_service_name': fields.char('Subservice Name', size=64),
@@ -117,17 +117,6 @@ class saas_service(osv.osv):
 
         vals.update(self.pool.get('saas.container').get_vals(cr, uid, service.container_id.id, context=context))
 
-
-        database_vals = self.pool.get('saas.container').get_vals(cr, uid, service.database_container_id.id, context=context)
-        vals.update({
-            'database_id': database_vals['container_id'],
-            'database_fullname': database_vals['container_fullname'],
-            'database_ssh_port': database_vals['container_ssh_port'],
-            'database_server_id': database_vals['server_id'],
-            'database_server_domain': database_vals['server_domain'],
-            'database_root_password': database_vals['container_root_password'],
-        })
-
         options = {}
         for option in service.container_id.application_id.type_id.option_ids:
             if option.type == 'service':
@@ -135,13 +124,54 @@ class saas_service(osv.osv):
         for option in service.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
-        database_server = vals['database_server_domain']
-        if vals['server_id'] == vals['database_server_id'] and vals['database_id'] in vals['container_links']:
-            database_server = vals['container_links'][vals['database_id']]['name']
+        links = {}
+        if 'app_links' in vals:
+            for app_code, link in vals['app_links'].iteritems():
+                if link['service']:
+                    links[app_code] = link
+                    links[app_code]['target'] = False
+        for link in service.link_ids:
+            if link.name.code in links and link.target:
+                link_vals = self.pool.get('saas.container').get_vals(cr, uid, link.target.id, context=context)
+                links[link.name.code]['target'] = {
+                    'link_id': link_vals['container_id'],
+                    'link_name': link_vals['container_name'],
+                    'link_fullname': link_vals['container_fullname'],
+                    'link_ssh_port': link_vals['container_ssh_port'],
+                    'link_server_id': link_vals['server_id'],
+                    'link_server_domain': link_vals['server_domain'],
+                    'link_server_ip': link_vals['server_ip'],
+                }
+                database = False
+                if link.name.code == 'postgres':
+                    vals['database_type'] = 'postgres'
+                    database = True
+                elif link.name.code == 'mysql':
+                    vals['database_type'] = 'mysql'
+                    database = True
+                if database:
+                    vals.update({
+                        'database_id': link_vals['container_id'],
+                        'database_fullname': link_vals['container_fullname'],
+                        'database_ssh_port': link_vals['container_ssh_port'],
+                        'database_server_id': link_vals['server_id'],
+                        'database_server_domain': link_vals['server_domain'],
+                        'database_root_password': link_vals['container_root_password'],
+                    })
+                    if links[link.name.code]['make_link'] and vals['database_server_id'] == vals['server_id']:
+                        vals['database_server'] = vals['database_type']
+                    else:
+                        vals['database_server'] = vals['database_server_domain']
+        for app_code, link in links.iteritems():
+            if link['required'] and not link['target']:
+                raise osv.except_osv(_('Data error!'),
+                    _("You need to specify a link to " + link['name'] + " for the service " + service.name))
+            if not link['target']:
+                del links[app_code]
 
         service_fullname = vals['container_name'] + '-' + service.name
         db_user = service_fullname.replace('-','_')
-        if vals['app_bdd'] == 'mysql':
+        if vals['database_type'] == 'mysql':
             db_user = vals['container_name'][:10] + '_' + service.name[:4]
             db_user = db_user.replace('-','_')
         vals.update({
@@ -154,13 +184,37 @@ class saas_service(osv.osv):
             'service_full_localpath': vals['apptype_localpath_services'] + '/' + service.name,
             'service_full_localpath_files': vals['apptype_localpath_services'] + '/' + service.name + '/files',
             'service_options': options,
-            'database_server': database_server,
+            'service_links': links,
             'service_subservice_name': service.sub_service_name,
             'service_custom_version': service.custom_version
         })
 
         return vals
 
+    def create(self, cr, uid, vals, context={}):
+        if 'container_id' in vals:
+            container = self.pool.get('saas.container').browse(cr, uid, vals['container_id'], context=context)
+            application = container.application_id
+            links = {}
+            for link in  application.link_ids:
+                if link.service:
+                    links[link.name.id] = {}
+                    links[link.name.id]['required'] = link.required
+                    links[link.name.id]['name'] = link.name.name
+                    links[link.name.id]['target'] = link.next and link.next.id or False
+            if 'link_ids' in vals:
+                for link in vals['link_ids']:
+                    link = link[2]
+                    if link['name'] in links:
+                        links[link['name']]['target'] = link['target']
+                del vals['link_ids']
+            vals['link_ids'] = []
+            for application_id, link in links.iteritems():
+                if link['required'] and not link['target']:
+                    raise osv.except_osv(_('Data error!'),
+                        _("You need to specify a link to " + link['name'] + " for the service " + vals['name']))
+                vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
+        return super(saas_service, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
         if 'application_version_id' in vals:
@@ -206,13 +260,19 @@ class saas_service(osv.osv):
                     options =[(0,0,{'name': type_ids[0], 'value': 'port-formation'})]
                 if service.sub_service_name == 'test':
                     options = [(0,0,{'name': type_ids[0], 'value': 'port-test'})]
+            links = []
+            for link in service.link_ids:
+                links.append((0,0,{
+                    'name': link.name.id,
+                    'target': link.target and link.target.id or False
+                }))
             service_vals = {
                 'name': service.sub_service_name,
                 'container_id': service.container_id.id,
-                'database_container_id': service.database_container_id.id,
                 'application_version_id': service.application_version_id.id,
                 'parent_id': service.id,
-                'option_ids': options
+                'option_ids': options,
+                'link_ids': links
             }
             service_id = self.create(cr, uid, service_vals, context=context)
             for base in service.base_ids:
@@ -247,7 +307,7 @@ class saas_service(osv.osv):
         execute.log('Creating database user', context=context)
 
         #SI postgres, create user
-        if vals['app_bdd'] != 'mysql':
+        if vals['database_type'] != 'mysql':
             ssh, sftp = execute.connect(vals['database_fullname'], username='postgres', context=context)
             execute.execute(ssh, ['psql', '-c', '"CREATE USER ' + vals['service_db_user'] + ' WITH PASSWORD \'' + vals['service_db_password'] + '\' CREATEDB;"'], context)
             ssh.close()
@@ -301,7 +361,7 @@ class saas_service(osv.osv):
         ssh.close()
         sftp.close()
 
-        if vals['app_bdd'] != 'mysql':
+        if vals['database_type'] != 'mysql':
             ssh, sftp = execute.connect(vals['database_fullname'], username='postgres', context=context)
             execute.execute(ssh, ['psql', '-c', '"DROP USER ' + vals['service_db_user'] + ';"'], context)
             ssh.close()
@@ -387,3 +447,76 @@ class saas_service_option(osv.osv):
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,name)', 'Option name must be unique per service!'),
     ]
+
+
+class saas_service_link(osv.osv):
+    _name = 'saas.service.link'
+
+    _columns = {
+        'service_id': fields.many2one('saas.service', 'Service', ondelete="cascade", required=True),
+        'name': fields.many2one('saas.application', 'Application', required=True),
+        'target': fields.many2one('saas.container', 'Target'),
+    }
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(service_id,name)', 'Links must be unique per service!'),
+    ]
+
+
+    def get_vals(self, cr, uid, id, context={}):
+        vals = {}
+
+        link = self.browse(cr, uid, id, context=context)
+
+        vals.update(self.pool.get('saas.service').get_vals(cr, uid, link.service_id.id, context=context))
+        if link.target:
+            target_vals = self.pool.get('saas.container').get_vals(cr, uid, link.target.id, context=context)
+            vals.update({
+                'link_target_container_id': target_vals['container_id'],
+                'link_target_container_name': target_vals['container_name'],
+                'link_target_container_fullname': target_vals['container_fullname'],
+                'link_target_app_id': target_vals['app_id'],
+                'link_target_app_code': target_vals['app_code'],
+            })
+
+
+        return vals
+
+    def reload(self, cr, uid, ids, context=None):
+        for link_id in ids:
+            vals = self.get_vals(cr, uid, link_id, context=context)
+            self.deploy(cr, uid, vals, context=context)
+        return
+
+    def deploy_link(self, cr, uid, vals, context={}):
+        return
+
+    def deploy(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        self.purge(cr, uid, vals, context=context)
+        if not 'link_target_container_id' in vals:
+            execute.log('The target isnt configured in the link, skipping deploy link', context)
+            return
+        if vals['link_target_app_code'] not in vals['service_links']:
+            execute.log('The target isnt in the application link for service, skipping deploy link', context)
+            return
+        if not vals['service_links'][vals['link_target_app_code']]['service']:
+            execute.log('This application isnt for service, skipping deploy link', context)
+            return
+        self.deploy_link(cr, uid, vals, context=context)
+
+    def purge_link(self, cr, uid, vals, context={}):
+        return
+
+    def purge(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if not 'link_target_container_id' in vals:
+            execute.log('The target isnt configured in the link, skipping deploy link', context)
+            return
+        if vals['link_target_app_code'] not in vals['service_links']:
+            execute.log('The target isnt in the application link for service, skipping deploy link', context)
+            return
+        if not vals['service_links'][vals['link_target_app_code']]['service']:
+            execute.log('This application isnt for service, skipping deploy link', context)
+            return
+        self.purge_link(cr, uid, vals, context=context)

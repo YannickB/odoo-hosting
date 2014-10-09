@@ -247,64 +247,8 @@ class saas_base(osv.osv):
     #         sftp.close()
     #     return
 
-
-    def deploy_bind(self, cr, uid, vals, context={}):
-        res = super(saas_base, self).deploy_bind(cr, uid, vals, context)
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if vals['apptype_name'] == 'odoo':
-            if not 'dns_server_domain' in vals:
-                execute.log('The dns isnt configured in conf, skipping purge container bind', context)
-                return
-            ssh, sftp = execute.connect(vals['dns_fullname'], context=context)
-            execute.execute(ssh, ['echo "IN MX 1 ' + vals['mail_server_domain'] + '. ;' + vals['base_name'] + ' IN CNAME" >> ' + vals['domain_configfile']], context)
-            execute.execute(ssh, ['/etc/init.d/bind9', 'reload'], context)
-            ssh.close()
-            sftp.close()
-        return res
-
-    def deploy_mail(self, cr, uid, vals, context={}):
-        res = super(saas_base, self).deploy_mail(cr, uid, vals, context)
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if vals['apptype_name'] == 'odoo':
-            try:
-                execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user=" + vals['apptype_admin_name'] + ", password=" + vals['base_admin_passwd'] + ")", context)
-                client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user=vals['apptype_admin_name'], password=vals['base_admin_passwd'])
-                execute.log("server_id = client.model('ir.model.data').get_object_reference('base', 'ir_mail_server_localhost0')[1]", context)
-                server_id = client.model('ir.model.data').get_object_reference('base', 'ir_mail_server_localhost0')[1]
-                execute.log("client.model('ir.mail_server').write([" + str(server_id) + "], {'name': 'postfix', 'smtp_host': 'postfix'})", context)
-                client.model('ir.mail_server').write([server_id], {'name': 'postfix', 'smtp_host': 'postfix'})
-            except:
-                pass
-
-            ssh, sftp = execute.connect(vals['mail_fullname'], context=context)
-            execute.execute(ssh, ['sed', '-i', '"/^mydestination =/ s/$/, ' + vals['base_fulldomain'] + '/"', '/etc/postfix/main.cf'], context)
-            execute.execute(ssh, ['echo "@' + vals['base_fulldomain'] + ' ' + vals['base_unique_name_'] + '@localhost" >> /etc/postfix/virtual_aliases'], context)
-            execute.execute(ssh, ['postmap', '/etc/postfix/virtual_aliases'], context)
-            execute.execute(ssh, ["echo '" + vals['base_unique_name_'] + ": \"|openerp_mailgate.py --host=" + vals['server_domain'] + " --port=" + vals['service_options']['port']['hostport'] + " -u 1 -p " + vals['base_admin_passwd'] + " -d " + vals['base_unique_name_'] + "\"' >> /etc/aliases"], context)
-            execute.execute(ssh, ['newaliases'], context)
-            execute.execute(ssh, ['/etc/init.d/postfix', 'reload'], context)
-            ssh.close()
-            sftp.close()
-        return res
-
-
-    def purge_mail(self, cr, uid, vals, context={}):
-        res = super(saas_base, self).purge_mail(cr, uid, vals, context)
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if vals['apptype_name'] == 'odoo':
-            ssh, sftp = execute.connect(vals['mail_fullname'], context=context)
-            execute.execute(ssh, ['sed', '-i', '"/^mydestination =/ s/, ' + vals['base_fulldomain'] + '//"', '/etc/postfix/main.cf'], context)
-            execute.execute(ssh, ['sed', '-i', '"/@' + vals['base_fulldomain'] + '/d"', '/etc/postfix/virtual_aliases'], context)
-            execute.execute(ssh, ['postmap' , '/etc/postfix/virtual_aliases'], context)
-            execute.execute(ssh, ['sed', '-i', '"/d\s' + vals['base_unique_name_'] + '/d"', '/etc/aliases'], context)
-            execute.execute(ssh, ['newaliases'], context)
-            execute.execute(ssh, ['/etc/init.d/postfix', 'reload'], context)
-            ssh.close()
-            sftp.close()
-        return res
-
     def post_reset(self, cr, uid, vals, context=None):
-        res = super(saas_base, self).deploy_mail(cr, uid, vals, context)
+        res = super(saas_base, self).post_reset(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
             execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user=" + vals['apptype_admin_name'] + ", password=" + vals['base_admin_passwd'] + ")", context)

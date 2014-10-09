@@ -29,8 +29,6 @@
                         <field name="application_id"/>
                         <field name="service_id" required="0"/>
                         <field name="service_ids" widget="many2many_tags"/>
-                        <field name="proxy_id"/>
-                        <field name="mail_id"/>
                         <field name="admin_passwd"/>
                         <field name="poweruser_name"/>
                         <field name="poweruser_passwd"/>
@@ -54,6 +52,13 @@
                             <field name="value"/>
                         </tree>
                     </field>
+                    <field name="link_ids" colspan="4">
+                        <tree string="Links" editable="bottom">
+                            <field name="name"/>
+                            <field name="target"/>
+                            <button name="reload" type="object" string="Reload"/>
+                        </tree>
+                    </field>
                     <group col="4">
                         <field name="save_repository_id"/>
                         <field name="time_between_save"/>
@@ -66,10 +71,6 @@
                     </group>
                     <button name="save" string="Save" type="object"/>
                     <button name="reinstall" string="Reinstall" type="object"/>
-                    <button name="reset_proxy" string="Reset Proxy" type="object"/>
-                    <button name="reset_bind" string="Reset DNS" type="object"/>
-                    <button name="reset_shinken" string="Reset Shinken" type="object"/>
-                    <button name="reset_mail" string="Reset Mail" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -106,7 +107,6 @@
                         <field name="container_id"/>
                         <field name="application_id"/>
                         <field name="application_version_id" domain="[('application_id.container_ids','=',container_id)]"/>
-                        <field name="database_container_id"/>
                         <field name="database_password"/>
                         <newline/>
                         <field name="custom_version"/>
@@ -125,6 +125,13 @@
                         <tree string="Options" editable="bottom">
                             <field name="name" domain="[('apptype_id.application_ids.container_ids','in',parent.container_id),('type','=','service')]"/>
                             <field name="value"/>
+                        </tree>
+                    </field>
+                    <field name="link_ids" colspan="4">
+                        <tree string="Links" editable="bottom">
+                            <field name="name"/>
+                            <field name="target"/>
+                            <button name="reload" type="object" string="Reload"/>
                         </tree>
                     </field>
                     <button name="reinstall" string="Reinstall" type="object"/>
@@ -164,7 +171,6 @@
                         <field name="name"/>
                         <field name="application_id" on_change="onchange_application_id(application_id)"/>
                         <field name="server_id"/>
-                        <field name="linked_container_ids" widget="many2many_tags"/>
                         <field name="image_id"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
                         <field name="nosave"/>
@@ -193,6 +199,13 @@
                             <field name="nosave"/>
                         </tree>
                     </field>
+                    <field name="link_ids" colspan="4">
+                        <tree string="Links" editable="bottom">
+                            <field name="name"/>
+                            <field name="target"/>
+                            <button name="reload" type="object" string="Reload"/>
+                        </tree>
+                    </field>
                     <group col="4">
                         <field name="save_repository_id"/>
                         <field name="time_between_save"/>
@@ -208,7 +221,6 @@
                     <button name="button_stop" string="Stop" type="object"/>
                     <button name="button_start" string="Start" type="object"/>
                     <button name="reset_key" string="Reset Key" type="object"/>
-                    <button name="reset_shinken" string="Reset Shinken" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
             </field>
@@ -358,6 +370,7 @@
                                 <field name="container_img_version"/>
                                 <field name="container_ports"/>
                                 <field name="container_options"/>
+                                <field name="container_links"/>
                                 <field name="container_volumes_comma"/>
                                 <field name="container_volumes"/>
                             </group>  
@@ -368,6 +381,7 @@
                                 <field name="service_name"/>
                                 <field name="service_database_id"/>
                                 <field name="service_options"/>
+                                <field name="service_links"/>
                             </group>  
                        </page>
                         <page string="Base" attrs="{'invisible':[('type','!=','base')]}">
@@ -385,6 +399,7 @@
                                 <field name="base_lang"/>
                                 <field name="base_nosave"/>
                                 <field name="base_options"/>
+                                <field name="base_links"/>
                             </group>  
                        </page>
                     </notebook>
@@ -531,9 +546,7 @@
                         <field name="code"/>
                         <field name="type_id"/>
                         <field name="current_version"/>
-                        <field name="bdd"/>
                         <field name="default_image_id"/>
-                        <field name="linked_local_containers"/>
                         <field name="next_server_id"/>
                         <field name="next_database_id"/>
 <!--
@@ -575,6 +588,17 @@
                         <tree string="Options" editable="bottom">
                             <field name="name" domain="[('apptype_id','=',parent.type_id),('type','=','application')]"/>
                             <field name="value"/>
+                        </tree>
+                    </field>
+                    <field name="link_ids" colspan="4">
+                        <tree string="Links" editable="bottom">
+                            <field name="name"/>
+                            <field name="required"/>
+                            <field name="make_link"/>
+                            <field name="container"/>
+                            <field name="service"/>
+                            <field name="base"/>
+                            <field name="next"/>
                         </tree>
                     </field>
                     <field name="buildfile" colspan="4"/>

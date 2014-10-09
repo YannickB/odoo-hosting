@@ -187,7 +187,7 @@ class saas_base(osv.osv):
 
 
     def post_reset(self, cr, uid, vals, context=None):
-        res = super(saas_base, self).deploy_mail(cr, uid, vals, context)
+        res = super(saas_base, self).post_reset(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'drupal':
 

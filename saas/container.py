@@ -138,10 +138,10 @@ class saas_container(osv.osv):
         'date_next_save': fields.datetime('Next save planned'),
         'save_comment': fields.text('Save Comment'),
         'nosave': fields.boolean('No Save?'),
-        'linked_container_ids': fields.many2many('saas.container', 'saas_container_linked_rel', 'from_id', 'to_id', 'Linked container', domain="[('server_id','=',server_id)]"),
         'port_ids': fields.one2many('saas.container.port', 'container_id', 'Ports'),
         'volume_ids': fields.one2many('saas.container.volume', 'container_id', 'Volumes'),
         'option_ids': fields.one2many('saas.container.option', 'container_id', 'Options'),
+        'link_ids': fields.one2many('saas.container.link', 'container_id', 'Links'),
         'service_ids': fields.one2many('saas.service', 'container_id', 'Services'),
         'ports': fields.function(_get_ports, type='text', string='Ports'),
     }
@@ -156,19 +156,8 @@ class saas_container(osv.osv):
                 return False
         return True
 
-    def _check_links(self, cr, uid, ids, context=None):
-        for c in self.browse(cr, uid, ids, context=context):
-            links = {}
-            for l in c.linked_container_ids:
-                apptype = l.application_id.type_id.name
-                if apptype in links:
-                    return False
-                links[apptype] = apptype
-        return True
-
     _constraints = [
         (_check_image, "The image of image version must be the same than the image of container." , ['image_id','image_version_id']),
-        (_check_links, "The image of image version must be the same than the image of container." , ['image_id','image_version_id']),
     ]
 
     def onchange_application_id(self, cr, uid, ids, application_id=False, context=None):
@@ -217,9 +206,9 @@ class saas_container(osv.osv):
         vals.update(self.pool.get('saas.server').get_vals(cr, uid, container.server_id.id, context=context))
 
 
-        links = {}
-        for link in  container.linked_container_ids:
-            links[link.id] = {'id': link.id, 'apptype': link.application_id.type_id.name, 'name': link.name}
+        # links = {}
+        # for link in  container.linked_container_ids:
+        #     links[link.id] = {'id': link.id, 'apptype': link.application_id.type_id.name, 'name': link.name}
 
         ports = {}
         ssh_port = 22
@@ -243,6 +232,32 @@ class saas_container(osv.osv):
                 options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
         for option in container.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+
+        links = {}
+        if 'app_links' in vals:
+            for app_code, link in vals['app_links'].iteritems():
+                if link['container'] or link['make_link']:
+                    links[app_code] = link
+                    links[app_code]['target'] = False
+        for link in container.link_ids:
+            if link.name.code in links and link.target:
+                link_vals = self.get_vals(cr, uid, link.target.id, context=context)
+                links[link.name.code]['target'] = {
+                    'link_id': link_vals['container_id'],
+                    'link_name': link_vals['container_name'],
+                    'link_fullname': link_vals['container_fullname'],
+                    'link_ssh_port': link_vals['container_ssh_port'],
+                    'link_server_id': link_vals['server_id'],
+                    'link_server_domain': link_vals['server_domain'],
+                    'link_server_ip': link_vals['server_ip'],
+                }
+        for app_code, link in links.iteritems():
+            if link['required'] and not link['target']:
+                raise osv.except_osv(_('Data error!'),
+                    _("You need to specify a link to " + link['name'] + " for the container " + container.name))
+            if not link['target']:
+                del links[app_code]
+
 
         root_password = False
         for key, option in options.iteritems():
@@ -280,16 +295,27 @@ class saas_container(osv.osv):
             vals['volume_ids'] = []
             for volume in self.pool.get('saas.image.version').browse(cr, uid, vals['image_version_id'], context=context).image_id.volume_ids:
                 vals['volume_ids'].append((0,0,{'name':volume.name,'hostpath':volume.hostpath,'user':volume.user,'readonly':volume.readonly,'nosave':volume.nosave}))
-        if 'application_id' in vals and 'server_id' in vals:
+        if 'application_id' in vals:
             application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
-            if not 'linked_container_ids' in vals:
-                vals['linked_container_ids'] = []
-            if application.linked_local_containers:
-                for type in application.linked_local_containers.split(','):
-                    container_ids = self.search(cr, uid, [('name','=',type),('server_id','=',vals['server_id'])], context=context)
-                    for container in self.browse(cr, uid, container_ids, context=context):
-                        vals['linked_container_ids'].append((4,container.id))
-        # vals = self.add_links(cr, uid, vals, context=context)
+            links = {}
+            for link in  application.link_ids:
+                if link.container or link.make_link:
+                    links[link.name.id] = {}
+                    links[link.name.id]['required'] = link.required
+                    links[link.name.id]['name'] = link.name.name
+                    links[link.name.id]['target'] = link.next and link.next.id or False
+            if 'link_ids' in vals:
+                for link in vals['link_ids']:
+                    link = link[2]
+                    if link['name'] in links:
+                        links[link['name']]['target'] = link['target']
+                del vals['link_ids']
+            vals['link_ids'] = []
+            for application_id, link in links.iteritems():
+                if link['required'] and not link['target']:
+                    raise osv.except_osv(_('Data error!'),
+                        _("You need to specify a link to " + link['name'] + " for the container " + vals['name']))
+                vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
         return super(saas_container, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
@@ -362,6 +388,13 @@ class saas_container(osv.osv):
             if not 'backup_server_domain' in vals:
                 execute.log('The backup isnt configured in conf, skipping save container', context)
                 return
+            links = {}
+            for app_code, link in vals['container_links'].iteritems():
+                links[app_code] = {
+                    'name': link['app_id'],
+                    'name_name': link['name'],
+                    'target': link['target'] and link['target']['link_id'] or False
+                }
             save_vals = {
                 'name': vals['now_bup'] + '_' + vals['container_fullname'],
                 'repo_id': vals['saverepo_id'],
@@ -376,6 +409,7 @@ class saas_container(osv.osv):
                 'container_ports': str(vals['container_ports']),
                 'container_volumes': str(vals['container_volumes']),
                 'container_options': str(vals['container_options']),
+                'container_links': str(links),
             }
             res[container.id] = save_obj.create(cr, uid, save_vals, context=context)
             next = (datetime.now() + timedelta(minutes=container.time_between_save or container.application_id.container_time_between_save)).strftime("%Y-%m-%d %H:%M:%S")
@@ -389,10 +423,6 @@ class saas_container(osv.osv):
             vals = self.get_vals(cr, uid, container.id, context=context)
             self.deploy_key(cr, uid, vals, context=context)
 
-    def reset_shinken(self, cr, uid, ids, context={}):
-        for container in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, container.id, context=context)
-            self.deploy_shinken(cr, uid, vals, context=context)
 
     def deploy_post(self, cr, uid, vals, context=None):
         return
@@ -428,7 +458,8 @@ class saas_container(osv.osv):
                     arg += ':ro'
                 cmd.extend(['-v', arg])
         for key, link in vals['container_links'].iteritems():
-            cmd.extend(['--link', link['name'] + ':' + link['name']])
+            if link['make_link'] and link['target']['link_server_id'] == vals['server_id']:
+                cmd.extend(['--link', link['target']['link_name'] + ':' + link['code']])
         cmd.extend(['-v', '/opt/keys/' + vals['container_fullname'] + ':/opt/keys', '--name', vals['container_name'], vals['image_version_fullname']])
 
         #Deploy key now, otherwise the container will be angry to not find the key. We can't before because vals['container_ssh_port'] may not be set
@@ -457,7 +488,6 @@ class saas_container(osv.osv):
                 ssh.close()
                 sftp.close()
 
-        self.deploy_shinken(cr, uid, vals, context=context)
         #For shinken
         self.save(cr, uid, [vals['container_id']], context=context)
 
@@ -466,7 +496,6 @@ class saas_container(osv.osv):
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
-        self.purge_shinken(cr, uid, vals, context=context)
         self.purge_key(cr, uid, vals, context=context)
 
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
@@ -495,38 +524,6 @@ class saas_container(osv.osv):
         sftp.close()
         time.sleep(3)
 
-    def deploy_shinken(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if not 'shinken_server_domain' in vals:
-            execute.log('The shinken isnt configured in conf, skipping deploy container shinken', context)
-            return
-        self.purge_shinken(cr, uid, vals, context=context)
-        ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-        file = 'container-shinken'
-        if vals['container_no_save']:
-            file = 'container-shinken-nosave'
-        sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/' + file + '.config', vals['container_shinken_configfile'])
-        execute.execute(ssh, ['sed', '-i', '"s/METHOD/' + vals['config_restore_method'] + '/g"', vals['container_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/TYPE/container/g"', vals['container_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/CONTAINER/' + vals['backup_fullname'] + '/g"', vals['container_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['container_fullname'] + '/g"', vals['container_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/HOST/' + vals['server_domain'] + '/g"', vals['container_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/PORT/' + str(vals['container_ports']['ssh']['hostport']) + '/g"', vals['container_shinken_configfile']], context)
-
-        execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-        ssh.close()
-        sftp.close()
-
-    def purge_shinken(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if not 'shinken_server_domain' in vals:
-            execute.log('The shinken isnt configured in conf, skipping purge container shinken', context)
-            return
-        ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-        execute.execute(ssh, ['rm', vals['container_shinken_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-        ssh.close()
-        sftp.close()
 
     def deploy_key(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
@@ -641,3 +638,76 @@ class saas_container_option(osv.osv):
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)', 'Option name must be unique per container!'),
     ]
+
+
+class saas_container_link(osv.osv):
+    _name = 'saas.container.link'
+
+    _columns = {
+        'container_id': fields.many2one('saas.container', 'Container', ondelete="cascade", required=True),
+        'name': fields.many2one('saas.application', 'Application', required=True),
+        'target': fields.many2one('saas.container', 'Target'),
+    }
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(container_id,name)', 'Links must be unique per container!'),
+    ]
+
+
+    def get_vals(self, cr, uid, id, context={}):
+        vals = {}
+
+        link = self.browse(cr, uid, id, context=context)
+
+        vals.update(self.pool.get('saas.container').get_vals(cr, uid, link.container_id.id, context=context))
+        if link.target:
+            target_vals = self.pool.get('saas.container').get_vals(cr, uid, link.target.id, context=context)
+            vals.update({
+                'link_target_container_id': target_vals['container_id'],
+                'link_target_container_name': target_vals['container_name'],
+                'link_target_container_fullname': target_vals['container_fullname'],
+                'link_target_app_id': target_vals['app_id'],
+                'link_target_app_code': target_vals['app_code'],
+            })
+
+
+        return vals
+
+    def reload(self, cr, uid, ids, context=None):
+        for link_id in ids:
+            vals = self.get_vals(cr, uid, link_id, context=context)
+            self.deploy(cr, uid, vals, context=context)
+        return
+
+    def deploy_link(self, cr, uid, vals, context={}):
+        return
+
+    def deploy(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        self.purge(cr, uid, vals, context=context)
+        if not 'link_target_container_id' in vals:
+            execute.log('The target isnt configured in the link, skipping deploy link', context)
+            return
+        if vals['link_target_app_code'] not in vals['container_links']:
+            execute.log('The target isnt in the application link for container, skipping deploy link', context)
+            return
+        if not vals['container_links'][vals['link_target_app_code']]['container']:
+            execute.log('This application isnt for container, skipping deploy link', context)
+            return
+        self.deploy_link(cr, uid, vals, context=context)
+
+    def purge_link(self, cr, uid, vals, context={}):
+        return
+
+    def purge(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if not 'link_target_container_id' in vals:
+            execute.log('The target isnt configured in the link, skipping deploy link', context)
+            return
+        if vals['link_target_app_code'] not in vals['container_links']:
+            execute.log('The target isnt in the application link for container, skipping deploy link', context)
+            return
+        if not vals['container_links'][vals['link_target_app_code']]['container']:
+            execute.log('This application isnt for container, skipping deploy link', context)
+            return
+        self.purge_link(cr, uid, vals, context=context)

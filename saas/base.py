@@ -127,6 +127,7 @@ class saas_base(osv.osv):
                 ('blocked','Blocked'),
                 ('removing','Removing')],'State',readonly=True),
         'option_ids': fields.one2many('saas.base.option', 'base_id', 'Options'),
+        'link_ids': fields.one2many('saas.base.link', 'base_id', 'Links'),
         'save_repository_id': fields.many2one('saas.save.repository', 'Save repository'),
         'time_between_save': fields.integer('Minutes between each save'),
         'saverepo_change': fields.integer('Days before saverepo change'),
@@ -230,6 +231,31 @@ class saas_base(osv.osv):
         for option in base.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
+        links = {}
+        if 'app_links' in vals:
+            for app_code, link in vals['app_links'].iteritems():
+                if link['base']:
+                    links[app_code] = link
+                    links[app_code]['target'] = False
+        for link in base.link_ids:
+            if link.name.code in links and link.target:
+                link_vals = self.pool.get('saas.container').get_vals(cr, uid, link.target.id, context=context)
+                links[link.name.code]['target'] = {
+                    'link_id': link_vals['container_id'],
+                    'link_name': link_vals['container_name'],
+                    'link_fullname': link_vals['container_fullname'],
+                    'link_ssh_port': link_vals['container_ssh_port'],
+                    'link_server_id': link_vals['server_id'],
+                    'link_server_domain': link_vals['server_domain'],
+                    'link_server_ip': link_vals['server_ip'],
+                }
+        for app_code, link in links.iteritems():
+            if link['required'] and not link['target']:
+                raise osv.except_osv(_('Data error!'),
+                    _("You need to specify a link to " + link['name'] + " for the base " + base.name))
+            if not link['target']:
+                del links[app_code]
+
         unique_name_ = unique_name.replace('-','_')
         databases = {'single': unique_name_}
         databases_comma = ''
@@ -263,6 +289,7 @@ class saas_base(osv.osv):
             'base_lang': base.lang,
             'base_nosave': base.nosave,
             'base_options': options,
+            'base_links': links,
             'base_nginx_configfile': '/etc/nginx/sites-available/' + unique_name,
             'base_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
             'base_databases': databases,
@@ -306,6 +333,27 @@ class saas_base(osv.osv):
                 'application_version_id': application.version_ids[0].id,
             }
             vals['service_id'] = service_obj.create(cr, uid, service_vals, context=context)
+        if 'application_id' in vals:
+            application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
+            links = {}
+            for link in application.link_ids:
+                if link.base:
+                    links[link.name.id] = {}
+                    links[link.name.id]['required'] = link.required
+                    links[link.name.id]['name'] = link.name.name
+                    links[link.name.id]['target'] = link.next and link.next.id or False
+            if 'link_ids' in vals:
+                for link in vals['link_ids']:
+                    link = link[2]
+                    if link['name'] in links:
+                        links[link['name']]['target'] = link['target']
+                del vals['link_ids']
+            vals['link_ids'] = []
+            for application_id, link in links.iteritems():
+                if link['required'] and not link['target']:
+                    raise osv.except_osv(_('Data error!'),
+                        _("You need to specify a link to " + link['name'] + " for the base " + vals['name']))
+                vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
         return super(saas_base, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
@@ -340,6 +388,28 @@ class saas_base(osv.osv):
             if not 'backup_server_domain' in vals:
                 execute.log('The backup isnt configured in conf, skipping save base', context)
                 return
+                return
+            container_links = {}
+            for app_code, link in vals['container_links'].iteritems():
+                container_links[app_code] = {
+                    'name': link['app_id'],
+                    'name_name': link['name'],
+                    'target': link['target'] and link['target']['link_id'] or False
+                }
+            service_links = {}
+            for app_code, link in vals['service_links'].iteritems():
+                service_links[app_code] = {
+                    'name': link['app_id'],
+                    'name_name': link['name'],
+                    'target': link['target'] and link['target']['link_id'] or False
+                }
+            base_links = {}
+            for app_code, link in vals['base_links'].iteritems():
+                base_links[app_code] = {
+                    'name': link['app_id'],
+                    'name_name': link['name'],
+                    'target': link['target'] and link['target']['link_id'] or False
+                }
             save_vals = {
                 'name': vals['now_bup'] + '_' + vals['base_unique_name'],
                 'repo_id': vals['saverepo_id'],
@@ -354,10 +424,12 @@ class saas_base(osv.osv):
                 'container_ports': str(vals['container_ports']),
                 'container_volumes': str(vals['container_volumes']),
                 'container_options': str(vals['container_options']),
+                'container_links': str(container_links),
                 'service_id': vals['service_id'],
                 'service_name': vals['service_name'],
                 'service_database_id': vals['database_id'],
                 'service_options': str(vals['service_options']),
+                'service_links': str(service_links),
                 'base_id': vals['base_id'],
                 'base_title': vals['base_title'],
                 'base_app_version': vals['app_version_name'],
@@ -374,6 +446,7 @@ class saas_base(osv.osv):
                 'base_lang': vals['base_lang'],
                 'base_nosave': vals['base_nosave'],
                 'base_options': str(vals['base_options']),
+                'base_links': str(base_links),
             }
             res[base.id] = save_obj.create(cr, uid, save_vals, context=context)
             next = (datetime.now() + timedelta(minutes=base.time_between_save or base.application_id.base_time_between_save)).strftime("%Y-%m-%d %H:%M:%S")
@@ -381,31 +454,11 @@ class saas_base(osv.osv):
             self.end_log(cr, uid, base.id, context=context)
         return res
 
-    def reset_proxy(self, cr, uid, ids, context={}):
-        for container in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, container.id, context=context)
-            self.deploy_proxy(cr, uid, vals, context=context)
-
-    def reset_bind(self, cr, uid, ids, context={}):
-        for container in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, container.id, context=context)
-            self.deploy_bind(cr, uid, vals, context=context)
-
-    def reset_shinken(self, cr, uid, ids, context={}):
-        for container in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, container.id, context=context)
-            self.deploy_shinken(cr, uid, vals, context=context)
-
-    def reset_mail(self, cr, uid, ids, context={}):
-        for container in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, container.id, context=context)
-            self.deploy_mail(cr, uid, vals, context=context)
-
-
     def reset_base(self, cr, uid, ids, context={}):
         self._reset_base(cr, uid,ids, context=context)
 
     def post_reset(self, cr, uid, vals, context=None):
+        self.deploy_links(cr, uid, [vals['base_id']], context=context)
         return
 
     def _reset_base(self, cr, uid, ids, base_name=False, service_id=False, context={}):
@@ -464,7 +517,7 @@ class saas_base(osv.osv):
         res = self.deploy_create_database(cr, uid, vals, context)
         if not res:
             for key, database in vals['base_databases'].iteritems():
-                if vals['app_bdd'] != 'mysql':
+                if vals['database_type'] != 'mysql':
                     ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
                     execute.execute(ssh, ['createdb', '-h', vals['database_server'], '-U', vals['service_db_user'], database], context)
                     ssh.close()
@@ -481,7 +534,7 @@ class saas_base(osv.osv):
             self.deploy_build(cr, uid, vals, context)
 
         elif vals['base_build'] == 'restore':
-            if vals['app_bdd'] != 'mysql':
+            if vals['database_type'] != 'mysql':
                 ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
                 execute.execute(ssh, ['pg_restore', '-h', vals['bdd_server_domain'], '-U', vals['service_db_user'], '--no-owner', '-Fc', '-d', vals['base_unique_name_'], vals['app_version_full_localpath'] + '/' + vals['app_bdd'] + '/build.sql'], context)
                 ssh.close()
@@ -528,11 +581,6 @@ class saas_base(osv.osv):
 # fi
 
 
-        self.deploy_proxy(cr, uid, vals, context=context)
-        self.deploy_bind(cr, uid, vals, context=context)
-        self.deploy_shinken(cr, uid, vals, context=context)
-        self.deploy_mail(cr, uid, vals, context=context)
-
         #For shinken
         self.save(cr, uid, [vals['base_id']], context=context)
 
@@ -544,7 +592,7 @@ class saas_base(osv.osv):
     def purge_db(self, cr, uid, vals, context=None):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         for key, database in vals['base_databases'].iteritems():
-            if vals['app_bdd'] != 'mysql':
+            if vals['database_type'] != 'mysql':
                 ssh, sftp = execute.connect(vals['database_fullname'], username='postgres', context=context)
                 execute.execute(ssh, ['psql', '-c', '"update pg_database set datallowconn = \'false\' where datname = \'' + database + '\'; SELECT pg_terminate_backend(procpid) FROM pg_stat_activity WHERE datname = \'' + database + '\';"'], context)
                 execute.execute(ssh, ['dropdb', database], context)
@@ -560,11 +608,6 @@ class saas_base(osv.osv):
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-
-        self.purge_shinken(cr, uid, vals, context=context)
-        self.purge_bind(cr, uid, vals, context=context)
-        self.purge_proxy(cr, uid, vals, context=context)
-        self.purge_mail(cr, uid, vals, context=context)
 
         self.purge_db(cr, uid, vals, context=context)
 
@@ -594,124 +637,6 @@ class saas_base(osv.osv):
         return
 
 
-    def deploy_proxy(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if not 'proxy_id' in vals:
-            return
-        self.purge_proxy(cr, uid, vals, context=context)
-        if not vals['base_sslonly']:
-            file = 'proxy.config'
-        else:
-            file = 'proxy-sslonly.config'
-        ssh, sftp = execute.connect(vals['proxy_fullname'], context=context)
-        execute.send(sftp, vals['config_conductor_path'] + '/saas/saas_' + vals['apptype_name'] + '/res/' + file, vals['base_nginx_configfile'], context)
-        execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_nginx_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_nginx_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/SERVER/' + vals['server_domain'] + '/g"', vals['base_nginx_configfile']], context)
-        if 'port' in vals['service_options']:
-            execute.execute(ssh, ['sed', '-i', '"s/PORT/' + vals['service_options']['port']['hostport'] + '/g"', vals['base_nginx_configfile']], context)
-        # self.deploy_prepare_apache(cr, uid, vals, context)
-        cert_file = '/etc/ssl/certs/' + vals['base_name'] + '.' + vals['domain_name'] + '.crt'
-        key_file = '/etc/ssl/private/' + vals['base_name'] + '.' + vals['domain_name'] + '.key'
-        if vals['base_certcert'] and vals['base_certkey']:
-            execute.execute(ssh, ['echo', '"' + vals['base_certcert'] + '"', '>', cert_file], context)
-            execute.execute(ssh, ['echo', '"' + vals['base_certkey'] + '"', '>', key_file], context)
-        elif vals['domain_certcert'] and vals['domain_certkey']:
-            execute.execute(ssh, ['echo', '"' + vals['domain_certcert'] + '"', '>', cert_file], context)
-            execute.execute(ssh, ['echo', '"' + vals['domain_certkey'] + '"', '>', key_file], context)
-        else:
-            execute.execute(ssh, ['openssl', 'req', '-x509', '-nodes', '-days', '365', '-newkey', 'rsa:2048', '-out', cert_file, ' -keyout',  key_file, '-subj', '"/C=FR/L=Paris/O=' + vals['domain_organisation'] + '/CN=' + vals['base_name'] + '.' + vals['domain_name'] + '"'], context)
-        execute.execute(ssh, ['ln', '-s', vals['base_nginx_configfile'], '/etc/nginx/sites-enabled/' + vals['base_unique_name']], context)
-        execute.execute(ssh, ['/etc/init.d/nginx', 'reload'], context)
-        ssh.close()
-        sftp.close()
-
-
-    def purge_proxy(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if not 'proxy_id' in vals:
-            return
-        ssh, sftp = execute.connect(vals['proxy_fullname'], context=context)
-        execute.execute(ssh, ['rm', '/etc/nginx/sites-enabled/' + vals['base_unique_name']], context)
-        execute.execute(ssh, ['rm', vals['base_nginx_configfile']], context)
-        execute.execute(ssh, ['rm', '/etc/ssl/certs/' + vals['base_name'] + '.' + vals['domain_name'] + '.*'], context)
-        execute.execute(ssh, ['rm', '/etc/ssl/private/' + vals['base_name'] + '.' + vals['domain_name'] + '.*'], context)
-        execute.execute(ssh, ['/etc/init.d/nginx', 'reload'], context)
-        ssh.close()
-        sftp.close()
-
-    def deploy_bind(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if not 'dns_server_domain' in vals:
-            execute.log('The dns isnt configured in conf, skipping purge container bind', context)
-            return
-        self.purge_bind(cr, uid, vals, context=context)
-        ssh, sftp = execute.connect(vals['dns_fullname'], context=context)
-        execute.execute(ssh, ['echo "' + vals['base_name'] + ' IN CNAME ' + ('proxy_server_domain' in vals and vals['proxy_server_domain'] or vals['server_domain']) + '." >> ' + vals['domain_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/bind9', 'restart'], context)
-        ssh.close()
-        sftp.close()
-
-
-    def purge_bind(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if not 'dns_server_domain' in vals:
-            execute.log('The dns isnt configured in conf, skipping purge container bind', context)
-            return
-        ssh, sftp = execute.connect(vals['dns_fullname'], context=context)
-        execute.execute(ssh, ['sed', '-i', '"/' + vals['base_name'] + '\sIN\sCNAME/d"', vals['domain_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/bind9', 'restart'], context)
-        ssh.close()
-        sftp.close()
-
-
-    def deploy_shinken(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if not 'shinken_server_domain' in vals:
-            execute.log('The shinken isnt configured in conf, skipping deploy container shinken', context)
-            return
-        self.purge_shinken(cr, uid, vals, context=context)
-        ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-        file = 'base-shinken'
-        if vals['base_nosave']:
-            file = 'base-shinken-nosave'
-        sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/' + file + '.config', vals['base_shinken_configfile'])
-        execute.execute(ssh, ['sed', '-i', '"s/TYPE/base/g"', vals['base_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['base_unique_name_'] + '/g"', vals['base_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/DATABASES/' + vals['base_databases_comma'] + '/g"', vals['base_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/METHOD/' + vals['config_restore_method'] + '/g"', vals['base_shinken_configfile']], context)
-        execute.execute(ssh, ['sed', '-i', '"s/CONTAINER/' + vals['backup_fullname'] + '/g"', vals['base_shinken_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-        ssh.close()
-        sftp.close()
-
-
-
-
-    def purge_shinken(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if not 'shinken_server_domain' in vals:
-            execute.log('The shinken isnt configured in conf, skipping purge container shinken', context)
-            return
-        ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-        execute.execute(ssh, ['rm', vals['base_shinken_configfile']], context)
-        execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-        ssh.close()
-        sftp.close()
-        
-        
-        
-    def deploy_mail(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        self.purge_mail(cr, uid, vals, context=context)
-
-
-    def purge_mail(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-
-
 
 class saas_base_option(osv.osv):
     _name = 'saas.base.option'
@@ -725,3 +650,76 @@ class saas_base_option(osv.osv):
     _sql_constraints = [
         ('name_uniq', 'unique(base_id,name)', 'Option name must be unique per base!'),
     ]
+
+
+class saas_base_link(osv.osv):
+    _name = 'saas.base.link'
+
+    _columns = {
+        'base_id': fields.many2one('saas.base', 'Base', ondelete="cascade", required=True),
+        'name': fields.many2one('saas.application', 'Application', required=True),
+        'target': fields.many2one('saas.container', 'Target'),
+    }
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(service_id,name)', 'Links must be unique per base!'),
+    ]
+
+
+    def get_vals(self, cr, uid, id, context={}):
+        vals = {}
+
+        link = self.browse(cr, uid, id, context=context)
+
+        vals.update(self.pool.get('saas.base').get_vals(cr, uid, link.base_id.id, context=context))
+        if link.target:
+            target_vals = self.pool.get('saas.container').get_vals(cr, uid, link.target.id, context=context)
+            vals.update({
+                'link_target_container_id': target_vals['container_id'],
+                'link_target_container_name': target_vals['container_name'],
+                'link_target_container_fullname': target_vals['container_fullname'],
+                'link_target_app_id': target_vals['app_id'],
+                'link_target_app_code': target_vals['app_code'],
+            })
+
+
+        return vals
+
+    def reload(self, cr, uid, ids, context=None):
+        for link_id in ids:
+            vals = self.get_vals(cr, uid, link_id, context=context)
+            self.deploy(cr, uid, vals, context=context)
+        return
+
+    def deploy_link(self, cr, uid, vals, context={}):
+        return
+
+    def deploy(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        self.purge(cr, uid, vals, context=context)
+        if not 'link_target_container_id' in vals:
+            execute.log('The target isnt configured in the link, skipping deploy link', context)
+            return
+        if vals['link_target_app_code'] not in vals['base_links']:
+            execute.log('The target isnt in the application link for base, skipping deploy link', context)
+            return
+        if not vals['base_links'][vals['link_target_app_code']]['base']:
+            execute.log('This application isnt for base, skipping deploy link', context)
+            return
+        self.deploy_link(cr, uid, vals, context=context)
+
+    def purge_link(self, cr, uid, vals, context={}):
+        return
+
+    def purge(self, cr, uid, vals, context={}):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if not 'link_target_container_id' in vals:
+            execute.log('The target isnt configured in the link, skipping deploy link', context)
+            return
+        if vals['link_target_app_code'] not in vals['base_links']:
+            execute.log('The target isnt in the application link for base, skipping deploy link', context)
+            return
+        if not vals['base_links'][vals['link_target_app_code']]['base']:
+            execute.log('This application isnt for base, skipping deploy link', context)
+            return
+        self.purge_link(cr, uid, vals, context=context)

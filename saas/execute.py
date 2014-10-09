@@ -111,12 +111,28 @@ class saas_model(osv.AbstractModel):
             if log.state == 'unfinished':
                 log_obj.write(cr, uid, [context['logs'][self._name][id]['log_id']], {'state': 'ok'}, context=context)
 
+    def deploy_links(self, cr, uid, ids, context=None):
+        for record in self.browse(cr, uid, ids, context=context):
+            if hasattr(record, 'link_ids'):
+                for link in record.link_ids:
+                    vals = self.pool.get(link._name).get_vals(cr, uid, link.id, context=context)
+                    self.pool.get(link._name).deploy(cr, uid, vals, context=context)
+
+    def purge_links(self, cr, uid, ids, context=None):
+        for record in self.browse(cr, uid, ids, context=context):
+            if hasattr(record, 'link_ids'):
+                for link in record.link_ids:
+                    vals = self.pool.get(link._name).get_vals(cr, uid, link.id, context=context)
+                    self.pool.get(link._name).purge(cr, uid, vals, context=context)
+
     def reinstall(self, cr, uid, ids, context=None):
         for record in self.browse(cr, uid, ids, context=context):
             context = self.create_log(cr, uid, record.id, 'reinstall', context)
             vals = self.get_vals(cr, uid, record.id, context=context)
+            self.purge_links(cr, uid, [record.id], context=context)
             self.purge(cr, uid, vals, context=context)
             self.deploy(cr, uid, vals, context=context)
+            self.deploy_links(cr, uid, [record.id], context=context)
             self.end_log(cr, uid, record.id, context=context)
 
     def create(self, cr, uid, vals, context=None):
@@ -125,6 +141,7 @@ class saas_model(osv.AbstractModel):
         vals = self.get_vals(cr, uid, res, context=context)
         try:
             self.deploy(cr, uid, vals, context)
+            self.deploy_links(cr, uid, [res], context=context)
         except:
             log('===================', context)
             log('FAIL! Reverting...', context)
@@ -139,6 +156,7 @@ class saas_model(osv.AbstractModel):
         for record in self.browse(cr, uid, ids, context=context):
             vals = self.get_vals(cr, uid, record.id, context=context)
             try:
+                self.purge_links(cr, uid, [record.id], context=context)
                 self.purge(cr, uid, vals, context=context)
             except:
                 pass   

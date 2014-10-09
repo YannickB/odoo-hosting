@@ -195,7 +195,39 @@ pypdf = 1.13
             <field name="name" ref="apptype_odoo_option5"/>
             <field name="value">community.group_community_administrator</field>
         </record>
-
+        <record id="app_odoo_link1" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="name" ref="saas_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_link2" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="name" ref="saas_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_link3" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="name" ref="saas_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="service" eval="True"/>
+        </record>
+        <record id="app_odoo_link4" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="name" ref="saas_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_link5" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_ocm"/>
+            <field name="name" ref="saas_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
 
         <record id="app_odoo" model="saas.application">
             <field name="name">Odoo</field>
@@ -232,6 +264,39 @@ pypdf = 1.13
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>
             <field name="base_save_expiration">5</field>
+        </record>
+        <record id="app_odoo_link1" model="saas.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="saas_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_link2" model="saas.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="saas_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_link3" model="saas.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="saas_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="service" eval="True"/>
+        </record>
+        <record id="app_odoo_link4" model="saas.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="saas_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_link5" model="saas.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="saas_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="base" eval="True"/>
         </record>
 
     </data>

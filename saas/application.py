@@ -107,6 +107,7 @@ class saas_application_type_option(osv.osv):
     ]
 
 
+
 class saas_application(osv.osv):
     _name = 'saas.application'
 
@@ -115,7 +116,6 @@ class saas_application(osv.osv):
         'code': fields.char('Code', size=10, required=True),
         'type_id': fields.many2one('saas.application.type', 'Type', required=True),
         'current_version': fields.char('Current version', size=64, required=True),
-        'bdd': fields.selection([('pgsql','PostgreSQL'),('mysql','MySQL')], 'BDD', required=True),
         'next_server_id': fields.many2one('saas.server', 'Next server'),
         'next_database_id': fields.many2one('saas.container', 'Next database'),
         'default_image_id': fields.many2one('saas.image', 'Default Image', required=True),
@@ -131,6 +131,7 @@ class saas_application(osv.osv):
         'version_test': fields.char('Version Test', size=64),
         'version_dev': fields.char('Version Dev', size=64),
         'option_ids': fields.one2many('saas.application.option', 'application_id', 'Options'),
+        'link_ids': fields.one2many('saas.application.link', 'application_id', 'Links'),
         'version_ids': fields.one2many('saas.application.version', 'application_id', 'Versions'),
         'buildfile': fields.text('Build File'),
         'container_ids': fields.one2many('saas.container', 'application_id', 'Containers'),
@@ -142,10 +143,6 @@ class saas_application(osv.osv):
         'base_saverepo_change': fields.integer('Days before base saverepo change', required=True),
         'base_saverepo_expiration': fields.integer('Days before base saverepo expiration', required=True),
         'base_save_expiration': fields.integer('Days before base save expiration', required=True),
-    }
-
-    _defaults = {
-        'bdd': 'pgsql',
     }
 
     _sql_constraints = [
@@ -170,11 +167,19 @@ class saas_application(osv.osv):
         for option in app.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
+        links = {}
+        for link in app.link_ids:
+            links[link.name.code] = {
+                'id': link.id, 'app_id': link.name.id, 'name': link.name.name, 'code': link.name.code,
+                'required': link.required, 'make_link': link.make_link, 'next': link.next,
+                'container': link.container, 'service': link.service, 'base': link.base
+            }
+
 
         vals.update({
+            'app_id': app.id,
             'app_name': app.name,
             'app_code': app.code,
-            'app_bdd': app.bdd,
             'app_instances_path': app.instances_path,
             'app_full_archivepath': vals['config_archive_path'] + '/' + app.type_id.name + '-' + app.code,
             'app_full_hostpath': vals['config_services_hostpath'] + '/' + app.type_id.name + '-' + app.code,
@@ -186,7 +191,8 @@ class saas_application(osv.osv):
             'app_current_version': app.current_version,
             'app_computed_version': computed_version,
             'app_buildfile': app.buildfile,
-            'app_options': options
+            'app_options': options,
+            'app_links': links
         })
 
         return vals
@@ -285,3 +291,21 @@ class saas_application_version(osv.osv):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         execute.execute_local(['sudo','rm', '-rf', vals['app_version_full_archivepath']], context)
         execute.execute_local(['sudo','rm', vals['app_version_full_archivepath_targz']], context)
+
+class saas_application_link(osv.osv):
+    _name = 'saas.application.link'
+
+    _columns = {
+        'application_id': fields.many2one('saas.application', 'Application', ondelete="cascade", required=True),
+        'name': fields.many2one('saas.application', 'Application', required=True),
+        'required': fields.boolean('Required?'),
+        'make_link': fields.boolean('Make docker link?'),
+        'container': fields.boolean('Container?'),
+        'service': fields.boolean('Service?'),
+        'base': fields.boolean('Base?'),
+        'next': fields.many2one('saas.container', 'Next')
+    }
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(application_id,name)', 'Links must be unique per application!'),
+    ]

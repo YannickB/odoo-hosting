@@ -112,10 +112,12 @@ class saas_save_save(osv.osv):
         'container_volumes': fields.text('Volumes'),
         'container_volumes_comma': fields.text('Volumes comma'),
         'container_options': fields.text('Container Options'),
+        'container_links': fields.text('Container Links'),
         'service_id': fields.many2one('saas.service', 'Service'),
         'service_name': fields.char('Service Name', size=64),
         'service_database_id': fields.many2one('saas.container', 'Database Container'),
         'service_options': fields.text('Service Options'),
+        'service_links': fields.text('Service Links'),
         'base_id': fields.many2one('saas.base', 'Base'),
         'base_title': fields.char('Title', size=64),
         'base_app_version': fields.char('Application Version', size=64),
@@ -132,6 +134,7 @@ class saas_save_save(osv.osv):
         'base_lang': fields.char('Lang', size=64),
         'base_nosave': fields.boolean('No save?'),
         'base_options': fields.text('Base Options'),
+        'base_links': fields.text('Base Links'),
 
         'container_name': fields.related('repo_id', 'container_name', type='char', string='Container Name', size=64, readonly=True),
         'container_server': fields.related('repo_id', 'container_server', type='char', string='Container Server', size=64, readonly=True),
@@ -248,6 +251,16 @@ class saas_save_save(osv.osv):
                     for option, option_vals in ast.literal_eval(save.container_options).iteritems():
                         del option_vals['id']
                         options.append((0,0,option_vals))
+                    links = []
+                    for link, link_vals in ast.literal_eval(save.container_links).iteritems():
+                        if not link_vals['name']:
+                            link_app_ids = self.pool.get('saas.application').search(cr, uid, [('code','=',link_vals['name_name'])], context=context)
+                            if link_app_ids:
+                                link_vals['name'] = link_app_ids[0]
+                            else:
+                                continue
+                        del link_vals['name_name']
+                        links.append((0,0,link_vals))
                     container_vals = {
                         'name': vals['save_container_restore_to_name'],
                         'server_id': server_ids[0],
@@ -257,6 +270,7 @@ class saas_save_save(osv.osv):
                         'port_ids': ports,
                         'volume_ids': volumes,
                         'option_ids': options,
+                        'link_ids': links
                     }
                     container_id = container_obj.create(cr, uid, container_vals, context=context)
 
@@ -299,6 +313,8 @@ class saas_save_save(osv.osv):
                 ssh.close()
                 sftp.close()
                 container_obj.start(cr, uid, vals_container, context=context)
+
+                container_obj.deploy_links(self, cr, uid, [container_id], context=None)
                 self.end_log(cr, uid, save.id, context=context)
                 res = container_id
 
@@ -323,12 +339,23 @@ class saas_save_save(osv.osv):
                         for option, option_vals in ast.literal_eval(save.service_options).iteritems():
                             del option_vals['id']
                             options.append((0,0,option_vals))
+                        links = []
+                        for link, link_vals in ast.literal_eval(save.service_links).iteritems():
+                            if not link_vals['name']:
+                                link_app_ids = self.pool.get('saas.application').search(cr, uid, [('code','=',link_vals['name_name'])], context=context)
+                                if link_app_ids:
+                                    link_vals['name'] = link_app_ids[0]
+                                else:
+                                    continue
+                            del link_vals['name_name']
+                            links.append((0,0,link_vals))
                         service_vals = {
                             'name': save.service_name,
                             'container_id': container_id,
                             'database_container_id': save.service_database_id.id,
                             'application_version_id': app_version_ids[0],
 #                            'option_ids': options,
+                            'link_ids': links
                         }
                         service_id = service_obj.create(cr, uid, service_vals, context=context)
 
@@ -351,6 +378,16 @@ class saas_save_save(osv.osv):
                         for option, option_vals in ast.literal_eval(save.base_options).iteritems():
                             del option_vals['id']
                             options.append((0,0,option_vals))
+                        links = []
+                        for link, link_vals in ast.literal_eval(save.base_links).iteritems():
+                            if not link_vals['name']:
+                                link_app_ids = self.pool.get('saas.application').search(cr, uid, [('code','=',link_vals['name_name'])], context=context)
+                                if link_app_ids:
+                                    link_vals['name'] = link_app_ids[0]
+                                else:
+                                    continue
+                            del link_vals['name_name']
+                            links.append((0,0,link_vals))
                         base_vals = {
                             'name': vals['save_base_restore_to_name'],
                             'service_id': service_id,
@@ -368,6 +405,7 @@ class saas_save_save(osv.osv):
                             'lang': save.base_lang,
                             'nosave': save.base_nosave,
 #                            'option_ids': options,
+                            'link_ids': links,
                         }
                         context['base_restoration'] = True
                         base_id = base_obj.create(cr, uid, base_vals, context=context)
@@ -395,7 +433,7 @@ class saas_save_save(osv.osv):
                 base_obj.purge_db(cr, uid, base_vals, context=context)
                 ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
                 for key, database in base_vals['base_databases'].iteritems():
-                    if vals['app_bdd'] != 'mysql':
+                    if vals['database_type'] != 'mysql':
                         execute.execute(ssh, ['createdb', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
                         execute.execute(ssh, ['cat', '/base-backup/' + vals['saverepo_name'] + '/' + vals['save_base_dumpfile'], '|', 'psql', '-q', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
                     else:
@@ -408,10 +446,7 @@ class saas_save_save(osv.osv):
 
                 self.restore_base(cr, uid, base_vals, context=context)
 
-                base_obj.deploy_proxy(cr, uid, base_vals, context=context)
-                base_obj.deploy_bind(cr, uid, base_vals, context=context)
-                base_obj.deploy_shinken(cr, uid, base_vals, context=context)
-                base_obj.deploy_mail(cr, uid, base_vals, context=context)
+                base_obj.deploy_links(cr, uid, [base_id], context=context)
 
                 execute.execute(ssh, ['rm', '-rf', '/base-backup/' + vals['saverepo_name']], context)
                 ssh.close()
@@ -490,7 +525,7 @@ class saas_save_save(osv.osv):
             ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['mkdir', '-p', '/base-backup/' + vals['saverepo_name']], context)
             for key, database in base_vals['base_databases'].iteritems():
-                if vals['app_bdd'] != 'mysql':
+                if vals['database_type'] != 'mysql':
                     execute.execute(ssh, ['pg_dump', '-O', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], database, '>', '/base-backup/' + vals['saverepo_name'] + '/' + database + '.dump'], context)
                 else:
                     execute.execute(ssh, ['mysqldump', '-h', base_vals['database_server'], '-u', base_vals['service_db_user'], '-p' + base_vals['service_db_password'], database, '>', '/base-backup/' + vals['saverepo_name'] + '/' +  database + '.dump'], context)
