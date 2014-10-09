@@ -56,8 +56,6 @@ class saas_config_settings(osv.osv):
         'backup_directory': fields.char('Backup directory', size=128),
         'piwik_server': fields.char('Piwik server', size=128),
         'piwik_password': fields.char('Piwik Password', size=128),
-        'dns_id': fields.many2one('saas.container', 'DNS Server'),
-        'shinken_id': fields.many2one('saas.container', 'Shinken Server'),
         'backup_id': fields.many2one('saas.container', 'Backup Server'),
         'backup_ids': fields.many2many('saas.config.backup.method', 'saas_config_backup_method_rel', 'config_id', 'method_id', 'Backup methods'),
         'restore_method': fields.many2one('saas.config.backup.method', 'Restore method'),
@@ -67,6 +65,9 @@ class saas_config_settings(osv.osv):
         'ftpserver': fields.char('FTP Server', size=64),
         'mailchimp_username': fields.char('MailChimp Username', size=64),
         'mailchimp_apikey': fields.char('MailChimp API Key', size=64),
+        'end_fsck': fields.datetime('Last FSCK ended at'),
+        'end_save_all': fields.datetime('Last Save All ended at'),
+        'end_reset': fields.datetime('Last Reset ended at'),
     }
 
     def get_vals(self, cr, uid, context={}):
@@ -74,28 +75,6 @@ class saas_config_settings(osv.osv):
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
 
         vals = {}
-
-        if config.dns_id:
-            dns_vals = self.pool.get('saas.container').get_vals(cr, uid, config.dns_id.id, context=context)
-            vals.update({
-                'dns_id': dns_vals['container_id'],
-                'dns_fullname': dns_vals['container_fullname'],
-                'dns_ssh_port': dns_vals['container_ssh_port'],
-                'dns_server_id': dns_vals['server_id'],
-                'dns_server_domain': dns_vals['server_domain'],
-                'dns_server_ip': dns_vals['server_ip'],
-            })
-
-        if config.shinken_id:
-            shinken_vals = self.pool.get('saas.container').get_vals(cr, uid, config.shinken_id.id, context=context)
-            vals.update({
-                'shinken_id': shinken_vals['container_id'],
-                'shinken_fullname': shinken_vals['container_fullname'],
-                'shinken_ssh_port': shinken_vals['container_ssh_port'],
-                'shinken_server_id': shinken_vals['server_id'],
-                'shinken_server_domain': shinken_vals['server_domain'],
-                'shinken_server_ip': shinken_vals['server_ip'],
-            })
 
         if config.backup_id:
             backup_vals = self.pool.get('saas.container').get_vals(cr, uid, config.backup_id.id, context=context)
@@ -159,6 +138,11 @@ class saas_config_settings(osv.osv):
         base_ids = base_obj.search(cr, uid, [], context=context)
         base_obj.save(cr, uid, base_ids, context=context)
 
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        self.write(cr, uid, [config.id], {'end_save_all': now}, context=context)
+
+
     def save_fsck(self, cr, uid, ids, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         vals = self.get_vals(cr, uid, context=context)
@@ -171,6 +155,10 @@ class saas_config_settings(osv.osv):
         execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-g'], context)
         ssh.close()
         sftp.close()
+
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        self.write(cr, uid, [config.id], {'end_fsck': now}, context=context)
 
     def save_upload(self, cr, uid, ids, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
@@ -224,13 +212,22 @@ class saas_config_settings(osv.osv):
             else:
                 base_obj.reinstall(cr, uid, [base.id], context=context)
 
-    def cron_daily(self, cr, uid, ids, context={}):
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        self.write(cr, uid, [config.id], {'end_reset': now}, context=context)
+
+    def cron_daily1(self, cr, uid, ids, context={}):
         self.reset_keys(cr, uid, [], context=context)
-        self.save_fsck(cr, uid, [], context=context)
-        self.save_all(cr, uid, [], context=context)
-        self.save_upload(cr, uid, [], context=context)
         self.purge_expired_saves(cr, uid, [], context=context)
         self.purge_expired_logs(cr, uid, [], context=context)
-        self.launch_next_saves(cr, uid, [], context=context)
+        self.save_fsck(cr, uid, [], context=context)
+        return True
+
+    def cron_daily2(self, cr, uid, ids, context={}):
+        self.save_all(cr, uid, [], context=context)
+        return True
+
+    def cron_daily3(self, cr, uid, ids, context={}):
+        self.save_upload(cr, uid, [], context=context)
         self.reset_bases(cr, uid, [], context=context)
         return True

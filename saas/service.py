@@ -171,6 +171,9 @@ class saas_service(osv.osv):
 
         service_fullname = vals['container_name'] + '-' + service.name
         db_user = service_fullname.replace('-','_')
+        if not 'database_type' in vals:
+            raise osv.except_osv(_('Data error!'),
+                _("You need to specify a database in the links of the service " + service.name + " " + vals['container_fullname']))
         if vals['database_type'] == 'mysql':
             db_user = vals['container_name'][:10] + '_' + service.name[:4]
             db_user = db_user.replace('-','_')

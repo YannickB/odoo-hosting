@@ -801,8 +801,6 @@
                         <field name="piwik_server" required="1"/>
                         <field name="piwik_password" required="1"/>
                         <field name="home_directory" required="1"/>
-                        <field name="dns_id"/>
-                        <field name="shinken_id"/>
                         <field name="backup_id"/>
                         <field name="backup_ids" widget="many2many_tags"/>
                         <field name="restore_method"/>
@@ -811,6 +809,9 @@
                         <field name="ftpserver" required="1"/>
                         <field name="mailchimp_username" required="1"/>
                         <field name="mailchimp_apikey" required="1"/>
+                        <field name="end_fsck"/>
+                        <field name="end_save_all"/>
+                        <field name="end_reset"/>
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
                     <button name="reset_keys" string="Reset Keys" type="object"/>
@@ -848,15 +849,39 @@
             sequence="15" action="action_saas_configuration"/>
 
         <record id="save_saas_daily_scheduler" model="ir.cron">
-          <field name="name">SaaS Daily Cron</field>
+          <field name="name">SaaS Daily Cron - Key/Purge/FSCK</field>
           <field eval="1" name="interval_number"/>
           <field name="interval_type">days</field>
           <field eval="-1" name="numbercall"/>
           <field eval="0" name="doall"/>
           <field name="model">saas.config.settings</field>
-          <field name="function">cron_daily</field>
+          <field name="function">cron_daily1</field>
           <field name="args">([1])</field>
-        </record> 
+        </record>
+
+
+        <record id="save_saas_daily_scheduler2" model="ir.cron">
+          <field name="name">SaaS Daily Cron - Save</field>
+          <field eval="1" name="interval_number"/>
+          <field name="interval_type">days</field>
+          <field eval="-1" name="numbercall"/>
+          <field eval="0" name="doall"/>
+          <field name="model">saas.config.settings</field>
+          <field name="function">cron_daily2</field>
+          <field name="args">([1])</field>
+        </record>
+
+
+        <record id="save_saas_daily_scheduler3" model="ir.cron">
+          <field name="name">SaaS Daily Cron - Upload/Reset</field>
+          <field eval="1" name="interval_number"/>
+          <field name="interval_type">days</field>
+          <field eval="-1" name="numbercall"/>
+          <field eval="0" name="doall"/>
+          <field name="model">saas.config.settings</field>
+          <field name="function">cron_daily3</field>
+          <field name="args">([1])</field>
+        </record>
 
         <record id="save_saas_nextsaves_scheduler" model="ir.cron">
           <field name="name">SaaS Next Saves</field>
