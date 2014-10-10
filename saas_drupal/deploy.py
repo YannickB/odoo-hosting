@@ -87,7 +87,7 @@ class saas_base(osv.osv):
             #
             ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
             execute.execute(ssh, ['drush', '-y', 'si',
-                                  '--db-url=' + vals['app_bdd'] + '://' + vals['service_db_user'] + ':' + vals['service_db_password'] + '@' + vals['database_server'] + '/' + vals['base_unique_name_'],
+                                  '--db-url=' + vals['database_type'] + '://' + vals['service_db_user'] + ':' + vals['service_db_password'] + '@' + vals['database_server'] + '/' + vals['base_unique_name_'],
                                   '--account-mail=' + vals['apptype_admin_email'],
                                   '--account-name=' + vals['apptype_admin_name'],
                                   '--account-pass=' + vals['base_admin_passwd'],

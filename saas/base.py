@@ -229,12 +229,14 @@ class saas_base(osv.osv):
                     'link_server_domain': link_vals['server_domain'],
                     'link_server_ip': link_vals['server_ip'],
                 }
+        links_temp = links
         for app_code, link in links.iteritems():
             if link['required'] and not link['target']:
                 raise osv.except_osv(_('Data error!'),
                     _("You need to specify a link to " + link['name'] + " for the base " + base.name))
-            if not link['target']:
-                del links[app_code]
+            # if not link['target']:
+            #     del links_temp[app_code]
+        links = links_temp
 
         unique_name_ = unique_name.replace('-','_')
         databases = {'single': unique_name_}
@@ -318,7 +320,7 @@ class saas_base(osv.osv):
                     links[link.name.id] = {}
                     links[link.name.id]['required'] = link.required
                     links[link.name.id]['name'] = link.name.name
-                    links[link.name.id]['target'] = link.next and link.next.id or False
+                    links[link.name.id]['target'] = link.auto and link.next and link.next.id or False
             if 'link_ids' in vals:
                 for link in vals['link_ids']:
                     link = link[2]

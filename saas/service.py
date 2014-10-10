@@ -144,11 +144,11 @@ class saas_service(osv.osv):
                 }
                 database = False
                 if link.name.code == 'postgres':
-                    vals['database_type'] = 'postgres'
-                    database = True
+                    vals['database_type'] = 'pgsql'
+                    database = 'postgres'
                 elif link.name.code == 'mysql':
                     vals['database_type'] = 'mysql'
-                    database = True
+                    database = 'mysql'
                 if database:
                     vals.update({
                         'database_id': link_vals['container_id'],
@@ -159,7 +159,7 @@ class saas_service(osv.osv):
                         'database_root_password': link_vals['container_root_password'],
                     })
                     if links[link.name.code]['make_link'] and vals['database_server_id'] == vals['server_id']:
-                        vals['database_server'] = vals['database_type']
+                        vals['database_server'] = database
                     else:
                         vals['database_server'] = vals['database_server_domain']
         for app_code, link in links.iteritems():
@@ -204,7 +204,7 @@ class saas_service(osv.osv):
                     links[link.name.id] = {}
                     links[link.name.id]['required'] = link.required
                     links[link.name.id]['name'] = link.name.name
-                    links[link.name.id]['target'] = link.next and link.next.id or False
+                    links[link.name.id]['target'] = link.auto and link.next and link.next.id or False
             if 'link_ids' in vals:
                 for link in vals['link_ids']:
                     link = link[2]

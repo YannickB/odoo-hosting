@@ -170,7 +170,7 @@ class saas_application(osv.osv):
         for link in app.link_ids:
             links[link.name.code] = {
                 'id': link.id, 'app_id': link.name.id, 'name': link.name.name, 'code': link.name.code,
-                'required': link.required, 'make_link': link.make_link, 'next': link.next,
+                'required': link.required, 'auto': link.auto, 'make_link': link.make_link, 'next': link.next,
                 'container': link.container, 'service': link.service, 'base': link.base
             }
 
@@ -298,6 +298,7 @@ class saas_application_link(osv.osv):
         'application_id': fields.many2one('saas.application', 'Application', ondelete="cascade", required=True),
         'name': fields.many2one('saas.application', 'Application', required=True),
         'required': fields.boolean('Required?'),
+        'auto': fields.boolean('Auto?'),
         'make_link': fields.boolean('Make docker link?'),
         'container': fields.boolean('Container?'),
         'service': fields.boolean('Service?'),

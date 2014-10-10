@@ -26,7 +26,7 @@
             <field name="dockerfile"><![CDATA[FROM img_nginx:latest
 MAINTAINER yannick.buron@gmail.com
 
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install php5-mysql php-apc php5-fpm php5-curl php5-gd php5-intl php-pear php5-imap php5-memcache memcached mc mysql-client
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install php5-mysql php-apc php5-fpm php5-curl php5-gd php5-intl php-pear php5-imap php5-memcache memcached mc mysql-client sudo apt-get install php5-geoip php5-dev libgeoip-dev
 
 # php-fpm config
 RUN sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php5/fpm/php.ini
@@ -96,12 +96,14 @@ VOLUME /base-backup
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="saas_bind.app_bind"/>
             <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="app_piwik_link2" model="saas.application.link">
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="saas_shinken.app_shinken"/>
             <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
         </record>
@@ -109,6 +111,7 @@ VOLUME /base-backup
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="saas_mysql.app_mysql"/>
             <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="service" eval="True"/>
         </record>
@@ -116,12 +119,14 @@ VOLUME /base-backup
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="saas_postfix.app_postfix"/>
             <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
         <record id="app_piwik_link5" model="saas.application.link">
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="saas_proxy.app_proxy"/>
             <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
 

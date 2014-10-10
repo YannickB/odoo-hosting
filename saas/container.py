@@ -303,7 +303,7 @@ class saas_container(osv.osv):
                     links[link.name.id] = {}
                     links[link.name.id]['required'] = link.required
                     links[link.name.id]['name'] = link.name.name
-                    links[link.name.id]['target'] = link.next and link.next.id or False
+                    links[link.name.id]['target'] = link.auto and link.next and link.next.id or False
             if 'link_ids' in vals:
                 for link in vals['link_ids']:
                     link = link[2]
@@ -337,9 +337,7 @@ class saas_container(osv.osv):
                 self.reinstall(cr, uid, [container.id], context=context)
                 self.end_log(cr, uid, container.id, context=context)
         if 'nosave' in vals:
-            for container_id in ids:
-                container_vals = self.get_vals(cr, uid, container_id, context=context)
-                self.deploy_shinken(cr, uid, container_vals, context=context)
+            self.deploy_links(cr, uid, ids, context=context)
         return res
 
     def unlink(self, cr, uid, ids, context={}):
@@ -558,21 +556,24 @@ class saas_container(osv.osv):
 
 
         if vals['apptype_name'] == 'backup':
-            if not 'shinken_server_domain' in vals:
+            shinken_ids = self.search(cr, uid, [('application_id.type_id.name', '=','shinken')], context=context)
+            if not shinken_ids:
                 execute.log('The shinken isnt configured in conf, skipping deploying backup keys in shinken', context)
                 return
-            ssh, sftp = execute.connect(vals['shinken_fullname'], username='shinken', context=context)
-            execute.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' + vals['container_fullname'] + '*'], context)
-            execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/home/shinken/.ssh/keys/' + vals['container_fullname'] + '.pub', context)
-            execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '/home/shinken/.ssh/keys/' + vals['container_fullname'], context)
-            execute.execute(ssh, ['chmod', '-R', '700', '/home/shinken/.ssh'], context)
-            execute.execute(ssh, ['sed', '-i', "'/Host " + vals['container_fullname'] + "/,/END " + vals['container_fullname'] + "/d'", '/home/shinken/.ssh/config'], context)
-            execute.execute(ssh, ['echo "Host ' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'], context)
-            execute.execute(ssh, ['echo "    Hostname ' + vals['server_domain'] + '" >> /home/shinken/.ssh/config'], context)
-            execute.execute(ssh, ['echo "    Port ' + str(vals['container_ssh_port']) + '" >> /home/shinken/.ssh/config'], context)
-            execute.execute(ssh, ['echo "    User backup" >> /home/shinken/.ssh/config'], context)
-            execute.execute(ssh, ['echo "    IdentityFile  ~/.ssh/keys/' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'], context)
-            execute.execute(ssh, ['echo "#END ' + vals['container_fullname'] +'" >> ~/.ssh/config'], context)
+            for shinken in self.browse(cr, uid, shinken_ids, context=context):
+                shinken_vals = self.get_vals(cr, uid, shinken.id, context=context)
+                ssh, sftp = execute.connect(shinken_vals['container_fullname'], username='shinken', context=context)
+                execute.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' + vals['container_fullname'] + '*'], context)
+                execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/home/shinken/.ssh/keys/' + vals['container_fullname'] + '.pub', context)
+                execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '/home/shinken/.ssh/keys/' + vals['container_fullname'], context)
+                execute.execute(ssh, ['chmod', '-R', '700', '/home/shinken/.ssh'], context)
+                execute.execute(ssh, ['sed', '-i', "'/Host " + vals['container_fullname'] + "/,/END " + vals['container_fullname'] + "/d'", '/home/shinken/.ssh/config'], context)
+                execute.execute(ssh, ['echo "Host ' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'], context)
+                execute.execute(ssh, ['echo "    Hostname ' + vals['server_domain'] + '" >> /home/shinken/.ssh/config'], context)
+                execute.execute(ssh, ['echo "    Port ' + str(vals['container_ssh_port']) + '" >> /home/shinken/.ssh/config'], context)
+                execute.execute(ssh, ['echo "    User backup" >> /home/shinken/.ssh/config'], context)
+                execute.execute(ssh, ['echo "    IdentityFile  ~/.ssh/keys/' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'], context)
+                execute.execute(ssh, ['echo "#END ' + vals['container_fullname'] +'" >> ~/.ssh/config'], context)
 
 
     def purge_key(self, cr, uid, vals, context={}):
