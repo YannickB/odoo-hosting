@@ -25,32 +25,23 @@ from openerp import pooler
 from openerp.osv import fields, osv, orm
 from openerp.tools.translate import _
 
-import time
-from datetime import datetime, timedelta
-import subprocess
-import re
 import openerp.addons.saas.execute as execute
 
 import logging
 _logger = logging.getLogger(__name__)
 
-class saas_application(osv.osv):
-    _inherit = 'saas.application'
 
+class saas_base_link(osv.osv):
+    _inherit = 'saas.base.link'
 
-class saas_application_version(osv.osv):
-    _inherit = 'saas.application.version'
-
-    def build_application(self, cr, uid, vals, context):
-        super(saas_application_version, self).build_application(cr, uid, vals, context)
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if vals['apptype_name'] == 'piwik':
-            ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
-            execute.execute(ssh, ['wget', '-q', 'http://builds.piwik.org/piwik.zip', 'piwik.zip'], context, path=vals['app_version_full_archivepath'])
-            execute.execute(ssh, ['unzip', '-q', 'piwik.zip'], context, path=vals['app_version_full_archivepath'])
-            execute.execute(ssh, ['mv', 'piwik/*', './'], context, path=vals['app_version_full_archivepath'])
-            execute.execute(ssh, ['rm', '-rf', './*.zip'], context, path=vals['app_version_full_archivepath'])
-            execute.execute(ssh, ['rm', '-rf', 'piwik/'], context, path=vals['app_version_full_archivepath'])
+    def deploy_piwik(self, cr, uid, vals, piwik_id, context={}):
+        super(saas_base_link, self).deploy_piwik(cr, uid, vals, piwik_id, context=context)
+        if vals['link_target_app_code'] == 'piwik' and vals['apptype_name'] == 'drupal':
+            ssh, sftp = execute.connect(vals['container_fullname'], context=context)
+            execute.execute(ssh, ['drush', 'variable-set', 'piwik_site_id', piwik_id], context, path=vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain'])
+            execute.execute(ssh, ['drush', 'variable-set', 'piwik_url_http', 'http://' +  vals['link_target_base_fulldomain'] + '/'], context, path=vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain'])
+            execute.execute(ssh, ['drush', 'variable-set', 'piwik_url_https', 'https://' +  vals['link_target_base_fulldomain'] + '/'], context, path=vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain'])
+            execute.execute(ssh, ['drush', 'variable-set', 'piwik_privacy_donottrack', '0'], context, path=vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain'])
             ssh.close()
             sftp.close()
         return

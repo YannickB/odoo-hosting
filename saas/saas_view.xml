@@ -548,7 +548,6 @@
                         <field name="current_version"/>
                         <field name="default_image_id"/>
                         <field name="next_server_id"/>
-                        <field name="next_database_id"/>
 <!--
                         <field name="preprod_domain_id"/>
                         <field name="preprod_server_id"/>

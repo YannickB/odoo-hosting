@@ -23,6 +23,7 @@
  'version': '1.0',
  'category': 'Community',
  'depends': ['base',
+             'saas_piwik',
              ],
  'author': 'Yannick Buron',
  'license': 'AGPL-3',

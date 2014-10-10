@@ -314,7 +314,7 @@ class saas_save_save(osv.osv):
                 sftp.close()
                 container_obj.start(cr, uid, vals_container, context=context)
 
-                container_obj.deploy_links(self, cr, uid, [container_id], context=None)
+                container_obj.deploy_links(cr, uid, [container_id], context=context)
                 self.end_log(cr, uid, save.id, context=context)
                 res = container_id
 

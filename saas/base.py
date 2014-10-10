@@ -204,26 +204,6 @@ class saas_base(osv.osv):
         unique_name = vals['app_code'] + '-' + base.name + '-' + base.domain_id.name
         unique_name = unique_name.replace('.','-')
 
-        if base.proxy_id:
-            proxy_vals = self.pool.get('saas.container').get_vals(cr, uid, base.proxy_id.id, context=context)
-            vals.update({
-                'proxy_id': proxy_vals['container_id'],
-                'proxy_fullname': proxy_vals['container_fullname'],
-                'proxy_ssh_port': proxy_vals['container_ssh_port'],
-                'proxy_server_id': proxy_vals['server_id'],
-                'proxy_server_domain': proxy_vals['server_domain'],
-            })
-
-        if base.mail_id:
-            mail_vals = self.pool.get('saas.container').get_vals(cr, uid, base.mail_id.id, context=context)
-            vals.update({
-                'mail_id': mail_vals['container_id'],
-                'mail_fullname': mail_vals['container_fullname'],
-                'mail_ssh_port': mail_vals['container_ssh_port'],
-                'mail_server_id': mail_vals['server_id'],
-                'mail_server_domain': mail_vals['server_domain'],
-            })
-
         options = {}
         for option in base.service_id.container_id.application_id.type_id.option_ids:
             if option.type == 'base':
@@ -309,8 +289,6 @@ class saas_base(osv.osv):
             application = application_obj.browse(cr, uid, vals['application_id'], context=context)
             if not application.next_server_id:
                 raise osv.except_osv(_('Error!'),_("You need to specify the next server in application for the container autocreate."))
-            if not application.next_database_id:
-                raise osv.except_osv(_('Error!'),_("You need to specify the next database in application for the service autocreate."))
             if not application.default_image_id.version_ids:
                 raise osv.except_osv(_('Error!'),_("No version for the image linked to the application, abandoning container autocreate..."))
             if not application.version_ids:
@@ -329,7 +307,6 @@ class saas_base(osv.osv):
             service_vals = {
                 'name': 'production',
                 'container_id': container_id,
-                'database_container_id': application.next_database_id.id,
                 'application_version_id': application.version_ids[0].id,
             }
             vals['service_id'] = service_obj.create(cr, uid, service_vals, context=context)
@@ -358,14 +335,8 @@ class saas_base(osv.osv):
 
     def write(self, cr, uid, ids, vals, context={}):
         res = super(saas_base, self).write(cr, uid, ids, vals, context=context)
-        if 'nosave' in vals:
-            for base_id in ids:
-                base_vals = self.get_vals(cr, uid, base_id, context=context)
-                self.deploy_shinken(cr, uid, base_vals, context=context)
-        if 'ssl_only' in vals:
-            for base_id in ids:
-                base_vals = self.get_vals(cr, uid, base_id, context=context)
-                self.deploy_proxy(cr, uid, base_vals, context=context)
+        if 'nosave' in vals or 'ssl_only' in vals:
+            self.deploy_links(cr, uid, ids, context=context)
         return res
 
     def unlink(self, cr, uid, ids, context={}):
@@ -556,31 +527,6 @@ class saas_base(osv.osv):
 
         self.deploy_post(cr, uid, vals, context)
 
-
-  # if [[ $skip_analytics != True ]]
-  # then
-
-    # if [[ $saas != 'demo' ]]
-    # then
-    # ssh $piwik_server << EOF
-      # mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_site (name, main_url, ts_created, timezone, currency) VALUES ('$domain_name.wikicompare.info', 'http://$domain_name.wikicompare.info', NOW(), 'Europe/Paris', 'EUR');"
-# EOF
-
-    # piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$domain_name.wikicompare.info' LIMIT 1")
-    # ssh $piwik_server << EOF
-      # mysql piwik -u piwik -p$piwik_password -se "INSERT INTO piwik_access (login, idsite, access) VALUES ('anonymous', $piwik_id, 'view');"
-# EOF
-    # else
-    # piwik_id=$piwik_demo_id
-    # fi
-
-    # $openerp_path/saas/saas/apps/$application_type/deploy.sh post_piwik $application $domain $instance $saas $system_user $server $piwik_id $piwik_server $instances_path
-
-  # fi
-
-# fi
-
-
         #For shinken
         self.save(cr, uid, [vals['base_id']], context=context)
 
@@ -612,26 +558,6 @@ class saas_base(osv.osv):
         self.purge_db(cr, uid, vals, context=context)
 
         self.purge_post(cr, uid, vals, context)
-
-# if [[ $saas != 'demo' ]]
-# then
-
-####TODO This part is not crossplatform because recover the variable will be difficult. When we will move piwik, consider open the post mysql to www server ip so we can continue query it directly.
-####ssh $piwik_server << EOF
-# piwik_id=$(mysql piwik -u piwik -p$piwik_password -se "select idsite from piwik_site WHERE name = '$saas.$domain' LIMIT 1")
-####EOF
-# echo piwik_id $piwik_id
-# fi
-
-# if [[ $piwik_id != '' ]]
-# then
-# ssh $piwik_server << EOF
-  # mysql piwik -u piwik -p$piwik_password -se "UPDATE piwik_site SET name = 'droped_$piwik_id'  WHERE idsite = $piwik_id;"
-  # mysql piwik -u piwik -p$piwik_password -se "DELETE FROM piwik_access WHERE idsite = $piwik_id;"
-# EOF
-# fi
-
-#}
 
     def update_base(self, cr, uid, vals, context=None):
         return
@@ -681,6 +607,17 @@ class saas_base_link(osv.osv):
                 'link_target_app_id': target_vals['app_id'],
                 'link_target_app_code': target_vals['app_code'],
             })
+            service_ids = self.pool.get('saas.service').search(cr, uid, [('container_id', '=', link.target.id)], context=context)
+            base_ids = self.pool.get('saas.base').search(cr, uid, [('service_id', 'in', service_ids)], context=context)
+            if base_ids:
+                base_vals = self.pool.get('saas.base').get_vals(cr, uid, base_ids[0], context=context)
+                vals.update({
+                    'link_target_service_db_user': base_vals['service_db_user'],
+                    'link_target_service_db_password': base_vals['service_db_password'],
+                    'link_target_database_server': base_vals['database_server'],
+                    'link_target_base_unique_name_': base_vals['base_unique_name_'],
+                    'link_target_base_fulldomain': base_vals['base_fulldomain'],
+                })
 
 
         return vals
