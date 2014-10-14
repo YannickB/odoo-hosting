@@ -460,6 +460,7 @@
                     <group col="4">
                         <field name="name"/>
                         <field name="organisation"/>
+                        <field name="dns_server_id"/>
                         <newline/>
                         <field name="cert_key"/>
                         <field name="cert_cert"/>

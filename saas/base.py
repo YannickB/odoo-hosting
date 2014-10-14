@@ -42,6 +42,7 @@ class saas_domain(osv.osv):
     _columns = {
         'name': fields.char('Domain name', size=64, required=True),
         'organisation': fields.char('Organisation', size=64, required=True),
+        'dns_server_id': fields.many2one('saas.container', 'DNS Server', required=True),
         'cert_key': fields.text('Wildcard Cert Key'),
         'cert_cert': fields.text('Wildcart Cert'),
     }
@@ -58,6 +59,18 @@ class saas_domain(osv.osv):
 
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
         vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
+
+        dns_vals = self.pool.get('saas.container').get_vals(cr, uid, domain.dns_server_id.id, context=context)
+
+        vals.update({
+            'dns_id': dns_vals['container_id'],
+            'dns_name': dns_vals['container_name'],
+            'dns_fullname': dns_vals['container_fullname'],
+            'dns_ssh_port': dns_vals['container_ssh_port'],
+            'dns_server_id': dns_vals['server_id'],
+            'dns_server_domain': dns_vals['server_domain'],
+            'dns_server_ip': dns_vals['server_ip'],
+        })
 
         vals.update({
             'domain_name': domain.name,
