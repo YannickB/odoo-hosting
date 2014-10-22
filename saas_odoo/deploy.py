@@ -275,12 +275,16 @@ class saas_base(osv.osv):
         res = super(saas_base, self).update_base(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'odoo':
-            execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user=" + vals['apptype_admin_name'] + ", password=" + vals['base_admin_passwd'] + ")", context)
-            client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user=vals['apptype_admin_name'], password=vals['base_admin_passwd'])
-            # execute.log("module_ids = client.model('ir.module.module').search([('state','in',['installed','to upgrade'])])", context)
-            # module_ids = client.model('ir.module.module').search([('state','in',['installed','to upgrade'])])
-            execute.log("client.upgrade('base')", context)
-            client.upgrade('base')
+            try:
+                execute.log("client = erppeek.Client('http://" + vals['server_domain'] + ":" + vals['service_options']['port']['hostport'] + "," + "db=" + vals['base_unique_name_'] + "," + "user=" + vals['apptype_admin_name'] + ", password=" + vals['base_admin_passwd'] + ")", context)
+                client = erppeek.Client('http://' + vals['server_domain'] + ':' + vals['service_options']['port']['hostport'], db=vals['base_unique_name_'], user=vals['apptype_admin_name'], password=vals['base_admin_passwd'])
+                # execute.log("module_ids = client.model('ir.module.module').search([('state','in',['installed','to upgrade'])])", context)
+                # module_ids = client.model('ir.module.module').search([('state','in',['installed','to upgrade'])])
+                execute.log("client.upgrade('base')", context)
+                client.upgrade('base')
+            except:
+                pass
+
         return res
 
 class saas_save_save(osv.osv):

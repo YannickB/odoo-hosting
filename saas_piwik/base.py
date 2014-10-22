@@ -48,8 +48,8 @@ class saas_base_link(osv.osv):
                     '"INSERT INTO piwik_site (name, main_url, ts_created, timezone, currency) VALUES (\'' + vals['base_fulldomain'] + '\', \'http://' + vals['base_fulldomain'] + '\', NOW(), \'Europe/Paris\', \'EUR\');"'], context)
                 piwik_id = execute.execute(ssh, ['mysql', vals['link_target_base_unique_name_'], '-h ' + vals['link_target_database_server'], '-u ' + vals['link_target_service_db_user'], '-p' + vals['link_target_service_db_password'], '-se',
                     '"select idsite from piwik_site WHERE name = \'' + vals['base_fulldomain'] + '\' LIMIT 1;"'], context)
-            execute.execute(ssh, ['mysql', vals['link_target_base_unique_name_'], '-h ' + vals['link_target_database_server'], '-u ' + vals['link_target_service_db_user'], '-p' + vals['link_target_service_db_password'], '-se',
-                '"INSERT INTO piwik_access (login, idsite, access) VALUES (\'anonymous\', ' + piwik_id + ', \'view\');"'], context)
+#            execute.execute(ssh, ['mysql', vals['link_target_base_unique_name_'], '-h ' + vals['link_target_database_server'], '-u ' + vals['link_target_service_db_user'], '-p' + vals['link_target_service_db_password'], '-se',
+#                '"INSERT INTO piwik_access (login, idsite, access) VALUES (\'anonymous\', ' + piwik_id + ', \'view\');"'], context)
 
             ssh.close()
             sftp.close()
@@ -62,9 +62,9 @@ class saas_base_link(osv.osv):
             ssh, sftp = execute.connect(vals['link_target_container_fullname'], context=context)
             piwik_id = execute.execute(ssh, ['mysql', vals['link_target_base_unique_name_'], '-h ' + vals['link_target_database_server'], '-u ' + vals['link_target_service_db_user'], '-p' + vals['link_target_service_db_password'], '-se',
                 '"select idsite from piwik_site WHERE name = \'' + vals['base_fulldomain'] + '\' LIMIT 1;"'], context)
-            if piwik_id:
-                execute.execute(ssh, ['mysql', vals['link_target_base_unique_name_'], '-h ' + vals['link_target_database_server'], '-u ' + vals['link_target_service_db_user'], '-p' + vals['link_target_service_db_password'], '-se',
-                    '"DELETE FROM piwik_access WHERE idsite = ' + piwik_id + ';"'], context)
+            # if piwik_id:
+            #     execute.execute(ssh, ['mysql', vals['link_target_base_unique_name_'], '-h ' + vals['link_target_database_server'], '-u ' + vals['link_target_service_db_user'], '-p' + vals['link_target_service_db_password'], '-se',
+            #         '"DELETE FROM piwik_access WHERE idsite = ' + piwik_id + ';"'], context)
 
             ssh.close()
             sftp.close()

@@ -41,6 +41,9 @@ RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:memcached]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/usr/bin/memcached -p 11211 -u www-data -m 64 -c 1024 -t 4" >> /etc/supervisor/conf.d/supervisord.conf
 
+# You need to add
+# $_SERVER['HTTPS']='on';
+# in wp-config.php after install to use https http://codex.wordpress.org/Administration_Over_SSL
 
 RUN mkdir /base-backup
 RUN chown -R www-data /base-backup
