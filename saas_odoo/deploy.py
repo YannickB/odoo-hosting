@@ -80,6 +80,7 @@ class saas_service(osv.osv):
             for dir in  sftp.listdir('/opt/odoo/' + vals['service_name'] + '/files/extra'):
                 addons_path += '/opt/odoo/' + vals['service_name'] + '/files/extra/' + dir + ','
             execute.execute(ssh, ['sed', '-i', '"s/ADDONS_PATH/' + addons_path.replace('/','\/') + '/g"', config_file], context)
+            execute.execute(ssh, ['sed', '-i', '"s/APPLICATION/' + vals['app_code'] + '/g"', config_file], context)
             execute.execute(ssh, ['sed', '-i', 's/SERVICE/' + vals['service_name'] + '/g', config_file], context)
             execute.execute(ssh, ['sed', '-i', 's/DATABASE_SERVER/' + vals['database_server'] + '/g', config_file], context)
             execute.execute(ssh, ['sed', '-i', 's/DBUSER/' + vals['service_db_user'] + '/g', config_file], context)
