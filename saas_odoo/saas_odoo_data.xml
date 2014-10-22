@@ -188,7 +188,7 @@ pypdf = 1.13
         <record id="app_odoo_option4" model="saas.application.option">
             <field name="application_id" ref="app_odoo_ocm"/>
             <field name="name" ref="apptype_odoo_option4"/>
-            <field name="value">community_blog,community_crm,community_event,community_forum,community_marketplace,community_project,project_marketplace,l10n_fr_centralbank</field>
+            <field name="value">community_blog,community_crm,community_event,community_forum,community_marketplace,community_project,project_marketplace,l10n_fr_wallet</field>
         </record>
         <record id="app_odoo_option5" model="saas.application.option">
             <field name="application_id" ref="app_odoo_ocm"/>

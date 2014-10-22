@@ -349,9 +349,30 @@ class saas_base(osv.osv):
         return super(saas_base, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
+        save_obj = self.pool.get('saas.save.save')
+        if 'service_id' in vals:
+            for base in self.browse(cr, uid, ids, context=context):
+                context = self.create_log(cr, uid, base.id, 'service change', context)
+                context['save_comment'] = 'Before service change'
+                context['forcesave'] = True
+                save_id = self.save(cr, uid, [base.id], context=context)[base.id]
+                del context['forcesave']
+                base_vals = self.get_vals(cr, uid, base.id, context=context)
+                self.purge(cr, uid, base_vals, context=context)
+                break
         res = super(saas_base, self).write(cr, uid, ids, vals, context=context)
+        if 'service_id' in vals:
+            for base in self.browse(cr, uid, ids, context=context):
+                save_obj.write(cr, uid, [save_id], {'service_id': vals['service_id']}, context=context)
+                context['base_restoration'] = True
+                base_vals = self.get_vals(cr, uid, base.id, context=context)
+                self.deploy(cr, uid, base_vals, context=context)
+                save_obj.restore(cr, uid, [save_id], context=context)
+                self.end_log(cr, uid, base.id, context=context)
+                break
         if 'nosave' in vals or 'ssl_only' in vals:
             self.deploy_links(cr, uid, ids, context=context)
+
         return res
 
     def unlink(self, cr, uid, ids, context={}):
