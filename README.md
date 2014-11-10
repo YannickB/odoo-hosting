@@ -17,3 +17,5 @@ Installation :
 
 
 Help for documentation are more than welcome, you can contact me by mail if you need help for the using/installation.
+
+Join https://launchpad.net/~odoo-vertical-hosting mailing-list for discussions regarding the project.
