@@ -174,6 +174,7 @@ pypdf = 1.13
             <field name="base_time_between_save">120</field>
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>
+            <field name="base_save_expiration">5</field>
         </record>
         <record id="app_odoo_option1" model="saas.application.option">
             <field name="application_id" ref="app_odoo_ocm"/>
