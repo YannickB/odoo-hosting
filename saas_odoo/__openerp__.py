@@ -23,6 +23,12 @@
  'version': '1.0',
  'category': 'Community',
  'depends': ['base',
+             'saas_bind',
+             'saas_shinken',
+             'saas_postfix',
+             'saas_proxy',
+             'saas_postgres',
+             'saas_piwik'
              ],
  'author': 'Yannick Buron',
  'license': 'AGPL-3',
