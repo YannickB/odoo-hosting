@@ -133,9 +133,9 @@ class saas_config_settings(osv.osv):
 
 
         context['save_comment'] = 'Save before upload_save'
-        container_ids = container_obj.search(cr, uid, [], context=context)
+        container_ids = container_obj.search(cr, uid, [('nosave','=',False)], context=context)
         container_obj.save(cr, uid, container_ids, context=context)
-        base_ids = base_obj.search(cr, uid, [], context=context)
+        base_ids = base_obj.search(cr, uid, [('nosave','=',False)], context=context)
         base_obj.save(cr, uid, base_ids, context=context)
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
