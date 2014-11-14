@@ -19,22 +19,20 @@
 #
 ##############################################################################
 
-{'name': 'SaaS Piwik',
- 'version': '1.0',
- 'category': 'Community',
- 'depends': ['base',
-             'saas_mysql'
-             ],
- 'author': 'Yannick Buron',
- 'license': 'AGPL-3',
- 'website': 'https://github.com/YannickB',
- 'description': """
-SaaS Piwik
-=================
-""",
- 'demo': [],
- 'data': ['saas_piwik_data.xml'
-          ],
- 'installable': True,
- 'application': True,
+{
+    'name': 'SaaS Piwik',
+    'version': '1.0',
+    'category': 'Community',
+    'depends': ['saas_mysql', 'saas_shinken'],
+    'author': 'Yannick Buron',
+    'license': 'AGPL-3',
+    'website': 'https://github.com/YannickB',
+    'description': """
+    SaaS Piwik
+    =================
+    """,
+    'demo': [],
+    'data': ['saas_piwik_data.xml'],
+    'installable': True,
+    'application': True,
 }

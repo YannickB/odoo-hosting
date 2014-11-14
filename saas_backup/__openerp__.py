@@ -19,21 +19,20 @@
 #
 ##############################################################################
 
-{'name': 'SaaS Backup',
- 'version': '1.0',
- 'category': 'Community',
- 'depends': ['base',
-             ],
- 'author': 'Yannick Buron',
- 'license': 'AGPL-3',
- 'website': 'https://github.com/YannickB',
- 'description': """
-SaaS Backup
-=================
-""",
- 'demo': [],
- 'data': ['saas_backup_data.xml'
-          ],
- 'installable': True,
- 'application': True,
+{
+    'name': 'SaaS Backup',
+    'version': '1.0',
+    'category': 'Community',
+    'depends': ['saas'],
+    'author': 'Yannick Buron',
+    'license': 'AGPL-3',
+    'website': 'https://github.com/YannickB',
+    'description': """
+    SaaS Backup
+    =================
+    """,
+    'demo': [],
+    'data': ['saas_backup_data.xml'],
+    'installable': True,
+    'application': True,
 }

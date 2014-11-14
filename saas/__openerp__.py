@@ -19,21 +19,20 @@
 #
 ##############################################################################
 
-{'name': 'SaaS',
- 'version': '1.0',
- 'category': 'Community',
- 'depends': ['base',
-             ],
- 'author': 'Yannick Buron',
- 'license': 'AGPL-3',
- 'website': 'https://github.com/YannickB',
- 'description': """
-SaaS
-=================
-""",
- 'demo': [],
- 'data': ['saas_view.xml'
-         ],
- 'installable': True,
- 'application': True,
+{
+    'name': 'SaaS',
+    'version': '1.0',
+    'category': 'Community',
+    'depends': ['base'],
+    'author': 'Yannick Buron',
+    'license': 'AGPL-3',
+    'website': 'https://github.com/YannickB',
+    'description': """
+    SaaS
+    =================
+    """,
+    'demo': [],
+    'data': ['saas_view.xml'],
+    'installable': True,
+    'application': True,
 }

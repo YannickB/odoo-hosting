@@ -19,21 +19,20 @@
 #
 ##############################################################################
 
-{'name': 'SaaS Postfix',
- 'version': '1.0',
- 'category': 'Community',
- 'depends': ['base',
-             ],
- 'author': 'Yannick Buron',
- 'license': 'AGPL-3',
- 'website': 'https://github.com/YannickB',
- 'description': """
-SaaS Postfix
-=================
-""",
- 'demo': [],
- 'data': ['saas_postfix_data.xml'
-          ],
- 'installable': True,
- 'application': True,
+{
+    'name': 'SaaS Postfix',
+    'version': '1.0',
+    'category': 'Community',
+    'depends': ['saas'],
+    'author': 'Yannick Buron',
+    'license': 'AGPL-3',
+    'website': 'https://github.com/YannickB',
+    'description': """
+    SaaS Postfix
+    =================
+    """,
+    'demo': [],
+    'data': ['saas_postfix_data.xml'],
+    'installable': True,
+    'application': True,
 }
