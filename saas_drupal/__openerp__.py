@@ -19,22 +19,20 @@
 #
 ##############################################################################
 
-{'name': 'SaaS Drupal',
- 'version': '1.0',
- 'category': 'Community',
- 'depends': ['base',
-             'saas_piwik',
-             ],
- 'author': 'Yannick Buron',
- 'license': 'AGPL-3',
- 'website': 'https://github.com/YannickB',
- 'description': """
-SaaS Drupal
-=================
-""",
- 'demo': [],
- 'data': ['saas_drupal_data.xml'
-          ],
- 'installable': True,
- 'application': True,
+{
+    'name': 'SaaS Drupal',
+    'version': '1.0',
+    'category': 'Community',
+    'depends': ['saas_piwik'],
+    'author': 'Yannick Buron',
+    'license': 'AGPL-3',
+    'website': 'https://github.com/YannickB',
+    'description': """
+    SaaS Drupal
+    =================
+    """,
+    'demo': [],
+    'data': ['saas_drupal_data.xml'],
+    'installable': True,
+    'application': True,
 }

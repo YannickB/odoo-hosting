@@ -19,21 +19,22 @@
 #
 ##############################################################################
 
-{'name': 'SaaS Wordpress',
- 'version': '1.0',
- 'category': 'Community',
- 'depends': ['base',
-             ],
- 'author': 'Yannick Buron',
- 'license': 'AGPL-3',
- 'website': 'https://github.com/YannickB',
- 'description': """
-SaaS Wordpress
-=================
-""",
- 'demo': [],
- 'data': ['saas_wordpress_data.xml'
-          ],
- 'installable': True,
- 'application': True,
+{
+    'name': 'SaaS Wordpress',
+    'version': '1.0',
+    'category': 'Community',
+    'depends': ['saas'],
+    'author': 'Yannick Buron',
+    'license': 'AGPL-3',
+    'website': 'https://github.com/YannickB',
+    'description': """
+    SaaS Wordpress
+    =================
+    """,
+    'demo': [],
+    'data': [
+        'saas_wordpress_data.xml'
+    ],
+    'installable': True,
+    'application': True,
 }
