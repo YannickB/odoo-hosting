@@ -88,25 +88,25 @@ class saas_server(osv.osv):
                 vals = container_obj.get_vals(cr, uid, container.id, context=context)
                 container_obj.stop(cr, uid, vals, context=context)
 
-    def deploy(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        _logger.info('test %s', vals['shinken_server_domain'])
-        if 'shinken_server_domain' in vals:
-            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-            sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/server-shinken.config', vals['server_shinken_configfile'])
-            execute.execute(ssh, ['sed', '-i', '"s/NAME/' + vals['server_domain'] + '/g"', vals['server_shinken_configfile']], context)
-            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-            ssh.close()
-            sftp.close()
+#    def deploy(self, cr, uid, vals, context={}):
+#        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+#        _logger.info('test %s', vals['shinken_server_domain'])
+#        if 'shinken_server_domain' in vals:
+#            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
+#            sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/server-shinken.config', vals['server_shinken_configfile'])
+#            execute.execute(ssh, ['sed', '-i', '"s/NAME/' + vals['server_domain'] + '/g"', vals['server_shinken_configfile']], context)
+#            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
+#            ssh.close()
+#            sftp.close()
 
-    def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if 'shinken_server_domain' in vals:
-            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-            execute.execute(ssh, ['rm', vals['server_shinken_configfile']], context)
-            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-            ssh.close()
-            sftp.close()
+#    def purge(self, cr, uid, vals, context={}):
+#        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+#        if 'shinken_server_domain' in vals:
+#            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
+#            execute.execute(ssh, ['rm', vals['server_shinken_configfile']], context)
+#            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
+#            ssh.close()
+#            sftp.close()
 
 class saas_container(osv.osv):
     _name = 'saas.container'
