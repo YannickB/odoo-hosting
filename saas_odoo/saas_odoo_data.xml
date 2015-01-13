@@ -160,8 +160,9 @@ anybox.recipe.openerp =
 [odoo]
 recipe = anybox.recipe.openerp:server
 version = git http://github.com/odoo/odoo.git odoo 8.0
-addons = git git@github.com:YannickB/community-management.git extra/community-management master
-         git git@github.com:YannickB/account-financial-tools.git extra/account-financial-tools master
+addons = git git@github.com:OCA/vertical-community.git extra/vertical-community 8.0
+         git git@github.com:OCA/account-financial-tools.git extra/account-financial-tools 8.0
+         git git@github.com:YannickB/community-web.git extra/community-web master
          git git@github.com:YannickB/odoo-hosting.git extra/odoo-hosting master
 
 [versions]
@@ -190,7 +191,7 @@ pypdf = 1.13
         <record id="app_odoo_option4" model="saas.application.option">
             <field name="application_id" ref="app_odoo_ocm"/>
             <field name="name" ref="apptype_odoo_option4"/>
-            <field name="value">community_blog,community_crm,community_event,community_forum,community_marketplace,community_project,project_marketplace,l10n_fr_wallet</field>
+            <field name="value">community_blog,community_crm,community_event,community_forum,community_marketplace,community_project,project_marketplace,l10n_fr_wallet,website_community_template</field>
         </record>
         <record id="app_odoo_option5" model="saas.application.option">
             <field name="application_id" ref="app_odoo_ocm"/>
