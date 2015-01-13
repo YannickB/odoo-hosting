@@ -56,6 +56,7 @@ RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq -t wheezy-backports install wkhtmltopdf
 # Note: The official Debian and Ubuntu images automatically ``apt-get clean``
 # after each ``apt-get``
+RUN pip install psycogreen
 
 echo "deb http://ftp.us.debian.org/debian wheezy-backports main" >> /etc/apt/sources.list
 

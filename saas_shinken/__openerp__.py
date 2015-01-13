@@ -19,22 +19,20 @@
 #
 ##############################################################################
 
-{'name': 'SaaS Shinken',
- 'version': '1.0',
- 'category': 'Community',
- 'depends': ['base',
-             'saas_postfix'
-             ],
- 'author': 'Yannick Buron',
- 'license': 'AGPL-3',
- 'website': 'https://github.com/YannickB',
- 'description': """
-SaaS Shinken
-=================
-""",
- 'demo': [],
- 'data': ['saas_shinken_data.xml'
-          ],
- 'installable': True,
- 'application': True,
+{
+    'name': 'SaaS Shinken',
+    'version': '1.0',
+    'category': 'Community',
+    'depends': ['saas_postfix'],
+    'author': 'Yannick Buron',
+    'license': 'AGPL-3',
+    'website': 'https://github.com/YannickB',
+    'description': """
+    SaaS Shinken
+    =================
+    """,
+    'demo': [],
+    'data': ['saas_shinken_data.xml'],
+    'installable': True,
+    'application': True,
 }

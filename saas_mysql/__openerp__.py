@@ -19,21 +19,20 @@
 #
 ##############################################################################
 
-{'name': 'SaaS MySQL',
- 'version': '1.0',
- 'category': 'Community',
- 'depends': ['base',
-             ],
- 'author': 'Yannick Buron',
- 'license': 'AGPL-3',
- 'website': 'https://github.com/YannickB',
- 'description': """
-SaaS MySQL
-=================
-""",
- 'demo': [],
- 'data': ['saas_mysql_data.xml'
-          ],
- 'installable': True,
- 'application': True,
+{
+    'name': 'SaaS MySQL',
+    'version': '1.0',
+    'category': 'Community',
+    'depends': ['saas'],
+    'author': 'Yannick Buron',
+    'license': 'AGPL-3',
+    'website': 'https://github.com/YannickB',
+    'description': """
+    SaaS MySQL
+    =================
+    """,
+    'demo': [],
+    'data': ['saas_mysql_data.xml'],
+    'installable': True,
+    'application': True,
 }
