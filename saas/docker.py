@@ -37,10 +37,55 @@ _logger = logging.getLogger(__name__)
 
 class saas_container(osv.osv):
     _inherit = 'saas.container'
+
+    def write(self, cr, uid, ids, vals, context=None):
+        res = super(saas_container, self).write(cr, uid, ids, vals, context)
+        for container in self.browse(cr, uid, ids, context=context):
+            if 'option_ids' in vals:
+                container_vals = self.get_vals(cr, uid, container.id, context=context)
+                if container_vals['apptype_name'] == 'docker' and 'public_key' in container_vals['container_options']:
+                    self.deploy_post(cr, uid, container_vals, context)
+        return res
+
+    def create_vals(self, cr, uid, vals, context={}):
+        super(saas_container, self).create_vals(cr, uid, vals, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if context['apptype_name'] == 'docker':
+            start_port = ''
+            end_port = ''
+            type_option_obj = self.pool.get('saas.application.type.option')
+            if 'option_ids' in vals:
+                _logger.info('test %s', vals['option_ids'])
+                for option in vals['option_ids']:
+                    _logger.info('test %s', option)
+                    option = option[2]
+                    type_option = type_option_obj.browse(cr, uid, option['name'], context=context)
+                    if type_option.name == 'start_port':
+                        start_port = option['value']
+                    if type_option.name == 'end_port':
+                        end_port = option['value']
+            if start_port and end_port:
+                start_port = int(start_port)
+                end_port = int(end_port)
+                if start_port < end_port:
+                    i = start_port
+                    while i <= end_port:
+                        vals['port_ids'].append((0,0,{'name':str(i),'localport':str(i),'hostport':str(i),'expose':'internet'}))
+                        i += 1
+                else:
+                    raise osv.except_osv(_('Data error!'),
+                    _("Start port need to be inferior to end port"))
+            else:
+                raise osv.except_osv(_('Data error!'),
+                _("You need to specify a start and end port"))
+
+        return vals
+
     def deploy_post(self, cr, uid, vals, context):
         super(saas_container, self).deploy_post(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'docker':
-            ssh, sftp = execute.connect(vals['container_fullname'], context=context)
-            execute.execute(ssh, ['echo "host all  all    ' + vals['container_options']['network']['value'] + ' md5" >> /etc/postgresql/' + vals['app_current_version'] + '/main/pg_hba.conf'], context)
-            execute.execute(ssh, ['echo "listen_addresses=\'' + vals['container_options']['listen']['value'] + '\'" >> /etc/postgresql/' + vals['app_current_version'] + '/main/postgresql.conf'], context)
+            if 'public_key' in vals['container_options']:
+                ssh, sftp = execute.connect(vals['container_fullname'], context=context)
+                execute.execute(ssh, ['echo "' + vals['container_options']['public_key']['value'] + '" > /root/.ssh/authorized_keys2'], context)
+

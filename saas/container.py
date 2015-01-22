@@ -35,9 +35,6 @@ import os
 import logging
 _logger = logging.getLogger(__name__)
 
-STARTPORT = 48000
-ENDPORT = 50000
-
 class saas_server(osv.osv):
     _name = 'saas.server'
     _inherit = ['saas.model']
@@ -168,11 +165,7 @@ class saas_server(osv.osv):
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
-        #TODO we need to launch a direct command, without ssh
-        ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
-        execute.execute(ssh, ['sed', '-i', "'/Host " + vals['server_domain'] + "/,/END " + vals['server_domain'] + "/d'", vals['config_home_directory'] + '/.ssh/config'], context)
-        ssh.close()
-        sftp.close()
+        execute.execute_local([vals['config_conductor_path'] + '/saas/saas/shell/sed.sh', vals['server_domain'], vals['config_home_directory'] + '/.ssh/config'], context)
         execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['server_domain']], context)
 
 #        if 'shinken_server_domain' in vals:
@@ -359,8 +352,8 @@ class saas_container(osv.osv):
 
         return vals
 
-    # def add_links(self, cr, uid, vals, context={}):
-    #     return vals
+    def create_vals(self, cr, uid, vals, context={}):
+        return vals
 
     def create(self, cr, uid, vals, context={}):
         if ('port_ids' not in vals or not vals['port_ids']) and 'image_version_id' in vals:
@@ -374,6 +367,7 @@ class saas_container(osv.osv):
                 vals['volume_ids'].append((0,0,{'name':volume.name,'hostpath':volume.hostpath,'user':volume.user,'readonly':volume.readonly,'nosave':volume.nosave}))
         if 'application_id' in vals:
             application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
+            context['apptype_name'] = application.type_id.name
             links = {}
             for link in  application.link_ids:
                 if link.container or link.make_link:
@@ -393,6 +387,7 @@ class saas_container(osv.osv):
                     raise osv.except_osv(_('Data error!'),
                         _("You need to specify a link to " + link['name'] + " for the container " + vals['name']))
                 vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
+        vals = self.create_vals(cr, uid, vals, context=context)
         return super(saas_container, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
@@ -509,10 +504,10 @@ class saas_container(osv.osv):
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
 
         cmd = ['sudo','docker', 'run', '-d']
-        nextport = STARTPORT
+        nextport = vals['server_start_port']
         for key, port in vals['container_ports'].iteritems():
             if not port['hostport']:
-                while not port['hostport'] and nextport != ENDPORT:
+                while not port['hostport'] and nextport != vals['server_end_port']:
                     port_ids = self.pool.get('saas.container.port').search(cr, uid, [('hostport','=',nextport),('container_id.server_id','=',vals['server_id'])], context=context)
                     if not port_ids and not execute.execute(ssh, ['netstat', '-an', '|', 'grep', str(nextport)], context):
                         self.pool.get('saas.container.port').write(cr, uid, [port['id']], {'hostport': nextport}, context=context)
@@ -656,12 +651,7 @@ class saas_container(osv.osv):
 
 
     def purge_key(self, cr, uid, vals, context={}):
-
-        #TODO we need to launch a direct command, without ssh
-        ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
-        execute.execute(ssh, ['sed', '-i', "'/Host " + vals['container_fullname'] + "/,/END " + vals['container_fullname'] + "/d'", vals['config_home_directory'] + '/.ssh/config'], context)
-        ssh.close()
-        sftp.close()
+        execute.execute_local([vals['config_conductor_path'] + '/saas/saas/shell/sed.sh', vals['container_fullname'], vals['config_home_directory'] + '/.ssh/config'], context)
         execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname']], context)
         execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub'], context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
