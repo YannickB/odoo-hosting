@@ -247,14 +247,16 @@ def execute_local(cmd, context, path=False, shell=False):
 #    for line in proc.stdin:
 #       line = 'stdin : ' + line
 #       log(line, context=context)
+    out = ''
     for line in proc.stdout:
+       out += line
        line = 'stdout : ' + line
        log(line, context)
 #    for line in proc.stderr:
 #       line = 'stderr : ' + line
 #       log(line, context)
     os.chdir(cwd)
-    return proc.stdout
+    return out
 
 def exist(sftp, path):
     try:

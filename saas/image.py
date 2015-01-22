@@ -41,6 +41,7 @@ class saas_image(osv.osv):
     _columns = {
         'name': fields.char('Image name', size=64, required=True),
         'current_version': fields.char('Current version', size=64, required=True),
+        'privileged': fields.boolean('Privileged?', help="Indicate if the containers shall be in privilaged mode. Warning : Theses containers will have access to the host system."),
         'dockerfile': fields.text('DockerFile'),
         'volume_ids': fields.one2many('saas.image.volume', 'image_id', 'Volumes'),
         'port_ids': fields.one2many('saas.image.port', 'image_id', 'Ports'),
@@ -71,6 +72,7 @@ class saas_image(osv.osv):
 
         vals.update({
             'image_name': image.name,
+            'image_privileged': image.privileged,
             'image_ports': ports,
             'image_volumes': volumes,
             'image_dockerfile': image.dockerfile

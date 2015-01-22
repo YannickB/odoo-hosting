@@ -30,6 +30,7 @@ from datetime import datetime, timedelta
 import subprocess
 import paramiko
 import execute
+import os
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -46,6 +47,10 @@ class saas_server(osv.osv):
         'ip': fields.char('IP', size=64, required=True),
         'ssh_port': fields.char('SSH port', size=12, required=True),
         'mysql_passwd': fields.char('MySQL Passwd', size=64),
+        'private_key': fields.text('SSH Private Key', required=True),
+        'public_key': fields.text('SSH Public Key', required=True),
+        'start_port': fields.integer('Start Port', required=True),
+        'end_port': fields.integer('End Port', required=True),
     }
 
     _sql_constraints = [
@@ -67,9 +72,59 @@ class saas_server(osv.osv):
             type + 'server_ip': server.ip,
             type + 'server_ssh_port': int(server.ssh_port),
             type + 'server_mysql_passwd': server.mysql_passwd,
-            type + 'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + server.name + '.cfg'
+            type + 'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + server.name + '.cfg',
+            type + 'server_private_key': server.private_key,
+            type + 'server_public_key': server.public_key,
+            type + 'server_start_port': server.start_port,
+            type + 'server_end_port': server.end_port,
         })
         return vals
+
+    def _create_key(self, cr, uid, context=None):
+        vals = self.pool.get('saas.config.settings').get_vals(cr, int(uid), context=context)
+        execute.execute_local(['mkdir', '/tmp/key_' + uid], context)
+        execute.execute_local(['ssh-keygen', '-t', 'rsa', '-C', vals['config_email_sysadmin'], '-f', '/tmp/key_' + uid + '/key', '-N', ''], context)
+        return True
+
+    def _destroy_key(self, cr, uid, context=None):
+        execute.execute_local(['rm', '-rf', '/tmp/key_' + uid], context)
+        return True
+
+    def _default_private_key(self, cr, uid, context=None):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        uid = str(uid)
+
+        destroy = True
+        if not execute.local_dir_exist('/tmp/key_' + uid):
+            self._create_key(cr, uid, context=context)
+            destroy = False
+
+        key = execute.execute_local(['cat', '/tmp/key_' + uid + '/key'], context)
+
+        if destroy:
+            self._destroy_key(cr, uid, context=context)
+        return key
+
+    def _default_public_key(self, cr, uid, context=None):
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        uid = str(uid)
+
+        destroy = True
+        if not execute.local_dir_exist('/tmp/key_' + uid):
+            self._create_key(cr, uid, context=context)
+            destroy = False
+
+        key = execute.execute_local(['cat', '/tmp/key_' + uid + '/key.pub'], context)
+
+        if destroy:
+            self._destroy_key(cr, uid, context=context)
+        return key
+
+
+    _defaults = {
+      'private_key': _default_private_key,
+      'public_key': _default_public_key,
+    }
 
 
     def start_containers(self, cr, uid, ids, context={}):
@@ -90,6 +145,17 @@ class saas_server(osv.osv):
 
     def deploy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        self.purge(cr, uid, vals, context=context)
+        key_file = vals['config_home_directory'] + '/.ssh/keys/' + vals['server_domain']
+        execute.execute_write_file(key_file, vals['server_private_key'], context)
+        execute.execute_local(['chmod', '700', key_file], context)
+        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', 'Host ' + vals['server_domain'], context)
+        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  HostName ' + vals['server_domain'], context)
+        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  Port ' + str(vals['server_ssh_port']), context)
+        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  User root', context)
+        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  IdentityFile ~/.ssh/keys/' + vals['server_domain'], context)
+        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n#END ' + vals['server_domain'] + '\n', context)
+
 #        _logger.info('test %s', vals['shinken_server_domain'])
 #        if 'shinken_server_domain' in vals:
 #            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
@@ -101,6 +167,14 @@ class saas_server(osv.osv):
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+
+        #TODO we need to launch a direct command, without ssh
+        ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
+        execute.execute(ssh, ['sed', '-i', "'/Host " + vals['server_domain'] + "/,/END " + vals['server_domain'] + "/d'", vals['config_home_directory'] + '/.ssh/config'], context)
+        ssh.close()
+        sftp.close()
+        execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['server_domain']], context)
+
 #        if 'shinken_server_domain' in vals:
 #            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
 #            execute.execute(ssh, ['rm', vals['server_shinken_configfile']], context)
@@ -138,6 +212,7 @@ class saas_container(osv.osv):
         'date_next_save': fields.datetime('Next save planned'),
         'save_comment': fields.text('Save Comment'),
         'nosave': fields.boolean('No Save?'),
+        'privileged': fields.boolean('Privileged?'),
         'port_ids': fields.one2many('saas.container.port', 'container_id', 'Ports'),
         'volume_ids': fields.one2many('saas.container.volume', 'container_id', 'Volumes'),
         'option_ids': fields.one2many('saas.container.option', 'container_id', 'Options'),
@@ -167,6 +242,7 @@ class saas_container(osv.osv):
             result = {'value': {
                     'server_id': application.next_server_id.id,
                     'image_id': application.default_image_id.id,
+                    'privileged': application.default_image_id.privileged,
                     'image_version_id': application.default_image_id.version_ids and application.default_image_id.version_ids[0].id,
                     }
                 }
@@ -276,6 +352,7 @@ class saas_container(osv.osv):
             'container_options': options,
             'container_links': links,
             'container_no_save': container.nosave,
+            'container_privileged': container.privileged,
             'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
             'container_root_password': root_password
         })
@@ -458,6 +535,8 @@ class saas_container(osv.osv):
         for key, link in vals['container_links'].iteritems():
             if link['make_link'] and link['target']['link_server_id'] == vals['server_id']:
                 cmd.extend(['--link', link['target']['link_name'] + ':' + link['code']])
+        if vals['container_privileged']:
+            cmd.extend(['--privileged'])
         cmd.extend(['-v', '/opt/keys/' + vals['container_fullname'] + ':/opt/keys', '--name', vals['container_name'], vals['image_version_fullname']])
 
         #Deploy key now, otherwise the container will be angry to not find the key. We can't before because vals['container_ssh_port'] may not be set
@@ -577,6 +656,8 @@ class saas_container(osv.osv):
 
 
     def purge_key(self, cr, uid, vals, context={}):
+
+        #TODO we need to launch a direct command, without ssh
         ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
         execute.execute(ssh, ['sed', '-i', "'/Host " + vals['container_fullname'] + "/,/END " + vals['container_fullname'] + "/d'", vals['config_home_directory'] + '/.ssh/config'], context)
         ssh.close()

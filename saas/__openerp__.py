@@ -29,10 +29,10 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS
-    =================
     """,
     'demo': [],
-    'data': ['saas_view.xml'],
+    'data': ['saas_view.xml',
+             'saas_docker_data.xml'],
     'installable': True,
     'application': True,
 }
