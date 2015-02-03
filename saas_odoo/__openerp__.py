@@ -36,7 +36,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS Odoo
-    =================
     """,
     'demo': [],
     'data': [

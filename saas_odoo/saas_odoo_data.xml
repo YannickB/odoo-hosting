@@ -52,7 +52,7 @@
 MAINTAINER yannick.buron@gmail.com
 
 RUN echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-passlib python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils postgresql-client
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-passlib python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils python-paramiko postgresql-client
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq -t wheezy-backports install wkhtmltopdf
 # Note: The official Debian and Ubuntu images automatically ``apt-get clean``
 # after each ``apt-get``
@@ -324,6 +324,88 @@ pypdf = 1.13
             <field name="base" eval="True"/>
         </record>
 
+
+        <record id="app_odoo_orchestrator" model="saas.application">
+            <field name="name">Orchestrator</field>
+            <field name="code">orchestrator</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="default_image_id" ref="image_odoo"/>
+            <field name="linked_local_containers">postfix,postgres</field>
+            <field name="current_version">8.0</field>
+            <field name="buildfile"><![CDATA[
+[buildout]
+parts = odoo
+extensions = gp.vcsdevelop
+vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/1.8#egg=aro-1.8
+vcs-update = True
+find-links = http://download.gna.org/pychart/
+
+[versions]
+# in some cases that's needed
+anybox.recipe.openerp =
+
+[odoo]
+recipe = anybox.recipe.openerp:server
+version = git http://github.com/odoo/odoo.git odoo 8.0
+addons = git git@github.com:YannickB/odoo-hosting.git extra/odoo-hosting master
+         git git@github.com:odoo-vertical-hosting/odoo-hosting-orchestrator.git extra/orchestrator master
+
+[versions]
+reportlab = 2.7
+pypdf = 1.13
+]]></field>
+            <field name="container_time_between_save">9999</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="container_save_expiration">5</field>
+            <field name="base_time_between_save">9999</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
+            <field name="base_save_expiration">5</field>
+        </record>
+        <record id="app_odoo_orchestrator_link1" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_orchestrator"/>
+            <field name="name" ref="saas_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_orchestrator_link2" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_orchestrator"/>
+            <field name="name" ref="saas_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_orchestrator_link3" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_orchestrator"/>
+            <field name="name" ref="saas_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="service" eval="True"/>
+        </record>
+        <record id="app_odoo_orchestrator_link4" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_orchestrator"/>
+            <field name="name" ref="saas_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_orchestrator_link5" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_orchestrator"/>
+            <field name="name" ref="saas_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_orchestrator_link6" model="saas.application.link">
+            <field name="application_id" ref="app_odoo_orchestrator"/>
+            <field name="name" ref="saas_piwik.app_piwik"/>
+            <field name="base" eval="True"/>
+        </record>
 
     </data>
 </openerp>
