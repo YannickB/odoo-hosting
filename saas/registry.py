@@ -19,24 +19,29 @@
 #
 ##############################################################################
 
-{
-    'name': 'SaaS',
-    'version': '1.0',
-    'category': 'Community',
-    'depends': ['base'],
-    'author': 'Yannick Buron',
-    'license': 'AGPL-3',
-    'website': 'https://github.com/YannickB',
-    'description': """
-    SaaS
-    """,
-    'demo': [],
-    'data': [
-        'saas_view.xml',
-        'saas_archive_data.xml',
-        'saas_docker_data.xml',
-        'saas_registry_data.xml'
-    ],
-    'installable': True,
-    'application': True,
-}
+
+from openerp import netsvc
+from openerp import pooler
+from openerp.osv import fields, osv, orm
+from openerp.tools.translate import _
+
+import time
+from datetime import datetime, timedelta
+import subprocess
+import paramiko
+import execute
+
+import logging
+_logger = logging.getLogger(__name__)
+
+
+class saas_container(osv.osv):
+    _inherit = 'saas.container'
+
+    def get_vals(self, cr, uid, ids, context={}):
+        res = super(saas_container, self).get_vals(cr, uid, ids, context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        if 'apptype_name' in res and res['apptype_name'] == 'registry':
+            res['image_version_fullname'] = 'registry'
+        return res
+

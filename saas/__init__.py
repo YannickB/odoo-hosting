@@ -8,3 +8,4 @@ import service
 import base
 import save
 import docker
+import registry
