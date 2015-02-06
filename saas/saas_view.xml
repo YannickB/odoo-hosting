@@ -609,6 +609,9 @@
                     </field>
                     <field name="buildfile" colspan="4"/>
                     <newline/>
+                    <group>
+                        <field name="archive_id"/>
+                    </group>
                     <button name="build" string="Build" type="object"/>
                     <field name="version_ids" colspan="4"/>
                 </form>
@@ -641,6 +644,7 @@
                     <group col="4">
                         <field name="name"/>
                         <field name="application_id"/>
+                        <field name="archive_id"/>
                     </group>
                     <button name="build_database" string="Build Database" type="object"/> <!-- TODO Click on this button to generate a build-appcode.yolo-consulting.net, dump the base and save in the archive file so it can be use later by restore method. Then drop build-appcode.yolo-consulting.net.-->
                     <field name="log_ids" colspan="4"/>
@@ -743,9 +747,9 @@
                         </tree>
                     </field>
                     <group col="4">
-                        <field name="parent_version_id" attrs="{'invisible': [('parent_id','=',False)],'required': [('parent_id','!=',False)]}"/>
+                        <field name="parent_version_id" domain="[('image_id','=',parent_id)]" attrs="{'invisible': [('parent_id','=',False)],'required': [('parent_id','!=',False)]}"/>
                         <field name="parent_from" attrs="{'invisible': [('parent_id','!=',False)],'required': [('parent_id','=',False)]}"/>
-                        <field name="registry_id" attrs="{'required': [('name','!=','img_registry')]}"/>
+                        <field name="registry_id" attrs="{'invisible': [('name','=','img_registry')],'required': [('name','!=','img_registry')]}"/>
                     </group>
                     <button name="build" string="Build" type="object"/>
                     <field name="version_ids" colspan="4"/>
@@ -927,7 +931,7 @@ RUN DEBIAN_FRONTEND=noninteractive locale-gen en_US.UTF-8
 RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
 RUN update-locale LANG=en_US.UTF-8
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils wget patch
 #/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix container.
 #Be cautious to any application which also use it.
 RUN mkdir -p /var/run/sshd

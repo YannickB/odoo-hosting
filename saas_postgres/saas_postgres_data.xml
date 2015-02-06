@@ -26,11 +26,8 @@
         <record id="image_postgres" model="saas.image">
             <field name="name">img_postgres</field>
             <field name="current_version">9.1</field>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
-
-
+            <field name="parent_id" ref="saas.image_base"/>
+            <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install postgresql

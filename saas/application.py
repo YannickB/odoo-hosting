@@ -129,6 +129,7 @@ class saas_application(osv.osv):
         'version_preprod': fields.char('Version Preprod', size=64),
         'version_test': fields.char('Version Test', size=64),
         'version_dev': fields.char('Version Dev', size=64),
+        'archive_id': fields.many2one('saas.container', 'Archive'),
         'option_ids': fields.one2many('saas.application.option', 'application_id', 'Options'),
         'link_ids': fields.one2many('saas.application.link', 'application_id', 'Links'),
         'version_ids': fields.one2many('saas.application.version', 'application_id', 'Versions'),
@@ -180,8 +181,8 @@ class saas_application(osv.osv):
             'app_name': app.name,
             'app_code': app.code,
             'app_instances_path': app.instances_path,
-            'app_full_archivepath': vals['config_archive_path'] + '/' + app.type_id.name + '-' + app.code,
-            'app_full_hostpath': vals['config_services_hostpath'] + '/' + app.type_id.name + '-' + app.code,
+            'app_full_archivepath': '/opt/archives/' + app.type_id.name + '-' + app.code,
+            'app_full_hostpath': '/opt/services/' + app.type_id.name + '-' + app.code,
             'app_full_localpath': vals['apptype_localpath'] and vals['apptype_localpath'] + '/' + app.type_id.name + '-' + app.code or '',
             'app_build_directory': app.build_directory,
             'app_poweruser_name': app.poweruser_name,
@@ -204,6 +205,8 @@ class saas_application(osv.osv):
         version_obj = self.pool.get('saas.application.version')
 
         for app in self.browse(cr, uid, ids, context={}):
+            if not app.archive_id:
+                raise osv.except_osv(_('Date error!'),_("You need to specify the archive where the version must be stored."))
             vals = self.get_vals(cr, uid, app.id, context=context)
             current_version = self.get_current_version(cr, uid, vals, context)
             if current_version:
@@ -211,7 +214,7 @@ class saas_application(osv.osv):
             current_version = current_version or app.current_version
             now = datetime.now()
             version = current_version + '.' + now.strftime('%Y%m%d.%H%M')
-            version_obj.create(cr, uid, {'application_id': app.id, 'name': version}, context=context)
+            version_obj.create(cr, uid, {'application_id': app.id, 'name': version, 'archive_id': app.archive_id and app.archive_id.id}, context=context)
 
 
 class saas_application_option(osv.osv):
@@ -234,6 +237,7 @@ class saas_application_version(osv.osv):
     _columns = {
         'name': fields.char('Name', size=64, required=True),
         'application_id': fields.many2one('saas.application', 'Application', required=True),
+        'archive_id': fields.many2one('saas.container', 'Archive', required=True),
         'service_ids': fields.one2many('saas.service','application_version_id', 'Services'),
     }
 
@@ -251,9 +255,21 @@ class saas_application_version(osv.osv):
 
         vals.update(self.pool.get('saas.application').get_vals(cr, uid, app_version.application_id.id, context=context))
 
+
+        archive_vals = self.pool.get('saas.container').get_vals(cr, uid, app_version.archive_id.id, context=context)
+        vals.update({
+            'archive_id': archive_vals['container_id'],
+            'archive_fullname': archive_vals['container_fullname'],
+            'archive_server_id': archive_vals['server_id'],
+            'archive_server_ssh_port': archive_vals['server_ssh_port'],
+            'archive_server_domain': archive_vals['server_domain'],
+            'archive_server_ip': archive_vals['server_ip'],
+        })
+
         vals.update({
             'app_version_id': app_version.id,
             'app_version_name': app_version.name,
+            'app_version_fullname': vals['app_code'] + '_' + app_version.name,
             'app_version_full_archivepath': vals['app_full_archivepath'] + '/' + app_version.name,
             'app_version_full_archivepath_targz': vals['app_full_archivepath'] + '/' + app_version.name + '.tar.gz',
             'app_version_full_hostpath': vals['app_full_hostpath'] + '/' + app_version.name,
@@ -275,21 +291,23 @@ class saas_application_version(osv.osv):
 
     def deploy(self, cr, uid, vals, context):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        if not execute.local_dir_exist(vals['app_full_archivepath']):
-            execute.execute_local(['mkdir', vals['app_full_archivepath']], context)
-        if execute.local_dir_exist(vals['app_version_full_archivepath']):
-            execute.execute_local(['rm', '-rf', vals['app_version_full_archivepath']], context)
-        execute.execute_local(['mkdir', vals['app_version_full_archivepath']], context)
+        ssh, sftp = execute.connect(vals['archive_fullname'], context=context)
+        execute.execute(ssh, ['mkdir', vals['app_full_archivepath']], context)
+        execute.execute(ssh, ['rm', '-rf', vals['app_version_full_archivepath']], context)
+        execute.execute(ssh, ['mkdir', vals['app_version_full_archivepath']], context)
         self.build_application(cr, uid, vals, context)
-        execute.execute_write_file(vals['app_version_full_archivepath'] + '/VERSION.txt', vals['app_version_name'], context)
-        execute.execute_local(['pwd'], context, path=vals['app_version_full_archivepath'])
-        execute.execute_local(['tar', 'czf', vals['app_version_full_archivepath_targz'], '-C', vals['app_full_archivepath'] + '/' + vals['app_version_name'], '.'], context)
-
+        execute.execute(ssh, ['echo "' + vals['app_version_name'] + '" >> ' +  vals['app_version_full_archivepath'] + '/VERSION.txt'], context)
+        execute.execute(ssh, ['tar', 'czf', vals['app_version_full_archivepath_targz'], '-C', vals['app_full_archivepath'] + '/' + vals['app_version_name'], '.'], context)
+        ssh.close()
+        sftp.close()
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        execute.execute_local(['sudo','rm', '-rf', vals['app_version_full_archivepath']], context)
-        execute.execute_local(['sudo','rm', vals['app_version_full_archivepath_targz']], context)
+        ssh, sftp = execute.connect(vals['archive_fullname'], context=context)
+        execute.execute(ssh, ['rm', '-rf', vals['app_version_full_archivepath']], context)
+        execute.execute(ssh, ['rm', vals['app_version_full_archivepath_targz']], context)
+        ssh.close()
+        sftp.close()
 
 class saas_application_link(osv.osv):
     _name = 'saas.application.link'

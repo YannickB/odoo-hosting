@@ -57,12 +57,14 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq -t wheezy-backports install wk
 # Note: The official Debian and Ubuntu images automatically ``apt-get clean``
 # after each ``apt-get``
 RUN pip install psycogreen
+RUN pip install erppeek
 
 echo "deb http://ftp.us.debian.org/debian wheezy-backports main" >> /etc/apt/sources.list
 
 RUN useradd -m -s /bin/bash odoo
 USER odoo
 RUN mkdir /home/odoo/.ssh
+RUN mkdir /home/odoo/.ssh/keys
 RUN ln -s /opt/keys/authorized_keys /home/odoo/.ssh/authorized_keys
 
 

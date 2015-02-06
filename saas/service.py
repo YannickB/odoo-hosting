@@ -403,8 +403,16 @@ class saas_service(osv.osv):
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
 
         if not execute.exist(sftp, vals['app_version_full_hostpath']):
+            ssh_archive, sftp_archive = execute.connect(vals['archive_fullname'], context=context)
+            tmp = '/tmp/' + vals['app_version_fullname'] + '.tar.gz'
+            execute.log('sftp get ' + vals['app_version_full_archivepath_targz'] + ' ' + tmp, context)
+            # sftp.get('/opt/test', '/tmp/test')
+            sftp_archive.get(vals['app_version_full_archivepath_targz'], tmp)
+            ssh_archive.close()
+            sftp_archive.close()
             execute.execute(ssh, ['mkdir', '-p', vals['app_version_full_hostpath']], context)
-            sftp.put(vals['app_version_full_archivepath_targz'], vals['app_version_full_hostpath'] + '.tar.gz')
+            execute.log('sftp put ' + tmp + ' ' + vals['app_version_full_hostpath'] + '.tar.gz', context)
+            sftp.put(tmp, vals['app_version_full_hostpath'] + '.tar.gz')
             execute.execute(ssh, ['tar', '-xf', vals['app_version_full_hostpath'] + '.tar.gz', '-C', vals['app_version_full_hostpath']], context)
             execute.execute(ssh, ['rm', vals['app_full_hostpath'] + '/' + vals['app_version_name'] + '.tar.gz'], context)
 

@@ -45,15 +45,19 @@ class saas_application_version(osv.osv):
         super(saas_application_version, self).build_application(cr, uid, vals, context)
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         if vals['apptype_name'] == 'drupal':
-            execute.execute_write_file(vals['app_version_full_archivepath'] + '/drush.make', vals['app_buildfile'], context)
-            execute.execute_local(['drush', 'make', vals['app_version_full_archivepath'] + '/drush.make', './'], context, path=vals['app_version_full_archivepath'])
-            execute.execute_local(['cp', vals['config_conductor_path'] + '/saas/saas_drupal/res/wikicompare.script', vals['app_version_full_archivepath']], context)
-            ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
-            execute.execute(ssh, ['patch', '-p0', '-d', vals['app_version_full_archivepath'] + '/sites/all/modules/revisioning/', '<', vals['config_conductor_path'] + '/saas/saas_drupal/res/patch/revisioning_postgres.patch'], context)
+            ssh, sftp = execute.connect(vals['archive_fullname'], context=context)
+            execute.execute(ssh, ['apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git php-pear'], context)
+            execute.execute(ssh, ['pear channel-discover pear.drush.org'], context)
+            execute.execute(ssh, ['pear install drush/drush'], context)
+            execute.execute(ssh, ['echo "' + vals['app_buildfile'].replace('"', '\\"') + '" >> ' + vals['app_version_full_archivepath'] + '/drush.make'], context)
+            execute.execute(ssh, ['drush', 'make', vals['app_version_full_archivepath'] + '/drush.make', './'], context, path=vals['app_version_full_archivepath'])
+            sftp.put(vals['config_conductor_path'] + '/saas_drupal/res/wikicompare.script', vals['app_version_full_archivepath'] + '/wikicompare.script')
+            sftp.put(vals['config_conductor_path'] + '/saas_drupal/res/patch/revisioning_postgres.patch', vals['app_version_full_archivepath'] + '/revisioning_postgres.patch')
+            execute.execute(ssh, ['patch', '-p0', '-d', vals['app_version_full_archivepath'] + '/sites/all/modules/revisioning/', '<', vals['app_version_full_archivepath'] + '/revisioning_postgres.patch'], context)
+            execute.execute(ssh, ['mv', vals['app_version_full_archivepath'] + '/sites', vals['app_version_full_archivepath'] + '/sites-template'], context)
+            execute.execute(ssh, ['ln', '-s', '../sites', vals['app_version_full_archivepath'] + '/sites'], context)
             ssh.close()
             sftp.close()
-            execute.execute_local(['mv', vals['app_version_full_archivepath'] + '/sites', vals['app_version_full_archivepath'] + '/sites-template'], context)
-            execute.execute_local(['ln', '-s', '../sites', vals['app_version_full_archivepath'] + '/sites'], context)
 
 
     #

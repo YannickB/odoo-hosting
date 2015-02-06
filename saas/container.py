@@ -619,7 +619,7 @@ class saas_container(osv.osv):
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  HostName ' + vals['server_domain'], context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  Port ' + str(vals['container_ssh_port']), context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  User root', context)
-        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  IdentityFile ~/.ssh/keys/' + vals['container_fullname'], context)
+        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  IdentityFile /home/odoo/.ssh/keys/' + vals['container_fullname'], context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n#END ' + vals['container_fullname'] + '\n', context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
         execute.execute(ssh, ['mkdir', '/opt/keys/' + vals['container_fullname']], context)

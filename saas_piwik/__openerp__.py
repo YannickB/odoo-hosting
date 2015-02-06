@@ -23,7 +23,7 @@
     'name': 'SaaS Piwik',
     'version': '1.0',
     'category': 'Community',
-    'depends': ['saas_mysql', 'saas_shinken'],
+    'depends': ['saas_mysql', 'saas_bind', 'saas_proxy', 'saas_shinken'],
     'author': 'Yannick Buron',
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',

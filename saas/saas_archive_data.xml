@@ -15,11 +15,12 @@
             <field name="current_version">1</field>
             <field name="parent_id" ref="image_base"/>
             <field name="dockerfile"><![CDATA[
+RUN mkdir /opt/archives
 ]]></field>
 </record>
 <record id="image_archive_volume1" model="saas.image.volume">
     <field name="image_id" ref="image_archive"/>
-    <field name="name">/var/lib/docker</field>
+    <field name="name">/opt/archives</field>
 </record>
 <record id="image_archive_port1" model="saas.image.port">
     <field name="image_id" ref="image_archive"/>
