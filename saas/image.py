@@ -41,7 +41,11 @@ class saas_image(osv.osv):
     _columns = {
         'name': fields.char('Image name', size=64, required=True),
         'current_version': fields.char('Current version', size=64, required=True),
+        'parent_id': fields.many2one('saas.image', 'Parent image'),
+        'parent_version_id': fields.many2one('saas.image.version', 'Parent version'),
+        'parent_from': fields.char('From', size=64),
         'privileged': fields.boolean('Privileged?', help="Indicate if the containers shall be in privilaged mode. Warning : Theses containers will have access to the host system."),
+        'registry_id': fields.many2one('saas.container', 'Registry'),
         'dockerfile': fields.text('DockerFile'),
         'volume_ids': fields.one2many('saas.image.volume', 'image_id', 'Volumes'),
         'port_ids': fields.one2many('saas.image.port', 'image_id', 'Ports'),
@@ -73,6 +77,8 @@ class saas_image(osv.osv):
         vals.update({
             'image_name': image.name,
             'image_privileged': image.privileged,
+            'image_parent_id': image.parent_id and image.parent_id.id,
+            'image_parent_from': image.parent_from,
             'image_ports': ports,
             'image_volumes': volumes,
             'image_dockerfile': image.dockerfile
@@ -86,9 +92,11 @@ class saas_image(osv.osv):
         for image in self.browse(cr, uid, ids, context={}):
             if not image.dockerfile:
                 continue
+            if not image.registry_id and image.name != 'img_registry':
+                raise osv.except_osv(_('Date error!'),_("You need to specify the registry where the version must be stored."))
             now = datetime.now()
             version = image.current_version + '.' + now.strftime('%Y%m%d.%H%M')
-            version_obj.create(cr, uid, {'image_id': image.id, 'name': version}, context=context)
+            version_obj.create(cr, uid, {'image_id': image.id, 'name': version, 'registry_id': image.registry_id and image.registry_id.id, 'parent_id': image.parent_version_id and image.parent_version_id.id}, context=context)
 
     def unlink(self, cr, uid, ids, context=None):
         for image in self.browse(cr, uid, ids, context=context):
@@ -143,6 +151,8 @@ class saas_image_version(osv.osv):
     _columns = {
         'image_id': fields.many2one('saas.image','Image', ondelete='cascade', required=True),
         'name': fields.char('Version', size=64, required=True),
+        'parent_id': fields.many2one('saas.image.version', 'Parent version'),
+        'registry_id': fields.many2one('saas.container', 'Registry'),
         'container_ids': fields.one2many('saas.container','image_version_id', 'Containers'),
     }
 
@@ -160,11 +170,41 @@ class saas_image_version(osv.osv):
 
         vals.update(self.pool.get('saas.image').get_vals(cr, uid, image_version.image_id.id, context=context))
 
+        if image_version.parent_id:
+            parent_vals = self.get_vals(cr, uid, image_version.parent_id.id, context=context)
+            vals.update({
+                'image_version_parent_id': parent_vals['image_version_id'],
+                'image_version_parent_fullpath': parent_vals['image_version_fullpath'],
+                'image_version_parent_fullpath_localhost': parent_vals['image_version_fullpath_localhost'],
+                'image_version_parent_registry_server_id': parent_vals['registry_server_id'],
+            })
+
+        if image_version.registry_id:
+            registry_vals = self.pool.get('saas.container').get_vals(cr, uid, image_version.registry_id.id, context=context)
+            registry_port = registry_vals['container_ports']['registry']['hostport']
+            vals.update({
+                'registry_id': registry_vals['container_id'],
+                'registry_fullname': registry_vals['container_fullname'],
+                'registry_port': registry_port,
+                'registry_server_id': registry_vals['server_id'],
+                'registry_server_ssh_port': registry_vals['server_ssh_port'],
+                'registry_server_domain': registry_vals['server_domain'],
+                'registry_server_ip': registry_vals['server_ip'],
+            })
+
         vals.update({
             'image_version_id': image_version.id,
             'image_version_name': image_version.name,
             'image_version_fullname': image_version.image_id.name + ':' + image_version.name,
         })
+
+        if image_version.registry_id:
+            vals.update({
+                'image_version_fullpath': vals['registry_server_ip'] + ':' + vals['registry_port'] + '/' + vals['image_version_fullname'],
+                'image_version_fullpath_localhost': 'localhost:' + vals['registry_port'] + '/' + vals['image_version_fullname']
+            })
+        else:
+            vals['image_version_fullpath'] = ''
 
 
         return vals
@@ -176,12 +216,28 @@ class saas_image_version(osv.osv):
             raise osv.except_osv(_('Inherit error!'),_("A container is linked to this image version, you can't delete it!"))
         return super(saas_image_version, self).unlink(cr, uid, ids, context=context)
 
+
+
     def deploy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        execute.execute_local(['mkdir', '-p','/opt/build/saas-conductor'], context)
-        execute.execute_local(['cp', '-R', vals['config_conductor_path'] + '/saas', '/opt/build/saas-conductor/saas'], context)
+        ssh, sftp = execute.connect(vals['registry_server_domain'], vals['registry_server_ssh_port'], 'root', context)
+        dir = '/tmp/' + vals['image_name'] + '_' + vals['image_version_fullname']
+        execute.execute(ssh, ['mkdir', '-p', dir], context)
 
-        dockerfile = vals['image_dockerfile']
+        dockerfile = 'FROM '
+        if vals['image_parent_id'] and vals['image_version_parent_id']:
+            if vals['registry_server_id'] == vals['image_version_parent_registry_server_id']:
+                dockerfile += vals['image_version_parent_fullpath_localhost']
+            else:
+                dockerfile += vals['image_version_parent_fullpath']
+        elif vals['image_parent_from']:
+            dockerfile += vals['image_parent_from']
+        else:
+            raise osv.except_osv(_('Date error!'),_("You need to specify the image to inherit!"))
+
+        dockerfile += '\nMAINTAINER ' + vals['config_email_sysadmin'] + '\n'
+
+        dockerfile += vals['image_dockerfile']
         for key, volume in vals['image_volumes'].iteritems():
             dockerfile += '\nVOLUME ' + volume['name']
 
@@ -191,10 +247,15 @@ class saas_image_version(osv.osv):
         if ports:
             dockerfile += '\nEXPOSE ' + ports
 
-        execute.execute_write_file('/opt/build/saas-conductor/Dockerfile', dockerfile, context)
-        execute.execute_local(['sudo','docker', 'build', '-t', vals['image_version_fullname'],'/opt/build/saas-conductor'], context)
-        execute.execute_local(['sudo','docker', 'tag', vals['image_version_fullname'], vals['image_name'] + ':latest'], context)
-        execute.execute_local(['rm', '-rf', '/opt/build/saas-conductor'], context)
+        execute.execute(ssh, ['echo "' + dockerfile.replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'], context)
+        execute.execute(ssh, ['sudo','docker', 'build', '-t', vals['image_version_fullname'], dir], context)
+        execute.execute(ssh, ['sudo','docker', 'tag', vals['image_version_fullname'], vals['image_version_fullpath_localhost']], context)
+        execute.execute(ssh, ['sudo','docker', 'push', vals['image_version_fullpath_localhost']], context)
+        execute.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullname']], context)
+        execute.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullpath_localhost']], context)
+        execute.execute(ssh, ['rm', '-rf', dir], context)
+        ssh.close()
+        sftp.close()
         return
 
 #In case of problems with ssh authentification
@@ -203,5 +264,4 @@ class saas_image_version(osv.osv):
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        execute.execute_local(['sudo','docker', 'rmi', vals['image_version_fullname']], context)
-
+        #TODO There is currently no way to delete an image from private registry.

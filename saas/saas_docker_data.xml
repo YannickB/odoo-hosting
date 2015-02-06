@@ -29,9 +29,8 @@
             <field name="name">img_docker</field>
             <field name="current_version">1</field>
             <field name="privileged">True</field>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
+            <field name="parent_id" ref="image_base"/>
+            <field name="dockerfile"><![CDATA[
 RUN apt-get update -qq && apt-get install -qqy \
 apt-transport-https \
 ca-certificates \

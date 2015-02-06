@@ -137,6 +137,7 @@ class saas_model(osv.AbstractModel):
 
     def create(self, cr, uid, vals, context=None):
         res = super(saas_model, self).create(cr, uid, vals, context=context)
+        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         context = self.create_log(cr, uid, res, 'create', context)
         vals = self.get_vals(cr, uid, res, context=context)
         try:

@@ -30,6 +30,7 @@ from datetime import datetime, timedelta
 import subprocess
 import execute
 import ast
+from os.path import expanduser
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -102,7 +103,7 @@ class saas_config_settings(osv.osv):
             'config_backup_directory': config.backup_directory,
             'config_piwik_server': config.piwik_server,
             'config_piwik_password': config.piwik_password,
-            'config_home_directory': config.home_directory,
+            'config_home_directory': expanduser("~"),
             'config_ftpuser': config.ftpuser,
             'config_ftppass': config.ftppass,
             'config_ftpserver': config.ftpserver,

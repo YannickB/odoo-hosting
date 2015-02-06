@@ -721,6 +721,7 @@
                     <group col="4">
                         <field name="name"/>
                         <field name="current_version"/>
+                        <field name="parent_id"/>
                         <field name="privileged"/>
                     </group>
                     <field name="dockerfile" colspan="4"/>
@@ -741,6 +742,11 @@
                             <field name="udp"/>
                         </tree>
                     </field>
+                    <group col="4">
+                        <field name="parent_version_id" attrs="{'invisible': [('parent_id','=',False)],'required': [('parent_id','!=',False)]}"/>
+                        <field name="parent_from" attrs="{'invisible': [('parent_id','!=',False)],'required': [('parent_id','=',False)]}"/>
+                        <field name="registry_id" attrs="{'required': [('name','!=','img_registry')]}"/>
+                    </group>
                     <button name="build" string="Build" type="object"/>
                     <field name="version_ids" colspan="4"/>
                 </form>
@@ -775,6 +781,8 @@
                     <group col="4">
                         <field name="name"/>
                         <field name="image_id"/>
+                        <field name="parent_id"/>
+                        <field name="registry_id"/>
                     </group>
                     <field name="log_ids" colspan="4"/>
                 </form>
@@ -787,6 +795,7 @@
                 <tree string="Image Versions">
                     <field name="image_id"/>
                     <field name="name"/>
+                    <field name="registry_id"/>
                     <field name="container_ids"/>
                 </tree>
             </field>
@@ -837,7 +846,7 @@
             <field name="archive_path">/opt/archives</field>
             <field name="email_sysadmin">yannick.buron@gmail.com</field>
             <field name="services_hostpath">/opt/services</field>
-            <field name="conductor_path">/opt/openerp/saas-conductor</field>
+            <field name="conductor_path">/opt/odoo/production/files/extra/orchestrator</field>
             <field name="home_directory">/home/saas-conductor</field>
             <field name="ftpuser">sd-34468</field>
             <field name="ftppass">psSLW9K9DrzX2lQ</field>
@@ -906,9 +915,8 @@
         <record id="image_base" model="saas.image">
             <field name="name">yolobase</field>
             <field name="current_version">1.0</field>
-            <field name="dockerfile"><![CDATA[FROM debian:latest
-MAINTAINER yannick.buron@gmail.com
-
+            <field name="parent_from">debian:latest</field>
+            <field name="dockerfile"><![CDATA[
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get -qy install locales
 ENV LANGUAGE en_US.UTF-8
@@ -945,11 +953,8 @@ CMD ["/usr/bin/supervisord"]
         <record id="image_apache" model="saas.image">
             <field name="name">img_apache</field>
             <field name="current_version">2</field>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
-
-
+            <field name="parent_id" ref="image_base"/>
+            <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install apache2
@@ -1003,11 +1008,8 @@ USER root
         <record id="image_nginx" model="saas.image">
             <field name="name">img_nginx</field>
             <field name="current_version">1</field>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
-
-
+            <field name="parent_id" ref="image_base"/>
+            <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install nginx openssl
