@@ -81,7 +81,7 @@ class saas_save_repository(osv.osv):
             vals = self.get_vals(cr, uid, repo.id, context=context)
             self.purge(cr, uid, vals, context=context)
         res = super(saas_save_repository, self).unlink(cr, uid, ids, context=context)
-        self.pool.get('saas.config.settings').save_fsck(cr, uid, [], context=context)
+        # self.pool.get('saas.config.settings').save_fsck(cr, uid, [], context=context)
 
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
@@ -99,6 +99,7 @@ class saas_save_save(osv.osv):
     _columns = {
         'name': fields.char('Name', size=256, required=True),
         'type': fields.related('repo_id','type', type='char', size=64, string='Type', readonly=True),
+        'backup_server_id': fields.many2one('saas.container', 'Backup Server', required=True),
         'repo_id': fields.many2one('saas.save.repository', 'Repository', ondelete='cascade', required=True),
         'date_expiration': fields.date('Expiration Date'),
         'comment': fields.text('Comment'),
@@ -162,6 +163,17 @@ class saas_save_save(osv.osv):
             vals.update(self.pool.get('saas.container').get_vals(cr, uid, save.container_id.id, context=context))
 
         vals.update(self.pool.get('saas.save.repository').get_vals(cr, uid, save.repo_id.id, context=context))
+
+        backup_server_vals = self.pool.get('saas.container').get_vals(cr, uid, save.backup_server_id.id, context=context)
+        vals.update({
+            'backup_id': backup_server_vals['container_id'],
+            'backup_fullname': backup_server_vals['container_fullname'],
+            'backup_server_id': backup_server_vals['server_id'],
+            'backup_server_ssh_port': backup_server_vals['server_ssh_port'],
+            'backup_server_domain': backup_server_vals['server_domain'],
+            'backup_server_ip': backup_server_vals['server_ip'],
+            'backup_method': backup_server_vals['app_options']['backup_method']['value']
+        })
 
         vals.update({
             'save_id': save.id,
@@ -476,14 +488,13 @@ class saas_save_save(osv.osv):
         execute.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'], context)
         execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
         execute.execute(ssh, ['mkdir', '-p', directory], context)
-        if vals['config_restore_method'] == 'simple':
+        if vals['backup_method'] == 'simple':
             execute.execute(ssh, ['cp', '-R', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name'] + '/*', directory], context)
-        if vals['config_restore_method'] == 'bup':
+        if vals['backup_method'] == 'bup':
             execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup restore -C ' + directory + ' ' +  vals['saverepo_name'] + '/' + vals['save_now_bup']], context)
             execute.execute(ssh, ['mv', directory + '/' + vals['save_now_bup'] + '/*', directory], context)
             execute.execute(ssh, ['rm -rf', directory + '/' + vals['save_now_bup']], context)
-        execute.execute(ssh, ['tar', 'cf', directory + '.tar.gz', '-C', directory, '.'], context)
-        execute.execute(ssh, ['scp', '-o StrictHostKeychecking=no', directory + '.tar.gz', vals['container_fullname'] + ':' + directory + '.tar.gz'], context)
+        execute.execute(ssh, ['rsync', '-ra', directory + '/', vals['container_fullname'] + ':' + directory], context)
         execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
         execute.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'], context)
         ssh.close()
@@ -491,9 +502,6 @@ class saas_save_save(osv.osv):
 
 
         ssh, sftp = execute.connect(vals['container_fullname'], context=context)
-        execute.execute(ssh, ['rm', '-rf', directory], context)
-        execute.execute(ssh, ['mkdir', directory], context)
-        execute.execute(ssh, ['tar', '-xf', directory + '.tar.gz', '-C', directory], context)
 
         if vals['saverepo_type'] == 'container':
             for volume in vals['save_container_volumes'].split(','):
@@ -551,7 +559,6 @@ class saas_save_save(osv.osv):
             execute.execute(ssh, ['cp', '-R', '/base-backup/' + vals['saverepo_name'] + '/*', directory], context)
 
         execute.execute(ssh, ['echo "' + vals['now_date'] + '" > ' + directory + '/backup-date'], context)
-        execute.execute(ssh, ['tar', 'cf', directory + '.tar.gz', '-C', directory, '.'], context)
         execute.execute(ssh, ['chmod', '-R', '777', directory + '*'], context)
         ssh.close()
         sftp.close()
@@ -573,18 +580,16 @@ class saas_save_save(osv.osv):
 
         execute.execute(ssh, ['rm', '-rf', directory], context)
         execute.execute(ssh, ['mkdir', directory], context)
-        execute.execute(ssh, ['scp', '-o StrictHostKeychecking=no', vals['container_fullname'] + ':' + directory + '.tar.gz', '/tmp/'], context)
-        execute.execute(ssh, ['tar', '-xf', directory + '.tar.gz', '-C', directory], context)
+        execute.execute(ssh, ['rsync', '-ra', vals['container_fullname'] + ':' + directory + '/', directory], context)
 
-        for backup in  vals['config_backups']:
-            if backup == 'simple':
-                execute.execute(ssh, ['mkdir', '-p', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name']], context)
-                execute.execute(ssh, ['cp', '-R', directory + '/*', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name']], context)
-                execute.execute(ssh, ['rm', '/opt/backup/simple/' + vals['saverepo_name'] + '/latest'], context)
-                execute.execute(ssh, ['ln', '-s', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name'], '/opt/backup/simple/' + vals['saverepo_name'] + '/latest'], context)
-            if backup == 'bup':
-                execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup index ' + directory], context)
-                execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup save -n ' + vals['saverepo_name'] + ' -d ' + str(int(vals['save_now_epoch'])) + ' --strip ' + directory], context)
+        if vals['backup_method'] == 'simple':
+            execute.execute(ssh, ['mkdir', '-p', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name']], context)
+            execute.execute(ssh, ['cp', '-R', directory + '/*', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name']], context)
+            execute.execute(ssh, ['rm', '/opt/backup/simple/' + vals['saverepo_name'] + '/latest'], context)
+            execute.execute(ssh, ['ln', '-s', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name'], '/opt/backup/simple/' + vals['saverepo_name'] + '/latest'], context)
+        if vals['backup_method'] == 'bup':
+            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup index ' + directory], context)
+            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup save -n ' + vals['saverepo_name'] + ' -d ' + str(int(vals['save_now_epoch'])) + ' --strip ' + directory], context)
         execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
         execute.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'], context)
         ssh.close()

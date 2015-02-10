@@ -57,18 +57,14 @@ class saas_config_settings(osv.osv):
         'backup_directory': fields.char('Backup directory', size=128),
         'piwik_server': fields.char('Piwik server', size=128),
         'piwik_password': fields.char('Piwik Password', size=128),
-        'backup_id': fields.many2one('saas.container', 'Backup Server'),
-        'backup_ids': fields.many2many('saas.config.backup.method', 'saas_config_backup_method_rel', 'config_id', 'method_id', 'Backup methods'),
-        'restore_method': fields.many2one('saas.config.backup.method', 'Restore method'),
-        'home_directory': fields.char('Home directory', size=128),
         'ftpuser': fields.char('FTP User', size=64),
         'ftppass': fields.char('FTP Pass', size=64),
         'ftpserver': fields.char('FTP Server', size=64),
         'mailchimp_username': fields.char('MailChimp Username', size=64),
         'mailchimp_apikey': fields.char('MailChimp API Key', size=64),
-        'end_fsck': fields.datetime('Last FSCK ended at'),
+        'end_reset_keys': fields.datetime('Last Reset Keys ended at'),
         'end_save_all': fields.datetime('Last Save All ended at'),
-        'end_reset': fields.datetime('Last Reset ended at'),
+        'end_reset_bases': fields.datetime('Last Reset Bases ended at'),
     }
 
     def get_vals(self, cr, uid, context={}):
@@ -76,22 +72,6 @@ class saas_config_settings(osv.osv):
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
 
         vals = {}
-
-        if config.backup_id:
-            backup_vals = self.pool.get('saas.container').get_vals(cr, uid, config.backup_id.id, context=context)
-            vals.update({
-                'backup_id': backup_vals['container_id'],
-                'backup_fullname': backup_vals['container_fullname'],
-                'backup_ssh_port': backup_vals['container_ssh_port'],
-                'backup_server_id': backup_vals['server_id'],
-                'backup_server_domain': backup_vals['server_domain'],
-                'backup_server_ip': backup_vals['server_ip'],
-            })
-        del context['from_config']
-
-        backups = []
-        for backup in config.backup_ids:
-            backups.append(backup.name)
 
         now = datetime.now()
         vals.update({
@@ -113,8 +93,6 @@ class saas_config_settings(osv.osv):
             'now_hour': now.strftime("%H-%M"),
             'now_hour_regular': now.strftime("%H:%M:%S"),
             'now_bup': now.strftime("%Y-%m-%d-%H%M%S"),
-            'config_backups': backups,
-            'config_restore_method': config.restore_method.name
         })
         return vals
 
@@ -123,15 +101,30 @@ class saas_config_settings(osv.osv):
         container_obj = self.pool.get('saas.container')
         container_ids = container_obj.search(cr, uid, [], context=context)
         container_obj.reset_key(cr, uid, container_ids, context=context)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        self.write(cr, uid, [config.id], {'end_reset_keys': now}, context=context)
+        cr.commit()
 
 
     def save_all(self, cr, uid, ids, context={}):
         container_obj = self.pool.get('saas.container')
+        container_link_obj = self.pool.get('saas.container.link')
         base_obj = self.pool.get('saas.base')
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
-        vals = self.get_vals(cr, uid, context=context)
-
+        backup_ids = container_obj.search(cr, uid, [('application_id.type_id.name','=','backup')], context=context)
+        for backup in container_obj.browse(cr, uid, backup_ids, context=context):
+            vals = container_obj.get_vals(cr, uid, backup.id, context=context)
+            ssh, sftp = execute.connect(vals['container_fullname'], username='backup', context=context)
+            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-r'], context)
+            #http://stackoverflow.com/questions/1904860/how-to-remove-unreferenced-blobs-from-my-git-repo
+            #https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
+            #https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
+            execute.execute(ssh, ['git', 'gc', '--prune=now'], context, path='/opt/backup/bup')
+            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-g'], context)
+            ssh.close()
+            sftp.close()
 
         context['save_comment'] = 'Save before upload_save'
         container_ids = container_obj.search(cr, uid, [('nosave','=',False)], context=context)
@@ -139,43 +132,15 @@ class saas_config_settings(osv.osv):
         base_ids = base_obj.search(cr, uid, [('nosave','=',False)], context=context)
         base_obj.save(cr, uid, base_ids, context=context)
 
+        link_ids = container_link_obj.search(cr, uid, [('container_id.application_id.type_id.name','=','backup'),('name.code','=','backup-upl')], context=context)
+        for link in container_link_obj.browse(cr, uid, link_ids, context=context):
+            vals = container_link_obj.get_vals(cr, uid, link.id, context=context)
+            container_link_obj.deploy(cr, uid, vals, context=context)
+
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
         self.write(cr, uid, [config.id], {'end_save_all': now}, context=context)
-
-
-    def save_fsck(self, cr, uid, ids, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        vals = self.get_vals(cr, uid, context=context)
-        ssh, sftp = execute.connect(vals['backup_fullname'], username='backup', context=context)
-        execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-r'], context)
-        #http://stackoverflow.com/questions/1904860/how-to-remove-unreferenced-blobs-from-my-git-repo
-        #https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
-        #https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
-        execute.execute(ssh, ['git', 'gc', '--prune=now'], context, path='/opt/backup/bup')
-        execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-g'], context)
-        ssh.close()
-        sftp.close()
-
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
-        self.write(cr, uid, [config.id], {'end_fsck': now}, context=context)
-
-    def save_upload(self, cr, uid, ids, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        vals = self.get_vals(cr, uid, context=context)
-        ssh, sftp = execute.connect(vals['backup_fullname'], context=context)
-        execute.execute(ssh, ['tar', 'czf', '/opt/backup.tar.gz', '-C', '/opt/backup', '.'], context)
-        stdin =[
-            'rm -rf /*\n',
-            'put /opt/backup.tar.gz\n',
-            'exit\n'
-        ]
-        execute.execute(ssh, ['ncftp', '-u', vals['config_ftpuser'], '-p' + vals['config_ftppass'], vals['config_ftpserver']], context, stdin_arg=stdin)
-        execute.execute(ssh, ['rm', '/opt/backup.tar.gz'], context)
-        ssh.close()
-        sftp.close()
-
+        cr.commit()
 
     def purge_expired_saves(self, cr, uid, ids, context={}):
         repo_obj = self.pool.get('saas.save.repository')
@@ -215,20 +180,14 @@ class saas_config_settings(osv.osv):
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
-        self.write(cr, uid, [config.id], {'end_reset': now}, context=context)
+        self.write(cr, uid, [config.id], {'end_reset_bases': now}, context=context)
+        cr.commit()
 
-    def cron_daily1(self, cr, uid, ids, context={}):
+    def cron_daily(self, cr, uid, ids, context={}):
         self.reset_keys(cr, uid, [], context=context)
         self.purge_expired_saves(cr, uid, [], context=context)
         self.purge_expired_logs(cr, uid, [], context=context)
-        self.save_fsck(cr, uid, [], context=context)
-        return True
-
-    def cron_daily2(self, cr, uid, ids, context={}):
         self.save_all(cr, uid, [], context=context)
-        return True
-
-    def cron_daily3(self, cr, uid, ids, context={}):
-        self.save_upload(cr, uid, [], context=context)
         self.reset_bases(cr, uid, [], context=context)
         return True
+

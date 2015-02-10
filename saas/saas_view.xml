@@ -46,32 +46,39 @@
                         <field name="parent_id"/>
                         <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
                     </group>
-                    <field name="option_ids" colspan="4">
-                        <tree string="Options" editable="bottom">
-                            <field name="name" domain="[('apptype_id.application_ids.container_ids.service_ids','in',parent.service_id),('type','=','base')]"/>
-                            <field name="value"/>
-                        </tree>
-                    </field>
-                    <field name="link_ids" colspan="4">
-                        <tree string="Links" editable="bottom">
-                            <field name="name"/>
-                            <field name="target"/>
-                            <button name="reload" type="object" string="Reload"/>
-                        </tree>
-                    </field>
-                    <group col="4">
-                        <field name="save_repository_id"/>
-                        <field name="time_between_save"/>
-                        <field name="saverepo_change"/>
-                        <field name="saverepo_expiration"/>
-                        <field name="save_expiration"/>
-                        <newline/>
-                        <field name="date_next_save"/>
-                        <field name="save_comment"/>
-                    </group>
-                    <button name="save" string="Save" type="object"/>
-                    <button name="reinstall" string="Reinstall" type="object"/>
-                    <field name="log_ids" colspan="4"/>
+                    <notebook>
+                        <page string="General">
+                            <field name="option_ids" colspan="4">
+                                <tree string="Options" editable="bottom">
+                                    <field name="name" domain="[('apptype_id.application_ids.container_ids.service_ids','in',parent.service_id),('type','=','base')]"/>
+                                    <field name="value"/>
+                                </tree>
+                            </field>
+                            <field name="link_ids" colspan="4">
+                                <tree string="Links" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="target"/>
+                                    <button name="reload" type="object" string="Reload"/>
+                                </tree>
+                            </field>
+                            <button name="reinstall" string="Reinstall" type="object"/>
+                            <field name="log_ids" colspan="4"/>
+                        </page>
+                        <page string="Save">
+                            <group col="4">
+                                <field name="backup_server_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
+                                <field name="save_repository_id"/>
+                                <field name="time_between_save"/>
+                                <field name="saverepo_change"/>
+                                <field name="saverepo_expiration"/>
+                                <field name="save_expiration"/>
+                                <newline/>
+                                <field name="date_next_save"/>
+                                <field name="save_comment"/>
+                            </group>
+                            <button name="save" string="Save" type="object"/>
+                        </page>
+                    </notebook>
                 </form>
             </field>
         </record>
@@ -176,53 +183,62 @@
                         <field name="nosave"/>
                         <field name="privileged"/>
                     </group>
-                    <field name="option_ids" colspan="4">
-                        <tree string="Options" editable="bottom">
-                            <field name="name" domain="[('apptype_id.application_ids','in',parent.application_id),('type','=','container')]"/>
-                            <field name="value"/>
-                        </tree>
-                    </field>
-                    <field name="port_ids" colspan="4">
-                        <tree string="Ports" editable="bottom">
-                            <field name="name"/>
-                            <field name="localport"/>
-                            <field name="hostport"/>
-                            <field name="expose"/>
-                            <field name="udp"/>
-                        </tree>
-                    </field>
-                    <field name="volume_ids" colspan="4">
-                        <tree string="Volumes" editable="bottom">
-                            <field name="name"/>
-                            <field name="hostpath"/>
-                            <field name="user"/>
-                            <field name="readonly"/>
-                            <field name="nosave"/>
-                        </tree>
-                    </field>
-                    <field name="link_ids" colspan="4">
-                        <tree string="Links" editable="bottom">
-                            <field name="name"/>
-                            <field name="target"/>
-                            <button name="reload" type="object" string="Reload"/>
-                        </tree>
-                    </field>
-                    <group col="4">
-                        <field name="save_repository_id"/>
-                        <field name="time_between_save"/>
-                        <field name="saverepo_change"/>
-                        <field name="saverepo_expiration"/>
-                        <field name="save_expiration"/>
-                        <newline/>
-                        <field name="date_next_save"/>
-                        <field name="save_comment"/>
-                    </group>
-                    <button name="save" string="Save" type="object"/>
-                    <button name="reinstall" string="Reinstall" type="object"/>
-                    <button name="button_stop" string="Stop" type="object"/>
-                    <button name="button_start" string="Start" type="object"/>
-                    <button name="reset_key" string="Reset Key" type="object"/>
-                    <field name="log_ids" colspan="4"/>
+                    <notebook>
+                        <page string="General">
+                            <field name="option_ids" colspan="4">
+                                <tree string="Options" editable="bottom">
+                                    <field name="name" domain="[('apptype_id.application_ids','in',parent.application_id),('type','=','container')]"/>
+                                    <field name="value"/>
+                                </tree>
+                            </field>
+                            <field name="port_ids" colspan="4">
+                                <tree string="Ports" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="localport"/>
+                                    <field name="hostport"/>
+                                    <field name="expose"/>
+                                    <field name="udp"/>
+                                </tree>
+                            </field>
+                            <field name="volume_ids" colspan="4">
+                                <tree string="Volumes" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="hostpath"/>
+                                    <field name="user"/>
+                                    <field name="readonly"/>
+                                    <field name="nosave"/>
+                                </tree>
+                            </field>
+                            <field name="link_ids" colspan="4">
+                                <tree string="Links" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="target"/>
+                                    <button name="reload" type="object" string="Reload"/>
+                                </tree>
+                            </field>
+                            <button name="reinstall" string="Reinstall" type="object"/>
+                            <button name="button_stop" string="Stop" type="object"/>
+                            <button name="button_start" string="Start" type="object"/>
+                            <button name="reset_key" string="Reset Key" type="object"/>
+                            <field name="log_ids" colspan="4"/>
+                        </page>
+                        <page string="Save">
+                            <group col="4">
+                                <field name="backup_server_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
+                                <field name="save_repository_id"/>
+                                <field name="time_between_save"/>
+                                <field name="saverepo_change"/>
+                                <field name="saverepo_expiration"/>
+                                <field name="save_expiration"/>
+                                <newline/>
+                                <field name="date_next_save"/>
+                                <field name="save_comment"/>
+                            </group>
+                            <button name="save" string="Save" type="object"/>
+                        </page>
+                    </notebook>
+
+
                 </form>
             </field>
         </record>
@@ -267,7 +283,7 @@
                         <field name="end_port"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
-                    <button name="start_containers" string="Start Containers" type="object"/>
+                    <button name="start_containers" string="Restart Containers" type="object"/>
                     <button name="stop_containers" string="Stop Containers" type="object"/>
                     <field name="log_ids" colspan="4"/>
                 </form>
@@ -351,6 +367,7 @@
                     <group col="4">
                       <field name="name"/>
                       <field name="type" invisible="1"/>
+                      <field name="backup_server_id"/>
                       <field name="repo_id"/>
                       <field name='comment'/>
                       <field name="now_bup"/>
@@ -578,42 +595,53 @@
                         <field name="version_test"/>
                         <field name="version_dev"/>
                         <newline/>
-                        <field name="container_time_between_save"/>
-                        <field name="base_time_between_save"/>
-                        <field name="container_saverepo_change"/>
-                        <field name="base_saverepo_change"/>
-                        <field name="container_saverepo_expiration"/>
-                        <field name="base_saverepo_expiration"/>
-                        <field name="container_save_expiration"/>
-                        <field name="base_save_expiration"/>
+
 <!--                        <newline/>
                         <button name="refresh_demo" string="Refresh Demo" type="object"/>-->
                     </group>
-                    <field name="option_ids" colspan="4">
-                        <tree string="Options" editable="bottom">
-                            <field name="name" domain="[('apptype_id','=',parent.type_id),('type','=','application')]"/>
-                            <field name="value"/>
-                        </tree>
-                    </field>
-                    <field name="link_ids" colspan="4">
-                        <tree string="Links" editable="bottom">
-                            <field name="name"/>
-                            <field name="required"/>
-                            <field name="auto"/>
-                            <field name="make_link"/>
-                            <field name="container"/>
-                            <field name="service"/>
-                            <field name="base"/>
-                            <field name="next"/>
-                        </tree>
-                    </field>
-                    <field name="buildfile" colspan="4"/>
-                    <newline/>
-                    <group>
-                        <field name="archive_id"/>
-                    </group>
-                    <button name="build" string="Build" type="object"/>
-                    <field name="version_ids" colspan="4"/>
+                    <notebook>
+                        <page string="General">
+                            <field name="option_ids" colspan="4">
+                                <tree string="Options" editable="bottom">
+                                    <field name="name" domain="[('apptype_id','=',parent.type_id),('type','=','application')]"/>
+                                    <field name="value"/>
+                                </tree>
+                            </field>
+                            <field name="link_ids" colspan="4">
+                                <tree string="Links" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="required"/>
+                                    <field name="auto"/>
+                                    <field name="make_link"/>
+                                    <field name="container"/>
+                                    <field name="service"/>
+                                    <field name="base"/>
+                                    <field name="next"/>
+                                </tree>
+                            </field>
+                            <field name="buildfile" colspan="4"/>
+                            <newline/>
+                            <group>
+                                <field name="archive_id"/>
+                            </group>
+                            <button name="build" string="Build" type="object"/>
+                            <field name="version_ids" colspan="4"/>
+                        </page>
+                        <page string="Save">
+                            <group>
+                                <field name="container_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
+                                <field name="base_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
+                                <field name="container_time_between_save"/>
+                                <field name="base_time_between_save"/>
+                                <field name="container_saverepo_change"/>
+                                <field name="base_saverepo_change"/>
+                                <field name="container_saverepo_expiration"/>
+                                <field name="base_saverepo_expiration"/>
+                                <field name="container_save_expiration"/>
+                                <field name="base_save_expiration"/>
+                            </group>
+                        </page>
+                    </notebook>
                 </form>
             </field>
         </record>
@@ -749,7 +777,7 @@
                     <group col="4">
                         <field name="parent_version_id" domain="[('image_id','=',parent_id)]" attrs="{'invisible': [('parent_id','=',False)],'required': [('parent_id','!=',False)]}"/>
                         <field name="parent_from" attrs="{'invisible': [('parent_id','!=',False)],'required': [('parent_id','=',False)]}"/>
-                        <field name="registry_id" attrs="{'invisible': [('name','=','img_registry')],'required': [('name','!=','img_registry')]}"/>
+                        <field name="registry_id" attrs="{'invisible': [('name','=','img_registry')],'required': [('name','!=','img_registry')]}" domain="[('application_id.type_id.name','=','registry')]"/>
                     </group>
                     <button name="build" string="Build" type="object"/>
                     <field name="version_ids" colspan="4"/>
@@ -820,24 +848,18 @@
                         <field name="backup_directory" required="1"/>
                         <field name="piwik_server" required="1"/>
                         <field name="piwik_password" required="1"/>
-                        <field name="home_directory" required="1"/>
-                        <field name="backup_id"/>
-                        <field name="backup_ids" widget="many2many_tags"/>
-                        <field name="restore_method"/>
                         <field name="ftpuser" required="1"/>
                         <field name="ftppass" required="1"/>
                         <field name="ftpserver" required="1"/>
                         <field name="mailchimp_username" required="1"/>
                         <field name="mailchimp_apikey" required="1"/>
-                        <field name="end_fsck"/>
+                        <field name="end_reset_keys"/>
                         <field name="end_save_all"/>
-                        <field name="end_reset"/>
+                        <field name="end_reset_bases"/>
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
                     <button name="reset_keys" string="Reset Keys" type="object"/>
                     <button name="save_all" string="Save All" type="object"/>
-                    <button name="save_fsck" string="Save fsck" type="object"/>
-                    <button name="save_upload" string="Save Upload" type="object"/>
                     <button name="purge_expired_saves" string="Purge expired Saves" type="object"/>
                     <button name="purge_expired_logs" string="Purge Expired Logs" type="object"/>
                     <button name="reset_bases" string="Reset Bases" type="object"/>
@@ -869,37 +891,13 @@
             sequence="15" action="action_saas_configuration"/>
 
         <record id="save_saas_daily_scheduler" model="ir.cron">
-          <field name="name">SaaS Daily Cron - Key/Purge/FSCK</field>
+          <field name="name">SaaS Daily Cron</field>
           <field eval="1" name="interval_number"/>
           <field name="interval_type">days</field>
           <field eval="-1" name="numbercall"/>
           <field eval="0" name="doall"/>
           <field name="model">saas.config.settings</field>
-          <field name="function">cron_daily1</field>
-          <field name="args">([1])</field>
-        </record>
-
-
-        <record id="save_saas_daily_scheduler2" model="ir.cron">
-          <field name="name">SaaS Daily Cron - Save</field>
-          <field eval="1" name="interval_number"/>
-          <field name="interval_type">days</field>
-          <field eval="-1" name="numbercall"/>
-          <field eval="0" name="doall"/>
-          <field name="model">saas.config.settings</field>
-          <field name="function">cron_daily2</field>
-          <field name="args">([1])</field>
-        </record>
-
-
-        <record id="save_saas_daily_scheduler3" model="ir.cron">
-          <field name="name">SaaS Daily Cron - Upload/Reset</field>
-          <field eval="1" name="interval_number"/>
-          <field name="interval_type">days</field>
-          <field eval="-1" name="numbercall"/>
-          <field eval="0" name="doall"/>
-          <field name="model">saas.config.settings</field>
-          <field name="function">cron_daily3</field>
+          <field name="function">cron_daily</field>
           <field name="args">([1])</field>
         </record>
 
@@ -931,7 +929,7 @@ RUN DEBIAN_FRONTEND=noninteractive locale-gen en_US.UTF-8
 RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
 RUN update-locale LANG=en_US.UTF-8
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils wget patch
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils wget patch rsync
 #/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix container.
 #Be cautious to any application which also use it.
 RUN mkdir -p /var/run/sshd
@@ -1063,11 +1061,6 @@ USER root
             <field name="name">nginx-ssl</field>
             <field name="localport">443</field>
             <field name="expose">internet</field>
-        </record>
-
-
-        <record id="backup_method_simple" model="saas.config.backup.method">
-            <field name="name">simple</field>
         </record>
 
         

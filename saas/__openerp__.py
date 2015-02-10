@@ -34,6 +34,7 @@
     'data': [
         'saas_view.xml',
         'saas_archive_data.xml',
+        'saas_backup_data.xml',
         'saas_docker_data.xml',
         'saas_registry_data.xml'
     ],

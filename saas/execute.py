@@ -212,7 +212,7 @@ def connect(host, port=False, username=False, context={}):
         if not port:
             port = user_config['port']
 
-    ssh.connect(host, port=int(port), username=username, key_filename=identityfile)
+    ssh.connect(host, port=int(port), username=username, key_filename=os.path.expanduser(identityfile))
     sftp = ssh.open_sftp()
     return (ssh, sftp)
 

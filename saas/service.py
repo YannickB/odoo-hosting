@@ -406,7 +406,6 @@ class saas_service(osv.osv):
             ssh_archive, sftp_archive = execute.connect(vals['archive_fullname'], context=context)
             tmp = '/tmp/' + vals['app_version_fullname'] + '.tar.gz'
             execute.log('sftp get ' + vals['app_version_full_archivepath_targz'] + ' ' + tmp, context)
-            # sftp.get('/opt/test', '/tmp/test')
             sftp_archive.get(vals['app_version_full_archivepath_targz'], tmp)
             ssh_archive.close()
             sftp_archive.close()
@@ -456,7 +455,7 @@ class saas_service_option(osv.osv):
     }
 
     _sql_constraints = [
-        ('name_uniq', 'unique(server_id,name)', 'Option name must be unique per service!'),
+        ('name_uniq', 'unique(service_id,name)', 'Option name must be unique per service!'),
     ]
 
 

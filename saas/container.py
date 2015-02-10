@@ -212,11 +212,18 @@ class saas_container(osv.osv):
         'link_ids': fields.one2many('saas.container.link', 'container_id', 'Links'),
         'service_ids': fields.one2many('saas.service', 'container_id', 'Services'),
         'ports': fields.function(_get_ports, type='text', string='Ports'),
+        'backup_server_ids': fields.many2many('saas.container', 'saas_container_backup_rel', 'container_id', 'backup_id', 'Backup containers'),
     }
 
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,name)', 'Name must be unique per server!'),
     ]
+
+    def _check_backup(self, cr, uid, ids, context=None):
+        for c in self.browse(cr, uid, ids, context=context):
+            if not c.backup_server_ids and c.application_id.type_id.name not in ['backup','backup_upload','archive','registry']:
+                return False
+        return True
 
     def _check_image(self, cr, uid, ids, context=None):
         for c in self.browse(cr, uid, ids, context=context):
@@ -225,6 +232,7 @@ class saas_container(osv.osv):
         return True
 
     _constraints = [
+        (_check_backup, "You need to specify at least one backup container." , ['application_id']),
         (_check_image, "The image of image version must be the same than the image of container." , ['image_id','image_version_id']),
     ]
 
@@ -268,10 +276,10 @@ class saas_container(osv.osv):
             self.write(cr, uid, [container.id], {'save_repository_id': repo_id}, context=context)
             container = self.browse(cr, uid, id, context=context)
 
-        if 'from_config' not in context:
-            vals.update(self.pool.get('saas.image.version').get_vals(cr, uid, container.image_version_id.id, context=context))
-            vals.update(self.pool.get('saas.application').get_vals(cr, uid, container.application_id.id, context=context))
-            vals.update(self.pool.get('saas.save.repository').get_vals(cr, uid, container.save_repository_id.id, context=context))
+        # if 'from_config' not in context:
+        vals.update(self.pool.get('saas.image.version').get_vals(cr, uid, container.image_version_id.id, context=context))
+        vals.update(self.pool.get('saas.application').get_vals(cr, uid, container.application_id.id, context=context))
+        vals.update(self.pool.get('saas.save.repository').get_vals(cr, uid, container.save_repository_id.id, context=context))
         vals.update(self.pool.get('saas.server').get_vals(cr, uid, container.server_id.id, context=context))
 
 
@@ -327,6 +335,19 @@ class saas_container(osv.osv):
             if not link['target']:
                 del links[app_code]
 
+        backup_servers = []
+        for backup in container.backup_server_ids:
+            backup_vals = self.pool.get('saas.container').get_vals(cr, uid, backup.id, context=context)
+            backup_servers.append({
+                'container_id': backup_vals['container_id'],
+                'container_fullname': backup_vals['container_fullname'],
+                'server_id': backup_vals['server_id'],
+                'server_ssh_port': backup_vals['server_ssh_port'],
+                'server_domain': backup_vals['server_domain'],
+                'server_ip': backup_vals['server_ip'],
+                'backup_method': backup_vals['app_options']['backup_method']['value']
+            })
+
 
         root_password = False
         for key, option in options.iteritems():
@@ -344,6 +365,7 @@ class saas_container(osv.osv):
             'container_ssh_port': ssh_port,
             'container_options': options,
             'container_links': links,
+            'container_backup_servers': backup_servers,
             'container_no_save': container.nosave,
             'container_privileged': container.privileged,
             'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
@@ -368,6 +390,19 @@ class saas_container(osv.osv):
         if 'application_id' in vals:
             application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
             context['apptype_name'] = application.type_id.name
+
+            _logger.info('vals %s', vals)
+            if 'backup_server_ids' not in vals or not vals['backup_server_ids'] or not vals['backup_server_ids'][0][2]:
+                vals['backup_server_ids'] = [(6,0,[b.id for b in application.container_backup_ids])]
+            if 'time_between_save' not in vals or not vals['time_between_save']:
+                vals['time_between_save'] = application.container_time_between_save
+            if 'saverepo_change' not in vals or not vals['saverepo_change']:
+                vals['saverepo_change'] = application.container_saverepo_change
+            if 'saverepo_expiration' not in vals or not vals['saverepo_expiration']:
+                vals['saverepo_expiration'] = application.container_saverepo_expiration
+            if 'save_expiration' not in vals or not vals['save_expiration']:
+                vals['save_expiration'] = application.container_save_expiration
+
             links = {}
             for link in  application.link_ids:
                 if link.container or link.make_link:
@@ -388,6 +423,7 @@ class saas_container(osv.osv):
                         _("You need to specify a link to " + link['name'] + " for the container " + vals['name']))
                 vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
         vals = self.create_vals(cr, uid, vals, context=context)
+        _logger.info('vals %s', vals)
         return super(saas_container, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
@@ -455,33 +491,32 @@ class saas_container(osv.osv):
                 continue
             context = self.create_log(cr, uid, container.id, 'save', context)
             vals = self.get_vals(cr, uid, container.id, context=context)
-            if not 'backup_server_domain' in vals:
-                execute.log('The backup isnt configured in conf, skipping save container', context)
-                return
-            links = {}
-            for app_code, link in vals['container_links'].iteritems():
-                links[app_code] = {
-                    'name': link['app_id'],
-                    'name_name': link['name'],
-                    'target': link['target'] and link['target']['link_id'] or False
+            for backup_server in vals['container_backup_servers']:
+                links = {}
+                for app_code, link in vals['container_links'].iteritems():
+                    links[app_code] = {
+                        'name': link['app_id'],
+                        'name_name': link['name'],
+                        'target': link['target'] and link['target']['link_id'] or False
+                    }
+                save_vals = {
+                    'name': vals['now_bup'] + '_' + vals['container_fullname'],
+                    'backup_server_id': backup_server['container_id'],
+                    'repo_id': vals['saverepo_id'],
+                    'date_expiration': (now + timedelta(days=container.save_expiration or container.application_id.container_save_expiration)).strftime("%Y-%m-%d"),
+                    'comment': 'save_comment' in context and context['save_comment'] or container.save_comment or 'Manual',
+                    'now_bup': vals['now_bup'],
+                    'container_id': vals['container_id'],
+                    'container_volumes_comma': vals['container_volumes_save'],
+                    'container_app': vals['app_code'],
+                    'container_img': vals['image_name'],
+                    'container_img_version': vals['image_version_name'],
+                    'container_ports': str(vals['container_ports']),
+                    'container_volumes': str(vals['container_volumes']),
+                    'container_options': str(vals['container_options']),
+                    'container_links': str(links),
                 }
-            save_vals = {
-                'name': vals['now_bup'] + '_' + vals['container_fullname'],
-                'repo_id': vals['saverepo_id'],
-                'date_expiration': (now + timedelta(days=container.save_expiration or container.application_id.container_save_expiration)).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in context and context['save_comment'] or container.save_comment or 'Manual',
-                'now_bup': vals['now_bup'],
-                'container_id': vals['container_id'],
-                'container_volumes_comma': vals['container_volumes_save'],
-                'container_app': vals['app_code'],
-                'container_img': vals['image_name'],
-                'container_img_version': vals['image_version_name'],
-                'container_ports': str(vals['container_ports']),
-                'container_volumes': str(vals['container_volumes']),
-                'container_options': str(vals['container_options']),
-                'container_links': str(links),
-            }
-            res[container.id] = save_obj.create(cr, uid, save_vals, context=context)
+                res[container.id] = save_obj.create(cr, uid, save_vals, context=context)
             next = (datetime.now() + timedelta(minutes=container.time_between_save or container.application_id.container_time_between_save)).strftime("%Y-%m-%d %H:%M:%S")
             self.write(cr, uid, [container.id], {'save_comment': False, 'date_next_save': next}, context=context)
             self.end_log(cr, uid, container.id, context=context)
@@ -619,7 +654,7 @@ class saas_container(osv.osv):
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  HostName ' + vals['server_domain'], context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  Port ' + str(vals['container_ssh_port']), context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  User root', context)
-        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  IdentityFile /home/odoo/.ssh/keys/' + vals['container_fullname'], context)
+        execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  IdentityFile ~/.ssh/keys/' + vals['container_fullname'], context)
         execute.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n#END ' + vals['container_fullname'] + '\n', context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
         execute.execute(ssh, ['mkdir', '/opt/keys/' + vals['container_fullname']], context)
@@ -653,7 +688,7 @@ class saas_container(osv.osv):
                 execute.execute(ssh, ['echo "    Hostname ' + vals['server_domain'] + '" >> /home/shinken/.ssh/config'], context)
                 execute.execute(ssh, ['echo "    Port ' + str(vals['container_ssh_port']) + '" >> /home/shinken/.ssh/config'], context)
                 execute.execute(ssh, ['echo "    User backup" >> /home/shinken/.ssh/config'], context)
-                execute.execute(ssh, ['echo "    IdentityFile  ' + vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'], context)
+                execute.execute(ssh, ['echo "    IdentityFile  ~/.ssh/keys/' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'], context)
                 execute.execute(ssh, ['echo "#END ' + vals['container_fullname'] +'" >> ~/.ssh/config'], context)
 
 
@@ -665,8 +700,6 @@ class saas_container(osv.osv):
         execute.execute(ssh, ['rm', '-rf', '/opt/keys/' + vals['container_fullname'] + '/authorized_keys'], context)
         ssh.close()
         sftp.close()
-
-
 
 
 class saas_container_port(osv.osv):
@@ -759,6 +792,24 @@ class saas_container_link(osv.osv):
         return
 
     def deploy_link(self, cr, uid, vals, context={}):
+        _logger.info('link %s, apptype %s', vals['link_target_app_code'], vals['apptype_name'])
+        if vals['link_target_app_code'] == 'backup-upl' and vals['apptype_name'] == 'backup':
+
+            directory = '/opt/upload/' + vals['container_fullname']
+            ssh_link, sftp_link = execute.connect(vals['link_target_container_fullname'], context=context)
+            execute.execute(ssh_link, ['mkdir', '-p', directory], context)
+            ssh_link.close()
+            sftp_link.close()
+
+            ssh, sftp = execute.connect(vals['container_fullname'], username='backup', context=context)
+            execute.send(sftp, vals['config_home_directory'] + '/.ssh/config', '/home/backup/.ssh/config', context)
+            execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['link_target_container_fullname'] + '.pub', '/home/backup/.ssh/keys/' + vals['link_target_container_fullname'] + '.pub', context)
+            execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['link_target_container_fullname'], '/home/backup/.ssh/keys/' + vals['link_target_container_fullname'], context)
+            execute.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'], context)
+            execute.execute(ssh, ['rsync', '-ra', '/opt/backup/', vals['link_target_container_fullname'] + ':' + directory], context)
+            execute.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'], context)
+            ssh.close()
+            sftp.close()
         return
 
     def deploy(self, cr, uid, vals, context={}):
@@ -776,6 +827,11 @@ class saas_container_link(osv.osv):
         self.deploy_link(cr, uid, vals, context=context)
 
     def purge_link(self, cr, uid, vals, context={}):
+        if vals['link_target_app_code'] == 'backup_upload' and vals['apptype_name'] == 'backup':
+            directory = '/opt/upload/' + vals['container_fullname']
+            ssh = execute.connect(vals['link_target_container_fullname'], context=context)
+            execute.execute(ssh, ['rm', '-rf', directory], context)
+            ssh.close()
         return
 
     def purge(self, cr, uid, vals, context={}):

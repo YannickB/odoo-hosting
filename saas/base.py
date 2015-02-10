@@ -152,7 +152,8 @@ class saas_base(osv.osv):
         'reset_each_day': fields.boolean('Reset each day?'),
         'cert_key': fields.text('Cert Key'),
         'cert_cert': fields.text('Cert'),
-        'parent_id': fields.many2one('saas.base','Parent Base')
+        'parent_id': fields.many2one('saas.base','Parent Base'),
+        'backup_server_ids': fields.many2many('saas.container', 'saas_base_backup_rel', 'base_id', 'backup_id', 'Backup containers', required=True),
     }
 
     _defaults = {
@@ -251,6 +252,19 @@ class saas_base(osv.osv):
             #     del links_temp[app_code]
         links = links_temp
 
+        backup_servers = []
+        for backup in base.backup_server_ids:
+            backup_vals = self.pool.get('saas.container').get_vals(cr, uid, backup.id, context=context)
+            backup_servers.append({
+                'container_id': backup_vals['container_id'],
+                'container_fullname': backup_vals['container_fullname'],
+                'server_id': backup_vals['server_id'],
+                'server_ssh_port': backup_vals['server_ssh_port'],
+                'server_domain': backup_vals['server_domain'],
+                'server_ip': backup_vals['server_ip'],
+                'backup_method': backup_vals['app_options']['backup_method']['value']
+            })
+
         unique_name_ = unique_name.replace('-','_')
         databases = {'single': unique_name_}
         databases_comma = ''
@@ -289,6 +303,7 @@ class saas_base(osv.osv):
             'base_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
             'base_databases': databases,
             'base_databases_comma': databases_comma,
+            'base_backup_servers': backup_servers
         })
 
         return vals
@@ -327,6 +342,18 @@ class saas_base(osv.osv):
             vals['service_id'] = service_obj.create(cr, uid, service_vals, context=context)
         if 'application_id' in vals:
             application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
+
+            if 'backup_server_ids' not in vals or not vals['backup_server_ids'] or not vals['backup_server_ids'][0][2]:
+                vals['backup_server_ids'] = [(6,0,[b.id for b in application.base_backup_ids])]
+            if 'time_between_save' not in vals or not vals['time_between_save']:
+                vals['time_between_save'] = application.base_time_between_save
+            if 'saverepo_change' not in vals or not vals['saverepo_change']:
+                vals['saverepo_change'] = application.base_saverepo_change
+            if 'saverepo_expiration' not in vals or not vals['saverepo_expiration']:
+                vals['saverepo_expiration'] = application.base_saverepo_expiration
+            if 'save_expiration' not in vals or not vals['save_expiration']:
+                vals['save_expiration'] = application.base_save_expiration
+
             links = {}
             for link in application.link_ids:
                 if link.base:
@@ -392,70 +419,72 @@ class saas_base(osv.osv):
                 continue
             context = self.create_log(cr, uid, base.id, 'save', context)
             vals = self.get_vals(cr, uid, base.id, context=context)
-            if not 'backup_server_domain' in vals:
-                execute.log('The backup isnt configured in conf, skipping save base', context)
-                return
-                return
-            container_links = {}
-            for app_code, link in vals['container_links'].iteritems():
-                container_links[app_code] = {
-                    'name': link['app_id'],
-                    'name_name': link['name'],
-                    'target': link['target'] and link['target']['link_id'] or False
+            for backup_server in vals['base_backup_servers']:
+                if not 'backup_server_domain' in vals:
+                    execute.log('The backup isnt configured in conf, skipping save base', context)
+                    return
+                    return
+                container_links = {}
+                for app_code, link in vals['container_links'].iteritems():
+                    container_links[app_code] = {
+                        'name': link['app_id'],
+                        'name_name': link['name'],
+                        'target': link['target'] and link['target']['link_id'] or False
+                    }
+                service_links = {}
+                for app_code, link in vals['service_links'].iteritems():
+                    service_links[app_code] = {
+                        'name': link['app_id'],
+                        'name_name': link['name'],
+                        'target': link['target'] and link['target']['link_id'] or False
+                    }
+                base_links = {}
+                for app_code, link in vals['base_links'].iteritems():
+                    base_links[app_code] = {
+                        'name': link['app_id'],
+                        'name_name': link['name'],
+                        'target': link['target'] and link['target']['link_id'] or False
+                    }
+                save_vals = {
+                    'name': vals['now_bup'] + '_' + vals['base_unique_name'],
+                    'backup_server_id': backup_server['container_id'],
+                    'repo_id': vals['saverepo_id'],
+                    'date_expiration': (now + timedelta(days=base.save_expiration or base.application_id.base_save_expiration)).strftime("%Y-%m-%d"),
+                    'comment': 'save_comment' in context and context['save_comment'] or base.save_comment or 'Manual',
+                    'now_bup': vals['now_bup'],
+                    'container_id': vals['container_id'],
+                    'container_volumes_comma': vals['container_volumes_save'],
+                    'container_app': vals['app_code'],
+                    'container_img': vals['image_name'],
+                    'container_img_version': vals['image_version_name'],
+                    'container_ports': str(vals['container_ports']),
+                    'container_volumes': str(vals['container_volumes']),
+                    'container_options': str(vals['container_options']),
+                    'container_links': str(container_links),
+                    'service_id': vals['service_id'],
+                    'service_name': vals['service_name'],
+                    'service_database_id': vals['database_id'],
+                    'service_options': str(vals['service_options']),
+                    'service_links': str(service_links),
+                    'base_id': vals['base_id'],
+                    'base_title': vals['base_title'],
+                    'base_app_version': vals['app_version_name'],
+                    'base_proxy_id': 'proxy_id' in vals and vals['proxy_id'],
+                    'base_mail_id': 'mail_id' in vals and vals['mail_id'],
+                    'base_container_name': vals['container_name'],
+                    'base_container_server': vals['server_domain'],
+                    'base_admin_passwd': vals['base_admin_passwd'],
+                    'base_poweruser_name': vals['base_poweruser_name'],
+                    'base_poweruser_password': vals['base_poweruser_password'],
+                    'base_poweruser_email': vals['base_poweruser_email'],
+                    'base_build': vals['base_build'],
+                    'base_test': vals['base_test'],
+                    'base_lang': vals['base_lang'],
+                    'base_nosave': vals['base_nosave'],
+                    'base_options': str(vals['base_options']),
+                    'base_links': str(base_links),
                 }
-            service_links = {}
-            for app_code, link in vals['service_links'].iteritems():
-                service_links[app_code] = {
-                    'name': link['app_id'],
-                    'name_name': link['name'],
-                    'target': link['target'] and link['target']['link_id'] or False
-                }
-            base_links = {}
-            for app_code, link in vals['base_links'].iteritems():
-                base_links[app_code] = {
-                    'name': link['app_id'],
-                    'name_name': link['name'],
-                    'target': link['target'] and link['target']['link_id'] or False
-                }
-            save_vals = {
-                'name': vals['now_bup'] + '_' + vals['base_unique_name'],
-                'repo_id': vals['saverepo_id'],
-                'date_expiration': (now + timedelta(days=base.save_expiration or base.application_id.base_save_expiration)).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in context and context['save_comment'] or base.save_comment or 'Manual',
-                'now_bup': vals['now_bup'],
-                'container_id': vals['container_id'],
-                'container_volumes_comma': vals['container_volumes_save'],
-                'container_app': vals['app_code'],
-                'container_img': vals['image_name'],
-                'container_img_version': vals['image_version_name'],
-                'container_ports': str(vals['container_ports']),
-                'container_volumes': str(vals['container_volumes']),
-                'container_options': str(vals['container_options']),
-                'container_links': str(container_links),
-                'service_id': vals['service_id'],
-                'service_name': vals['service_name'],
-                'service_database_id': vals['database_id'],
-                'service_options': str(vals['service_options']),
-                'service_links': str(service_links),
-                'base_id': vals['base_id'],
-                'base_title': vals['base_title'],
-                'base_app_version': vals['app_version_name'],
-                'base_proxy_id': 'proxy_id' in vals and vals['proxy_id'],
-                'base_mail_id': 'mail_id' in vals and vals['mail_id'],
-                'base_container_name': vals['container_name'],
-                'base_container_server': vals['server_domain'],
-                'base_admin_passwd': vals['base_admin_passwd'],
-                'base_poweruser_name': vals['base_poweruser_name'],
-                'base_poweruser_password': vals['base_poweruser_password'],
-                'base_poweruser_email': vals['base_poweruser_email'],
-                'base_build': vals['base_build'],
-                'base_test': vals['base_test'],
-                'base_lang': vals['base_lang'],
-                'base_nosave': vals['base_nosave'],
-                'base_options': str(vals['base_options']),
-                'base_links': str(base_links),
-            }
-            res[base.id] = save_obj.create(cr, uid, save_vals, context=context)
+                res[base.id] = save_obj.create(cr, uid, save_vals, context=context)
             next = (datetime.now() + timedelta(minutes=base.time_between_save or base.application_id.base_time_between_save)).strftime("%Y-%m-%d %H:%M:%S")
             self.write(cr, uid, [base.id], {'save_comment': False, 'date_next_save': next}, context=context)
             self.end_log(cr, uid, base.id, context=context)
@@ -624,7 +653,7 @@ class saas_base_link(osv.osv):
     }
 
     _sql_constraints = [
-        ('name_uniq', 'unique(service_id,name)', 'Links must be unique per base!'),
+        ('name_uniq', 'unique(base_id,name)', 'Links must be unique per base!'),
     ]
 
 
