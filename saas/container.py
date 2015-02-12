@@ -391,7 +391,6 @@ class saas_container(osv.osv):
             application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
             context['apptype_name'] = application.type_id.name
 
-            _logger.info('vals %s', vals)
             if 'backup_server_ids' not in vals or not vals['backup_server_ids'] or not vals['backup_server_ids'][0][2]:
                 vals['backup_server_ids'] = [(6,0,[b.id for b in application.container_backup_ids])]
             if 'time_between_save' not in vals or not vals['time_between_save']:
@@ -423,7 +422,6 @@ class saas_container(osv.osv):
                         _("You need to specify a link to " + link['name'] + " for the container " + vals['name']))
                 vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
         vals = self.create_vals(cr, uid, vals, context=context)
-        _logger.info('vals %s', vals)
         return super(saas_container, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
@@ -476,7 +474,6 @@ class saas_container(osv.osv):
             del context['forcesave']
             context['nosave'] = True
             super(saas_container, self).reinstall(cr, uid, [container.id], context=context)
-            save_obj.restore(cr, uid, [save_id], context=context)
 
 
 

@@ -951,6 +951,12 @@ RUN ln -s /opt/keys/authorized_keys /root/.ssh/authorized_keys
 CMD ["/usr/bin/supervisord"]
 ]]></field>
         </record>
+        <record id="image_base_port1" model="saas.image.port">
+            <field name="image_id" ref="image_base"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
 
         <record id="image_apache" model="saas.image">
             <field name="name">img_apache</field>
