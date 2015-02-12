@@ -714,7 +714,7 @@
                         <field name="create_date"/>
                         <field name="expiration_date"/>
                         <newline/>
-                        <field name="log" colspan="4"/>
+                        <field name="description" colspan="4"/>
                         <field name="state"/>
                     </group>
                 </form>

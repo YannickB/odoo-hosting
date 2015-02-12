@@ -56,7 +56,7 @@ class saas_log(osv.osv):
         'res_id': fields.integer('Related Document ID', select=1),
         'name': fields.function(_get_name, type="char", size=128, string='Name'),
         'action': fields.char('Action', size=64),
-        'log': fields.text('log'),
+        'description': fields.text('log'),
         'state': fields.selection([('unfinished','Not finished'),('ok','Ok'),('ko','Ko')], 'State', required=True),
         'create_date': fields.datetime('Launch Date'),
         'finish_date': fields.datetime('Finish Date'),
@@ -181,7 +181,7 @@ def log(message, context):
         for model, model_vals in context['logs'].iteritems():
             for res_id, vals in context['logs'][model].iteritems():
                 log = log_obj.browse(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], context=context)
-                log_obj.write(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], {'log': (log.log or '') + message + '\n'}, context=context)
+                log_obj.write(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], {'description': (log.description or '') + message + '\n'}, context=context)
 
 def ko_log(self, context):
     log_obj = context['saas-self'].pool.get('saas.log')
