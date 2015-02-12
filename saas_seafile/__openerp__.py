@@ -29,7 +29,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS Seafile
-    =================
     """,
     'demo': [],
     'data': ['saas_seafile_data.xml'],

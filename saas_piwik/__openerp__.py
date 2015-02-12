@@ -29,7 +29,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS Piwik
-    =================
     """,
     'demo': [],
     'data': ['saas_piwik_data.xml'],

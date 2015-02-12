@@ -29,7 +29,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS Postfix
-    =================
     """,
     'demo': [],
     'data': ['saas_postfix_data.xml'],

@@ -29,7 +29,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS Proxy
-    =================
     """,
     'demo': [],
     'data': ['saas_proxy_data.xml'],

@@ -29,7 +29,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS MySQL
-    =================
     """,
     'demo': [],
     'data': ['saas_mysql_data.xml'],

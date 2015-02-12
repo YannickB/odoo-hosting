@@ -29,7 +29,6 @@
  'website': 'https://github.com/YannickB',
  'description': """
 SaaS Git
-=================
 """,
  'demo': [],
  'data': ['saas_git_data.xml'

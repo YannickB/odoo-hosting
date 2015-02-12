@@ -29,7 +29,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS Bind
-    =================
     """,
     'demo': [],
     'data': ['saas_bind_data.xml'],

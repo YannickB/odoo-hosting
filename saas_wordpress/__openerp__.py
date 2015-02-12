@@ -29,7 +29,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS Wordpress
-    =================
     """,
     'demo': [],
     'data': [

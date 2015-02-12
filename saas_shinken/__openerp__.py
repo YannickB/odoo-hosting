@@ -29,7 +29,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS Shinken
-    =================
     """,
     'demo': [],
     'data': ['saas_shinken_data.xml'],

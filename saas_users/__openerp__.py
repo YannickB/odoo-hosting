@@ -28,7 +28,7 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    SaaS LDAP
+    SaaS Users
     """,
     'demo': [],
     'data': [],

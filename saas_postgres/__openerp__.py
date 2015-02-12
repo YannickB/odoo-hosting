@@ -29,7 +29,6 @@
     'website': 'https://github.com/YannickB',
     'description': """
     SaaS Postgres
-    =================
     """,
     'demo': [],
     'data': ['saas_postgres_data.xml'],
