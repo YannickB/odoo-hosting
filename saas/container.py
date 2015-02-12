@@ -187,7 +187,8 @@ class saas_container(osv.osv):
             for port in container.port_ids:
                 if not first:
                     res[container.id] += ', '
-                res[container.id] += port.name + ' : ' + port.hostport
+                if port.hostport:
+                    res[container.id] += port.name + ' : ' + port.hostport
                 first = False
         return res
 

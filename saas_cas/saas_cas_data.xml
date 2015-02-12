@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_cas" model="saas.application.type">
+            <field name="name">cas</field>
+            <field name="system_user">cas</field>
+            <field name="admin_name">admin</field>
+            <field name="admin_email">admin@localhost</field>
+            <field name="standard_port">389</field>
+        </record>
+
+        <record id="image_cas" model="saas.image">
+            <field name="name">img_cas</field>
+            <field name="current_version">1</field>
+            <field name="parent_id" ref="saas.image_base"/>
+            <field name="dockerfile"><![CDATA[
+RUN echo "deb http://http.debian.net/debian squeeze main contrib non-free" >> /etc/apt/sources.list
+RUN apt-get update
+
+RUN echo "sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true" | debconf-set-selections
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install sun-java6-jre sun-java6-jdk maven2 tomcat6 apache2 ntpdate wget
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q purge openjdk*
+ENV JAVA_HOME "/usr/lib/jvm/java-6-sun/"
+ENV JAVA_OPTS "-Xmx1000m -XX:MaxPermSize=1024m"
+ENV CATALINA_HOME "/etc/tomcat6/"
+ENV CAS_HOME "/opt/idp-cas/cas/"
+
+RUN mkdir -p /opt/idp-cas/cas/{logs,war,autodeploy,credentials,downloads}
+
+RUN cd /opt/idp-cas/cas/downloads
+RUN wget http://downloads.jasig.org/cas/cas-server-3.5.2-release.tar.gz;
+RUN tar -xvf cas-server-3.5.1-release.tar.gz
+
+RUN cd cas-server-3.5.1/cas-server-webapp
+
+#RUN echo "<dependencies>" >> /opt/idp-cas/cas/downloads/cas-server-3.5.1/cas-server-webapp/pom.xml
+#RUN echo "<dependency>" >> /opt/idp-cas/cas/downloads/cas-server-3.5.1/cas-server-webapp/pom.xml
+#RUN echo "<groupId>\${project.groupId}</groupId>" >> /opt/idp-cas/cas/downloads/cas-server-3.5.1/cas-server-webapp/pom.xml
+#RUN echo "<artifactId>cas-server-support-ldap</artifactId>" >> /opt/idp-cas/cas/downloads/cas-server-3.5.1/cas-server-webapp/pom.xml
+#RUN echo "<version>\${project.version}</version>" >> /opt/idp-cas/cas/downloads/cas-server-3.5.1/cas-server-webapp/pom.xml
+#RUN echo "<dependency>" >> /opt/idp-cas/cas/downloads/cas-server-3.5.1/cas-server-webapp/pom.xml
+#RUN echo "<dependencies>" >> /opt/idp-cas/cas/downloads/cas-server-3.5.1/cas-server-webapp/pom.xml
+
+#RUN mvn package
+RUN cp /opt/idp-cas/cas/downloads/cas-server-3.5.2/modules/cas-server-webapp-3.5.2.war /opt/idp-cas/cas/war/cas.war
+
+RUN echo '<Context docBase="/opt/idp-cas/cas/war/cas.war" privileged="true" antiResourceLocking="false" antiJARLocking="false" unpackWAR="false"/>' >> /opt/idp-cas/cas/autodeploy/cas.xml
+RUN cp /opt/idp-cas/cas/autodeploy/cas.xml /etc/tomcat6/Catalina/localhost/cas.xml
+RUN rm -r /var/lib/tomcat6/webapps/ROOT ; rm /etc/tomcat6/Catalina/localhost/ROOT.xml
+RUN chown –R tomcat6 /opt/idp-cas/cas/
+
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:tomcat]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/etc/init.d/tomcat6 start" >> /etc/supervisor/conf.d/supervisord.conf
+
+#http://wiki-informatique.olympe.in/?p=16
+
+]]></field>
+        </record>
+        <record id="image_cas_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_cas"/>
+            <field name="name">/opt/idp-cas/cas</field>
+        </record>
+        <record id="image_cas_port1" model="saas.image.port">
+            <field name="image_id" ref="image_cas"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_cas_port2" model="saas.image.port">
+            <field name="image_id" ref="image_cas"/>
+            <field name="name">tomcat</field>
+            <field name="localport">8080</field>
+            <field name="expose" eval="True"/>
+            <field name="expose">internet</field>
+        </record>
+
+
+        <record id="app_cas" model="saas.application">
+            <field name="name">cas</field>
+            <field name="code">cas</field>
+            <field name="current_version">1</field>
+            <field name="type_id" ref="apptype_cas"/>
+            <field name="default_image_id" ref="image_cas"/>
+            <field name="container_time_between_save">9999</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="container_save_expiration">5</field>
+            <field name="base_time_between_save">9999</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
+            <field name="base_save_expiration">5</field>
+        </record>
+
+    </data>
+</openerp>

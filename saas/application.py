@@ -160,7 +160,7 @@ class saas_application(osv.osv):
         vals.update(self.pool.get('saas.application.type').get_vals(cr, uid, app.type_id.id, context=context))
 
         now = datetime.now()
-        computed_version = app.current_version + '.' + now.strftime('%Y%m%d.%H%M')
+        computed_version = app.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
 
         options = {}
         for option in app.type_id.option_ids:

@@ -95,7 +95,7 @@ class saas_image(osv.osv):
             if not image.registry_id and image.name != 'img_registry':
                 raise osv.except_osv(_('Date error!'),_("You need to specify the registry where the version must be stored."))
             now = datetime.now()
-            version = image.current_version + '.' + now.strftime('%Y%m%d.%H%M')
+            version = image.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
             version_obj.create(cr, uid, {'image_id': image.id, 'name': version, 'registry_id': image.registry_id and image.registry_id.id, 'parent_id': image.parent_version_id and image.parent_version_id.id}, context=context)
 
     def unlink(self, cr, uid, ids, context=None):
