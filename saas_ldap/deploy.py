@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -74,7 +74,7 @@ class saas_container(osv.osv):
             execute.execute(ssh, ['dpkg-reconfigure', '-f', 'noninteractive', 'slapd'], context)
 
             config_file = '/etc/ldap/schema/' + vals['container_options']['domain']['value'] + '.ldif'
-            sftp.put(vals['config_conductor_path'] + '/saas_ldap/res/ldap.ldif', config_file)
+            sftp.put(modules.get_module_path('saas_ldap') + '/res/ldap.ldif', config_file)
             domain_dc = ''
             for dc in vals['container_options']['domain']['value'].split('.'):
                 if domain_dc:

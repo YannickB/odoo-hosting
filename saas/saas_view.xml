@@ -840,7 +840,6 @@
             <field name="arch" type="xml">
                 <form string="Application" version="7.0">
                     <group col="4">
-                        <field name="conductor_path" required="1"/>
                         <field name="email_sysadmin" required="1"/>
                         <field name="log_path" required="1"/>
                         <field name="archive_path" required="1"/>
@@ -872,7 +871,6 @@
             <field name="archive_path">/opt/archives</field>
             <field name="email_sysadmin">yannick.buron@gmail.com</field>
             <field name="services_hostpath">/opt/services</field>
-            <field name="conductor_path">/opt/odoo/production/files/extra/orchestrator</field>
             <field name="home_directory">/home/saas-conductor</field>
             <field name="ftpuser">sd-34468</field>
             <field name="ftppass">psSLW9K9DrzX2lQ</field>

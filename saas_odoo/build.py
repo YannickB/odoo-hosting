@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -51,7 +51,7 @@ class saas_application_version(osv.osv):
 
             #Can't make sed work on local
             ssh, sftp = execute.connect('localhost', 22, 'saas-conductor', context)
-            execute.execute(ssh, ['patch', vals['app_version_full_archivepath'] + '/parts/odoo/openerp/http.py', '<', vals['config_conductor_path'] + '/saas/saas_odoo/res/http.patch'], context)
+            execute.execute(ssh, ['patch', vals['app_version_full_archivepath'] + '/parts/odoo/openerp/http.py', '<', modules.get_module_path('saas_odoo') + '/res/http.patch'], context)
             execute.execute(ssh, ['sed', '-i', '"s/' + vals['config_archive_path'].replace('/','\/') + '/' + vals['apptype_localpath'].replace('/','\/') + '/g"', vals['app_version_full_archivepath'] + '/bin/start_odoo'], context)
             execute.execute(ssh, ['sed', '-i', '"s/' + vals['config_archive_path'].replace('/','\/') + '/' + vals['apptype_localpath'].replace('/','\/') + '/g"', vals['app_version_full_archivepath'] + '/bin/buildout'], context)
             ssh.close()

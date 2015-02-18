@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -75,7 +75,7 @@ class saas_service(osv.osv):
 
             config_file = '/opt/odoo/' + vals['service_name'] + '/etc/config'
             execute.execute(ssh, ['mkdir', '-p', '/opt/odoo/' + vals['service_name'] + '/etc'], context)
-            sftp.put(vals['config_conductor_path'] + '/saas/saas_odoo/res/openerp.config', config_file)
+            sftp.put(modules.get_module_path('saas_odoo') + '/res/openerp.config', config_file)
             addons_path = '/opt/odoo/' + vals['service_name'] + '/files/parts/odoo/addons,'
             for dir in  sftp.listdir('/opt/odoo/' + vals['service_name'] + '/files/extra'):
                 addons_path += '/opt/odoo/' + vals['service_name'] + '/files/extra/' + dir + ','

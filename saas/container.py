@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -156,7 +156,7 @@ class saas_server(osv.osv):
 #        _logger.info('test %s', vals['shinken_server_domain'])
 #        if 'shinken_server_domain' in vals:
 #            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-#            sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/server-shinken.config', vals['server_shinken_configfile'])
+#            sftp.put(modules.get_module_path('saas_shinken') + '/res/server-shinken.config', vals['server_shinken_configfile'])
 #            execute.execute(ssh, ['sed', '-i', '"s/NAME/' + vals['server_domain'] + '/g"', vals['server_shinken_configfile']], context)
 #            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
 #            ssh.close()
@@ -165,7 +165,7 @@ class saas_server(osv.osv):
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
-        execute.execute_local([vals['config_conductor_path'] + '/saas/shell/sed.sh', vals['server_domain'], vals['config_home_directory'] + '/.ssh/config'], context)
+        execute.execute_local([modules.get_module_path('saas') + '/shell/sed.sh', vals['server_domain'], vals['config_home_directory'] + '/.ssh/config'], context)
         execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['server_domain']], context)
 
 #        if 'shinken_server_domain' in vals:
@@ -691,7 +691,7 @@ class saas_container(osv.osv):
 
 
     def purge_key(self, cr, uid, vals, context={}):
-        execute.execute_local([vals['config_conductor_path'] + '/saas/shell/sed.sh', vals['container_fullname'], vals['config_home_directory'] + '/.ssh/config'], context)
+        execute.execute_local([modules.get_module_path('saas') + '/shell/sed.sh', vals['container_fullname'], vals['config_home_directory'] + '/.ssh/config'], context)
         execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname']], context)
         execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub'], context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)

@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -42,7 +42,7 @@ class saas_base_link(osv.osv):
             else:
                 file = 'proxy-sslonly.config'
             ssh, sftp = execute.connect(vals['link_target_container_fullname'], context=context)
-            execute.send(sftp, vals['config_conductor_path'] + '/saas/saas_' + vals['apptype_name'] + '/res/' + file, vals['base_nginx_configfile'], context)
+            execute.send(sftp, modules.get_module_path('saas_' + vals['apptype_name']) + '/res/' + file, vals['base_nginx_configfile'], context)
             execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_nginx_configfile']], context)
             execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_nginx_configfile']], context)
             execute.execute(ssh, ['sed', '-i', '"s/SERVER/' + vals['server_domain'] + '/g"', vals['base_nginx_configfile']], context)

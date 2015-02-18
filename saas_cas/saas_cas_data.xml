@@ -27,13 +27,17 @@ ENV JAVA_OPTS "-Xmx1000m -XX:MaxPermSize=1024m"
 ENV CATALINA_HOME "/etc/tomcat6/"
 ENV CAS_HOME "/opt/idp-cas/cas/"
 
-RUN mkdir -p /opt/idp-cas/cas/{logs,war,autodeploy,credentials,downloads}
+RUN mkdir -p  /opt/idp-cas/cas/logs
+RUN mkdir -p  /opt/idp-cas/cas/war
+RUN mkdir -p  /opt/idp-cas/cas/autodeploy
+RUN mkdir -p  /opt/idp-cas/cas/credentials
+RUN mkdir -p  /opt/idp-cas/cas/downloads
 
 RUN cd /opt/idp-cas/cas/downloads
-RUN wget http://downloads.jasig.org/cas/cas-server-3.5.2-release.tar.gz;
-RUN tar -xvf cas-server-3.5.1-release.tar.gz
+RUN wget http://downloads.jasig.org/cas/cas-server-3.5.2-release.tar.gz -O /opt/idp-cas/cas/downloads/cas-server-3.5.2-release.tar.gz
+RUN tar -xvf /opt/idp-cas/cas/downloads/cas-server-3.5.2-release.tar.gz -C /opt/idp-cas/cas/downloads
 
-RUN cd cas-server-3.5.1/cas-server-webapp
+#RUN cd cas-server-3.5.1/cas-server-webapp
 
 #RUN echo "<dependencies>" >> /opt/idp-cas/cas/downloads/cas-server-3.5.1/cas-server-webapp/pom.xml
 #RUN echo "<dependency>" >> /opt/idp-cas/cas/downloads/cas-server-3.5.1/cas-server-webapp/pom.xml
@@ -48,8 +52,8 @@ RUN cp /opt/idp-cas/cas/downloads/cas-server-3.5.2/modules/cas-server-webapp-3.5
 
 RUN echo '<Context docBase="/opt/idp-cas/cas/war/cas.war" privileged="true" antiResourceLocking="false" antiJARLocking="false" unpackWAR="false"/>' >> /opt/idp-cas/cas/autodeploy/cas.xml
 RUN cp /opt/idp-cas/cas/autodeploy/cas.xml /etc/tomcat6/Catalina/localhost/cas.xml
-RUN rm -r /var/lib/tomcat6/webapps/ROOT ; rm /etc/tomcat6/Catalina/localhost/ROOT.xml
-RUN chown –R tomcat6 /opt/idp-cas/cas/
+RUN rm -r /var/lib/tomcat6/webapps/ROOT
+RUN chown -R tomcat6 /opt/idp-cas/cas/
 
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
@@ -80,7 +84,7 @@ RUN echo "command=/etc/init.d/tomcat6 start" >> /etc/supervisor/conf.d/superviso
 
 
         <record id="app_cas" model="saas.application">
-            <field name="name">cas</field>
+            <field name="name">Cas</field>
             <field name="code">cas</field>
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_cas"/>

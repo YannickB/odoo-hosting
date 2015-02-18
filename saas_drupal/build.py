@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -51,8 +51,8 @@ class saas_application_version(osv.osv):
             execute.execute(ssh, ['pear install drush/drush'], context)
             execute.execute(ssh, ['echo "' + vals['app_buildfile'].replace('"', '\\"') + '" >> ' + vals['app_version_full_archivepath'] + '/drush.make'], context)
             execute.execute(ssh, ['drush', 'make', vals['app_version_full_archivepath'] + '/drush.make', './'], context, path=vals['app_version_full_archivepath'])
-            sftp.put(vals['config_conductor_path'] + '/saas_drupal/res/wikicompare.script', vals['app_version_full_archivepath'] + '/wikicompare.script')
-            sftp.put(vals['config_conductor_path'] + '/saas_drupal/res/patch/revisioning_postgres.patch', vals['app_version_full_archivepath'] + '/revisioning_postgres.patch')
+            sftp.put(modules.get_module_path('saas_drupal') + '/res/wikicompare.script', vals['app_version_full_archivepath'] + '/wikicompare.script')
+            sftp.put(modules.get_module_path('saas_drupal') + '/res/patch/revisioning_postgres.patch', vals['app_version_full_archivepath'] + '/revisioning_postgres.patch')
             execute.execute(ssh, ['patch', '-p0', '-d', vals['app_version_full_archivepath'] + '/sites/all/modules/revisioning/', '<', vals['app_version_full_archivepath'] + '/revisioning_postgres.patch'], context)
             execute.execute(ssh, ['mv', vals['app_version_full_archivepath'] + '/sites', vals['app_version_full_archivepath'] + '/sites-template'], context)
             execute.execute(ssh, ['ln', '-s', '../sites', vals['app_version_full_archivepath'] + '/sites'], context)

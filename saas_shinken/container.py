@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -41,7 +41,7 @@ class saas_container_link(osv.osv):
             file = 'container-shinken'
             if vals['container_no_save']:
                 file = 'container-shinken-nosave'
-            sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/' + file + '.config', vals['container_shinken_configfile'])
+            sftp.put(modules.get_module_path('saas_shinken') + '/res/' + file + '.config', vals['container_shinken_configfile'])
             execute.execute(ssh, ['sed', '-i', '"s/METHOD/' + vals['config_restore_method'] + '/g"', vals['container_shinken_configfile']], context)
             execute.execute(ssh, ['sed', '-i', '"s/TYPE/container/g"', vals['container_shinken_configfile']], context)
             execute.execute(ssh, ['sed', '-i', '"s/CONTAINER/' + vals['backup_fullname'] + '/g"', vals['container_shinken_configfile']], context)

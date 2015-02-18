@@ -20,6 +20,7 @@
 ##############################################################################
 
 
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -49,7 +50,6 @@ class saas_config_settings(osv.osv):
     _description = 'SaaS configuration'
 
     _columns = {
-        'conductor_path': fields.char('Conductor Path', size=128),
         'email_sysadmin': fields.char('Email SysAdmin', size=128),
         'log_path': fields.char('SaaS Log Path', size=128),
         'archive_path': fields.char('Archive path', size=128),
@@ -75,7 +75,6 @@ class saas_config_settings(osv.osv):
 
         now = datetime.now()
         vals.update({
-            'config_conductor_path': config.conductor_path,
             'config_email_sysadmin': config.email_sysadmin,
             'config_log_path': config.log_path,
             'config_archive_path': config.archive_path,

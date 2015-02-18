@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -87,7 +87,7 @@ class saas_domain(osv.osv):
     def deploy(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
         ssh, sftp = execute.connect(vals['dns_fullname'], username='root', context=context)
-        sftp.put(vals['config_conductor_path'] + '/saas/saas/res/bind.config', vals['domain_configfile'])
+        sftp.put(modules.get_module_path('saas') + '/res/bind.config', vals['domain_configfile'])
         execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['domain_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/IP/' + vals['dns_server_ip'] + '/g"', vals['domain_configfile']], context)
         execute.execute(ssh, ["echo 'zone \"" + vals['domain_name'] + "\" {' >> /etc/bind/named.conf"], context)

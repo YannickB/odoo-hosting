@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -41,7 +41,7 @@ class saas_base_link(osv.osv):
             file = 'base-shinken'
             if vals['base_nosave']:
                 file = 'base-shinken-nosave'
-            sftp.put(vals['config_conductor_path'] + '/saas/saas_shinken/res/' + file + '.config', vals['base_shinken_configfile'])
+            sftp.put(modules.get_module_path('saas_shinken') + '/res/' + file + '.config', vals['base_shinken_configfile'])
             execute.execute(ssh, ['sed', '-i', '"s/TYPE/base/g"', vals['base_shinken_configfile']], context)
             execute.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + vals['base_unique_name_'] + '/g"', vals['base_shinken_configfile']], context)
             execute.execute(ssh, ['sed', '-i', '"s/DATABASES/' + vals['base_databases_comma'] + '/g"', vals['base_shinken_configfile']], context)

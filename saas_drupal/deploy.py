@@ -19,7 +19,7 @@
 #
 ##############################################################################
 
-
+from openerp import modules
 from openerp import netsvc
 from openerp import pooler
 from openerp.osv import fields, osv, orm
@@ -76,7 +76,7 @@ class saas_base(osv.osv):
 
             ssh, sftp = execute.connect(vals['container_fullname'], context=context)
             config_file = '/etc/nginx/sites-available/' + vals['base_fullname']
-            sftp.put(vals['config_conductor_path'] + '/saas/saas_drupal/res/nginx.config', config_file)
+            sftp.put(modules.get_module_path('saas_drupal') + '/res/nginx.config', config_file)
             execute.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', config_file], context)
             execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', config_file], context)
             execute.execute(ssh, ['sed', '-i', '"s/PATH/' + vals['service_full_localpath_files'].replace('/','\/') + '/g"', config_file], context)
