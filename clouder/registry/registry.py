@@ -35,28 +35,28 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class saas_image_version(osv.osv):
-    _inherit = 'saas.image.version'
+class clouder_image_version(osv.osv):
+    _inherit = 'clouder.image.version'
 
     def deploy(self, cr, uid, vals, context={}):
         if vals['image_name'] != 'img_registry':
-            return super(saas_image_version, self).deploy(cr, uid, vals, context)
+            return super(clouder_image_version, self).deploy(cr, uid, vals, context)
         else:
             return True
 
 
-class saas_container(osv.osv):
-    _inherit = 'saas.container'
+class clouder_container(osv.osv):
+    _inherit = 'clouder.container'
     #
     # def get_vals(self, cr, uid, ids, context={}):
-    #     res = super(saas_container, self).get_vals(cr, uid, ids, context)
-    #     context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+    #     res = super(clouder_container, self).get_vals(cr, uid, ids, context)
+    #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
     #     if 'apptype_name' in res and res['apptype_name'] == 'registry':
     #         res['image_version_fullname'] = 'registry'
     #     return res
 
     def deploy(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         if vals['image_name'] == 'img_registry':
             ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
             dir = '/tmp/' + vals['image_name'] + '_' + vals['image_version_fullname']
@@ -66,6 +66,6 @@ class saas_container(osv.osv):
             execute.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullname']], context)
             execute.execute(ssh, ['sudo','docker', 'build', '-t', vals['image_version_fullname'], dir], context)
             execute.execute(ssh, ['rm', '-rf', dir], context)
-        return super(saas_container, self).deploy(cr, uid, vals, context)
+        return super(clouder_container, self).deploy(cr, uid, vals, context)
 
 

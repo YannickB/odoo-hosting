@@ -38,8 +38,8 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class saas_log(osv.osv):
-    _name = 'saas.log'
+class clouder_log(osv.osv):
+    _name = 'clouder.log'
 
     def _get_name(self, cr, uid, ids, field_name, arg, context=None):
         res = {}
@@ -69,13 +69,13 @@ class saas_log(osv.osv):
 
     _order = 'create_date desc'
 
-class saas_model(osv.AbstractModel):
-    _name = 'saas.model'
+class clouder_model(osv.AbstractModel):
+    _name = 'clouder.model'
 
     _log_expiration_days = 30
 
     _columns = {
-        'log_ids': fields.one2many('saas.log', 'res_id',
+        'log_ids': fields.one2many('clouder.log', 'res_id',
             domain=lambda self: [('model', '=', self._name)],
             auto_join=True,
             string='Logs'),
@@ -84,7 +84,7 @@ class saas_model(osv.AbstractModel):
     def create_log(self, cr, uid, id, action, context):
         if 'log_id' in context:
             return context
-        log_obj = self.pool.get('saas.log')
+        log_obj = self.pool.get('clouder.log')
         if context == None:
             context = {}
         if not 'logs' in context:
@@ -104,7 +104,7 @@ class saas_model(osv.AbstractModel):
         return context
 
     def end_log(self, cr, uid, id, context=None):
-        log_obj = self.pool.get('saas.log')
+        log_obj = self.pool.get('clouder.log')
         #_logger.info('end log model %s, res %s', self._name, id)
         if 'logs' in  context:
             log = log_obj.browse(cr, uid, context['logs'][self._name][id]['log_id'], context=context)
@@ -136,8 +136,8 @@ class saas_model(osv.AbstractModel):
             self.end_log(cr, uid, record.id, context=context)
 
     def create(self, cr, uid, vals, context=None):
-        res = super(saas_model, self).create(cr, uid, vals, context=context)
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        res = super(clouder_model, self).create(cr, uid, vals, context=context)
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         context = self.create_log(cr, uid, res, 'create', context)
         vals = self.get_vals(cr, uid, res, context=context)
         try:
@@ -161,12 +161,12 @@ class saas_model(osv.AbstractModel):
                 self.purge(cr, uid, vals, context=context)
             except:
                 pass   
-        res = super(saas_model, self).unlink(cr, uid, ids, context=context)
-        #Security to prevent log to write in a removed saas.log
+        res = super(clouder_model, self).unlink(cr, uid, ids, context=context)
+        #Security to prevent log to write in a removed clouder.log
         for id in ids:
             if 'logs' in context and self._name in context['logs'] and id in context['logs'][self._name]:
                 del context['logs'][self._name][id]
-        log_obj = self.pool.get('saas.log')
+        log_obj = self.pool.get('clouder.log')
         log_ids = log_obj.search(cr, uid, [('model','=',self._name),('res_id','in',ids)],context=context)
         log_obj.unlink(cr, uid, log_ids, context=context)
         return res
@@ -175,20 +175,20 @@ class saas_model(osv.AbstractModel):
 def log(message, context):
     message = filter(lambda x: x in string.printable, message)
     _logger.info(message)
-    log_obj = context['saas-self'].pool.get('saas.log')
+    log_obj = context['clouder-self'].pool.get('clouder.log')
     if 'logs' in context:
         # _logger.info('context.log %s', context['logs'])
         for model, model_vals in context['logs'].iteritems():
             for res_id, vals in context['logs'][model].iteritems():
-                log = log_obj.browse(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], context=context)
-                log_obj.write(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], {'description': (log.description or '') + message + '\n'}, context=context)
+                log = log_obj.browse(context['clouder-cr'], context['clouder-uid'], context['logs'][model][res_id]['log_id'], context=context)
+                log_obj.write(context['clouder-cr'], context['clouder-uid'], context['logs'][model][res_id]['log_id'], {'description': (log.description or '') + message + '\n'}, context=context)
 
 def ko_log(self, context):
-    log_obj = context['saas-self'].pool.get('saas.log')
+    log_obj = context['clouder-self'].pool.get('clouder.log')
     if 'logs' in context:
         for model, model_vals in context['logs'].iteritems():
             for res_id, vals in context['logs'][model].iteritems():
-                log_obj.write(context['saas-cr'], context['saas-uid'], context['logs'][model][res_id]['log_id'], {'state': 'ko'}, context=context)
+                log_obj.write(context['clouder-cr'], context['clouder-uid'], context['logs'][model][res_id]['log_id'], {'state': 'ko'}, context=context)
 
 
 def connect(host, port=False, username=False, context={}):

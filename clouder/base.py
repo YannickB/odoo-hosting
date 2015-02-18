@@ -35,14 +35,14 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class saas_domain(osv.osv):
-    _name = 'saas.domain'
-    _inherit = ['saas.model']
+class clouder_domain(osv.osv):
+    _name = 'clouder.domain'
+    _inherit = ['clouder.model']
 
     _columns = {
         'name': fields.char('Domain name', size=64, required=True),
         'organisation': fields.char('Organisation', size=64, required=True),
-        'dns_server_id': fields.many2one('saas.container', 'DNS Server', required=True),
+        'dns_server_id': fields.many2one('clouder.container', 'DNS Server', required=True),
         'cert_key': fields.text('Wildcard Cert Key'),
         'cert_cert': fields.text('Wildcart Cert'),
     }
@@ -57,10 +57,10 @@ class saas_domain(osv.osv):
 
         domain = self.browse(cr, uid, id, context=context)
 
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
-        vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
+        vals.update(self.pool.get('clouder.config.settings').get_vals(cr, uid, context=context))
 
-        dns_vals = self.pool.get('saas.container').get_vals(cr, uid, domain.dns_server_id.id, context=context)
+        dns_vals = self.pool.get('clouder.container').get_vals(cr, uid, domain.dns_server_id.id, context=context)
 
         vals.update({
             'dns_id': dns_vals['container_id'],
@@ -85,9 +85,9 @@ class saas_domain(osv.osv):
 
 
     def deploy(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         ssh, sftp = execute.connect(vals['dns_fullname'], username='root', context=context)
-        sftp.put(modules.get_module_path('saas') + '/res/bind.config', vals['domain_configfile'])
+        sftp.put(modules.get_module_path('clouder') + '/res/bind.config', vals['domain_configfile'])
         execute.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['domain_configfile']], context)
         execute.execute(ssh, ['sed', '-i', '"s/IP/' + vals['dns_server_ip'] + '/g"', vals['domain_configfile']], context)
         execute.execute(ssh, ["echo 'zone \"" + vals['domain_name'] + "\" {' >> /etc/bind/named.conf"], context)
@@ -102,7 +102,7 @@ class saas_domain(osv.osv):
         sftp.close()
 
     def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         ssh, sftp = execute.connect(vals['dns_fullname'], username='root', context=context)
         execute.execute(ssh, ['sed', '-i', "'/zone\s\"" + vals['domain_name'] + "\"/,/END\s" + vals['domain_name'] + "/d'", '/etc/bind/named.conf'], context)
         execute.execute(ssh, ['rm', vals['domain_configfile']], context)
@@ -110,20 +110,20 @@ class saas_domain(osv.osv):
         ssh.close()
         sftp.close()
 
-class saas_base(osv.osv):
-    _name = 'saas.base'
-    _inherit = ['saas.model']
+class clouder_base(osv.osv):
+    _name = 'clouder.base'
+    _inherit = ['clouder.model']
 
     _columns = {
         'name': fields.char('Name', size=64, required=True),
         'title': fields.char('Title', size=64, required=True),
-        'application_id': fields.many2one('saas.application', 'Application', required=True),
-        'domain_id': fields.many2one('saas.domain', 'Domain name', required=True),
-        'service_id': fields.many2one('saas.service', 'Service', required=True),
-        'service_ids': fields.many2many('saas.service', 'saas_base_service_rel', 'base_id', 'service_id', 'Alternative Services'),
-        'admin_name': fields.char('Admin name', size=64),
-        'admin_passwd': fields.char('Admin password', size=64),
-        'admin_email': fields.char('Admin email', size=64),
+        'application_id': fields.many2one('clouder.application', 'Application', required=True),
+        'domain_id': fields.many2one('clouder.domain', 'Domain name', required=True),
+        'service_id': fields.many2one('clouder.service', 'Service', required=True),
+        'service_ids': fields.many2many('clouder.service', 'clouder_base_service_rel', 'base_id', 'service_id', 'Alternative Services'),
+        'admin_name': fields.char('Admin name', size=64, required=True),
+        'admin_passwd': fields.char('Admin password', size=64, required=True),
+        'admin_email': fields.char('Admin email', size=64, required=True),
         'poweruser_name': fields.char('PowerUser name', size=64),
         'poweruser_passwd': fields.char('PowerUser password', size=64),
         'poweruser_email': fields.char('PowerUser email', size=64),
@@ -139,9 +139,9 @@ class saas_base(osv.osv):
                 ('enabled','Enabled'),
                 ('blocked','Blocked'),
                 ('removing','Removing')],'State',readonly=True),
-        'option_ids': fields.one2many('saas.base.option', 'base_id', 'Options'),
-        'link_ids': fields.one2many('saas.base.link', 'base_id', 'Links'),
-        'save_repository_id': fields.many2one('saas.save.repository', 'Save repository'),
+        'option_ids': fields.one2many('clouder.base.option', 'base_id', 'Options'),
+        'link_ids': fields.one2many('clouder.base.link', 'base_id', 'Links'),
+        'save_repository_id': fields.many2one('clouder.save.repository', 'Save repository'),
         'time_between_save': fields.integer('Minutes between each save'),
         'saverepo_change': fields.integer('Days before saverepo change'),
         'saverepo_expiration': fields.integer('Days before saverepo expiration'),
@@ -152,8 +152,8 @@ class saas_base(osv.osv):
         'reset_each_day': fields.boolean('Reset each day?'),
         'cert_key': fields.text('Cert Key'),
         'cert_cert': fields.text('Cert'),
-        'parent_id': fields.many2one('saas.base','Parent Base'),
-        'backup_server_ids': fields.many2many('saas.container', 'saas_base_backup_rel', 'base_id', 'backup_id', 'Backup containers', required=True),
+        'parent_id': fields.many2one('clouder.base','Parent Base'),
+        'backup_server_ids': fields.many2many('clouder.container', 'clouder_base_backup_rel', 'base_id', 'backup_id', 'Backup containers', required=True),
     }
 
     _defaults = {
@@ -185,7 +185,7 @@ class saas_base(osv.osv):
 #########Contrainte : L'application entre base et service doit �tre la m�me, de plus la bdd/host/db_user/db_password doit �tre la m�me entre tous les services d'une m�me base
 
     def get_vals(self, cr, uid, id, context=None):
-        repo_obj = self.pool.get('saas.save.repository')
+        repo_obj = self.pool.get('clouder.save.repository')
         vals = {}
 
         base = self.browse(cr, uid, id, context=context)
@@ -211,9 +211,9 @@ class saas_base(osv.osv):
             base = self.browse(cr, uid, id, context=context)
 
 
-        vals.update(self.pool.get('saas.domain').get_vals(cr, uid, base.domain_id.id, context=context))
-        vals.update(self.pool.get('saas.service').get_vals(cr, uid, base.service_id.id, context=context))
-        vals.update(self.pool.get('saas.save.repository').get_vals(cr, uid, base.save_repository_id.id, context=context))
+        vals.update(self.pool.get('clouder.domain').get_vals(cr, uid, base.domain_id.id, context=context))
+        vals.update(self.pool.get('clouder.service').get_vals(cr, uid, base.service_id.id, context=context))
+        vals.update(self.pool.get('clouder.save.repository').get_vals(cr, uid, base.save_repository_id.id, context=context))
 
         unique_name = vals['app_code'] + '-' + base.name + '-' + base.domain_id.name
         unique_name = unique_name.replace('.','-')
@@ -233,7 +233,7 @@ class saas_base(osv.osv):
                     links[app_code]['target'] = False
         for link in base.link_ids:
             if link.name.code in links and link.target:
-                link_vals = self.pool.get('saas.container').get_vals(cr, uid, link.target.id, context=context)
+                link_vals = self.pool.get('clouder.container').get_vals(cr, uid, link.target.id, context=context)
                 links[link.name.code]['target'] = {
                     'link_id': link_vals['container_id'],
                     'link_name': link_vals['container_name'],
@@ -254,7 +254,7 @@ class saas_base(osv.osv):
 
         backup_servers = []
         for backup in base.backup_server_ids:
-            backup_vals = self.pool.get('saas.container').get_vals(cr, uid, backup.id, context=context)
+            backup_vals = self.pool.get('clouder.container').get_vals(cr, uid, backup.id, context=context)
             backup_servers.append({
                 'container_id': backup_vals['container_id'],
                 'container_fullname': backup_vals['container_fullname'],
@@ -312,10 +312,10 @@ class saas_base(osv.osv):
 
     def create(self, cr, uid, vals, context={}):
         if (not 'service_id' in vals) or (not vals['service_id']):
-            application_obj = self.pool.get('saas.application')
-            domain_obj = self.pool.get('saas.domain')
-            container_obj = self.pool.get('saas.container')
-            service_obj = self.pool.get('saas.service')
+            application_obj = self.pool.get('clouder.application')
+            domain_obj = self.pool.get('clouder.domain')
+            container_obj = self.pool.get('clouder.container')
+            service_obj = self.pool.get('clouder.service')
             if 'application_id' not in vals or not vals['application_id']:
                 raise osv.except_osv(_('Error!'),_("You need to specify the application of the base."))
             application = application_obj.browse(cr, uid, vals['application_id'], context=context)
@@ -343,8 +343,8 @@ class saas_base(osv.osv):
             }
             vals['service_id'] = service_obj.create(cr, uid, service_vals, context=context)
         if 'application_id' in vals:
-            config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
-            application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
+            config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
+            application = self.pool.get('clouder.application').browse(cr, uid, vals['application_id'], context=context)
             if 'admin_name' not in vals or not vals['admin_name']:
                 vals['admin_name'] = application.admin_name
             if 'admin_email' not in vals or not vals['admin_email']:
@@ -379,10 +379,10 @@ class saas_base(osv.osv):
                     raise osv.except_osv(_('Data error!'),
                         _("You need to specify a link to " + link['name'] + " for the base " + vals['name']))
                 vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
-        return super(saas_base, self).create(cr, uid, vals, context=context)
+        return super(clouder_base, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
-        save_obj = self.pool.get('saas.save.save')
+        save_obj = self.pool.get('clouder.save.save')
         if 'service_id' in vals:
             for base in self.browse(cr, uid, ids, context=context):
                 context = self.create_log(cr, uid, base.id, 'service change', context)
@@ -393,7 +393,7 @@ class saas_base(osv.osv):
                 base_vals = self.get_vals(cr, uid, base.id, context=context)
                 self.purge(cr, uid, base_vals, context=context)
                 break
-        res = super(saas_base, self).write(cr, uid, ids, vals, context=context)
+        res = super(clouder_base, self).write(cr, uid, ids, vals, context=context)
         if 'service_id' in vals:
             for base in self.browse(cr, uid, ids, context=context):
                 save_obj.write(cr, uid, [save_id], {'service_id': vals['service_id']}, context=context)
@@ -411,11 +411,11 @@ class saas_base(osv.osv):
     def unlink(self, cr, uid, ids, context={}):
         context['save_comment'] = 'Before unlink'
         self.save(cr, uid, ids, context=context)
-        return super(saas_base, self).unlink(cr, uid, ids, context=context)
+        return super(clouder_base, self).unlink(cr, uid, ids, context=context)
 
     def save(self, cr, uid, ids, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        save_obj = self.pool.get('saas.save.save')
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
+        save_obj = self.pool.get('clouder.save.save')
 
         res = {}
         now = datetime.now()
@@ -504,7 +504,7 @@ class saas_base(osv.osv):
         return
 
     def _reset_base(self, cr, uid, ids, base_name=False, service_id=False, context={}):
-        save_obj = self.pool.get('saas.save.save')
+        save_obj = self.pool.get('clouder.save.save')
         for base in self.browse(cr, uid, ids, context=context):
             base_parent_id = base.parent_id and base.parent_id.id or base.id
             vals_parent = self.get_vals(cr, uid, base_parent_id, context=context)
@@ -550,7 +550,7 @@ class saas_base(osv.osv):
         return
 
     def deploy(self, cr, uid, vals, context=None):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         self.purge(cr, uid, vals, context=context)
 
         if 'base_restoration' in context:
@@ -607,7 +607,7 @@ class saas_base(osv.osv):
         return
 
     def purge_db(self, cr, uid, vals, context=None):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         for key, database in vals['base_databases'].iteritems():
             if vals['database_type'] != 'mysql':
                 ssh, sftp = execute.connect(vals['database_fullname'], username='postgres', context=context)
@@ -624,7 +624,7 @@ class saas_base(osv.osv):
         return
 
     def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
 
         self.purge_db(cr, uid, vals, context=context)
 
@@ -635,12 +635,12 @@ class saas_base(osv.osv):
 
 
 
-class saas_base_option(osv.osv):
-    _name = 'saas.base.option'
+class clouder_base_option(osv.osv):
+    _name = 'clouder.base.option'
 
     _columns = {
-        'base_id': fields.many2one('saas.base', 'Base', ondelete="cascade", required=True),
-        'name': fields.many2one('saas.application.type.option', 'Option', required=True),
+        'base_id': fields.many2one('clouder.base', 'Base', ondelete="cascade", required=True),
+        'name': fields.many2one('clouder.application.type.option', 'Option', required=True),
         'value': fields.text('Value'),
     }
 
@@ -649,13 +649,13 @@ class saas_base_option(osv.osv):
     ]
 
 
-class saas_base_link(osv.osv):
-    _name = 'saas.base.link'
+class clouder_base_link(osv.osv):
+    _name = 'clouder.base.link'
 
     _columns = {
-        'base_id': fields.many2one('saas.base', 'Base', ondelete="cascade", required=True),
-        'name': fields.many2one('saas.application', 'Application', required=True),
-        'target': fields.many2one('saas.container', 'Target'),
+        'base_id': fields.many2one('clouder.base', 'Base', ondelete="cascade", required=True),
+        'name': fields.many2one('clouder.application', 'Application', required=True),
+        'target': fields.many2one('clouder.container', 'Target'),
     }
 
     _sql_constraints = [
@@ -668,9 +668,9 @@ class saas_base_link(osv.osv):
 
         link = self.browse(cr, uid, id, context=context)
 
-        vals.update(self.pool.get('saas.base').get_vals(cr, uid, link.base_id.id, context=context))
+        vals.update(self.pool.get('clouder.base').get_vals(cr, uid, link.base_id.id, context=context))
         if link.target:
-            target_vals = self.pool.get('saas.container').get_vals(cr, uid, link.target.id, context=context)
+            target_vals = self.pool.get('clouder.container').get_vals(cr, uid, link.target.id, context=context)
             vals.update({
                 'link_target_container_id': target_vals['container_id'],
                 'link_target_container_name': target_vals['container_name'],
@@ -678,10 +678,10 @@ class saas_base_link(osv.osv):
                 'link_target_app_id': target_vals['app_id'],
                 'link_target_app_code': target_vals['app_code'],
             })
-            service_ids = self.pool.get('saas.service').search(cr, uid, [('container_id', '=', link.target.id)], context=context)
-            base_ids = self.pool.get('saas.base').search(cr, uid, [('service_id', 'in', service_ids)], context=context)
+            service_ids = self.pool.get('clouder.service').search(cr, uid, [('container_id', '=', link.target.id)], context=context)
+            base_ids = self.pool.get('clouder.base').search(cr, uid, [('service_id', 'in', service_ids)], context=context)
             if base_ids:
-                base_vals = self.pool.get('saas.base').get_vals(cr, uid, base_ids[0], context=context)
+                base_vals = self.pool.get('clouder.base').get_vals(cr, uid, base_ids[0], context=context)
                 vals.update({
                     'link_target_service_db_user': base_vals['service_db_user'],
                     'link_target_service_db_password': base_vals['service_db_password'],
@@ -703,7 +703,7 @@ class saas_base_link(osv.osv):
         return
 
     def deploy(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         self.purge(cr, uid, vals, context=context)
         if not 'link_target_container_id' in vals:
             execute.log('The target isnt configured in the link, skipping deploy link', context)
@@ -720,7 +720,7 @@ class saas_base_link(osv.osv):
         return
 
     def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         if not 'link_target_container_id' in vals:
             execute.log('The target isnt configured in the link, skipping deploy link', context)
             return

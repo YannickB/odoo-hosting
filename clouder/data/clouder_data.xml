@@ -1,7 +1,7 @@
 <openerp>
     <data>
 
-        <record id="image_base" model="saas.image">
+        <record id="image_base" model="clouder.image">
             <field name="name">yolobase</field>
             <field name="current_version">1.0</field>
             <field name="parent_from">debian:latest</field>
@@ -38,14 +38,14 @@ RUN ln -s /opt/keys/authorized_keys /root/.ssh/authorized_keys
 CMD ["/usr/bin/supervisord"]
 ]]></field>
         </record>
-        <record id="image_base_port1" model="saas.image.port">
+        <record id="image_base_port1" model="clouder.image.port">
             <field name="image_id" ref="image_base"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
             <field name="expose">internet</field>
         </record>
 
-        <record id="image_apache" model="saas.image">
+        <record id="image_apache" model="clouder.image">
             <field name="name">img_apache</field>
             <field name="current_version">2</field>
             <field name="parent_id" ref="image_base"/>
@@ -72,27 +72,27 @@ RUN chown -R www-data /var/www/.ssh
 USER root
 ]]></field>
         </record>
-        <record id="image_apache_volume1" model="saas.image.volume">
+        <record id="image_apache_volume1" model="clouder.image.volume">
             <field name="image_id" ref="image_apache"/>
             <field name="name">/etc/apache2</field>
         </record>
-        <record id="image_apache_volume2" model="saas.image.volume">
+        <record id="image_apache_volume2" model="clouder.image.volume">
             <field name="image_id" ref="image_apache"/>
             <field name="name">/var/www</field>
         </record>
-        <record id="image_apache_port1" model="saas.image.port">
+        <record id="image_apache_port1" model="clouder.image.port">
             <field name="image_id" ref="image_apache"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_apache_port2" model="saas.image.port">
+        <record id="image_apache_port2" model="clouder.image.port">
             <field name="image_id" ref="image_apache"/>
             <field name="name">apache</field>
             <field name="localport">80</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_apache_port3" model="saas.image.port">
+        <record id="image_apache_port3" model="clouder.image.port">
             <field name="image_id" ref="image_apache"/>
             <field name="name">apache-ssl</field>
             <field name="localport">443</field>
@@ -100,7 +100,7 @@ USER root
         </record>
 
 
-        <record id="image_nginx" model="saas.image">
+        <record id="image_nginx" model="clouder.image">
             <field name="name">img_nginx</field>
             <field name="current_version">1</field>
             <field name="parent_id" ref="image_base"/>
@@ -125,31 +125,31 @@ RUN chown -R www-data:www-data /var/www/.ssh
 USER root
 ]]></field>
         </record>
-        <record id="image_nginx_volume1" model="saas.image.volume">
+        <record id="image_nginx_volume1" model="clouder.image.volume">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">/etc/nginx</field>
         </record>
-        <record id="image_nginx_volume2" model="saas.image.volume">
+        <record id="image_nginx_volume2" model="clouder.image.volume">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">/var/www</field>
         </record>
-        <record id="image_nginx_volume3" model="saas.image.volume">
+        <record id="image_nginx_volume3" model="clouder.image.volume">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">/etc/ssl</field>
         </record>
-        <record id="image_nginx_port1" model="saas.image.port">
+        <record id="image_nginx_port1" model="clouder.image.port">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_nginx_port2" model="saas.image.port">
+        <record id="image_nginx_port2" model="clouder.image.port">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">nginx</field>
             <field name="localport">80</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_nginx_port3" model="saas.image.port">
+        <record id="image_nginx_port3" model="clouder.image.port">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">nginx-ssl</field>
             <field name="localport">443</field>

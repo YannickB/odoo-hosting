@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'SaaS',
+    'name': 'Clouder',
     'version': '1.0',
     'category': 'Community',
     'depends': ['base'],
@@ -28,15 +28,15 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    SaaS
+    Clouder
     """,
     'demo': [],
     'data': [
-        'saas_view.xml',
-        'data/saas_data.xml',
-        'archive/saas_archive_data.xml',
-        'backup/saas_backup_data.xml',
-        'registry/saas_registry_data.xml'
+        'clouder_view.xml',
+        'data/clouder_data.xml',
+        'archive/clouder_archive_data.xml',
+        'backup/clouder_backup_data.xml',
+        'registry/clouder_registry_data.xml'
     ],
     'installable': True,
     'application': True,

@@ -2,24 +2,24 @@
 <openerp>
     <data>
 
-        <menuitem id="menu_saas" name="SaaS" sequence="40"/>
+        <menuitem id="menu_clouder" name="Clouder" sequence="40"/>
 
-        <menuitem id="menu_saas_saas" name="SaaS" parent="menu_saas" sequence="5"/>
+        <menuitem id="menu_clouder_clouder" name="Clouder" parent="menu_clouder" sequence="5"/>
 
 
-        <record id="action_saas_base_form" model="ir.actions.act_window">
+        <record id="action_clouder_base_form" model="ir.actions.act_window">
             <field name="name">Bases</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.base</field>
+            <field name="res_model">clouder.base</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_base_form" id="menu_action_saas_base_form" parent="menu_saas_saas"/>
+        <menuitem action="action_clouder_base_form" id="menu_action_clouder_base_form" parent="menu_clouder_clouder"/>
 
 
-        <record id="view_saas_base_form" model="ir.ui.view">
-            <field name="name">saas.base.form</field>
-            <field name="model">saas.base</field>
+        <record id="view_clouder_base_form" model="ir.ui.view">
+            <field name="name">clouder.base.form</field>
+            <field name="model">clouder.base</field>
             <field name="arch" type="xml">
                 <form string="Base" version="7.0">
                     <group col="4">
@@ -84,9 +84,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_base_tree" model="ir.ui.view">
-            <field name="name">saas.base.tree</field>
-            <field name="model">saas.base</field>
+        <record id="view_clouder_base_tree" model="ir.ui.view">
+            <field name="name">clouder.base.tree</field>
+            <field name="model">clouder.base</field>
             <field name="arch" type="xml">
                 <tree string="Base">
                         <field name="name"/>
@@ -97,18 +97,18 @@
         </record>
 
 
-        <record id="action_saas_service_form" model="ir.actions.act_window">
+        <record id="action_clouder_service_form" model="ir.actions.act_window">
             <field name="name">Services</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.service</field>
+            <field name="res_model">clouder.service</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_service_form" id="menu_action_saas_service_form" parent="menu_saas_saas"/>
+        <menuitem action="action_clouder_service_form" id="menu_action_clouder_service_form" parent="menu_clouder_clouder"/>
 
-        <record id="view_saas_service_form" model="ir.ui.view">
-            <field name="name">saas.service.form</field>
-            <field name="model">saas.service</field>
+        <record id="view_clouder_service_form" model="ir.ui.view">
+            <field name="name">clouder.service.form</field>
+            <field name="model">clouder.service</field>
             <field name="arch" type="xml">
                 <form string="Service" version="7.0">
                     <group col="4">
@@ -148,9 +148,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_service_tree" model="ir.ui.view">
-            <field name="name">saas.service.tree</field>
-            <field name="model">saas.service</field>
+        <record id="view_clouder_service_tree" model="ir.ui.view">
+            <field name="name">clouder.service.tree</field>
+            <field name="model">clouder.service</field>
             <field name="arch" type="xml">
                 <tree string="Services">
                     <field name="name"/>
@@ -162,18 +162,18 @@
 
 
 
-        <record id="action_saas_container_form" model="ir.actions.act_window">
+        <record id="action_clouder_container_form" model="ir.actions.act_window">
             <field name="name">Containers</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.container</field>
+            <field name="res_model">clouder.container</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_container_form" id="menu_action_saas_container_form" parent="menu_saas_saas"/>
+        <menuitem action="action_clouder_container_form" id="menu_action_clouder_container_form" parent="menu_clouder_clouder"/>
 
-        <record id="view_saas_container_form" model="ir.ui.view">
-            <field name="name">saas.container.form</field>
-            <field name="model">saas.container</field>
+        <record id="view_clouder_container_form" model="ir.ui.view">
+            <field name="name">clouder.container.form</field>
+            <field name="model">clouder.container</field>
             <field name="arch" type="xml">
                 <form string="Container" version="7.0">
                     <group col="4">
@@ -244,9 +244,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_container_tree" model="ir.ui.view">
-            <field name="name">saas.container.tree</field>
-            <field name="model">saas.container</field>
+        <record id="view_clouder_container_tree" model="ir.ui.view">
+            <field name="name">clouder.container.tree</field>
+            <field name="model">clouder.container</field>
             <field name="arch" type="xml">
                 <tree string="Containers">
                     <field name="name"/>
@@ -260,18 +260,18 @@
         </record>
 
 
-        <record id="action_saas_server_form" model="ir.actions.act_window">
+        <record id="action_clouder_server_form" model="ir.actions.act_window">
             <field name="name">Servers</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.server</field>
+            <field name="res_model">clouder.server</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_server_form" id="menu_action_saas_server_form" parent="menu_saas_saas"/>
+        <menuitem action="action_clouder_server_form" id="menu_action_clouder_server_form" parent="menu_clouder_clouder"/>
 
-        <record id="view_saas_server_form" model="ir.ui.view">
-            <field name="name">saas.server.form</field>
-            <field name="model">saas.server</field>
+        <record id="view_clouder_server_form" model="ir.ui.view">
+            <field name="name">clouder.server.form</field>
+            <field name="model">clouder.server</field>
             <field name="arch" type="xml">
                 <form string="Server" version="7.0">
                     <group col="4">
@@ -291,9 +291,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_server_tree" model="ir.ui.view">
-            <field name="name">saas.server.tree</field>
-            <field name="model">saas.server</field>
+        <record id="view_clouder_server_tree" model="ir.ui.view">
+            <field name="name">clouder.server.tree</field>
+            <field name="model">clouder.server</field>
             <field name="arch" type="xml">
                 <tree string="Servers">
                     <field name="name"/>
@@ -303,18 +303,18 @@
             </field>
         </record>
 
-        <record id="action_saas_save_repository_form" model="ir.actions.act_window">
+        <record id="action_clouder_save_repository_form" model="ir.actions.act_window">
             <field name="name">Save Repositories</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.save.repository</field>
+            <field name="res_model">clouder.save.repository</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_save_repository_form" id="menu_action_saas_save_repository_form" parent="menu_saas_saas"/>
+        <menuitem action="action_clouder_save_repository_form" id="menu_action_clouder_save_repository_form" parent="menu_clouder_clouder"/>
 
-        <record id="view_saas_save_repository_form" model="ir.ui.view">
-            <field name="name">saas.save.repository.form</field>
-            <field name="model">saas.save.repository</field>
+        <record id="view_clouder_save_repository_form" model="ir.ui.view">
+            <field name="name">clouder.save.repository.form</field>
+            <field name="model">clouder.save.repository</field>
             <field name="arch" type="xml">
                 <form string="Save Repository" version="7.0">
                     <group col="4">
@@ -341,9 +341,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_save_repository_tree" model="ir.ui.view">
-            <field name="name">saas.save.repository.tree</field>
-            <field name="model">saas.save.repository</field>
+        <record id="view_clouder_save_repository_tree" model="ir.ui.view">
+            <field name="name">clouder.save.repository.tree</field>
+            <field name="model">clouder.save.repository</field>
             <field name="arch" type="xml">
                 <tree string="Save Repository">
                     <field name="name"/>
@@ -352,18 +352,18 @@
             </field>
         </record>
 
-        <record id="action_saas_save_save_form" model="ir.actions.act_window">
+        <record id="action_clouder_save_save_form" model="ir.actions.act_window">
             <field name="name">Saves</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.save.save</field>
+            <field name="res_model">clouder.save.save</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_save_save_form" id="menu_action_saas_save_save_form" parent="menu_saas_saas"/>
+        <menuitem action="action_clouder_save_save_form" id="menu_action_clouder_save_save_form" parent="menu_clouder_clouder"/>
 
-        <record id="view_saas_save_save_form" model="ir.ui.view">
-            <field name="name">saas.save.save.form</field>
-            <field name="model">saas.save.save</field>
+        <record id="view_clouder_save_save_form" model="ir.ui.view">
+            <field name="name">clouder.save.save.form</field>
+            <field name="model">clouder.save.save</field>
             <field name="arch" type="xml">
                 <form string="Save" version="7.0">
                     <group col="4">
@@ -375,7 +375,7 @@
                       <field name="now_bup"/>
                       <field name="date_expiration"/>
 <!--                      <field name="instance_id"/>
-                      <field name="saas_ids"/>
+                      <field name="clouder_ids"/>
                       <field name="create_date"/>
                       <field name="version"/>
                       <field name="application_id" invisible="1"/>
@@ -383,7 +383,7 @@
                       <newline/>
                       <field name="restore_instance_id" domain="[('application_id','=',application_id)]"/>
                       <field name="restore_prefix"/>
-                      <field name="restore_saas_ids" domain="[('id','in',saas_ids[0][2])]"/>-->
+                      <field name="restore_clouder_ids" domain="[('id','in',clouder_ids[0][2])]"/>-->
                     </group>
                     <notebook>
                         <page string="Container">
@@ -446,9 +446,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_save_save_tree" model="ir.ui.view">
-            <field name="name">saas.save.save.tree</field>
-            <field name="model">saas.save.save</field>
+        <record id="view_clouder_save_save_tree" model="ir.ui.view">
+            <field name="name">clouder.save.save.tree</field>
+            <field name="model">clouder.save.save</field>
             <field name="arch" type="xml">
                 <tree string="Save">
                     <field name="name"/>
@@ -456,7 +456,7 @@
                     <field name='comment'/>
                     <field name='date_expiration'/>
 <!--                    <field name='instance_id'/>
-                    <field name="saas_ids"/>
+                    <field name="clouder_ids"/>
                     <field name="create_date"/>
                     <field name="version"/>-->
                 </tree>
@@ -465,20 +465,20 @@
 
 
 
-        <menuitem id="menu_saas_configuration" name="Configuration" parent="menu_saas" sequence="10"/>
+        <menuitem id="menu_clouder_configuration" name="Configuration" parent="menu_clouder" sequence="10"/>
 
-        <record id="action_saas_domain_form" model="ir.actions.act_window">
+        <record id="action_clouder_domain_form" model="ir.actions.act_window">
             <field name="name">Domains</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.domain</field>
+            <field name="res_model">clouder.domain</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_domain_form" id="menu_action_saas_domain_form" parent="menu_saas_configuration"/>
+        <menuitem action="action_clouder_domain_form" id="menu_action_clouder_domain_form" parent="menu_clouder_configuration"/>
 
-        <record id="view_saas_domain_form" model="ir.ui.view">
-            <field name="name">saas.domain.form</field>
-            <field name="model">saas.domain</field>
+        <record id="view_clouder_domain_form" model="ir.ui.view">
+            <field name="name">clouder.domain.form</field>
+            <field name="model">clouder.domain</field>
             <field name="arch" type="xml">
                 <form string="Domain" version="7.0">
                     <group col="4">
@@ -494,9 +494,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_domain_tree" model="ir.ui.view">
-            <field name="name">saas.domain.tree</field>
-            <field name="model">saas.domain</field>
+        <record id="view_clouder_domain_tree" model="ir.ui.view">
+            <field name="name">clouder.domain.tree</field>
+            <field name="model">clouder.domain</field>
             <field name="arch" type="xml">
                 <tree string="Domains">
                     <field name="name"/>
@@ -504,18 +504,18 @@
             </field>
         </record>
 
-        <record id="action_saas_application_type_form" model="ir.actions.act_window">
+        <record id="action_clouder_application_type_form" model="ir.actions.act_window">
             <field name="name">Application types</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.application.type</field>
+            <field name="res_model">clouder.application.type</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_application_type_form" id="menu_action_saas_application_type_form" parent="menu_saas_configuration"/>
+        <menuitem action="action_clouder_application_type_form" id="menu_action_clouder_application_type_form" parent="menu_clouder_configuration"/>
 
-        <record id="view_saas_application_type_form" model="ir.ui.view">
-            <field name="name">saas.application.type.form</field>
-            <field name="model">saas.application.type</field>
+        <record id="view_clouder_application_type_form" model="ir.ui.view">
+            <field name="name">clouder.application.type.form</field>
+            <field name="model">clouder.application.type</field>
             <field name="arch" type="xml">
                 <form string="Application type" version="7.0">
                     <group col="4">
@@ -536,9 +536,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_application_type_tree" model="ir.ui.view">
-            <field name="name">saas.application.type.tree</field>
-            <field name="model">saas.application.type</field>
+        <record id="view_clouder_application_type_tree" model="ir.ui.view">
+            <field name="name">clouder.application.type.tree</field>
+            <field name="model">clouder.application.type</field>
             <field name="arch" type="xml">
                 <tree string="Application types">
                     <field name="name"/>
@@ -547,18 +547,18 @@
         </record>
 
 
-        <record id="action_saas_application_form" model="ir.actions.act_window">
+        <record id="action_clouder_application_form" model="ir.actions.act_window">
             <field name="name">Applications</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.application</field>
+            <field name="res_model">clouder.application</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_application_form" id="menu_action_saas_application_form" parent="menu_saas_configuration"/>
+        <menuitem action="action_clouder_application_form" id="menu_action_clouder_application_form" parent="menu_clouder_configuration"/>
 
-        <record id="view_saas_application_form" model="ir.ui.view">
-            <field name="name">saas.application.form</field>
-            <field name="model">saas.application</field>
+        <record id="view_clouder_application_form" model="ir.ui.view">
+            <field name="name">clouder.application.form</field>
+            <field name="model">clouder.application</field>
             <field name="arch" type="xml">
                 <form string="Application" version="7.0">
                     <group col="4">
@@ -617,9 +617,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_application_tree" model="ir.ui.view">
-            <field name="name">saas.application.tree</field>
-            <field name="model">saas.application</field>
+        <record id="view_clouder_application_tree" model="ir.ui.view">
+            <field name="name">clouder.application.tree</field>
+            <field name="model">clouder.application</field>
             <field name="arch" type="xml">
                 <tree string="Applications">
                     <field name="name"/>
@@ -627,18 +627,18 @@
             </field>
         </record>
 
-        <record id="action_saas_application_version_form" model="ir.actions.act_window">
+        <record id="action_clouder_application_version_form" model="ir.actions.act_window">
             <field name="name">App Versions</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.application.version</field>
+            <field name="res_model">clouder.application.version</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_application_version_form" id="menu_action_saas_application_version_form" parent="menu_saas_configuration"/>
+        <menuitem action="action_clouder_application_version_form" id="menu_action_clouder_application_version_form" parent="menu_clouder_configuration"/>
 
-        <record id="view_saas_application_version_form" model="ir.ui.view">
-            <field name="name">saas.application.version.form</field>
-            <field name="model">saas.application.version</field>
+        <record id="view_clouder_application_version_form" model="ir.ui.view">
+            <field name="name">clouder.application.version.form</field>
+            <field name="model">clouder.application.version</field>
             <field name="arch" type="xml">
                 <form string="App Version" version="7.0">
                     <group col="4">
@@ -651,9 +651,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_application_version_tree" model="ir.ui.view">
-            <field name="name">saas.application.version.tree</field>
-            <field name="model">saas.application.version</field>
+        <record id="view_clouder_application_version_tree" model="ir.ui.view">
+            <field name="name">clouder.application.version.tree</field>
+            <field name="model">clouder.application.version</field>
             <field name="arch" type="xml">
                 <tree string="App Versions">
                     <field name="name"/>
@@ -664,18 +664,18 @@
         </record>
 
 
-        <record id="action_saas_log_form" model="ir.actions.act_window">
+        <record id="action_clouder_log_form" model="ir.actions.act_window">
             <field name="name">Logs</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.log</field>
+            <field name="res_model">clouder.log</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_log_form" id="menu_action_saas_log_form" parent="menu_saas_configuration"/>
+        <menuitem action="action_clouder_log_form" id="menu_action_clouder_log_form" parent="menu_clouder_configuration"/>
 
-        <record id="view_saas_log_form" model="ir.ui.view">
-            <field name="name">saas.log.form</field>
-            <field name="model">saas.log</field>
+        <record id="view_clouder_log_form" model="ir.ui.view">
+            <field name="name">clouder.log.form</field>
+            <field name="model">clouder.log</field>
             <field name="arch" type="xml">
                 <form string="Version" version="7.0">
                     <group col="4">
@@ -692,9 +692,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_log_tree" model="ir.ui.view">
-            <field name="name">saas.log.tree</field>
-            <field name="model">saas.log</field>
+        <record id="view_clouder_log_tree" model="ir.ui.view">
+            <field name="name">clouder.log.tree</field>
+            <field name="model">clouder.log</field>
             <field name="arch" type="xml">
                 <tree string="Versions">
                     <field name="model"/>
@@ -708,18 +708,18 @@
         </record>
 
 
-        <record id="action_saas_image_form" model="ir.actions.act_window">
+        <record id="action_clouder_image_form" model="ir.actions.act_window">
             <field name="name">Images</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.image</field>
+            <field name="res_model">clouder.image</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_image_form" id="menu_action_saas_image_form" parent="menu_saas_configuration"/>
+        <menuitem action="action_clouder_image_form" id="menu_action_clouder_image_form" parent="menu_clouder_configuration"/>
 
-        <record id="view_saas_image_form" model="ir.ui.view">
-            <field name="name">saas.image.form</field>
-            <field name="model">saas.image</field>
+        <record id="view_clouder_image_form" model="ir.ui.view">
+            <field name="name">clouder.image.form</field>
+            <field name="model">clouder.image</field>
             <field name="arch" type="xml">
                 <form string="Image" version="7.0">
                     <group col="4">
@@ -756,9 +756,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_image_tree" model="ir.ui.view">
-            <field name="name">saas.image.tree</field>
-            <field name="model">saas.image</field>
+        <record id="view_clouder_image_tree" model="ir.ui.view">
+            <field name="name">clouder.image.tree</field>
+            <field name="model">clouder.image</field>
             <field name="arch" type="xml">
                 <tree string="Images">
                     <field name="name"/>
@@ -768,18 +768,18 @@
         </record>
 
 
-        <record id="action_saas_image_version_form" model="ir.actions.act_window">
+        <record id="action_clouder_image_version_form" model="ir.actions.act_window">
             <field name="name">Image Versions</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">saas.image.version</field>
+            <field name="res_model">clouder.image.version</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_saas_image_version_form" id="menu_action_saas_image_version_form" parent="menu_saas_configuration"/>
+        <menuitem action="action_clouder_image_version_form" id="menu_action_clouder_image_version_form" parent="menu_clouder_configuration"/>
 
-        <record id="view_saas_image_version_form" model="ir.ui.view">
-            <field name="name">saas.image.version.form</field>
-            <field name="model">saas.image.version</field>
+        <record id="view_clouder_image_version_form" model="ir.ui.view">
+            <field name="name">clouder.image.version.form</field>
+            <field name="model">clouder.image.version</field>
             <field name="arch" type="xml">
                 <form string="Image Version" version="7.0">
                     <group col="4">
@@ -792,9 +792,9 @@
                 </form>
             </field>
         </record>
-        <record id="view_saas_image_version_tree" model="ir.ui.view">
-            <field name="name">saas.image.version.tree</field>
-            <field name="model">saas.image.version</field>
+        <record id="view_clouder_image_version_tree" model="ir.ui.view">
+            <field name="name">clouder.image.version.tree</field>
+            <field name="model">clouder.image.version</field>
             <field name="arch" type="xml">
                 <tree string="Image Versions">
                     <field name="image_id"/>
@@ -806,9 +806,9 @@
         </record>
 
 
-        <record id="view_saas_configuration" model="ir.ui.view">
-            <field name="name">saas settings</field>
-            <field name="model">saas.config.settings</field>
+        <record id="view_clouder_configuration" model="ir.ui.view">
+            <field name="name">clouder settings</field>
+            <field name="model">clouder.config.settings</field>
             <field name="arch" type="xml">
                 <form string="Application" version="7.0">
                     <group col="4">
@@ -829,37 +829,37 @@
             </field>
         </record>
 
-        <record id="saas_settings" model='saas.config.settings'/>
+        <record id="clouder_settings" model='clouder.config.settings'/>
 
-        <record id="action_saas_configuration" model="ir.actions.act_window">
-            <field name="name">Configure SaaS</field>
-            <field name="res_model">saas.config.settings</field>
-            <field name="view_id" ref="view_saas_configuration"/>
+        <record id="action_clouder_configuration" model="ir.actions.act_window">
+            <field name="name">Configure Clouder</field>
+            <field name="res_model">clouder.config.settings</field>
+            <field name="view_id" ref="view_clouder_configuration"/>
             <field name="view_mode">form</field>
-            <field name="res_id" ref="saas_settings"/>
+            <field name="res_id" ref="clouder_settings"/>
         </record>
 
-        <menuitem id="menu_saas_admin_configuration" parent="menu_saas_configuration"
-            sequence="15" action="action_saas_configuration"/>
+        <menuitem id="menu_clouder_admin_configuration" parent="menu_clouder_configuration"
+            sequence="15" action="action_clouder_configuration"/>
 
-        <record id="save_saas_daily_scheduler" model="ir.cron">
-          <field name="name">SaaS Daily Cron</field>
+        <record id="save_clouder_daily_scheduler" model="ir.cron">
+          <field name="name">Clouder Daily Cron</field>
           <field eval="1" name="interval_number"/>
           <field name="interval_type">days</field>
           <field eval="-1" name="numbercall"/>
           <field eval="0" name="doall"/>
-          <field name="model">saas.config.settings</field>
+          <field name="model">clouder.config.settings</field>
           <field name="function">cron_daily</field>
           <field name="args">([1])</field>
         </record>
 
-        <record id="save_saas_nextsaves_scheduler" model="ir.cron">
-          <field name="name">SaaS Next Saves</field>
+        <record id="save_clouder_nextsaves_scheduler" model="ir.cron">
+          <field name="name">Clouder Next Saves</field>
           <field eval="30" name="interval_number"/>
           <field name="interval_type">minutes</field>
           <field eval="-1" name="numbercall"/>
           <field eval="0" name="doall"/>
-          <field name="model">saas.config.settings</field>
+          <field name="model">clouder.config.settings</field>
           <field name="function">launch_next_saves</field>
           <field name="args">([1])</field>
         </record>

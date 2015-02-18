@@ -3,14 +3,12 @@
     <data>
 
 
-        <record id="apptype_registry" model="saas.application.type">
+        <record id="apptype_registry" model="clouder.application.type">
             <field name="name">registry</field>
             <field name="system_user">registry</field>
-            <field name="admin_name">admin</field>
-            <field name="admin_email">admin@localhost</field>
         </record>
 
-        <record id="image_registry" model="saas.image">
+        <record id="image_registry" model="clouder.image">
             <field name="name">img_registry</field>
             <field name="current_version">1</field>
             <field name="parent_from">registry</field>
@@ -51,13 +49,13 @@ EXPOSE 22 5000
 VOLUME /docker-registry
 ]]></field>
 </record>
-<record id="image_registry_port1" model="saas.image.port">
+<record id="image_registry_port1" model="clouder.image.port">
     <field name="image_id" ref="image_registry"/>
     <field name="name">registry</field>
     <field name="localport">5000</field>
     <field name="expose">internet</field>
 </record>
-<record id="image_registry_port2" model="saas.image.port">
+<record id="image_registry_port2" model="clouder.image.port">
     <field name="image_id" ref="image_registry"/>
     <field name="name">ssh</field>
     <field name="localport">22</field>
@@ -67,7 +65,7 @@ VOLUME /docker-registry
 
 
 
-        <record id="app_registry" model="saas.application">
+        <record id="app_registry" model="clouder.application">
             <field name="name">Registry</field>
             <field name="code">registry</field>
             <field name="current_version">1</field>

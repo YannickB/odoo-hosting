@@ -36,8 +36,8 @@ from os.path import expanduser
 import logging
 _logger = logging.getLogger(__name__)
 
-class saas_config_backup_method(osv.osv):
-    _name = 'saas.config.backup.method'
+class clouder_config_backup_method(osv.osv):
+    _name = 'clouder.config.backup.method'
     _description = 'Backup Method'
 
     _columns = {
@@ -45,9 +45,9 @@ class saas_config_backup_method(osv.osv):
     }
 
 
-class saas_config_settings(osv.osv):
-    _name = 'saas.config.settings'
-    _description = 'SaaS configuration'
+class clouder_config_settings(osv.osv):
+    _name = 'clouder.config.settings'
+    _description = 'Clouder configuration'
 
     _columns = {
         'email_sysadmin': fields.char('Email SysAdmin', size=128),
@@ -58,7 +58,7 @@ class saas_config_settings(osv.osv):
 
     def get_vals(self, cr, uid, context={}):
         context['from_config'] = True
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
 
         vals = {}
 
@@ -82,20 +82,20 @@ class saas_config_settings(osv.osv):
 
 
     def reset_keys(self, cr, uid, ids, context={}):
-        container_obj = self.pool.get('saas.container')
+        container_obj = self.pool.get('clouder.container')
         container_ids = container_obj.search(cr, uid, [], context=context)
         container_obj.reset_key(cr, uid, container_ids, context=context)
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
         self.write(cr, uid, [config.id], {'end_reset_keys': now}, context=context)
         cr.commit()
 
 
     def save_all(self, cr, uid, ids, context={}):
-        container_obj = self.pool.get('saas.container')
-        container_link_obj = self.pool.get('saas.container.link')
-        base_obj = self.pool.get('saas.base')
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        container_obj = self.pool.get('clouder.container')
+        container_link_obj = self.pool.get('clouder.container.link')
+        base_obj = self.pool.get('clouder.base')
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
 
         backup_ids = container_obj.search(cr, uid, [('application_id.type_id.name','=','backup')], context=context)
         for backup in container_obj.browse(cr, uid, backup_ids, context=context):
@@ -122,13 +122,13 @@ class saas_config_settings(osv.osv):
             container_link_obj.deploy(cr, uid, vals, context=context)
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
         self.write(cr, uid, [config.id], {'end_save_all': now}, context=context)
         cr.commit()
 
     def purge_expired_saves(self, cr, uid, ids, context={}):
-        repo_obj = self.pool.get('saas.save.repository')
-        save_obj = self.pool.get('saas.save.save')
+        repo_obj = self.pool.get('clouder.save.repository')
+        save_obj = self.pool.get('clouder.save.save')
         vals = self.get_vals(cr, uid, context=context)
         expired_saverepo_ids = repo_obj.search(cr, uid, [('date_expiration','!=',False),('date_expiration','<',vals['now_date'])], context=context)
         repo_obj.unlink(cr, uid, expired_saverepo_ids, context=context)
@@ -136,25 +136,25 @@ class saas_config_settings(osv.osv):
         save_obj.unlink(cr, uid, expired_save_ids, context=context)
 
     def purge_expired_logs(self, cr, uid, ids, context={}):
-        log_obj = self.pool.get('saas.log')
+        log_obj = self.pool.get('clouder.log')
         vals = self.get_vals(cr, uid, context=context)
         expired_log_ids = log_obj.search(cr, uid, [('expiration_date','!=',False),('expiration_date','<',vals['now_date'])], context=context)
         log_obj.unlink(cr, uid, expired_log_ids, context=context)
 
     def launch_next_saves(self, cr, uid, ids, context={}):
         context['save_comment'] = 'Auto save'
-        container_obj = self.pool.get('saas.container')
+        container_obj = self.pool.get('clouder.container')
         vals = self.get_vals(cr, uid, context=context)
         container_ids = container_obj.search(cr, uid, [('date_next_save','!=',False),('date_next_save','<',vals['now_date'] + ' ' + vals['now_hour_regular'])], context=context)
         container_obj.save(cr, uid, container_ids, context=context)
-        base_obj = self.pool.get('saas.base')
+        base_obj = self.pool.get('clouder.base')
         vals = self.get_vals(cr, uid, context=context)
         base_ids = base_obj.search(cr, uid, [('date_next_save','!=',False),('date_next_save','<',vals['now_date'] + ' ' + vals['now_hour_regular'])], context=context)
         base_obj.save(cr, uid, base_ids, context=context)
 
 
     def reset_bases(self, cr, uid, ids, context={}):
-        base_obj = self.pool.get('saas.base')
+        base_obj = self.pool.get('clouder.base')
         base_ids = base_obj.search(cr, uid, [('reset_each_day','=',True)], context=context)
         for base in base_obj.browse(cr, uid, base_ids, context=context):
             if base.parent_id:
@@ -163,7 +163,7 @@ class saas_config_settings(osv.osv):
                 base_obj.reinstall(cr, uid, [base.id], context=context)
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
         self.write(cr, uid, [config.id], {'end_reset_bases': now}, context=context)
         cr.commit()
 

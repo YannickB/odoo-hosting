@@ -35,21 +35,21 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class saas_image(osv.osv):
-    _name = 'saas.image'
+class clouder_image(osv.osv):
+    _name = 'clouder.image'
 
     _columns = {
         'name': fields.char('Image name', size=64, required=True),
         'current_version': fields.char('Current version', size=64, required=True),
-        'parent_id': fields.many2one('saas.image', 'Parent image'),
-        'parent_version_id': fields.many2one('saas.image.version', 'Parent version'),
+        'parent_id': fields.many2one('clouder.image', 'Parent image'),
+        'parent_version_id': fields.many2one('clouder.image.version', 'Parent version'),
         'parent_from': fields.char('From', size=64),
         'privileged': fields.boolean('Privileged?', help="Indicate if the containers shall be in privilaged mode. Warning : Theses containers will have access to the host system."),
-        'registry_id': fields.many2one('saas.container', 'Registry'),
+        'registry_id': fields.many2one('clouder.container', 'Registry'),
         'dockerfile': fields.text('DockerFile'),
-        'volume_ids': fields.one2many('saas.image.volume', 'image_id', 'Volumes'),
-        'port_ids': fields.one2many('saas.image.port', 'image_id', 'Ports'),
-        'version_ids': fields.one2many('saas.image.version','image_id', 'Versions'),
+        'volume_ids': fields.one2many('clouder.image.volume', 'image_id', 'Volumes'),
+        'port_ids': fields.one2many('clouder.image.port', 'image_id', 'Ports'),
+        'version_ids': fields.one2many('clouder.image.version','image_id', 'Versions'),
     }
 
     _sql_constraints = [
@@ -63,8 +63,8 @@ class saas_image(osv.osv):
 
         image = self.browse(cr, uid, id, context=context)
 
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings') 
-        vals.update(self.pool.get('saas.config.settings').get_vals(cr, uid, context=context))
+        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
+        vals.update(self.pool.get('clouder.config.settings').get_vals(cr, uid, context=context))
 
         ports = {}
         for port in image.port_ids:
@@ -87,7 +87,7 @@ class saas_image(osv.osv):
         return vals
 
     def build(self, cr, uid, ids, context=None):
-        version_obj = self.pool.get('saas.image.version')
+        version_obj = self.pool.get('clouder.image.version')
 
         for image in self.browse(cr, uid, ids, context={}):
             if not image.dockerfile:
@@ -102,17 +102,17 @@ class saas_image(osv.osv):
     #     for image in self.browse(cr, uid, ids, context=context):
     #         vals = self.get_vals(cr, uid, image.id, context=context)
     #         self.purge(cr, uid, vals, context=context)
-    #     return super(saas_image, self).unlink(cr, uid, ids, context=context)
+    #     return super(clouder_image, self).unlink(cr, uid, ids, context=context)
     #
     # def purge(self, cr, uid, vals, context={}):
-    #     context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+    #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
     #     execute.execute_local(['sudo','docker', 'rmi', vals['image_name'] + ':latest'], context)
 
-class saas_image_volume(osv.osv):
-    _name = 'saas.image.volume'
+class clouder_image_volume(osv.osv):
+    _name = 'clouder.image.volume'
 
     _columns = {
-        'image_id': fields.many2one('saas.image', 'Image', ondelete="cascade", required=True),
+        'image_id': fields.many2one('clouder.image', 'Image', ondelete="cascade", required=True),
         'name': fields.char('Path', size=128, required=True),
         'hostpath': fields.char('Host path', size=128),
         'user': fields.char('System User', size=64),
@@ -125,11 +125,11 @@ class saas_image_volume(osv.osv):
     ]
 
 
-class saas_image_port(osv.osv):
-    _name = 'saas.image.port'
+class clouder_image_port(osv.osv):
+    _name = 'clouder.image.port'
 
     _columns = {
-        'image_id': fields.many2one('saas.image', 'Image', ondelete="cascade", required=True),
+        'image_id': fields.many2one('clouder.image', 'Image', ondelete="cascade", required=True),
         'name': fields.char('Name', size=64, required=True),
         'localport': fields.char('Local port', size=12, required=True),
         'expose': fields.selection([('internet','Internet'),('local','Local'),('none','None')],'Expose?', required=True),
@@ -144,16 +144,16 @@ class saas_image_port(osv.osv):
         ('name_uniq', 'unique(image_id,name)', 'Port name must be unique per image!'),
     ]
 
-class saas_image_version(osv.osv):
-    _name = 'saas.image.version'
-    _inherit = ['saas.model']
+class clouder_image_version(osv.osv):
+    _name = 'clouder.image.version'
+    _inherit = ['clouder.model']
 
     _columns = {
-        'image_id': fields.many2one('saas.image','Image', ondelete='cascade', required=True),
+        'image_id': fields.many2one('clouder.image','Image', ondelete='cascade', required=True),
         'name': fields.char('Version', size=64, required=True),
-        'parent_id': fields.many2one('saas.image.version', 'Parent version'),
-        'registry_id': fields.many2one('saas.container', 'Registry'),
-        'container_ids': fields.one2many('saas.container','image_version_id', 'Containers'),
+        'parent_id': fields.many2one('clouder.image.version', 'Parent version'),
+        'registry_id': fields.many2one('clouder.container', 'Registry'),
+        'container_ids': fields.one2many('clouder.container','image_version_id', 'Containers'),
     }
 
     _order = 'create_date desc'
@@ -168,7 +168,7 @@ class saas_image_version(osv.osv):
 
         image_version = self.browse(cr, uid, id, context=context)
 
-        vals.update(self.pool.get('saas.image').get_vals(cr, uid, image_version.image_id.id, context=context))
+        vals.update(self.pool.get('clouder.image').get_vals(cr, uid, image_version.image_id.id, context=context))
 
         if image_version.parent_id:
             parent_vals = self.get_vals(cr, uid, image_version.parent_id.id, context=context)
@@ -180,7 +180,7 @@ class saas_image_version(osv.osv):
             })
 
         if image_version.registry_id:
-            registry_vals = self.pool.get('saas.container').get_vals(cr, uid, image_version.registry_id.id, context=context)
+            registry_vals = self.pool.get('clouder.container').get_vals(cr, uid, image_version.registry_id.id, context=context)
             registry_port = registry_vals['container_ports']['registry']['hostport']
             vals.update({
                 'registry_id': registry_vals['container_id'],
@@ -211,15 +211,15 @@ class saas_image_version(osv.osv):
 
 
     def unlink(self, cr, uid, ids, context=None):
-        container_obj = self.pool.get('saas.container')
+        container_obj = self.pool.get('clouder.container')
         if container_obj.search(cr, uid, [('image_version_id','in',ids)], context=context):
             raise osv.except_osv(_('Inherit error!'),_("A container is linked to this image version, you can't delete it!"))
-        return super(saas_image_version, self).unlink(cr, uid, ids, context=context)
+        return super(clouder_image_version, self).unlink(cr, uid, ids, context=context)
 
 
 
     def deploy(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         ssh, sftp = execute.connect(vals['registry_server_domain'], vals['registry_server_ssh_port'], 'root', context)
         dir = '/tmp/' + vals['image_name'] + '_' + vals['image_version_fullname']
         execute.execute(ssh, ['mkdir', '-p', dir], context)
@@ -263,5 +263,5 @@ class saas_image_version(osv.osv):
 # - Make sure the user in the container can access the keys, and if possible make the key belong to the user with 700 rights
 
     def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         #TODO There is currently no way to delete an image from private registry.
