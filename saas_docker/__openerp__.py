@@ -20,23 +20,18 @@
 ##############################################################################
 
 {
-    'name': 'SaaS',
+    'name': 'SaaS Docker',
     'version': '1.0',
     'category': 'Community',
-    'depends': ['base'],
+    'depends': ['saas'],
     'author': 'Yannick Buron',
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    SaaS
+    SaaS Docker
     """,
     'demo': [],
-    'data': [
-        'saas_view.xml',
-        'saas_archive_data.xml',
-        'saas_backup_data.xml',
-        'saas_registry_data.xml'
-    ],
+    'data': ['saas_docker_data.xml'],
     'installable': True,
     'application': True,
 }
