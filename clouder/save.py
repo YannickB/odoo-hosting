@@ -76,22 +76,6 @@ class clouder_save_repository(osv.osv):
 
         return vals
 
-    # def unlink(self, cr, uid, ids, context={}):
-    #     for repo in self.browse(cr, uid, ids, context=context):
-    #         vals = self.get_vals(cr, uid, repo.id, context=context)
-    #         self.purge(cr, uid, vals, context=context)
-    #     res = super(clouder_save_repository, self).unlink(cr, uid, ids, context=context)
-    #     # self.pool.get('clouder.config.settings').save_fsck(cr, uid, [], context=context)
-    #
-    # def purge(self, cr, uid, vals, context={}):
-    #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-    #     ssh, sftp = execute.connect(vals['backup_fullname'], context=context)
-    #     execute.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + vals['saverepo_name']], context)
-    #     execute.execute(ssh, ['git', '--git-dir=/opt/backup/bup', 'branch', '-D', vals['saverepo_name']], context)
-    #     ssh.close()
-    #     sftp.close()
-    #     return
-
 class clouder_save_save(osv.osv):
     _name = 'clouder.save.save'
     _inherit = ['clouder.model']
@@ -136,7 +120,6 @@ class clouder_save_save(osv.osv):
         'base_nosave': fields.boolean('No save?'),
         'base_options': fields.text('Base Options'),
         'base_links': fields.text('Base Links'),
-
         'container_name': fields.related('repo_id', 'container_name', type='char', string='Container Name', size=64, readonly=True),
         'container_server': fields.related('repo_id', 'container_server', type='char', string='Container Server', size=64, readonly=True),
         'container_restore_to_name': fields.char('Restore to (Name)', size=64),
@@ -202,6 +185,9 @@ class clouder_save_save(osv.osv):
         context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         ssh, sftp = execute.connect(vals['backup_fullname'], context=context)
         execute.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + vals['saverepo_name'] + '/'+ vals['save_name']], context)
+        if self.search(cr, uid, [('repo_id','=',vals['saverepo_id'])], context=context) == [vals['save_id']]:
+            execute.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + vals['saverepo_name']], context)
+            execute.execute(ssh, ['git', '--git-dir=/opt/backup/bup', 'branch', '-D', vals['saverepo_name']], context)
         ssh.close()
         sftp.close()
         return
