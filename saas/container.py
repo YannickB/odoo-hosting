@@ -165,7 +165,7 @@ class saas_server(osv.osv):
     def purge(self, cr, uid, vals, context={}):
         context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
 
-        execute.execute_local([modules.get_module_path('saas') + '/shell/sed.sh', vals['server_domain'], vals['config_home_directory'] + '/.ssh/config'], context)
+        execute.execute_local([modules.get_module_path('saas') + '/res/sed.sh', vals['server_domain'], vals['config_home_directory'] + '/.ssh/config'], context)
         execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['server_domain']], context)
 
 #        if 'shinken_server_domain' in vals:
@@ -691,7 +691,7 @@ class saas_container(osv.osv):
 
 
     def purge_key(self, cr, uid, vals, context={}):
-        execute.execute_local([modules.get_module_path('saas') + '/shell/sed.sh', vals['container_fullname'], vals['config_home_directory'] + '/.ssh/config'], context)
+        execute.execute_local([modules.get_module_path('saas') + '/res/sed.sh', vals['container_fullname'], vals['config_home_directory'] + '/.ssh/config'], context)
         execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname']], context)
         execute.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub'], context)
         ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
