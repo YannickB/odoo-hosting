@@ -841,17 +841,7 @@
                 <form string="Application" version="7.0">
                     <group col="4">
                         <field name="email_sysadmin" required="1"/>
-                        <field name="log_path" required="1"/>
-                        <field name="archive_path" required="1"/>
-                        <field name="services_hostpath" required="1"/>
-                        <field name="backup_directory" required="1"/>
-                        <field name="piwik_server" required="1"/>
-                        <field name="piwik_password" required="1"/>
-                        <field name="ftpuser" required="1"/>
-                        <field name="ftppass" required="1"/>
-                        <field name="ftpserver" required="1"/>
-                        <field name="mailchimp_username" required="1"/>
-                        <field name="mailchimp_apikey" required="1"/>
+                        <newline/>
                         <field name="end_reset_keys"/>
                         <field name="end_save_all"/>
                         <field name="end_reset_bases"/>
@@ -865,16 +855,6 @@
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
                 </form>
             </field>
-        </record>
-
-        <record id="saas_settings" model='saas.config.settings'>
-            <field name="archive_path">/opt/archives</field>
-            <field name="email_sysadmin">yannick.buron@gmail.com</field>
-            <field name="services_hostpath">/opt/services</field>
-            <field name="home_directory">/home/saas-conductor</field>
-            <field name="ftpuser">sd-34468</field>
-            <field name="ftppass">psSLW9K9DrzX2lQ</field>
-            <field name="ftpserver">dedibackup-dc3.online.net</field>
         </record>
 
         <record id="action_saas_configuration" model="ir.actions.act_window">

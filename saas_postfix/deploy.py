@@ -47,7 +47,7 @@ class saas_container(osv.osv):
             execute.execute(ssh, ['echo "smtp_sasl_security_options = noanonymous" >> /etc/postfix/main.cf'], context)
             execute.execute(ssh, ['echo "smtp_use_tls = yes" >> /etc/postfix/main.cf'], context)
             execute.execute(ssh, ['echo "mynetworks = 127.0.0.0/8 172.17.0.0/16" >> /etc/postfix/main.cf'], context)
-            execute.execute(ssh, ['echo "[smtp.mandrillapp.com]    ' + vals['config_mailchimp_username'] + ':' + vals['config_mailchimp_apikey'] + '" > /etc/postfix/sasl_passwd'], context)
+            execute.execute(ssh, ['echo "[smtp.mandrillapp.com]    ' + vals['container_options']['mailchimp_username']['value'] + ':' + vals['container_options']['mailchimp_apikey']['value'] + '" > /etc/postfix/sasl_passwd'], context)
             execute.execute(ssh, ['postmap /etc/postfix/sasl_passwd'], context)
             ssh.close()
             sftp.close()

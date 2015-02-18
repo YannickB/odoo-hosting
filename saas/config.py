@@ -51,17 +51,6 @@ class saas_config_settings(osv.osv):
 
     _columns = {
         'email_sysadmin': fields.char('Email SysAdmin', size=128),
-        'log_path': fields.char('SaaS Log Path', size=128),
-        'archive_path': fields.char('Archive path', size=128),
-        'services_hostpath': fields.char('Host services path', size=128),
-        'backup_directory': fields.char('Backup directory', size=128),
-        'piwik_server': fields.char('Piwik server', size=128),
-        'piwik_password': fields.char('Piwik Password', size=128),
-        'ftpuser': fields.char('FTP User', size=64),
-        'ftppass': fields.char('FTP Pass', size=64),
-        'ftpserver': fields.char('FTP Server', size=64),
-        'mailchimp_username': fields.char('MailChimp Username', size=64),
-        'mailchimp_apikey': fields.char('MailChimp API Key', size=64),
         'end_reset_keys': fields.datetime('Last Reset Keys ended at'),
         'end_save_all': fields.datetime('Last Save All ended at'),
         'end_reset_bases': fields.datetime('Last Reset Bases ended at'),
@@ -73,21 +62,17 @@ class saas_config_settings(osv.osv):
 
         vals = {}
 
+        if not config.email_sysadmin:
+            raise osv.except_osv(_('Data error!'),
+                _("You need to specify the sysadmin email in configuration"))
+
+
         now = datetime.now()
         vals.update({
             'config_email_sysadmin': config.email_sysadmin,
-            'config_log_path': config.log_path,
-            'config_archive_path': config.archive_path,
-            'config_services_hostpath': config.services_hostpath,
-            'config_backup_directory': config.backup_directory,
-            'config_piwik_server': config.piwik_server,
-            'config_piwik_password': config.piwik_password,
+            'config_archive_path': '/opt/archives',
+            'config_services_hostpath': '/opt/services',
             'config_home_directory': expanduser("~"),
-            'config_ftpuser': config.ftpuser,
-            'config_ftppass': config.ftppass,
-            'config_ftpserver': config.ftpserver,
-            'config_mailchimp_username': config.mailchimp_username,
-            'config_mailchimp_apikey': config.mailchimp_apikey,
             'now_date': now.strftime("%Y-%m-%d"),
             'now_hour': now.strftime("%H-%M"),
             'now_hour_regular': now.strftime("%H:%M:%S"),
