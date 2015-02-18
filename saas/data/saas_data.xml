@@ -1,0 +1,161 @@
+<openerp>
+    <data>
+
+        <record id="image_base" model="saas.image">
+            <field name="name">yolobase</field>
+            <field name="current_version">1.0</field>
+            <field name="parent_from">debian:latest</field>
+            <field name="dockerfile"><![CDATA[
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get -qy install locales
+ENV LANGUAGE en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+RUN DEBIAN_FRONTEND=noninteractive locale-gen en_US.UTF-8
+RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
+RUN update-locale LANG=en_US.UTF-8
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils wget patch rsync
+#/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix container.
+#Be cautious to any application which also use it.
+RUN mkdir -p /var/run/sshd
+RUN mkdir -p /var/log/supervisor
+RUN rm /usr/bin/mail
+RUN ln -s /usr/sbin/ssmtp /usr/bin/mail
+#RUN echo "" > /etc/ssmtp/ssmtp.conf
+
+
+RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/usr/sbin/sshd -D" >> /etc/supervisor/conf.d/supervisord.conf
+
+RUN mkdir /root/.ssh
+RUN ln -s /opt/keys/authorized_keys /root/.ssh/authorized_keys
+
+CMD ["/usr/bin/supervisord"]
+]]></field>
+        </record>
+        <record id="image_base_port1" model="saas.image.port">
+            <field name="image_id" ref="image_base"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+
+        <record id="image_apache" model="saas.image">
+            <field name="name">img_apache</field>
+            <field name="current_version">2</field>
+            <field name="parent_id" ref="image_base"/>
+            <field name="dockerfile"><![CDATA[
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install apache2
+
+RUN a2enmod ssl
+RUN a2enmod proxy
+RUN a2enmod proxy_http
+RUN a2enmod headers
+RUN echo "ServerName proxy.yolo-consulting.net" >> /etc/apache2/apache2.conf
+RUN echo "NameVirtualHost *:443" >> /etc/apache2/ports.conf
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:apache]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/bin/bash -c 'source /etc/apache2/envvars && exec /usr/sbin/apache2 -DFOREGROUND'" >> /etc/supervisor/conf.d/supervisord.conf
+
+RUN mkdir /var/www/.ssh
+RUN ln -s /opt/keys/authorized_keys /var/www/.ssh/authorized_keys
+RUN chown -R www-data /var/www/.ssh
+
+USER root
+]]></field>
+        </record>
+        <record id="image_apache_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_apache"/>
+            <field name="name">/etc/apache2</field>
+        </record>
+        <record id="image_apache_volume2" model="saas.image.volume">
+            <field name="image_id" ref="image_apache"/>
+            <field name="name">/var/www</field>
+        </record>
+        <record id="image_apache_port1" model="saas.image.port">
+            <field name="image_id" ref="image_apache"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_apache_port2" model="saas.image.port">
+            <field name="image_id" ref="image_apache"/>
+            <field name="name">apache</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_apache_port3" model="saas.image.port">
+            <field name="image_id" ref="image_apache"/>
+            <field name="name">apache-ssl</field>
+            <field name="localport">443</field>
+            <field name="expose">internet</field>
+        </record>
+
+
+        <record id="image_nginx" model="saas.image">
+            <field name="name">img_nginx</field>
+            <field name="current_version">1</field>
+            <field name="parent_id" ref="image_base"/>
+            <field name="dockerfile"><![CDATA[
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install nginx openssl
+
+# nginx config
+RUN sed -i -e"s/keepalive_timeout\s*65/keepalive_timeout 2/" /etc/nginx/nginx.conf
+RUN echo "daemon off;" >> /etc/nginx/nginx.conf
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/etc/init.d/nginx start" >> /etc/supervisor/conf.d/supervisord.conf
+
+RUN mkdir -p /var/www/.ssh
+RUN ln -s /opt/keys/authorized_keys /var/www/.ssh/authorized_keys
+RUN chown -R www-data:www-data /var/www
+RUN chown -R www-data:www-data /var/www/.ssh
+
+USER root
+]]></field>
+        </record>
+        <record id="image_nginx_volume1" model="saas.image.volume">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_nginx_volume2" model="saas.image.volume">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">/var/www</field>
+        </record>
+        <record id="image_nginx_volume3" model="saas.image.volume">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">/etc/ssl</field>
+        </record>
+        <record id="image_nginx_port1" model="saas.image.port">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_nginx_port2" model="saas.image.port">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">nginx</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_nginx_port3" model="saas.image.port">
+            <field name="image_id" ref="image_nginx"/>
+            <field name="name">nginx-ssl</field>
+            <field name="localport">443</field>
+            <field name="expose">internet</field>
+        </record>
+
+
+    </data>
+</openerp>

@@ -33,9 +33,10 @@
     'demo': [],
     'data': [
         'saas_view.xml',
-        'saas_archive_data.xml',
-        'saas_backup_data.xml',
-        'saas_registry_data.xml'
+        'data/saas_data.xml',
+        'archive/saas_archive_data.xml',
+        'backup/saas_backup_data.xml',
+        'registry/saas_registry_data.xml'
     ],
     'installable': True,
     'application': True,
