@@ -76,21 +76,21 @@ class saas_save_repository(osv.osv):
 
         return vals
 
-    def unlink(self, cr, uid, ids, context={}):
-        for repo in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, repo.id, context=context)
-            self.purge(cr, uid, vals, context=context)
-        res = super(saas_save_repository, self).unlink(cr, uid, ids, context=context)
-        # self.pool.get('saas.config.settings').save_fsck(cr, uid, [], context=context)
+#    def unlink(self, cr, uid, ids, context={}):
+#        for repo in self.browse(cr, uid, ids, context=context):
+#            vals = self.get_vals(cr, uid, repo.id, context=context)
+#            self.purge(cr, uid, vals, context=context)
+#        res = super(saas_save_repository, self).unlink(cr, uid, ids, context=context)
+#        # self.pool.get('saas.config.settings').save_fsck(cr, uid, [], context=context)
 
-    def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        ssh, sftp = execute.connect(vals['backup_fullname'], context=context)
-        execute.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + vals['saverepo_name']], context)
-        execute.execute(ssh, ['git', '--git-dir=/opt/backup/bup', 'branch', '-D', vals['saverepo_name']], context)
-        ssh.close()
-        sftp.close()
-        return
+#    def purge(self, cr, uid, vals, context={}):
+#        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+#        ssh, sftp = execute.connect(vals['backup_fullname'], context=context)
+#        execute.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + vals['saverepo_name']], context)
+#        execute.execute(ssh, ['git', '--git-dir=/opt/backup/bup', 'branch', '-D', vals['saverepo_name']], context)
+#        ssh.close()
+#        sftp.close()
+#        return
 
 class saas_save_save(osv.osv):
     _name = 'saas.save.save'

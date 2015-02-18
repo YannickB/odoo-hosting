@@ -29,7 +29,7 @@ import time
 from datetime import datetime, timedelta
 import subprocess
 import paramiko
-import execute
+from .. import execute
 
 import logging
 _logger = logging.getLogger(__name__)

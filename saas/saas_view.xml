@@ -829,6 +829,8 @@
             </field>
         </record>
 
+        <record id="saas_settings" model='saas.config.settings'/>
+
         <record id="action_saas_configuration" model="ir.actions.act_window">
             <field name="name">Configure SaaS</field>
             <field name="res_model">saas.config.settings</field>
