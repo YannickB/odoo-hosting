@@ -29,7 +29,9 @@
                         <field name="application_id"/>
                         <field name="service_id" required="0"/>
                         <field name="service_ids" widget="many2many_tags"/>
+                        <field name="admin_name"/>
                         <field name="admin_passwd"/>
+                        <field name="admin_email"/>
                         <field name="poweruser_name"/>
                         <field name="poweruser_passwd"/>
                         <field name="poweruser_email"/>
@@ -519,11 +521,6 @@
                     <group col="4">
                         <field name="name"/>
                         <field name="system_user"/>
-                        <field name="admin_name"/>
-                        <field name="admin_email"/>
-                        <field name="mysql"/>
-                        <field name="init_test"/>
-                        <field name="standard_port"/>
                         <field name="symlink"/>
                         <field name="localpath"/>
                         <field name="localpath_services"/>
@@ -571,33 +568,8 @@
                         <field name="current_version"/>
                         <field name="default_image_id"/>
                         <field name="next_server_id"/>
-<!--
-                        <field name="preprod_domain_id"/>
-                        <field name="preprod_server_id"/>
-                        <field name="preprod_bdd_server_id"/>
-                        <field name="preprod_port"/>
-                        <field name="preprod_instance_id"/>
-                        <field name="preprod_mysql_instance_id"/>
-                        <field name="test_port"/>
-                        <field name="test_instance_id"/>
-                        <field name="test_mysql_instance_id"/>
-                        <field name="dev_port"/>
-                        <field name="dev_instance_id"/>
-                        <field name="dev_mysql_instance_id"/>-->
-                        <field name="instances_path"/>
-                        <field name="build_directory"/>
-                        <field name="poweruser_name"/>
-                        <field name="poweruser_password"/>
-                        <field name="poweruser_email"/>
-                        <field name="piwik_demo_id"/>
-                        <field name="version_prod"/>
-                        <field name="version_preprod"/>
-                        <field name="version_test"/>
-                        <field name="version_dev"/>
-                        <newline/>
-
-<!--                        <newline/>
-                        <button name="refresh_demo" string="Refresh Demo" type="object"/>-->
+                        <field name="admin_name"/>
+                        <field name="admin_email"/>
                     </group>
                     <notebook>
                         <page string="General">

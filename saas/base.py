@@ -121,9 +121,9 @@ class saas_base(osv.osv):
         'domain_id': fields.many2one('saas.domain', 'Domain name', required=True),
         'service_id': fields.many2one('saas.service', 'Service', required=True),
         'service_ids': fields.many2many('saas.service', 'saas_base_service_rel', 'base_id', 'service_id', 'Alternative Services'),
-        'proxy_id': fields.many2one('saas.container', 'Proxy'),
-        'mail_id': fields.many2one('saas.container', 'Mail'),
+        'admin_name': fields.char('Admin name', size=64),
         'admin_passwd': fields.char('Admin password', size=64),
+        'admin_email': fields.char('Admin email', size=64),
         'poweruser_name': fields.char('PowerUser name', size=64),
         'poweruser_passwd': fields.char('PowerUser password', size=64),
         'poweruser_email': fields.char('PowerUser email', size=64),
@@ -286,7 +286,9 @@ class saas_base(osv.osv):
             'base_unique_name_': unique_name_,
             'base_title': base.title,
             'base_domain': base.domain_id.name,
+            'base_admin_name': base.admin_name,
             'base_admin_passwd': base.admin_passwd,
+            'base_admin_email': base.admin_email,
             'base_poweruser_name': base.poweruser_name,
             'base_poweruser_password': base.poweruser_passwd,
             'base_poweruser_email': base.poweruser_email,
@@ -341,8 +343,12 @@ class saas_base(osv.osv):
             }
             vals['service_id'] = service_obj.create(cr, uid, service_vals, context=context)
         if 'application_id' in vals:
+            config = self.pool.get('ir.model.data').get_object(cr, uid, 'saas', 'saas_settings')
             application = self.pool.get('saas.application').browse(cr, uid, vals['application_id'], context=context)
-
+            if 'admin_name' not in vals or not vals['admin_name']:
+                vals['admin_name'] = application.admin_name
+            if 'admin_email' not in vals or not vals['admin_email']:
+                vals['admin_email'] = application.admin_email and application.admin_email or config.sysadmin_email
             if 'backup_server_ids' not in vals or not vals['backup_server_ids'] or not vals['backup_server_ids'][0][2]:
                 vals['backup_server_ids'] = [(6,0,[b.id for b in application.base_backup_ids])]
             if 'time_between_save' not in vals or not vals['time_between_save']:

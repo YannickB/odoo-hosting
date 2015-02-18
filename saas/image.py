@@ -98,15 +98,15 @@ class saas_image(osv.osv):
             version = image.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
             version_obj.create(cr, uid, {'image_id': image.id, 'name': version, 'registry_id': image.registry_id and image.registry_id.id, 'parent_id': image.parent_version_id and image.parent_version_id.id}, context=context)
 
-    def unlink(self, cr, uid, ids, context=None):
-        for image in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, image.id, context=context)
-            self.purge(cr, uid, vals, context=context)
-        return super(saas_image, self).unlink(cr, uid, ids, context=context)
-
-    def purge(self, cr, uid, vals, context={}):
-        context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
-        execute.execute_local(['sudo','docker', 'rmi', vals['image_name'] + ':latest'], context)
+    # def unlink(self, cr, uid, ids, context={}):
+    #     for image in self.browse(cr, uid, ids, context=context):
+    #         vals = self.get_vals(cr, uid, image.id, context=context)
+    #         self.purge(cr, uid, vals, context=context)
+    #     return super(saas_image, self).unlink(cr, uid, ids, context=context)
+    #
+    # def purge(self, cr, uid, vals, context={}):
+    #     context.update({'saas-self': self, 'saas-cr': cr, 'saas-uid': uid})
+    #     execute.execute_local(['sudo','docker', 'rmi', vals['image_name'] + ':latest'], context)
 
 class saas_image_volume(osv.osv):
     _name = 'saas.image.volume'
