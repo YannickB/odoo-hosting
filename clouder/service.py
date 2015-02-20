@@ -20,22 +20,16 @@
 ##############################################################################
 
 
-from openerp import netsvc
-from openerp import pooler
-from openerp.osv import fields, osv, orm
-from openerp.tools.translate import _
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 
-import time
-from datetime import datetime, timedelta
-import subprocess
-import paramiko
 import execute
 
 import logging
 _logger = logging.getLogger(__name__)
 
 
-class clouder_service(osv.osv):
+class ClouderService(models.Model):
     _name = 'clouder.service'
     _inherit = ['clouder.model']
 
@@ -64,20 +58,19 @@ class clouder_service(osv.osv):
         return result
 
 
-    _columns = {
-        'name': fields.char('Name', size=64, required=True),
-        'application_id': fields.related('container_id', 'application_id', type='many2one', relation='clouder.application', string='Application', readonly=True),
-        'application_version_id': fields.many2one('clouder.application.version', 'Version', domain="[('application_id.container_ids','in',container_id)]", required=True),
-        'database_password': fields.char('Database password', size=64, required=True),
-        'container_id': fields.many2one('clouder.container', 'Container', required=True),
-        'skip_analytics': fields.boolean('Skip Analytics?'),
-        'option_ids': fields.one2many('clouder.service.option', 'service_id', 'Options'),
-        'link_ids': fields.one2many('clouder.service.link', 'service_id', 'Links'),
-        'base_ids': fields.one2many('clouder.base', 'service_id', 'Bases'),
-        'parent_id': fields.many2one('clouder.service', 'Parent Service'),
-        'sub_service_name': fields.char('Subservice Name', size=64),
-        'custom_version': fields.boolean('Custom Version?'),
-    }
+    name = fields.Char('Name', size=64, required=True)
+    application_id = fields.Many2one('clouder.application', 'Application', relation='container_id.application_id', readonly=True)
+    application_version_id = fields.Many2one('clouder.application.version', 'Version', domain="[('application_id.container_ids','in',container_id)]", required=True)
+    database_password = fields.Char('Database password', size=64, required=True)
+    container_id = fields.Many2one('clouder.container', 'Container', required=True)
+    skip_analytics = fields.Boolean('Skip Analytics?')
+    option_ids = fields.One2many('clouder.service.option', 'service_id', 'Options')
+    link_ids = fields.One2many('clouder.service.link', 'service_id', 'Links')
+    base_ids = fields.One2many('clouder.base', 'service_id', 'Bases')
+    parent_id = fields.Many2one('clouder.service', 'Parent Service')
+    sub_service_name = fields.Char('Subservice Name', size=64)
+    custom_version = fields.Boolean('Custom Version?')
+
 
     _defaults = {
       'database_password': execute.generate_random_password(20),
@@ -106,22 +99,20 @@ class clouder_service(osv.osv):
     ]
 
 
-
-    def get_vals(self, cr, uid, id, context=None):
+    @api.multi
+    def get_vals(self):
 
         vals = {}
 
-        service = self.browse(cr, uid, id, context=context)
+        vals.update(self.application_version_id.get_vals())
 
-        vals.update(self.pool.get('clouder.application.version').get_vals(cr, uid, service.application_version_id.id, context=context))
-
-        vals.update(self.pool.get('clouder.container').get_vals(cr, uid, service.container_id.id, context=context))
+        vals.update(self.container_id.get_vals())
 
         options = {}
-        for option in service.container_id.application_id.type_id.option_ids:
+        for option in self.container_id.application_id.type_id.option_ids:
             if option.type == 'service':
                 options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
-        for option in service.option_ids:
+        for option in self.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
         links = {}
@@ -130,9 +121,9 @@ class clouder_service(osv.osv):
                 if link['service']:
                     links[app_code] = link
                     links[app_code]['target'] = False
-        for link in service.link_ids:
+        for link in self.link_ids:
             if link.name.code in links and link.target:
-                link_vals = self.pool.get('clouder.container').get_vals(cr, uid, link.target.id, context=context)
+                link_vals = link.target.get_vals()
                 links[link.name.code]['target'] = {
                     'link_id': link_vals['container_id'],
                     'link_name': link_vals['container_name'],
@@ -164,32 +155,32 @@ class clouder_service(osv.osv):
                         vals['database_server'] = vals['database_server_domain']
         for app_code, link in links.iteritems():
             if link['required'] and not link['target']:
-                raise osv.except_osv(_('Data error!'),
-                    _("You need to specify a link to " + link['name'] + " for the service " + service.name))
+                raise except_orm(_('Data error!'),
+                    _("You need to specify a link to " + link['name'] + " for the service " + self.name))
             if not link['target']:
                 del links[app_code]
 
-        service_fullname = vals['container_name'] + '-' + service.name
+        service_fullname = vals['container_name'] + '-' + self.name
         db_user = service_fullname.replace('-','_')
         if not 'database_type' in vals:
-            raise osv.except_osv(_('Data error!'),
-                _("You need to specify a database in the links of the service " + service.name + " " + vals['container_fullname']))
+            raise except_orm(_('Data error!'),
+                _("You need to specify a database in the links of the service " + self.name + " " + vals['container_fullname']))
         if vals['database_type'] == 'mysql':
-            db_user = vals['container_name'][:10] + '_' + service.name[:4]
+            db_user = vals['container_name'][:10] + '_' + self.name[:4]
             db_user = db_user.replace('-','_')
         vals.update({
-            'service_id': service.id,
-            'service_name': service.name,
+            'service_id': self.id,
+            'service_name': self.name,
             'service_fullname': service_fullname,
             'service_db_user': db_user,
-            'service_db_password': service.database_password,
-            'service_skip_analytics': service.skip_analytics,
-            'service_full_localpath': vals['apptype_localpath_services'] + '/' + service.name,
-            'service_full_localpath_files': vals['apptype_localpath_services'] + '/' + service.name + '/files',
+            'service_db_password': self.database_password,
+            'service_skip_analytics': self.skip_analytics,
+            'service_full_localpath': vals['apptype_localpath_services'] + '/' + self.name,
+            'service_full_localpath_files': vals['apptype_localpath_services'] + '/' + self.name + '/files',
             'service_options': options,
             'service_links': links,
-            'service_subservice_name': service.sub_service_name,
-            'service_custom_version': service.custom_version
+            'service_subservice_name': self.sub_service_name,
+            'service_custom_version': self.custom_version
         })
 
         return vals
@@ -214,17 +205,17 @@ class clouder_service(osv.osv):
             vals['link_ids'] = []
             for application_id, link in links.iteritems():
                 if link['required'] and not link['target']:
-                    raise osv.except_osv(_('Data error!'),
+                    raise except_orm(_('Data error!'),
                         _("You need to specify a link to " + link['name'] + " for the service " + vals['name']))
                 vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
-        return super(clouder_service, self).create(cr, uid, vals, context=context)
+        return super(ClouderService, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
         if 'application_version_id' in vals:
             services_old = []
             for service in self.browse(cr, uid, ids, context=context):
                 services_old.append(self.get_vals(cr, uid, service.id, context=context))
-        res = super(clouder_service, self).write(cr, uid, ids, vals, context=context)
+        res = super(ClouderService, self).write(cr, uid, ids, vals, context=context)
         if 'application_version_id' in vals:
             for service_vals in services_old:
                 self.check_files(cr, uid, service_vals, context=context)
@@ -239,7 +230,7 @@ class clouder_service(osv.osv):
         base_obj = self.pool.get('clouder.base')
         for service in self.browse(cr, uid, ids, context=context):
             base_obj.unlink(cr, uid, [b.id for b in service.base_ids], context=context)
-        return super(clouder_service, self).unlink(cr, uid, ids, context=context)
+        return super(ClouderService, self).unlink(cr, uid, ids, context=context)
 
     def install_formation(self, cr, uid, ids, context={}):
         self.write(cr, uid, ids, {'sub_service_name': 'formation'}, context=context)
@@ -387,8 +378,8 @@ class clouder_service(osv.osv):
     def check_files(self, cr, uid, vals, context={}):
         context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         service_ids = self.search(cr, uid, [('application_version_id', '=', vals['app_version_id']),('container_id.server_id','=',vals['server_id'])], context=context)
-	if vals['service_id'] in service_ids:
-	    service_ids.remove(vals['service_id'])
+        if vals['service_id'] in service_ids:
+            service_ids.remove(vals['service_id'])
         if not service_ids:
             ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
             execute.execute(ssh, ['rm', '-rf', vals['app_version_full_hostpath']], context)
@@ -445,28 +436,26 @@ class clouder_service(osv.osv):
         self.check_files(cr, uid, vals, context=context)
 
 
-class clouder_service_option(osv.osv):
+class ClouderServiceOption(models.Model):
     _name = 'clouder.service.option'
 
-    _columns = {
-        'service_id': fields.many2one('clouder.service', 'Service', ondelete="cascade", required=True),
-        'name': fields.many2one('clouder.application.type.option', 'Option', required=True),
-        'value': fields.text('Value'),
-    }
+    service_id = fields.Many2one('clouder.service', 'Service', ondelete="cascade", required=True)
+    name = fields.Many2one('clouder.application.type.option', 'Option', required=True)
+    value = fields.Text('Value')
+
 
     _sql_constraints = [
         ('name_uniq', 'unique(service_id,name)', 'Option name must be unique per service!'),
     ]
 
 
-class clouder_service_link(osv.osv):
+class ClouderServiceLink(models.Model):
     _name = 'clouder.service.link'
 
-    _columns = {
-        'service_id': fields.many2one('clouder.service', 'Service', ondelete="cascade", required=True),
-        'name': fields.many2one('clouder.application', 'Application', required=True),
-        'target': fields.many2one('clouder.container', 'Target'),
-    }
+    service_id = fields.Many2one('clouder.service', 'Service', ondelete="cascade", required=True)
+    name = fields.Many2one('clouder.application', 'Application', required=True)
+    target = fields.Many2one('clouder.container', 'Target')
+
 
     _sql_constraints = [
         ('name_uniq', 'unique(service_id,name)', 'Links must be unique per service!'),

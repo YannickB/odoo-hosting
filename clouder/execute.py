@@ -20,12 +20,9 @@
 ##############################################################################
 
 
-from openerp import netsvc
-from openerp import pooler
-from openerp.osv import fields, osv, orm
-from openerp.tools.translate import _
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 
-import time
 from datetime import datetime, timedelta
 import subprocess
 import paramiko
@@ -38,7 +35,7 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class clouder_log(osv.osv):
+class ClouderLog(models.Model):
     _name = 'clouder.log'
 
     def _get_name(self, cr, uid, ids, field_name, arg, context=None):
@@ -51,17 +48,15 @@ class clouder_log(osv.osv):
                 res[log.id] = record.name
         return res
 
-    _columns = {
-        'model': fields.char('Related Document Model', size=128, select=1),
-        'res_id': fields.integer('Related Document ID', select=1),
-        'name': fields.function(_get_name, type="char", size=128, string='Name'),
-        'action': fields.char('Action', size=64),
-        'description': fields.text('log'),
-        'state': fields.selection([('unfinished','Not finished'),('ok','Ok'),('ko','Ko')], 'State', required=True),
-        'create_date': fields.datetime('Launch Date'),
-        'finish_date': fields.datetime('Finish Date'),
-        'expiration_date': fields.datetime('Expiration Date'),
-    }
+    model = fields.Char('Related Document Model', size=128, select=1)
+    res_id = fields.Integer('Related Document ID', select=1)
+    name = fields.Char('Name', compute='_get_name', size=128)
+    action = fields.Char('Action', size=64)
+    description = fields.Text('Description')
+    state = fields.Selection([('unfinished','Not finished'),('ok','Ok'),('ko','Ko')], 'State', required=True)
+    create_date = fields.Datetime('Launch Date')
+    finish_date = fields.Datetime('Finish Date')
+    expiration_date = fields.Datetime('Expiration Date')
 
     _defaults = {
         'state': 'unfinished'
@@ -69,17 +64,15 @@ class clouder_log(osv.osv):
 
     _order = 'create_date desc'
 
-class clouder_model(osv.AbstractModel):
+class ClouderModel(models.AbstractModel):
     _name = 'clouder.model'
 
     _log_expiration_days = 30
 
-    _columns = {
-        'log_ids': fields.one2many('clouder.log', 'res_id',
-            domain=lambda self: [('model', '=', self._name)],
-            auto_join=True,
-            string='Logs'),
-    }
+    log_ids = fields.One2many('clouder.log', 'res_id',
+        domain=lambda self: [('model', '=', self._name)],
+        auto_join=True,
+        string='Logs')
 
     def create_log(self, cr, uid, id, action, context):
         if 'log_id' in context:
@@ -136,7 +129,7 @@ class clouder_model(osv.AbstractModel):
             self.end_log(cr, uid, record.id, context=context)
 
     def create(self, cr, uid, vals, context=None):
-        res = super(clouder_model, self).create(cr, uid, vals, context=context)
+        res = super(ClouderModel, self).create(cr, uid, vals, context=context)
         context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         context = self.create_log(cr, uid, res, 'create', context)
         vals = self.get_vals(cr, uid, res, context=context)
@@ -161,7 +154,7 @@ class clouder_model(osv.AbstractModel):
                 self.purge(cr, uid, vals, context=context)
             except:
                 pass   
-        res = super(clouder_model, self).unlink(cr, uid, ids, context=context)
+        res = super(ClouderModel, self).unlink(cr, uid, ids, context=context)
         #Security to prevent log to write in a removed clouder.log
         for id in ids:
             if 'logs' in context and self._name in context['logs'] and id in context['logs'][self._name]:

@@ -19,61 +19,52 @@
 #
 ##############################################################################
 
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 from openerp import modules
-from openerp import netsvc
-from openerp import pooler
-from openerp.osv import fields, osv, orm
-from openerp.tools.translate import _
 
 import time
 from datetime import datetime, timedelta
-import subprocess
-import paramiko
 import execute
-import os
 
 import logging
 _logger = logging.getLogger(__name__)
 
-class clouder_server(osv.osv):
+class ClouderServer(models.Model):
     _name = 'clouder.server'
     _inherit = ['clouder.model']
 
-    _columns = {
-        'name': fields.char('Domain name', size=64, required=True),
-        'ip': fields.char('IP', size=64, required=True),
-        'ssh_port': fields.char('SSH port', size=12, required=True),
-        'mysql_passwd': fields.char('MySQL Passwd', size=64),
-        'private_key': fields.text('SSH Private Key', required=True),
-        'public_key': fields.text('SSH Public Key', required=True),
-        'start_port': fields.integer('Start Port', required=True),
-        'end_port': fields.integer('End Port', required=True),
-    }
+    name = fields.Char('Domain name', size=64, required=True)
+    ip = fields.Char('IP', size=64, required=True)
+    ssh_port = fields.Char('SSH port', size=12, required=True)
+    mysql_passwd = fields.Char('MySQL Passwd', size=64)
+    private_key = fields.Text('SSH Private Key', required=True)
+    public_key = fields.Text('SSH Public Key', required=True)
+    start_port = fields.Integer('Start Port', required=True)
+    end_port = fields.Integer('End Port', required=True)
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
 
-    def get_vals(self, cr, uid, id, type='', context={}):
+    @api.multi
+    def get_vals(self):
 
-        server = self.browse(cr, uid, id, context=context)
         vals ={}
 
-        if 'from_config' not in context:
-            config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
-            vals.update(self.pool.get('clouder.config.settings').get_vals(cr, uid, context=context))
+        vals.update(self.env.ref('clouder.clouder_settings').get_vals())
 
         vals.update({
-            type + 'server_id': server.id,
-            type + 'server_domain': server.name,
-            type + 'server_ip': server.ip,
-            type + 'server_ssh_port': int(server.ssh_port),
-            type + 'server_mysql_passwd': server.mysql_passwd,
-            type + 'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + server.name + '.cfg',
-            type + 'server_private_key': server.private_key,
-            type + 'server_public_key': server.public_key,
-            type + 'server_start_port': server.start_port,
-            type + 'server_end_port': server.end_port,
+            'server_id': self.id,
+            'server_domain': self.name,
+            'server_ip': self.ip,
+            'server_ssh_port': int(self.ssh_port),
+            'server_mysql_passwd': self.mysql_passwd,
+            'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + self.name + '.cfg',
+            'server_private_key': self.private_key,
+            'server_public_key': self.public_key,
+            'server_start_port': self.start_port,
+            'server_end_port': self.end_port,
         })
         return vals
 
@@ -175,7 +166,7 @@ class clouder_server(osv.osv):
 #            ssh.close()
 #            sftp.close()
 
-class clouder_container(osv.osv):
+class ClouderContainer(models.Model):
     _name = 'clouder.container'
     _inherit = ['clouder.model']
 
@@ -192,29 +183,27 @@ class clouder_container(osv.osv):
                 first = False
         return res
 
-    _columns = {
-        'name': fields.char('Name', size=64, required=True),
-        'application_id': fields.many2one('clouder.application', 'Application', required=True),
-        'image_id': fields.many2one('clouder.image', 'Image', required=True),
-        'server_id': fields.many2one('clouder.server', 'Server', required=True),
-        'image_version_id': fields.many2one('clouder.image.version', 'Image version', required=True),
-        'save_repository_id': fields.many2one('clouder.save.repository', 'Save repository'),
-        'time_between_save': fields.integer('Minutes between each save'),
-        'saverepo_change': fields.integer('Days before saverepo change'),
-        'saverepo_expiration': fields.integer('Days before saverepo expiration'),
-        'save_expiration': fields.integer('Days before save expiration'),
-        'date_next_save': fields.datetime('Next save planned'),
-        'save_comment': fields.text('Save Comment'),
-        'nosave': fields.boolean('No Save?'),
-        'privileged': fields.boolean('Privileged?'),
-        'port_ids': fields.one2many('clouder.container.port', 'container_id', 'Ports'),
-        'volume_ids': fields.one2many('clouder.container.volume', 'container_id', 'Volumes'),
-        'option_ids': fields.one2many('clouder.container.option', 'container_id', 'Options'),
-        'link_ids': fields.one2many('clouder.container.link', 'container_id', 'Links'),
-        'service_ids': fields.one2many('clouder.service', 'container_id', 'Services'),
-        'ports': fields.function(_get_ports, type='text', string='Ports'),
-        'backup_server_ids': fields.many2many('clouder.container', 'clouder_container_backup_rel', 'container_id', 'backup_id', 'Backup containers'),
-    }
+    name = fields.Char('Name', size=64, required=True)
+    application_id = fields.Many2one('clouder.application', 'Application', required=True)
+    image_id = fields.Many2one('clouder.image', 'Image', required=True)
+    server_id = fields.Many2one('clouder.server', 'Server', required=True)
+    image_version_id = fields.Many2one('clouder.image.version', 'Image version', required=True)
+    save_repository_id = fields.Many2one('clouder.save.repository', 'Save repository')
+    time_between_save = fields.Integer('Minutes between each save')
+    saverepo_change = fields.Integer('Days before saverepo change')
+    saverepo_expiration = fields.Integer('Days before saverepo expiration')
+    save_expiration = fields.Integer('Days before save expiration')
+    date_next_save = fields.Datetime('Next save planned')
+    save_comment = fields.Text('Save Comment')
+    nosave = fields.Boolean('No Save?')
+    privileged = fields.Boolean('Privileged?')
+    port_ids = fields.One2many('clouder.container.port', 'container_id', 'Ports')
+    volume_ids = fields.One2many('clouder.container.volume', 'container_id', 'Volumes')
+    option_ids = fields.One2many('clouder.container.option', 'container_id', 'Options')
+    link_ids = fields.One2many('clouder.container.link', 'container_id', 'Links')
+    service_ids = fields.One2many('clouder.service', 'container_id', 'Services')
+    ports = fields.Text('Ports', compute='_get_ports')
+    backup_server_ids = fields.Many2many('clouder.container', 'clouder_container_backup_rel', 'container_id', 'backup_id', 'Backup containers')
 
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,name)', 'Name must be unique per server!'),
@@ -250,38 +239,33 @@ class clouder_container(osv.osv):
                 }
         return result
 
-
-    def get_vals(self, cr, uid, id, context={}):
-        repo_obj = self.pool.get('clouder.save.repository')
+    @api.multi
+    def get_vals(self):
+        repo_obj = self.env['clouder.save.repository']
         vals = {}
 
-        container = self.browse(cr, uid, id, context=context)
-
         now = datetime.now()
-        if not container.save_repository_id:
-            repo_ids = repo_obj.search(cr, uid, [('container_name','=',container.name),('container_server','=',container.server_id.name)], context=context)
+        if not self.save_repository_id:
+            repo_ids = repo_obj.search([('container_name','=',self.name),('container_server','=',self.server_id.name)])
             if repo_ids:
-                self.write(cr, uid, [container.id], {'save_repository_id': repo_ids[0]}, context=context)
-                container = self.browse(cr, uid, id, context=context)
+                self.write({'save_repository_id': repo_ids[0]})
 
-        if not container.save_repository_id or datetime.strptime(container.save_repository_id.date_change, "%Y-%m-%d") < now or False:
+        if not self.save_repository_id or datetime.strptime(self.save_repository_id.date_change, "%Y-%m-%d") < now or False:
             repo_vals ={
-                'name': now.strftime("%Y-%m-%d") + '_' + container.name + '_' + container.server_id.name,
+                'name': now.strftime("%Y-%m-%d") + '_' + self.name + '_' + self.server_id.name,
                 'type': 'container',
-                'date_change': (now + timedelta(days=container.saverepo_change or container.application_id.container_saverepo_change)).strftime("%Y-%m-%d"),
-                'date_expiration': (now + timedelta(days=container.saverepo_expiration or container.application_id.container_saverepo_expiration)).strftime("%Y-%m-%d"),
-                'container_name': container.name,
-                'container_server': container.server_id.name,
+                'date_change': (now + timedelta(days=self.saverepo_change or self.application_id.container_saverepo_change)).strftime("%Y-%m-%d"),
+                'date_expiration': (now + timedelta(days=self.saverepo_expiration or self.application_id.container_saverepo_expiration)).strftime("%Y-%m-%d"),
+                'container_name': self.name,
+                'container_server': self.server_id.name,
             }
-            repo_id = repo_obj.create(cr, uid, repo_vals, context=context)
-            self.write(cr, uid, [container.id], {'save_repository_id': repo_id}, context=context)
-            container = self.browse(cr, uid, id, context=context)
+            repo_id = repo_obj.create(repo_vals)
+            self.write({'save_repository_id': repo_id})
 
-        # if 'from_config' not in context:
-        vals.update(self.pool.get('clouder.image.version').get_vals(cr, uid, container.image_version_id.id, context=context))
-        vals.update(self.pool.get('clouder.application').get_vals(cr, uid, container.application_id.id, context=context))
-        vals.update(self.pool.get('clouder.save.repository').get_vals(cr, uid, container.save_repository_id.id, context=context))
-        vals.update(self.pool.get('clouder.server').get_vals(cr, uid, container.server_id.id, context=context))
+        vals.update(self.image_version_id.get_vals())
+        vals.update(self.application_id.get_vals())
+        vals.update(self.save_repository_id.id.get_vals())
+        vals.update(self.server_id.get_vals())
 
 
         # links = {}
@@ -290,7 +274,7 @@ class clouder_container(osv.osv):
 
         ports = {}
         ssh_port = 22
-        for port in container.port_ids:
+        for port in self.port_ids:
             ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport, 'expose': port.expose, 'udp': port.udp}
             if port.name == 'ssh':
                 ssh_port = port.hostport
@@ -298,17 +282,17 @@ class clouder_container(osv.osv):
         volumes = {}
         volumes_save = ''
         first = True
-        for volume in container.volume_ids:
+        for volume in self.volume_ids:
             volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'user': volume.user,'readonly': volume.readonly,'nosave': volume.nosave}
             if not volume.nosave:
                 volumes_save += (not first and ',' or '') + volume.name
                 first = False
 
         options = {}
-        for option in container.application_id.type_id.option_ids:
+        for option in self.application_id.type_id.option_ids:
             if option.type == 'container':
                 options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
-        for option in container.option_ids:
+        for option in self.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
         links = {}
@@ -317,9 +301,9 @@ class clouder_container(osv.osv):
                 if link['container'] or link['make_link']:
                     links[app_code] = link
                     links[app_code]['target'] = False
-        for link in container.link_ids:
+        for link in self.link_ids:
             if link.name.code in links and link.target:
-                link_vals = self.get_vals(cr, uid, link.target.id, context=context)
+                link_vals = link.get_vals()
                 links[link.name.code]['target'] = {
                     'link_id': link_vals['container_id'],
                     'link_name': link_vals['container_name'],
@@ -331,14 +315,14 @@ class clouder_container(osv.osv):
                 }
         for app_code, link in links.iteritems():
             if link['required'] and not link['target']:
-                raise osv.except_osv(_('Data error!'),
+                raise except_orm(_('Data error!'),
                     _("You need to specify a link to " + link['name'] + " for the container " + container.name))
             if not link['target']:
                 del links[app_code]
 
         backup_servers = []
-        for backup in container.backup_server_ids:
-            backup_vals = self.pool.get('clouder.container').get_vals(cr, uid, backup.id, context=context)
+        for backup in self.backup_server_ids:
+            backup_vals = backup.get_vals()
             backup_servers.append({
                 'container_id': backup_vals['container_id'],
                 'container_fullname': backup_vals['container_fullname'],
@@ -355,10 +339,10 @@ class clouder_container(osv.osv):
             if option['name'] == 'root_password':
                 root_password = option['value']
 
-        unique_name = container.name + '_' + vals['server_domain']
+        unique_name = self.name + '_' + vals['server_domain']
         vals.update({
-            'container_id': container.id,
-            'container_name': container.name,
+            'container_id': self.id,
+            'container_name': self.name,
             'container_fullname': unique_name,
             'container_ports': ports,
             'container_volumes': volumes,
@@ -367,8 +351,8 @@ class clouder_container(osv.osv):
             'container_options': options,
             'container_links': links,
             'container_backup_servers': backup_servers,
-            'container_no_save': container.nosave,
-            'container_privileged': container.privileged,
+            'container_no_save': self.nosave,
+            'container_privileged': self.privileged,
             'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
             'container_root_password': root_password
         })
@@ -419,11 +403,11 @@ class clouder_container(osv.osv):
             vals['link_ids'] = []
             for application_id, link in links.iteritems():
                 if link['required'] and not link['target']:
-                    raise osv.except_osv(_('Data error!'),
+                    raise except_orm(_('Data error!'),
                         _("You need to specify a link to " + link['name'] + " for the container " + vals['name']))
                 vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
         vals = self.create_vals(cr, uid, vals, context=context)
-        return super(clouder_container, self).create(cr, uid, vals, context=context)
+        return super(ClouderContainer, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
         version_obj = self.pool.get('clouder.image.version')
@@ -438,7 +422,7 @@ class clouder_container(osv.osv):
                     context['save_comment'] = 'Before upgrade from ' + container.image_version_id.name + ' to ' + new_version.name
                 else:
                     context['save_comment'] = 'Change on port or volumes'
-        res = super(clouder_container, self).write(cr, uid, ids, vals, context=context)
+        res = super(ClouderContainer, self).write(cr, uid, ids, vals, context=context)
         if flag:
             for container in self.browse(cr, uid, ids, context=context):
                 self.reinstall(cr, uid, [container.id], context=context)
@@ -453,7 +437,7 @@ class clouder_container(osv.osv):
             service_obj.unlink(cr, uid, [s.id for s in container.service_ids], context=context)
         context['save_comment'] = 'Before unlink'
         self.save(cr, uid, ids, context=context)
-        return super(clouder_container, self).unlink(cr, uid, ids, context=context)
+        return super(ClouderContainer, self).unlink(cr, uid, ids, context=context)
 
     def button_stop(self, cr, uid, ids, context={}):
         for container in self.browse(cr, uid, ids, context=context):
@@ -474,7 +458,7 @@ class clouder_container(osv.osv):
             save_id = self.save(cr, uid, [container.id], context=context)[container.id]
             del context['forcesave']
             context['nosave'] = True
-            super(clouder_container, self).reinstall(cr, uid, [container.id], context=context)
+            super(ClouderContainer, self).reinstall(cr, uid, [container.id], context=context)
 
 
 
@@ -700,17 +684,15 @@ class clouder_container(osv.osv):
         sftp.close()
 
 
-class clouder_container_port(osv.osv):
+class ClouderContainerPort(models.Model):
     _name = 'clouder.container.port'
 
-    _columns = {
-        'container_id': fields.many2one('clouder.container', 'Container', ondelete="cascade", required=True),
-        'name': fields.char('Name', size=64, required=True),
-        'localport': fields.char('Local port', size=12, required=True),
-        'hostport': fields.char('Host port', size=12),
-        'expose': fields.selection([('internet','Internet'),('local','Local')],'Expose?', required=True),
-        'udp': fields.boolean('UDP?'),
-    }
+    container_id = fields.Many2one('clouder.container', 'Container', ondelete="cascade", required=True)
+    name = fields.Char('Name', size=64, required=True)
+    localport = fields.Char('Local port', size=12, required=True)
+    hostport = fields.Char('Host port', size=12)
+    expose = fields.Selection([('internet','Internet'),('local','Local')],'Expose?', required=True)
+    udp = fields.Boolean('UDP?')
 
     _defaults = {
         'expose': 'local'
@@ -720,58 +702,53 @@ class clouder_container_port(osv.osv):
         ('name_uniq', 'unique(container_id,name)', 'Port name must be unique per container!'),
     ]
 
-class clouder_container_volume(osv.osv):
+class ClouderContainerVolume(models.Model):
     _name = 'clouder.container.volume'
 
-    _columns = {
-        'container_id': fields.many2one('clouder.container', 'Container', ondelete="cascade", required=True),
-        'name': fields.char('Path', size=128, required=True),
-        'hostpath': fields.char('Host path', size=128),
-        'user': fields.char('System User', size=64),
-        'readonly': fields.boolean('Readonly?'),
-        'nosave': fields.boolean('No save?'),
-    }
+    container_id = fields.Many2one('clouder.container', 'Container', ondelete="cascade", required=True)
+    name = fields.Char('Path', size=128, required=True)
+    hostpath = fields.Char('Host path', size=128)
+    user = fields.Char('System User', size=64)
+    readonly = fields.Boolean('Readonly?')
+    nosave = fields.Boolean('No save?')
+
 
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)', 'Volume name must be unique per container!'),
     ]
 
-class clouder_container_option(osv.osv):
+class ClouderContainerOption(models.Model):
     _name = 'clouder.container.option'
 
-    _columns = {
-        'container_id': fields.many2one('clouder.container', 'Container', ondelete="cascade", required=True),
-        'name': fields.many2one('clouder.application.type.option', 'Option', required=True),
-        'value': fields.text('Value'),
-    }
+    container_id = fields.Many2one('clouder.container', 'Container', ondelete="cascade", required=True)
+    name = fields.Many2one('clouder.application.type.option', 'Option', required=True)
+    value = fields.Text('Value')
 
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)', 'Option name must be unique per container!'),
     ]
 
 
-class clouder_container_link(osv.osv):
+class ClouderContainerLink(models.Model):
     _name = 'clouder.container.link'
 
-    _columns = {
-        'container_id': fields.many2one('clouder.container', 'Container', ondelete="cascade", required=True),
-        'name': fields.many2one('clouder.application', 'Application', required=True),
-        'target': fields.many2one('clouder.container', 'Target'),
-    }
+    container_id = fields.Many2one('clouder.container', 'Container', ondelete="cascade", required=True)
+    name = fields.Many2one('clouder.application', 'Application', required=True)
+    target = fields.Many2one('clouder.container', 'Target')
+
 
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)', 'Links must be unique per container!'),
     ]
 
 
-    def get_vals(self, cr, uid, id, context={}):
+    @api.multi
+    def get_vals(self):
         vals = {}
 
-        link = self.browse(cr, uid, id, context=context)
-
-        vals.update(self.pool.get('clouder.container').get_vals(cr, uid, link.container_id.id, context=context))
-        if link.target:
-            target_vals = self.pool.get('clouder.container').get_vals(cr, uid, link.target.id, context=context)
+        vals.update(self.container_id.get_vals())
+        if self.target:
+            target_vals = self.target_id.get_vals()
             vals.update({
                 'link_target_container_id': target_vals['container_id'],
                 'link_target_container_name': target_vals['container_name'],

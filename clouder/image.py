@@ -20,68 +20,57 @@
 ##############################################################################
 
 
-from openerp import netsvc
-from openerp import pooler
-from openerp.osv import fields, osv, orm
-from openerp.tools.translate import _
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 
-import time
-from datetime import datetime, timedelta
-import subprocess
-import paramiko
+from datetime import datetime
 import execute
 
 import logging
 _logger = logging.getLogger(__name__)
 
 
-class clouder_image(osv.osv):
+class ClouderImage(models.Model):
     _name = 'clouder.image'
 
-    _columns = {
-        'name': fields.char('Image name', size=64, required=True),
-        'current_version': fields.char('Current version', size=64, required=True),
-        'parent_id': fields.many2one('clouder.image', 'Parent image'),
-        'parent_version_id': fields.many2one('clouder.image.version', 'Parent version'),
-        'parent_from': fields.char('From', size=64),
-        'privileged': fields.boolean('Privileged?', help="Indicate if the containers shall be in privilaged mode. Warning : Theses containers will have access to the host system."),
-        'registry_id': fields.many2one('clouder.container', 'Registry'),
-        'dockerfile': fields.text('DockerFile'),
-        'volume_ids': fields.one2many('clouder.image.volume', 'image_id', 'Volumes'),
-        'port_ids': fields.one2many('clouder.image.port', 'image_id', 'Ports'),
-        'version_ids': fields.one2many('clouder.image.version','image_id', 'Versions'),
-    }
+    name = fields.Char('Image name', size=64, required=True)
+    current_version = fields.Char('Current version', size=64, required=True)
+    parent_id = fields.Many2one('clouder.image', 'Parent image')
+    parent_version_id = fields.Many2one('clouder.image.version', 'Parent version')
+    parent_from = fields.Char('From', size=64)
+    privileged = fields.Boolean('Privileged?', help="Indicate if the containers shall be in privilaged mode. Warning : Theses containers will have access to the host system.")
+    registry_id = fields.Many2one('clouder.container', 'Registry')
+    dockerfile = fields.Text('DockerFile')
+    volume_ids = fields.One2many('clouder.image.volume', 'image_id', 'Volumes')
+    port_ids = fields.One2many('clouder.image.port', 'image_id', 'Ports')
+    version_ids = fields.One2many('clouder.image.version','image_id', 'Versions')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Image name must be unique!'),
+        ('name_uniq', 'unique(name)', 'Image name must be unique!')
     ]
 
-
-    def get_vals(self, cr, uid, id, context={}):
+    @api.multi
+    def get_vals(self):
 
         vals = {}
-
-        image = self.browse(cr, uid, id, context=context)
-
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
-        vals.update(self.pool.get('clouder.config.settings').get_vals(cr, uid, context=context))
+        vals.update(self.env.ref('clouder.clouder_settings').get_vals())
 
         ports = {}
-        for port in image.port_ids:
+        for port in self.port_ids:
             ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport}
 
         volumes = {}
-        for volume in image.volume_ids:
+        for volume in self.volume_ids:
             volumes[volume.id] = {'id': volume.id, 'name': volume.name}
 
         vals.update({
-            'image_name': image.name,
-            'image_privileged': image.privileged,
-            'image_parent_id': image.parent_id and image.parent_id.id,
-            'image_parent_from': image.parent_from,
+            'image_name': self.name,
+            'image_privileged': self.privileged,
+            'image_parent_id': self.parent_id and self.parent_id.id,
+            'image_parent_from': self.parent_from,
             'image_ports': ports,
             'image_volumes': volumes,
-            'image_dockerfile': image.dockerfile
+            'image_dockerfile': self.dockerfile
         })
 
         return vals
@@ -93,7 +82,7 @@ class clouder_image(osv.osv):
             if not image.dockerfile:
                 continue
             if not image.registry_id and image.name != 'img_registry':
-                raise osv.except_osv(_('Date error!'),_("You need to specify the registry where the version must be stored."))
+                raise except_orm(_('Date error!'),_("You need to specify the registry where the version must be stored."))
             now = datetime.now()
             version = image.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
             version_obj.create(cr, uid, {'image_id': image.id, 'name': version, 'registry_id': image.registry_id and image.registry_id.id, 'parent_id': image.parent_version_id and image.parent_version_id.id}, context=context)
@@ -108,70 +97,64 @@ class clouder_image(osv.osv):
     #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
     #     execute.execute_local(['sudo','docker', 'rmi', vals['image_name'] + ':latest'], context)
 
-class clouder_image_volume(osv.osv):
+class ClouderImageVolume(models.Model):
     _name = 'clouder.image.volume'
 
-    _columns = {
-        'image_id': fields.many2one('clouder.image', 'Image', ondelete="cascade", required=True),
-        'name': fields.char('Path', size=128, required=True),
-        'hostpath': fields.char('Host path', size=128),
-        'user': fields.char('System User', size=64),
-        'readonly': fields.boolean('Readonly?'),
-        'nosave': fields.boolean('No save?'),
-    }
+    image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade", required=True)
+    name = fields.Char('Path', size=128, required=True)
+    hostpath = fields.Char('Host path', size=128)
+    user = fields.Char('System User', size=64)
+    readonly = fields.Boolean('Readonly?')
+    nosave = fields.Boolean('No save?')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)', 'Volume name must be unique per image!'),
+        ('name_uniq', 'unique(image_id,name)', 'Volume name must be unique per image!')
     ]
 
 
-class clouder_image_port(osv.osv):
+class ClouderImagePort(models.Model):
     _name = 'clouder.image.port'
 
-    _columns = {
-        'image_id': fields.many2one('clouder.image', 'Image', ondelete="cascade", required=True),
-        'name': fields.char('Name', size=64, required=True),
-        'localport': fields.char('Local port', size=12, required=True),
-        'expose': fields.selection([('internet','Internet'),('local','Local'),('none','None')],'Expose?', required=True),
-        'udp': fields.boolean('UDP?'),
-    }
+    image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade", required=True)
+    name = fields.Char('Name', size=64, required=True)
+    localport = fields.Char('Local port', size=12, required=True)
+    expose = fields.Selection([('internet','Internet'),('local','Local'),('none','None')],'Expose?', required=True)
+    udp = fields.Boolean('UDP?')
 
     _defaults = {
         'expose': 'none'
     }
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)', 'Port name must be unique per image!'),
+        ('name_uniq', 'unique(image_id,name)', 'Port name must be unique per image!')
     ]
 
-class clouder_image_version(osv.osv):
+class ClouderImageVersion(models.Model):
     _name = 'clouder.image.version'
     _inherit = ['clouder.model']
 
-    _columns = {
-        'image_id': fields.many2one('clouder.image','Image', ondelete='cascade', required=True),
-        'name': fields.char('Version', size=64, required=True),
-        'parent_id': fields.many2one('clouder.image.version', 'Parent version'),
-        'registry_id': fields.many2one('clouder.container', 'Registry'),
-        'container_ids': fields.one2many('clouder.container','image_version_id', 'Containers'),
-    }
+    image_id = fields.Many2one('clouder.image','Image', ondelete='cascade', required=True)
+    name = fields.Char('Version', size=64, required=True)
+    parent_id = fields.Many2one('clouder.image.version', 'Parent version')
+    registry_id = fields.Many2one('clouder.container', 'Registry')
+    container_ids = fields.One2many('clouder.container','image_version_id', 'Containers')
+
 
     _order = 'create_date desc'
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)', 'Version name must be unique per image!'),
+        ('name_uniq', 'unique(image_id,name)', 'Version name must be unique per image!')
     ]
 
-    def get_vals(self, cr, uid, id, context=None):
+    @api.multi
+    def get_vals(self):
 
         vals = {}
 
-        image_version = self.browse(cr, uid, id, context=context)
+        vals.update(self.image_id.get_vals())
 
-        vals.update(self.pool.get('clouder.image').get_vals(cr, uid, image_version.image_id.id, context=context))
-
-        if image_version.parent_id:
-            parent_vals = self.get_vals(cr, uid, image_version.parent_id.id, context=context)
+        if self.parent_id:
+            parent_vals = self.parent_id.get_vals()
             vals.update({
                 'image_version_parent_id': parent_vals['image_version_id'],
                 'image_version_parent_fullpath': parent_vals['image_version_fullpath'],
@@ -179,8 +162,8 @@ class clouder_image_version(osv.osv):
                 'image_version_parent_registry_server_id': parent_vals['registry_server_id'],
             })
 
-        if image_version.registry_id:
-            registry_vals = self.pool.get('clouder.container').get_vals(cr, uid, image_version.registry_id.id, context=context)
+        if self.registry_id:
+            registry_vals = self.registry_id.get_vals()
             registry_port = registry_vals['container_ports']['registry']['hostport']
             vals.update({
                 'registry_id': registry_vals['container_id'],
@@ -193,12 +176,12 @@ class clouder_image_version(osv.osv):
             })
 
         vals.update({
-            'image_version_id': image_version.id,
-            'image_version_name': image_version.name,
-            'image_version_fullname': image_version.image_id.name + ':' + image_version.name,
+            'image_version_id': self.id,
+            'image_version_name': self.name,
+            'image_version_fullname': self.image_id.name + ':' + self.name,
         })
 
-        if image_version.registry_id:
+        if self.registry_id:
             vals.update({
                 'image_version_fullpath': vals['registry_server_ip'] + ':' + vals['registry_port'] + '/' + vals['image_version_fullname'],
                 'image_version_fullpath_localhost': 'localhost:' + vals['registry_port'] + '/' + vals['image_version_fullname']
@@ -206,17 +189,13 @@ class clouder_image_version(osv.osv):
         else:
             vals['image_version_fullpath'] = ''
 
-
         return vals
-
 
     def unlink(self, cr, uid, ids, context=None):
         container_obj = self.pool.get('clouder.container')
         if container_obj.search(cr, uid, [('image_version_id','in',ids)], context=context):
-            raise osv.except_osv(_('Inherit error!'),_("A container is linked to this image version, you can't delete it!"))
-        return super(clouder_image_version, self).unlink(cr, uid, ids, context=context)
-
-
+            raise except_orm(_('Inherit error!'),_("A container is linked to this image version, you can't delete it!"))
+        return super(ClouderImageVersion, self).unlink(cr, uid, ids, context=context)
 
     def deploy(self, cr, uid, vals, context={}):
         context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
@@ -233,7 +212,7 @@ class clouder_image_version(osv.osv):
         elif vals['image_parent_from']:
             dockerfile += vals['image_parent_from']
         else:
-            raise osv.except_osv(_('Date error!'),_("You need to specify the image to inherit!"))
+            raise except_orm(_('Date error!'),_("You need to specify the image to inherit!"))
 
         dockerfile += '\nMAINTAINER ' + vals['config_email_sysadmin'] + '\n'
 

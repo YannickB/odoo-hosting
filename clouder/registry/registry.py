@@ -20,32 +20,26 @@
 ##############################################################################
 
 
-from openerp import netsvc
-from openerp import pooler
-from openerp.osv import fields, osv, orm
-from openerp.tools.translate import _
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 
-import time
-from datetime import datetime, timedelta
-import subprocess
-import paramiko
 from .. import execute
 
 import logging
 _logger = logging.getLogger(__name__)
 
 
-class clouder_image_version(osv.osv):
+class ClouderImageVersion(models.Model):
     _inherit = 'clouder.image.version'
 
     def deploy(self, cr, uid, vals, context={}):
         if vals['image_name'] != 'img_registry':
-            return super(clouder_image_version, self).deploy(cr, uid, vals, context)
+            return super(ClouderImageVersion, self).deploy(cr, uid, vals, context)
         else:
             return True
 
 
-class clouder_container(osv.osv):
+class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
     #
     # def get_vals(self, cr, uid, ids, context={}):
@@ -66,6 +60,6 @@ class clouder_container(osv.osv):
             execute.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullname']], context)
             execute.execute(ssh, ['sudo','docker', 'build', '-t', vals['image_version_fullname'], dir], context)
             execute.execute(ssh, ['rm', '-rf', dir], context)
-        return super(clouder_container, self).deploy(cr, uid, vals, context)
+        return super(ClouderContainer, self).deploy(cr, uid, vals, context)
 
 

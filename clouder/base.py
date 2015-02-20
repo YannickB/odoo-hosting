@@ -20,47 +20,38 @@
 ##############################################################################
 
 from openerp import modules
-from openerp import netsvc
-from openerp import pooler
-from openerp.osv import fields, osv, orm
-from openerp.tools.translate import _
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 
-import time
 from datetime import datetime, timedelta
-import subprocess
-import paramiko
 import execute
 
 import logging
 _logger = logging.getLogger(__name__)
 
 
-class clouder_domain(osv.osv):
+class ClouderDomain(models.Model):
     _name = 'clouder.domain'
     _inherit = ['clouder.model']
 
-    _columns = {
-        'name': fields.char('Domain name', size=64, required=True),
-        'organisation': fields.char('Organisation', size=64, required=True),
-        'dns_server_id': fields.many2one('clouder.container', 'DNS Server', required=True),
-        'cert_key': fields.text('Wildcard Cert Key'),
-        'cert_cert': fields.text('Wildcart Cert'),
-    }
+    name = fields.Char('Domain name', size=64, required=True)
+    organisation = fields.Char('Organisation', size=64, required=True)
+    dns_server_id = fields.Many2one('clouder.container', 'DNS Server', required=True)
+    cert_key = fields.Text('Wildcard Cert Key')
+    cert_cert = fields.Text('Wildcart Cert')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
 
-    def get_vals(self, cr, uid, id, context=None):
+    @api.multi
+    def get_vals(self):
 
         vals = {}
 
-        domain = self.browse(cr, uid, id, context=context)
+        vals.update(self.env.ref('clouder.clouder_settings').get_vals())
 
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
-        vals.update(self.pool.get('clouder.config.settings').get_vals(cr, uid, context=context))
-
-        dns_vals = self.pool.get('clouder.container').get_vals(cr, uid, domain.dns_server_id.id, context=context)
+        dns_vals = self.dns_server_id.get_vals()
 
         vals.update({
             'dns_id': dns_vals['container_id'],
@@ -73,11 +64,11 @@ class clouder_domain(osv.osv):
         })
 
         vals.update({
-            'domain_name': domain.name,
-            'domain_organisation': domain.organisation,
-            'domain_configfile': '/etc/bind/db.' + domain.name,
-            'domain_certkey': domain.cert_key,
-            'domain_certcert': domain.cert_cert,
+            'domain_name': self.name,
+            'domain_organisation': self.organisation,
+            'domain_configfile': '/etc/bind/db.' + self.name,
+            'domain_certkey': self.cert_key,
+            'domain_certcert': self.cert_cert,
         })
 
         return vals
@@ -110,51 +101,49 @@ class clouder_domain(osv.osv):
         ssh.close()
         sftp.close()
 
-class clouder_base(osv.osv):
+class ClouderBase(models.Model):
     _name = 'clouder.base'
     _inherit = ['clouder.model']
 
-    _columns = {
-        'name': fields.char('Name', size=64, required=True),
-        'title': fields.char('Title', size=64, required=True),
-        'application_id': fields.many2one('clouder.application', 'Application', required=True),
-        'domain_id': fields.many2one('clouder.domain', 'Domain name', required=True),
-        'service_id': fields.many2one('clouder.service', 'Service', required=True),
-        'service_ids': fields.many2many('clouder.service', 'clouder_base_service_rel', 'base_id', 'service_id', 'Alternative Services'),
-        'admin_name': fields.char('Admin name', size=64, required=True),
-        'admin_passwd': fields.char('Admin password', size=64, required=True),
-        'admin_email': fields.char('Admin email', size=64, required=True),
-        'poweruser_name': fields.char('PowerUser name', size=64),
-        'poweruser_passwd': fields.char('PowerUser password', size=64),
-        'poweruser_email': fields.char('PowerUser email', size=64),
-        'build': fields.selection([
+    name = fields.Char('Name', size=64, required=True)
+    title = fields.Char('Title', size=64, required=True)
+    application_id = fields.Many2one('clouder.application', 'Application', required=True)
+    domain_id = fields.Many2one('clouder.domain', 'Domain name', required=True)
+    service_id = fields.Many2one('clouder.service', 'Service', required=True)
+    service_ids = fields.Many2many('clouder.service', 'clouder_base_service_rel', 'base_id', 'service_id', 'Alternative Services')
+    admin_name = fields.Char('Admin name', size=64, required=True)
+    admin_passwd = fields.Char('Admin password', size=64, required=True)
+    admin_email = fields.Char('Admin email', size=64, required=True)
+    poweruser_name = fields.Char('PowerUser name', size=64)
+    poweruser_passwd = fields.Char('PowerUser password', size=64)
+    poweruser_email = fields.Char('PowerUser email', size=64)
+    build = fields.Selection([
                  ('none','No action'),
                  ('build','Build'),
-                 ('restore','Restore')],'Build?'),
-        'ssl_only': fields.boolean('SSL Only?'),
-        'test': fields.boolean('Test?'),
-        'lang': fields.selection([('en_US','en_US'),('fr_FR','fr_FR')], 'Language', required=True),
-        'state': fields.selection([
+                 ('restore','Restore')],'Build?')
+    ssl_only = fields.Boolean('SSL Only?')
+    test = fields.Boolean('Test?')
+    lang = fields.Selection([('en_US','en_US'),('fr_FR','fr_FR')], 'Language', required=True)
+    state = fields.Selection([
                 ('installing','Installing'),
                 ('enabled','Enabled'),
                 ('blocked','Blocked'),
-                ('removing','Removing')],'State',readonly=True),
-        'option_ids': fields.one2many('clouder.base.option', 'base_id', 'Options'),
-        'link_ids': fields.one2many('clouder.base.link', 'base_id', 'Links'),
-        'save_repository_id': fields.many2one('clouder.save.repository', 'Save repository'),
-        'time_between_save': fields.integer('Minutes between each save'),
-        'saverepo_change': fields.integer('Days before saverepo change'),
-        'saverepo_expiration': fields.integer('Days before saverepo expiration'),
-        'save_expiration': fields.integer('Days before save expiration'),
-        'date_next_save': fields.datetime('Next save planned'),
-        'save_comment': fields.text('Save Comment'),
-        'nosave': fields.boolean('No save?'),
-        'reset_each_day': fields.boolean('Reset each day?'),
-        'cert_key': fields.text('Cert Key'),
-        'cert_cert': fields.text('Cert'),
-        'parent_id': fields.many2one('clouder.base','Parent Base'),
-        'backup_server_ids': fields.many2many('clouder.container', 'clouder_base_backup_rel', 'base_id', 'backup_id', 'Backup containers', required=True),
-    }
+                ('removing','Removing')],'State',readonly=True)
+    option_ids = fields.One2many('clouder.base.option', 'base_id', 'Options')
+    link_ids = fields.One2many('clouder.base.link', 'base_id', 'Links')
+    save_repository_id = fields.Many2one('clouder.save.repository', 'Save repository')
+    time_between_save = fields.Integer('Minutes between each save')
+    saverepo_change = fields.Integer('Days before saverepo change')
+    saverepo_expiration = fields.Integer('Days before saverepo expiration')
+    save_expiration = fields.Integer('Days before save expiration')
+    date_next_save = fields.Datetime('Next save planned')
+    save_comment = fields.Text('Save Comment')
+    nosave = fields.Boolean('No save?')
+    reset_each_day = fields.Boolean('Reset each day?')
+    cert_key = fields.Text('Cert Key')
+    cert_cert = fields.Text('Cert')
+    parent_id = fields.Many2one('clouder.base','Parent Base')
+    backup_server_ids = fields.Many2many('clouder.container', 'clouder_base_backup_rel', 'base_id', 'backup_id', 'Backup containers', required=True)
 
     _defaults = {
       'build': 'restore',
@@ -184,45 +173,42 @@ class clouder_base(osv.osv):
 #########TODO La liaison entre base et service est un many2many � cause du loadbalancing. Si le many2many est vide, un service est cr�� automatiquement. Finalement il y aura un many2one pour le principal, et un many2many pour g�rer le loadbalancing
 #########Contrainte : L'application entre base et service doit �tre la m�me, de plus la bdd/host/db_user/db_password doit �tre la m�me entre tous les services d'une m�me base
 
-    def get_vals(self, cr, uid, id, context=None):
+    @api.multi
+    def get_vals(self):
         repo_obj = self.pool.get('clouder.save.repository')
         vals = {}
 
-        base = self.browse(cr, uid, id, context=context)
-
         now = datetime.now()
-        if not base.save_repository_id:
-            repo_ids = repo_obj.search(cr, uid, [('base_name','=',base.name),('base_domain','=',base.domain_id.name)], context=context)
+        if not self.save_repository_id:
+            repo_ids = repo_obj.search([('base_name','=',self.name),('base_domain','=',self.domain_id.name)])
             if repo_ids:
-                self.write(cr, uid, [base.id], {'save_repository_id': repo_ids[0]}, context=context)
-                base = self.browse(cr, uid, id, context=context)
+                self.write({'save_repository_id': repo_ids[0]})
 
-        if not base.save_repository_id or datetime.strptime(base.save_repository_id.date_change, "%Y-%m-%d") < now or False:
+        if not self.save_repository_id or datetime.strptime(self.save_repository_id.date_change, "%Y-%m-%d") < now or False:
             repo_vals ={
-                'name': now.strftime("%Y-%m-%d") + '_' + base.name + '_' + base.domain_id.name,
+                'name': now.strftime("%Y-%m-%d") + '_' + self.name + '_' + self.domain_id.name,
                 'type': 'base',
-                'date_change': (now + timedelta(days=base.saverepo_change or base.application_id.base_saverepo_change)).strftime("%Y-%m-%d"),
-                'date_expiration': (now + timedelta(days=base.saverepo_expiration or base.application_id.base_saverepo_expiration)).strftime("%Y-%m-%d"),
-                'base_name': base.name,
-                'base_domain': base.domain_id.name,
+                'date_change': (now + timedelta(days=self.saverepo_change or self.application_id.base_saverepo_change)).strftime("%Y-%m-%d"),
+                'date_expiration': (now + timedelta(days=self.saverepo_expiration or self.application_id.base_saverepo_expiration)).strftime("%Y-%m-%d"),
+                'base_name': self.name,
+                'base_domain': self.domain_id.name,
             }
-            repo_id = repo_obj.create(cr, uid, repo_vals, context=context)
-            self.write(cr, uid, [base.id], {'save_repository_id': repo_id}, context=context)
-            base = self.browse(cr, uid, id, context=context)
+            repo_id = repo_obj.create(repo_vals)
+            self.write({'save_repository_id': repo_id})
 
 
-        vals.update(self.pool.get('clouder.domain').get_vals(cr, uid, base.domain_id.id, context=context))
-        vals.update(self.pool.get('clouder.service').get_vals(cr, uid, base.service_id.id, context=context))
-        vals.update(self.pool.get('clouder.save.repository').get_vals(cr, uid, base.save_repository_id.id, context=context))
+        vals.update(self.domain_id.get_vals())
+        vals.update(self.service_id.get_vals())
+        vals.update(self.save_repository_id.get_vals())
 
-        unique_name = vals['app_code'] + '-' + base.name + '-' + base.domain_id.name
+        unique_name = vals['app_code'] + '-' + self.name + '-' + self.domain_id.name
         unique_name = unique_name.replace('.','-')
 
         options = {}
-        for option in base.service_id.container_id.application_id.type_id.option_ids:
+        for option in self.service_id.container_id.application_id.type_id.option_ids:
             if option.type == 'base':
                 options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
-        for option in base.option_ids:
+        for option in self.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
 
         links = {}
@@ -231,9 +217,9 @@ class clouder_base(osv.osv):
                 if link['base']:
                     links[app_code] = link
                     links[app_code]['target'] = False
-        for link in base.link_ids:
+        for link in self.link_ids:
             if link.name.code in links and link.target:
-                link_vals = self.pool.get('clouder.container').get_vals(cr, uid, link.target.id, context=context)
+                link_vals = link.target.get_vals()
                 links[link.name.code]['target'] = {
                     'link_id': link_vals['container_id'],
                     'link_name': link_vals['container_name'],
@@ -246,15 +232,15 @@ class clouder_base(osv.osv):
         links_temp = links
         for app_code, link in links.iteritems():
             if link['required'] and not link['target']:
-                raise osv.except_osv(_('Data error!'),
-                    _("You need to specify a link to " + link['name'] + " for the base " + base.name))
+                raise except_orm(_('Data error!'),
+                    _("You need to specify a link to " + link['name'] + " for the base " + self.name))
             # if not link['target']:
             #     del links_temp[app_code]
         links = links_temp
 
         backup_servers = []
-        for backup in base.backup_server_ids:
-            backup_vals = self.pool.get('clouder.container').get_vals(cr, uid, backup.id, context=context)
+        for backup in self.backup_server_ids:
+            backup_vals = backup.get_vals()
             backup_servers.append({
                 'container_id': backup_vals['container_id'],
                 'container_fullname': backup_vals['container_fullname'],
@@ -278,27 +264,27 @@ class clouder_base(osv.osv):
                 databases_comma += databases[database]
                 first = False
         vals.update({
-            'base_id': base.id,
-            'base_name': base.name,
+            'base_id': self.id,
+            'base_name': self.name,
             'base_fullname': unique_name,
-            'base_fulldomain': base.name + '.' + base.domain_id.name,
+            'base_fulldomain': self.name + '.' + self.domain_id.name,
             'base_unique_name': unique_name,
             'base_unique_name_': unique_name_,
-            'base_title': base.title,
-            'base_domain': base.domain_id.name,
-            'base_admin_name': base.admin_name,
-            'base_admin_passwd': base.admin_passwd,
-            'base_admin_email': base.admin_email,
-            'base_poweruser_name': base.poweruser_name,
-            'base_poweruser_password': base.poweruser_passwd,
-            'base_poweruser_email': base.poweruser_email,
-            'base_build': base.build,
-            'base_sslonly': base.ssl_only,
-            'base_certkey': base.cert_key,
-            'base_certcert': base.cert_cert,
-            'base_test': base.test,
-            'base_lang': base.lang,
-            'base_nosave': base.nosave,
+            'base_title': self.title,
+            'base_domain': self.domain_id.name,
+            'base_admin_name': self.admin_name,
+            'base_admin_passwd': self.admin_passwd,
+            'base_admin_email': self.admin_email,
+            'base_poweruser_name': self.poweruser_name,
+            'base_poweruser_password': self.poweruser_passwd,
+            'base_poweruser_email': self.poweruser_email,
+            'base_build': self.build,
+            'base_sslonly': self.ssl_only,
+            'base_certkey': self.cert_key,
+            'base_certcert': self.cert_cert,
+            'base_test': self.test,
+            'base_lang': self.lang,
+            'base_nosave': self.nosave,
             'base_options': options,
             'base_links': links,
             'base_nginx_configfile': '/etc/nginx/sites-available/' + unique_name,
@@ -317,16 +303,16 @@ class clouder_base(osv.osv):
             container_obj = self.pool.get('clouder.container')
             service_obj = self.pool.get('clouder.service')
             if 'application_id' not in vals or not vals['application_id']:
-                raise osv.except_osv(_('Error!'),_("You need to specify the application of the base."))
+                raise except_orm(_('Error!'),_("You need to specify the application of the base."))
             application = application_obj.browse(cr, uid, vals['application_id'], context=context)
             if not application.next_server_id:
-                raise osv.except_osv(_('Error!'),_("You need to specify the next server in application for the container autocreate."))
+                raise except_orm(_('Error!'),_("You need to specify the next server in application for the container autocreate."))
             if not application.default_image_id.version_ids:
-                raise osv.except_osv(_('Error!'),_("No version for the image linked to the application, abandoning container autocreate..."))
+                raise except_orm(_('Error!'),_("No version for the image linked to the application, abandoning container autocreate..."))
             if not application.version_ids:
-                raise osv.except_osv(_('Error!'),_("No version for the application, abandoning service autocreate..."))
+                raise except_orm(_('Error!'),_("No version for the application, abandoning service autocreate..."))
             if 'domain_id' not in vals or not vals['domain_id']:
-                raise osv.except_osv(_('Error!'),_("You need to specify the domain of the base."))
+                raise except_orm(_('Error!'),_("You need to specify the domain of the base."))
             domain = domain_obj.browse(cr, uid, vals['domain_id'], context=context)
             container_vals = {
                 'name': vals['name'] + '_' + domain.name.replace('.','_').replace('-','_'),
@@ -376,10 +362,10 @@ class clouder_base(osv.osv):
             vals['link_ids'] = []
             for application_id, link in links.iteritems():
                 if link['required'] and not link['target']:
-                    raise osv.except_osv(_('Data error!'),
+                    raise except_orm(_('Data error!'),
                         _("You need to specify a link to " + link['name'] + " for the base " + vals['name']))
                 vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
-        return super(clouder_base, self).create(cr, uid, vals, context=context)
+        return super(ClouderBase, self).create(cr, uid, vals, context=context)
 
     def write(self, cr, uid, ids, vals, context={}):
         save_obj = self.pool.get('clouder.save.save')
@@ -393,7 +379,7 @@ class clouder_base(osv.osv):
                 base_vals = self.get_vals(cr, uid, base.id, context=context)
                 self.purge(cr, uid, base_vals, context=context)
                 break
-        res = super(clouder_base, self).write(cr, uid, ids, vals, context=context)
+        res = super(ClouderBase, self).write(cr, uid, ids, vals, context=context)
         if 'service_id' in vals:
             for base in self.browse(cr, uid, ids, context=context):
                 save_obj.write(cr, uid, [save_id], {'service_id': vals['service_id']}, context=context)
@@ -411,7 +397,7 @@ class clouder_base(osv.osv):
     def unlink(self, cr, uid, ids, context={}):
         context['save_comment'] = 'Before unlink'
         self.save(cr, uid, ids, context=context)
-        return super(clouder_base, self).unlink(cr, uid, ids, context=context)
+        return super(ClouderBase, self).unlink(cr, uid, ids, context=context)
 
     def save(self, cr, uid, ids, context={}):
         context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
@@ -635,42 +621,38 @@ class clouder_base(osv.osv):
 
 
 
-class clouder_base_option(osv.osv):
+class ClouderBaseOption(models.Model):
     _name = 'clouder.base.option'
 
-    _columns = {
-        'base_id': fields.many2one('clouder.base', 'Base', ondelete="cascade", required=True),
-        'name': fields.many2one('clouder.application.type.option', 'Option', required=True),
-        'value': fields.text('Value'),
-    }
+    base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade", required=True)
+    name = fields.Many2one('clouder.application.type.option', 'Option', required=True)
+    value = fields.Text('Value')
 
     _sql_constraints = [
         ('name_uniq', 'unique(base_id,name)', 'Option name must be unique per base!'),
     ]
 
 
-class clouder_base_link(osv.osv):
+class ClouderBaseLink(models.Model):
     _name = 'clouder.base.link'
 
-    _columns = {
-        'base_id': fields.many2one('clouder.base', 'Base', ondelete="cascade", required=True),
-        'name': fields.many2one('clouder.application', 'Application', required=True),
-        'target': fields.many2one('clouder.container', 'Target'),
-    }
+    base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade", required=True)
+    name = fields.Many2one('clouder.application', 'Application', required=True)
+    target = fields.Many2one('clouder.container', 'Target')
+
 
     _sql_constraints = [
         ('name_uniq', 'unique(base_id,name)', 'Links must be unique per base!'),
     ]
 
 
-    def get_vals(self, cr, uid, id, context={}):
+    @api.multi
+    def get_vals(self):
         vals = {}
 
-        link = self.browse(cr, uid, id, context=context)
-
-        vals.update(self.pool.get('clouder.base').get_vals(cr, uid, link.base_id.id, context=context))
-        if link.target:
-            target_vals = self.pool.get('clouder.container').get_vals(cr, uid, link.target.id, context=context)
+        vals.update(self.base_id.get_vals())
+        if self.target:
+            target_vals = self.target_id.get_vals()
             vals.update({
                 'link_target_container_id': target_vals['container_id'],
                 'link_target_container_name': target_vals['container_name'],
@@ -678,10 +660,10 @@ class clouder_base_link(osv.osv):
                 'link_target_app_id': target_vals['app_id'],
                 'link_target_app_code': target_vals['app_code'],
             })
-            service_ids = self.pool.get('clouder.service').search(cr, uid, [('container_id', '=', link.target.id)], context=context)
-            base_ids = self.pool.get('clouder.base').search(cr, uid, [('service_id', 'in', service_ids)], context=context)
+            service_ids = self.env['clouder.service'].search([('container_id', '=', self.target.id)])
+            base_ids = self.env['clouder.base'].search([('service_id', 'in', service_ids)])
             if base_ids:
-                base_vals = self.pool.get('clouder.base').get_vals(cr, uid, base_ids[0], context=context)
+                base_vals = base_ids[0].get_vals()
                 vals.update({
                     'link_target_service_db_user': base_vals['service_db_user'],
                     'link_target_service_db_password': base_vals['service_db_password'],

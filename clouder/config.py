@@ -20,50 +20,40 @@
 ##############################################################################
 
 
-from openerp import modules
-from openerp import netsvc
-from openerp import pooler
-from openerp.osv import fields, osv, orm
-from openerp.tools.translate import _
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 
-import time
-from datetime import datetime, timedelta
-import subprocess
+from datetime import datetime
 import execute
-import ast
 from os.path import expanduser
 
 import logging
 _logger = logging.getLogger(__name__)
 
-class clouder_config_backup_method(osv.osv):
+class ClouderConfigBackupMethod(models.Model):
     _name = 'clouder.config.backup.method'
     _description = 'Backup Method'
 
-    _columns = {
-        'name': fields.char('Name', size=64, required=True)
-    }
+    name = fields.Char('Name', size=64, required=True)
 
 
-class clouder_config_settings(osv.osv):
+class ClouderConfigSettings(models.Model):
     _name = 'clouder.config.settings'
     _description = 'Clouder configuration'
 
-    _columns = {
-        'email_sysadmin': fields.char('Email SysAdmin', size=128),
-        'end_reset_keys': fields.datetime('Last Reset Keys ended at'),
-        'end_save_all': fields.datetime('Last Save All ended at'),
-        'end_reset_bases': fields.datetime('Last Reset Bases ended at'),
-    }
+    email_sysadmin = fields.Char('Email SysAdmin', size=128)
+    end_reset_keys = fields.Datetime('Last Reset Keys ended at')
+    end_save_all = fields.Datetime('Last Save All ended at')
+    end_reset_bases  = fields.Datetime('Last Reset Bases ended at')
 
-    def get_vals(self, cr, uid, context={}):
-        context['from_config'] = True
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
+    @api.multi
+    def get_vals(self):
+        config = self.env.ref('clouder.clouder_settings')
 
         vals = {}
 
         if not config.email_sysadmin:
-            raise osv.except_osv(_('Data error!'),
+            raise except_orm(_('Data error!'),
                 _("You need to specify the sysadmin email in configuration"))
 
 
