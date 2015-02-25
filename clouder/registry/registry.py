@@ -50,17 +50,17 @@ class ClouderContainer(models.Model):
     #         res['image_version_fullname'] = 'registry'
     #     return res
 
-    def deploy(self, cr, uid, vals, context={}):
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
+    @api.multi
+    def deploy(self, vals):
         if vals['image_name'] == 'img_registry':
-            ssh, sftp = execute.connect(vals['server_domain'], vals['server_ssh_port'], 'root', context)
+            ssh, sftp = self.connect(vals['server_domain'], vals['server_ssh_port'], 'root')
             dir = '/tmp/' + vals['image_name'] + '_' + vals['image_version_fullname']
-            execute.execute(ssh, ['mkdir', '-p', dir], context)
+            self.execute(ssh, ['mkdir', '-p', dir])
 
-            execute.execute(ssh, ['echo "' + vals['image_dockerfile'].replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'], context)
-            execute.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullname']], context)
-            execute.execute(ssh, ['sudo','docker', 'build', '-t', vals['image_version_fullname'], dir], context)
-            execute.execute(ssh, ['rm', '-rf', dir], context)
-        return super(ClouderContainer, self).deploy(cr, uid, vals, context)
+            self.execute(ssh, ['echo "' + vals['image_dockerfile'].replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'])
+            self.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullname']])
+            self.execute(ssh, ['sudo','docker', 'build', '-t', vals['image_version_fullname'], dir])
+            self.execute(ssh, ['rm', '-rf', dir])
+        return super(ClouderContainer, self).deploy(vals)
 
 

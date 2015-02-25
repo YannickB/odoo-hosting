@@ -105,20 +105,18 @@ class ClouderModel(models.AbstractModel):
         if 'logs' in self.env.context:
             log = log_obj.browse(self.env.context['logs'][self._name][self.id]['log_id'])
             if log.state == 'unfinished':
-                log.write({'state': 'ok'})
+                log.state = 'ok'
 
     @api.multi
     def log(self, message):
         message = filter(lambda x: x in string.printable, message)
         _logger.info(message)
         log_obj = self.env['clouder.log']
-        _logger.info('context %s', self.env.context)
         if 'logs' in self.env.context:
-            _logger.info('context.log %s', self.env.context['logs'])
             for model, model_vals in self.env.context['logs'].iteritems():
                 for res_id, vals in self.env.context['logs'][model].iteritems():
                     log = log_obj.browse(self.env.context['logs'][model][res_id]['log_id'])
-                    log.write({'description': (log.description or '') + message + '\n'})
+                    log.description = (log.description or '') + message + '\n'
 
     @api.multi
     def ko_log(self):
@@ -127,7 +125,7 @@ class ClouderModel(models.AbstractModel):
             for model, model_vals in self.env.context['logs'].iteritems():
                 for res_id, vals in self.env.context['logs'][model].iteritems():
                     log = log_obj.browse(self.env.context['logs'][model][res_id]['log_id'])
-                    log.write({'state': 'ko'})
+                    log.state = 'ko'
 
 
     @api.multi
@@ -161,7 +159,6 @@ class ClouderModel(models.AbstractModel):
         res = res.with_context(res.create_log('create'))
         vals = res.get_vals()
         try:
-            res.log('test')
             res.deploy(vals)
             res.deploy_links()
         except:
@@ -218,10 +215,10 @@ class ClouderModel(models.AbstractModel):
         return ssh, sftp
 
     @api.multi
-    def execute(self, ssh, cmd, context, stdin_arg=False,path=False):
+    def execute(self, ssh, cmd, stdin_arg=False,path=False):
         self.log('command : ' + ' '.join(cmd))
         if path:
-            self.log('path : ' + path, context)
+            self.log('path : ' + path)
             cmd.insert(0, 'cd ' + path + ';')
         stdin, stdout, stderr = ssh.exec_command(' '.join(cmd))
         if stdin_arg:
@@ -236,16 +233,16 @@ class ClouderModel(models.AbstractModel):
         return stdout_read
 
     @api.multi
-    def send(self, sftp, source, destination, context):
-        self.log('send : ' + source + ' to ' + destination, context)
+    def send(self, sftp, source, destination):
+        self.log('send : ' + source + ' to ' + destination)
         sftp.put(source, destination)
 
     @api.multi
-    def execute_local(self, cmd, context, path=False, shell=False):
-        self.log('command : ' + ' '.join(cmd), context)
+    def execute_local(self, cmd, path=False, shell=False):
+        self.log('command : ' + ' '.join(cmd))
         cwd = os.getcwd()
         if path:
-            self.log('path : ' + path, context)
+            self.log('path : ' + path)
             os.chdir(path)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell)
     #    for line in proc.stdin:
@@ -255,7 +252,7 @@ class ClouderModel(models.AbstractModel):
         for line in proc.stdout:
            out += line
            line = 'stdout : ' + line
-           self.log(line, context)
+           self.log(line)
     #    for line in proc.stderr:
     #       line = 'stderr : ' + line
     #       log(line, context)

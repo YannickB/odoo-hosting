@@ -24,7 +24,6 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 
 from datetime import datetime
-import execute
 from os.path import expanduser
 
 import logging
@@ -70,98 +69,80 @@ class ClouderConfigSettings(models.Model):
         })
         return vals
 
+    @api.multi
+    def reset_keys(self):
 
-    def reset_keys(self, cr, uid, ids, context={}):
-        container_obj = self.pool.get('clouder.container')
-        container_ids = container_obj.search(cr, uid, [], context=context)
-        container_obj.reset_key(cr, uid, container_ids, context=context)
+        self.env['clouder.container'].search([]).reset_key()
+
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
-        self.write(cr, uid, [config.id], {'end_reset_keys': now}, context=context)
-        cr.commit()
+        self.env.ref('clouder.clouder_settings').end_reset_keys = now
+        self.cr.commit()
 
+    @api.multi
+    def save_all(self):
+        self = self.with_context(save_comment='Save before upload_save')
 
-    def save_all(self, cr, uid, ids, context={}):
-        container_obj = self.pool.get('clouder.container')
-        container_link_obj = self.pool.get('clouder.container.link')
-        base_obj = self.pool.get('clouder.base')
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-
-        backup_ids = container_obj.search(cr, uid, [('application_id.type_id.name','=','backup')], context=context)
-        for backup in container_obj.browse(cr, uid, backup_ids, context=context):
-            vals = container_obj.get_vals(cr, uid, backup.id, context=context)
-            ssh, sftp = execute.connect(vals['container_fullname'], username='backup', context=context)
-            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-r'], context)
+        backups = self.env['clouder.container'].search([('application_id.type_id.name','=','backup')])
+        for backup in backups:
+            vals = backup.get_vals()
+            ssh, sftp = backup.connect(vals['container_fullname'], username='backup')
+            backup.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-r'])
             #http://stackoverflow.com/questions/1904860/how-to-remove-unreferenced-blobs-from-my-git-repo
             #https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
             #https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
-            execute.execute(ssh, ['git', 'gc', '--prune=now'], context, path='/opt/backup/bup')
-            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-g'], context)
-            ssh.close()
-            sftp.close()
+            backup.execute(ssh, ['git', 'gc', '--prune=now'], path='/opt/backup/bup')
+            backup.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-g'])
+            ssh.close(), sftp.close()
 
-        context['save_comment'] = 'Save before upload_save'
-        container_ids = container_obj.search(cr, uid, [('nosave','=',False)], context=context)
-        container_obj.save(cr, uid, container_ids, context=context)
-        base_ids = base_obj.search(cr, uid, [('nosave','=',False)], context=context)
-        base_obj.save(cr, uid, base_ids, context=context)
+        self.env['clouder.container'].search([('nosave','=',False)]).save()
+        self.env['clouder.base'].search([('nosave','=',False)]).save()
 
-        link_ids = container_link_obj.search(cr, uid, [('container_id.application_id.type_id.name','=','backup'),('name.code','=','backup-upl')], context=context)
-        for link in container_link_obj.browse(cr, uid, link_ids, context=context):
-            vals = container_link_obj.get_vals(cr, uid, link.id, context=context)
-            container_link_obj.deploy(cr, uid, vals, context=context)
+        links = self.env['clouder.container.link'].search([('container_id.application_id.type_id.name','=','backup'),('name.code','=','backup-upl')])
+        for link in links:
+            vals = link.get_vals()
+            link.deploy(vals)
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
-        self.write(cr, uid, [config.id], {'end_save_all': now}, context=context)
-        cr.commit()
+        self.env.ref('clouder.clouder_settings').end_save_all = now
+        self.cr.commit()
 
-    def purge_expired_saves(self, cr, uid, ids, context={}):
-        repo_obj = self.pool.get('clouder.save.repository')
-        save_obj = self.pool.get('clouder.save.save')
-        vals = self.get_vals(cr, uid, context=context)
-        expired_saverepo_ids = repo_obj.search(cr, uid, [('date_expiration','!=',False),('date_expiration','<',vals['now_date'])], context=context)
-        repo_obj.unlink(cr, uid, expired_saverepo_ids, context=context)
-        expired_save_ids = save_obj.search(cr, uid, [('date_expiration','!=',False),('date_expiration','<',vals['now_date'])], context=context)
-        save_obj.unlink(cr, uid, expired_save_ids, context=context)
+    @api.multi
+    def purge_expired_saves(self):
+        vals = self.get_vals()
+        self.env['clouder.save.repository'].search([('date_expiration','!=',False),('date_expiration','<',vals['now_date'])]).unlink()
+        self.env['clouder.save.save'].search([('date_expiration','!=',False),('date_expiration','<',vals['now_date'])]).unlink()
 
-    def purge_expired_logs(self, cr, uid, ids, context={}):
-        log_obj = self.pool.get('clouder.log')
-        vals = self.get_vals(cr, uid, context=context)
-        expired_log_ids = log_obj.search(cr, uid, [('expiration_date','!=',False),('expiration_date','<',vals['now_date'])], context=context)
-        log_obj.unlink(cr, uid, expired_log_ids, context=context)
+    @api.multi
+    def purge_expired_logs(self):
+        vals = self.get_vals()
+        self.env['clouder.log'].search([('expiration_date','!=',False),('expiration_date','<',vals['now_date'])]).unlink()
 
-    def launch_next_saves(self, cr, uid, ids, context={}):
-        context['save_comment'] = 'Auto save'
-        container_obj = self.pool.get('clouder.container')
-        vals = self.get_vals(cr, uid, context=context)
-        container_ids = container_obj.search(cr, uid, [('date_next_save','!=',False),('date_next_save','<',vals['now_date'] + ' ' + vals['now_hour_regular'])], context=context)
-        container_obj.save(cr, uid, container_ids, context=context)
-        base_obj = self.pool.get('clouder.base')
-        vals = self.get_vals(cr, uid, context=context)
-        base_ids = base_obj.search(cr, uid, [('date_next_save','!=',False),('date_next_save','<',vals['now_date'] + ' ' + vals['now_hour_regular'])], context=context)
-        base_obj.save(cr, uid, base_ids, context=context)
+    @api.multi
+    def launch_next_saves(self):
+        self = self.with_context(save_comment='Auto save')
+        vals = self.get_vals()
+        self.env['clouder.container'].search([('date_next_save','!=',False),('date_next_save','<',vals['now_date'] + ' ' + vals['now_hour_regular'])]).save()
+        self.env['clouder.base'].search([('date_next_save','!=',False),('date_next_save','<',vals['now_date'] + ' ' + vals['now_hour_regular'])]).save()
 
-
-    def reset_bases(self, cr, uid, ids, context={}):
-        base_obj = self.pool.get('clouder.base')
-        base_ids = base_obj.search(cr, uid, [('reset_each_day','=',True)], context=context)
-        for base in base_obj.browse(cr, uid, base_ids, context=context):
+    @api.multi
+    def reset_bases(self):
+        bases = self.env['clouder.base'].search([('reset_each_day','=',True)])
+        for base in bases:
             if base.parent_id:
-                base_obj.reset_base(cr, uid, [base.id], context=context)
+                base.reset_base()
             else:
-                base_obj.reinstall(cr, uid, [base.id], context=context)
+                bases.reinstall()
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        config = self.pool.get('ir.model.data').get_object(cr, uid, 'clouder', 'clouder_settings')
-        self.write(cr, uid, [config.id], {'end_reset_bases': now}, context=context)
-        cr.commit()
+        self.env.ref('clouder.clouder_settings').end_reset_bases = now
+        self.cr.commit()
 
-    def cron_daily(self, cr, uid, ids, context={}):
-        self.reset_keys(cr, uid, [], context=context)
-        self.purge_expired_saves(cr, uid, [], context=context)
-        self.purge_expired_logs(cr, uid, [], context=context)
-        self.save_all(cr, uid, [], context=context)
-        self.reset_bases(cr, uid, [], context=context)
+    @api.multi
+    def cron_daily(self):
+        self.reset_keys()
+        self.purge_expired_saves()
+        self.purge_expired_logs()
+        self.save_all()
+        self.reset_bases()
         return True
 

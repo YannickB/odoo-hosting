@@ -23,7 +23,6 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 from datetime import datetime
-import execute
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -163,24 +162,23 @@ class ClouderApplication(models.Model):
 
         return vals
 
-
-    def get_current_version(self, cr, uid, vals, context=None):
+    @api.multi
+    def get_current_version(self, vals):
         return False
 
-    def build(self, cr, uid, ids, context=None):
-        version_obj = self.pool.get('clouder.application.version')
+    @api.multi
+    def build(self):
 
-        for app in self.browse(cr, uid, ids, context={}):
-            if not app.archive_id:
-                raise except_orm(_('Date error!'),_("You need to specify the archive where the version must be stored."))
-            vals = self.get_vals(cr, uid, app.id, context=context)
-            current_version = self.get_current_version(cr, uid, vals, context)
-            if current_version:
-                self.write(cr, uid, [app.id], {'current_version': current_version}, context=context)
-            current_version = current_version or app.current_version
-            now = datetime.now()
-            version = current_version + '.' + now.strftime('%Y%m%d.%H%M')
-            version_obj.create(cr, uid, {'application_id': app.id, 'name': version, 'archive_id': app.archive_id and app.archive_id.id}, context=context)
+        if not self.archive_id:
+            raise except_orm(_('Date error!'),_("You need to specify the archive where the version must be stored."))
+        vals = self.get_vals()
+        current_version = self.get_current_version(vals)
+        if current_version:
+            self.write({'current_version': current_version})
+        current_version = current_version or self.current_version
+        now = datetime.now()
+        version = current_version + '.' + now.strftime('%Y%m%d.%H%M')
+        self.env['clouder.application.version'].create({'application_id': self.id, 'name': version, 'archive_id': self.archive_id and self.archive_id.id})
 
 
 class ClouderApplicationOption(models.Model):
@@ -240,36 +238,34 @@ class ClouderApplicationVersion(models.Model):
 
         return vals
 
+    @api.multi
+    def unlink(self):
+        if self.service_ids:
+            raise except_orm(_('Inherit error!'),_("A service is linked to this application version, you can't delete it!"))
+        return super(ClouderApplicationVersion, self).unlink()
 
-    def unlink(self, cr, uid, ids, context=None):
-        for app in self.browse(cr, uid, ids, context=context):
-            if app.service_ids:
-                raise except_orm(_('Inherit error!'),_("A service is linked to this application version, you can't delete it!"))
-        return super(ClouderApplicationVersion, self).unlink(cr, uid, ids, context=context)
 
-
-    def build_application(self, cr, uid, vals, context):
+    @api.multi
+    def build_application(self, vals):
         return
 
-    def deploy(self, cr, uid, vals, context):
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        ssh, sftp = execute.connect(vals['archive_fullname'], context=context)
-        execute.execute(ssh, ['mkdir', vals['app_full_archivepath']], context)
-        execute.execute(ssh, ['rm', '-rf', vals['app_version_full_archivepath']], context)
-        execute.execute(ssh, ['mkdir', vals['app_version_full_archivepath']], context)
-        self.build_application(cr, uid, vals, context)
-        execute.execute(ssh, ['echo "' + vals['app_version_name'] + '" >> ' +  vals['app_version_full_archivepath'] + '/VERSION.txt'], context)
-        execute.execute(ssh, ['tar', 'czf', vals['app_version_full_archivepath_targz'], '-C', vals['app_full_archivepath'] + '/' + vals['app_version_name'], '.'], context)
-        ssh.close()
-        sftp.close()
+    @api.multi
+    def deploy(self, vals):
+        ssh, sftp = self.connect(vals['archive_fullname'])
+        self.execute(ssh, ['mkdir', vals['app_full_archivepath']])
+        self.execute(ssh, ['rm', '-rf', vals['app_version_full_archivepath']])
+        self.execute(ssh, ['mkdir', vals['app_version_full_archivepath']])
+        self.build_application(vals)
+        self.execute(ssh, ['echo "' + vals['app_version_name'] + '" >> ' +  vals['app_version_full_archivepath'] + '/VERSION.txt'])
+        self.execute(ssh, ['tar', 'czf', vals['app_version_full_archivepath_targz'], '-C', vals['app_full_archivepath'] + '/' + vals['app_version_name'], '.'])
+        ssh.close(), sftp.close()
 
-    def purge(self, cr, uid, vals, context={}):
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        ssh, sftp = execute.connect(vals['archive_fullname'], context=context)
-        execute.execute(ssh, ['rm', '-rf', vals['app_version_full_archivepath']], context)
-        execute.execute(ssh, ['rm', vals['app_version_full_archivepath_targz']], context)
-        ssh.close()
-        sftp.close()
+    @api.multi
+    def purge(self, vals):
+        ssh, sftp = self.connect(vals['archive_fullname'])
+        self.execute(ssh, ['rm', '-rf', vals['app_version_full_archivepath']])
+        self.execute(ssh, ['rm', vals['app_version_full_archivepath_targz']])
+        ssh.close(), sftp.close()
 
 
 class ClouderApplicationLink(models.Model):
