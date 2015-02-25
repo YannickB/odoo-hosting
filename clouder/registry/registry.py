@@ -32,9 +32,10 @@ _logger = logging.getLogger(__name__)
 class ClouderImageVersion(models.Model):
     _inherit = 'clouder.image.version'
 
-    def deploy(self, cr, uid, vals, context={}):
+    @api.multi
+    def deploy(self, vals):
         if vals['image_name'] != 'img_registry':
-            return super(ClouderImageVersion, self).deploy(cr, uid, vals, context)
+            return super(ClouderImageVersion, self).deploy(vals)
         else:
             return True
 

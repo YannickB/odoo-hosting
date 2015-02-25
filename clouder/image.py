@@ -24,7 +24,7 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 
 from datetime import datetime
-import execute
+#import execute #TODO rename clouder_model
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -75,17 +75,16 @@ class ClouderImage(models.Model):
 
         return vals
 
-    def build(self, cr, uid, ids, context=None):
-        version_obj = self.pool.get('clouder.image.version')
+    @api.multi
+    def build(self):
 
-        for image in self.browse(cr, uid, ids, context={}):
-            if not image.dockerfile:
-                continue
-            if not image.registry_id and image.name != 'img_registry':
-                raise except_orm(_('Date error!'),_("You need to specify the registry where the version must be stored."))
-            now = datetime.now()
-            version = image.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
-            version_obj.create(cr, uid, {'image_id': image.id, 'name': version, 'registry_id': image.registry_id and image.registry_id.id, 'parent_id': image.parent_version_id and image.parent_version_id.id}, context=context)
+        if not self.dockerfile:
+            return
+        if not self.registry_id and self.name != 'img_registry':
+            raise except_orm(_('Date error!'),_("You need to specify the registry where the version must be stored."))
+        now = datetime.now()
+        version = self.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
+        self.env['clouder.image.version'].create({'image_id': self.id, 'name': version, 'registry_id': self.registry_id and self.registry_id.id, 'parent_id': self.parent_version_id and self.parent_version_id.id})
 
     # def unlink(self, cr, uid, ids, context={}):
     #     for image in self.browse(cr, uid, ids, context=context):
@@ -96,6 +95,7 @@ class ClouderImage(models.Model):
     # def purge(self, cr, uid, vals, context={}):
     #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
     #     execute.execute_local(['sudo','docker', 'rmi', vals['image_name'] + ':latest'], context)
+
 
 class ClouderImageVolume(models.Model):
     _name = 'clouder.image.volume'
@@ -191,17 +191,17 @@ class ClouderImageVersion(models.Model):
 
         return vals
 
-    def unlink(self, cr, uid, ids, context=None):
-        container_obj = self.pool.get('clouder.container')
-        if container_obj.search(cr, uid, [('image_version_id','in',ids)], context=context):
+    @api.multi
+    def unlink(self):
+        if self.container_ids:
             raise except_orm(_('Inherit error!'),_("A container is linked to this image version, you can't delete it!"))
-        return super(ClouderImageVersion, self).unlink(cr, uid, ids, context=context)
+        return super(ClouderImageVersion, self).unlink()
 
-    def deploy(self, cr, uid, vals, context={}):
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        ssh, sftp = execute.connect(vals['registry_server_domain'], vals['registry_server_ssh_port'], 'root', context)
+    @api.multi
+    def deploy(self, vals):
+        ssh, sftp = self.connect(vals['registry_server_domain'], vals['registry_server_ssh_port'], 'root')
         dir = '/tmp/' + vals['image_name'] + '_' + vals['image_version_fullname']
-        execute.execute(ssh, ['mkdir', '-p', dir], context)
+        self.execute(ssh, ['mkdir', '-p', dir])
 
         dockerfile = 'FROM '
         if vals['image_parent_id'] and vals['image_version_parent_id']:
@@ -226,21 +226,21 @@ class ClouderImageVersion(models.Model):
         if ports:
             dockerfile += '\nEXPOSE ' + ports
 
-        execute.execute(ssh, ['echo "' + dockerfile.replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'], context)
-        execute.execute(ssh, ['sudo','docker', 'build', '-t', vals['image_version_fullname'], dir], context)
-        execute.execute(ssh, ['sudo','docker', 'tag', vals['image_version_fullname'], vals['image_version_fullpath_localhost']], context)
-        execute.execute(ssh, ['sudo','docker', 'push', vals['image_version_fullpath_localhost']], context)
-        execute.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullname']], context)
-        execute.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullpath_localhost']], context)
-        execute.execute(ssh, ['rm', '-rf', dir], context)
-        ssh.close()
-        sftp.close()
+        self.execute(ssh, ['echo "' + dockerfile.replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'])
+        self.execute(ssh, ['sudo','docker', 'build', '-t', vals['image_version_fullname'], dir])
+        self.execute(ssh, ['sudo','docker', 'tag', vals['image_version_fullname'], vals['image_version_fullpath_localhost']])
+        self.execute(ssh, ['sudo','docker', 'push', vals['image_version_fullpath_localhost']])
+        self.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullname']])
+        self.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullpath_localhost']])
+        self.execute(ssh, ['rm', '-rf', dir])
+        ssh.close(), sftp.close()
         return
 
 #In case of problems with ssh authentification
 # - Make sure the /opt/keys belong to root:root with 700 rights
 # - Make sure the user in the container can access the keys, and if possible make the key belong to the user with 700 rights
 
-    def purge(self, cr, uid, vals, context={}):
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
+    @api.multi
+    def purge(self,vals):
         #TODO There is currently no way to delete an image from private registry.
+        return

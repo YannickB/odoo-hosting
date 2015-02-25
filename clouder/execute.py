@@ -38,15 +38,13 @@ _logger = logging.getLogger(__name__)
 class ClouderLog(models.Model):
     _name = 'clouder.log'
 
-    def _get_name(self, cr, uid, ids, field_name, arg, context=None):
-        res = {}
-        for log in self.browse(cr, uid, ids, context=context):
-            model_obj = self.pool.get(log.model)
-            record = model_obj.browse(cr, uid, log.res_id, context=context)
-            res[log.id] = ''
-            if record and hasattr(record, 'name'):
-                res[log.id] = record.name
-        return res
+    @api.multi
+    def _get_name(self):
+        model_obj = self.env[self.model]
+        record = model_obj.browse(self.res_id)
+        if record and hasattr(record, 'name'):
+            self.name = record.name
+        return
 
     model = fields.Char('Related Document Model', size=128, select=1)
     res_id = fields.Integer('Related Document ID', select=1)
@@ -74,204 +72,221 @@ class ClouderModel(models.AbstractModel):
         auto_join=True,
         string='Logs')
 
-    def create_log(self, cr, uid, id, action, context):
-        if 'log_id' in context:
-            return context
-        log_obj = self.pool.get('clouder.log')
-        if context == None:
-            context = {}
-        if not 'logs' in context:
-            context['logs'] = {}
-        if not self._name in context['logs']:
-            context['logs'][self._name] = {}
+    @api.multi
+    def create_log(self, action):
+        if 'log_id' in self.env.context:
+            return self.env.context
+
+        if 'logs' in self.env.context:
+            logs = self.env.context['logs']
+        else:
+            logs = {}
+
+        if not self._name in logs:
+            logs[self._name] = {}
         now = datetime.now()
         #_logger.info('start log model %s, res %s', self._name, id)
-        if not id in context['logs'][self._name]:
+        if not self.id in logs[self._name]:
             expiration_date = (now + timedelta(days=self._log_expiration_days)).strftime("%Y-%m-%d")
-            log_id = log_obj.create(cr, uid, {'model': self._name, 'res_id': id, 'action': action,'expiration_date':expiration_date}, context=context)
-            context['logs'][self._name][id] = {}
-            context['logs'][self._name][id]['log_model'] = self._name
-            context['logs'][self._name][id]['log_res_id'] = id
-            context['logs'][self._name][id]['log_id'] = log_id
-            context['logs'][self._name][id]['log_log'] = ''
-        return context
+            log_id = self.env['clouder.log'].create({'model': self._name, 'res_id': self.id, 'action': action,'expiration_date':expiration_date})
+            logs[self._name][self.id] = {}
+            logs[self._name][self.id]['log_model'] = self._name
+            logs[self._name][self.id]['log_res_id'] = self.id
+            logs[self._name][self.id]['log_id'] = log_id.id
+            logs[self._name][self.id]['log_log'] = ''
 
-    def end_log(self, cr, uid, id, context=None):
-        log_obj = self.pool.get('clouder.log')
+        self = self.with_context(logs=logs)
+        return self.env.context
+
+    @api.multi
+    def end_log(self):
+        log_obj = self.env['clouder.log']
         #_logger.info('end log model %s, res %s', self._name, id)
-        if 'logs' in  context:
-            log = log_obj.browse(cr, uid, context['logs'][self._name][id]['log_id'], context=context)
+        if 'logs' in self.env.context:
+            log = log_obj.browse(self.env.context['logs'][self._name][self.id]['log_id'])
             if log.state == 'unfinished':
-                log_obj.write(cr, uid, [context['logs'][self._name][id]['log_id']], {'state': 'ok'}, context=context)
+                log.write({'state': 'ok'})
 
-    def deploy_links(self, cr, uid, ids, context=None):
-        for record in self.browse(cr, uid, ids, context=context):
-            if hasattr(record, 'link_ids'):
-                for link in record.link_ids:
-                    vals = self.pool.get(link._name).get_vals(cr, uid, link.id, context=context)
-                    self.pool.get(link._name).deploy(cr, uid, vals, context=context)
+    @api.multi
+    def log(self, message):
+        message = filter(lambda x: x in string.printable, message)
+        _logger.info(message)
+        log_obj = self.env['clouder.log']
+        _logger.info('context %s', self.env.context)
+        if 'logs' in self.env.context:
+            _logger.info('context.log %s', self.env.context['logs'])
+            for model, model_vals in self.env.context['logs'].iteritems():
+                for res_id, vals in self.env.context['logs'][model].iteritems():
+                    log = log_obj.browse(self.env.context['logs'][model][res_id]['log_id'])
+                    log.write({'description': (log.description or '') + message + '\n'})
 
-    def purge_links(self, cr, uid, ids, context=None):
-        for record in self.browse(cr, uid, ids, context=context):
-            if hasattr(record, 'link_ids'):
-                for link in record.link_ids:
-                    vals = self.pool.get(link._name).get_vals(cr, uid, link.id, context=context)
-                    self.pool.get(link._name).purge(cr, uid, vals, context=context)
+    @api.multi
+    def ko_log(self):
+        log_obj = self.env['clouder.log']
+        if 'logs' in self.env.context:
+            for model, model_vals in self.env.context['logs'].iteritems():
+                for res_id, vals in self.env.context['logs'][model].iteritems():
+                    log = log_obj.browse(self.env.context['logs'][model][res_id]['log_id'])
+                    log.write({'state': 'ko'})
 
-    def reinstall(self, cr, uid, ids, context=None):
-        for record in self.browse(cr, uid, ids, context=context):
-            context = self.create_log(cr, uid, record.id, 'reinstall', context)
-            vals = self.get_vals(cr, uid, record.id, context=context)
-            self.purge_links(cr, uid, [record.id], context=context)
-            self.purge(cr, uid, vals, context=context)
-            self.deploy(cr, uid, vals, context=context)
-            self.deploy_links(cr, uid, [record.id], context=context)
-            self.end_log(cr, uid, record.id, context=context)
 
-    def create(self, cr, uid, vals, context=None):
-        res = super(ClouderModel, self).create(cr, uid, vals, context=context)
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        context = self.create_log(cr, uid, res, 'create', context)
-        vals = self.get_vals(cr, uid, res, context=context)
+    @api.multi
+    def deploy_links(self):
+        if hasattr(self, 'link_ids'):
+            for link in self.link_ids:
+                vals = link.get_vals()
+                link.deploy(vals)
+
+    @api.multi
+    def purge_links(self):
+        if hasattr(self, 'link_ids'):
+            for link in self.link_ids:
+                vals = link.get_vals()
+                link.purge(vals)
+
+    @api.multi
+    def reinstall(self):
+        self = self.with_context(self.create_log('reinstall'))
+        vals = self.get_vals()
+        self.purge_links()
+        self.purge(vals)
+        self.deploy(vals)
+        self.deploy_links()
+        self.end_log()
+
+    @api.multi
+    def create(self, vals):
+        res = super(ClouderModel, self).create(vals)
+        # context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
+        res = res.with_context(res.create_log('create'))
+        vals = res.get_vals()
         try:
-            self.deploy(cr, uid, vals, context)
-            self.deploy_links(cr, uid, [res], context=context)
+            res.log('test')
+            res.deploy(vals)
+            res.deploy_links()
         except:
-            log('===================', context)
-            log('FAIL! Reverting...', context)
-            log('===================', context)
-            context['nosave'] = True
-            self.unlink(cr, uid, [res], context=context)
+            res.log('===================')
+            res.log('FAIL! Reverting...')
+            res.log('===================')
+            res = res.with_context(nosave=True)
+            res.unlink()
             raise
-        self.end_log(cr, uid, res, context=context)
+        res.end_log()
         return res 
 
-    def unlink(self, cr, uid, ids, context={}):
-        for record in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, record.id, context=context)
-            try:
-                self.purge_links(cr, uid, [record.id], context=context)
-                self.purge(cr, uid, vals, context=context)
-            except:
-                pass   
-        res = super(ClouderModel, self).unlink(cr, uid, ids, context=context)
+    @api.multi
+    def unlink(self):
+        vals = self.get_vals()
+        try:
+            self.purge_links()
+            self.purge(vals)
+        except:
+            pass
+        res = super(ClouderModel, self).unlink()
         #Security to prevent log to write in a removed clouder.log
-        for id in ids:
-            if 'logs' in context and self._name in context['logs'] and id in context['logs'][self._name]:
-                del context['logs'][self._name][id]
-        log_obj = self.pool.get('clouder.log')
-        log_ids = log_obj.search(cr, uid, [('model','=',self._name),('res_id','in',ids)],context=context)
-        log_obj.unlink(cr, uid, log_ids, context=context)
+        if 'logs' in self.env.context and self._name in self.env.context['logs'] and self.id in self.env.context['logs'][self._name]:
+            del self.env.context['logs'][self._name][self.id]
+        log_ids = self.env['clouder.log'].search([('model','=',self._name),('res_id','=',self.id)])
+        log_ids.unlink()
         return res
 
 
-def log(message, context):
-    message = filter(lambda x: x in string.printable, message)
-    _logger.info(message)
-    log_obj = context['clouder-self'].pool.get('clouder.log')
-    if 'logs' in context:
-        # _logger.info('context.log %s', context['logs'])
-        for model, model_vals in context['logs'].iteritems():
-            for res_id, vals in context['logs'][model].iteritems():
-                log = log_obj.browse(context['clouder-cr'], context['clouder-uid'], context['logs'][model][res_id]['log_id'], context=context)
-                log_obj.write(context['clouder-cr'], context['clouder-uid'], context['logs'][model][res_id]['log_id'], {'description': (log.description or '') + message + '\n'}, context=context)
+    @api.multi
+    def connect(self, host, port=False, username=False):
+        self.log('connect: ssh ' + (username and username + '@' or '') + host + (port and ' -p ' + str(port) or ''))
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-def ko_log(self, context):
-    log_obj = context['clouder-self'].pool.get('clouder.log')
-    if 'logs' in context:
-        for model, model_vals in context['logs'].iteritems():
-            for res_id, vals in context['logs'][model].iteritems():
-                log_obj.write(context['clouder-cr'], context['clouder-uid'], context['logs'][model][res_id]['log_id'], {'state': 'ko'}, context=context)
+        ssh_config = paramiko.SSHConfig()
+        user_config_file = os.path.expanduser("~/.ssh/config")
+        if os.path.exists(user_config_file):
+            with open(user_config_file) as f:
+                ssh_config.parse(f)
+        user_config = ssh_config.lookup(host)
 
+        identityfile = None
+        if 'identityfile' in user_config:
+            host = user_config['hostname']
+            identityfile = user_config['identityfile']
+            if not username:
+                username = user_config['user']
+            if not port:
+                port = user_config['port']
 
-def connect(host, port=False, username=False, context={}):
-    log('connect: ssh ' + (username and username + '@' or '') + host + (port and ' -p ' + str(port) or ''), context)
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(host, port=int(port), username=username, key_filename=os.path.expanduser(identityfile))
+        sftp = ssh.open_sftp()
+        return ssh, sftp
 
-    ssh_config = paramiko.SSHConfig()
-    user_config_file = os.path.expanduser("~/.ssh/config")
-    if os.path.exists(user_config_file):
-        with open(user_config_file) as f:
-            ssh_config.parse(f)
-    user_config = ssh_config.lookup(host)
+    @api.multi
+    def execute(self, ssh, cmd, context, stdin_arg=False,path=False):
+        self.log('command : ' + ' '.join(cmd))
+        if path:
+            self.log('path : ' + path, context)
+            cmd.insert(0, 'cd ' + path + ';')
+        stdin, stdout, stderr = ssh.exec_command(' '.join(cmd))
+        if stdin_arg:
+            for arg in stdin_arg:
+                self.log('command : ' + arg)
+                stdin.write(arg)
+                stdin.flush()
+    #    _logger.info('stdin : %s', stdin.read())
+        stdout_read = stdout.read()
+        self.log('stdout : ' + stdout_read)
+        self.log('stderr : ' + stderr.read())
+        return stdout_read
 
-    identityfile = None
-    if 'identityfile' in user_config:
-        host = user_config['hostname']
-        identityfile = user_config['identityfile']
-        if not username:
-            username = user_config['user']
-        if not port:
-            port = user_config['port']
+    @api.multi
+    def send(self, sftp, source, destination, context):
+        self.log('send : ' + source + ' to ' + destination, context)
+        sftp.put(source, destination)
 
-    ssh.connect(host, port=int(port), username=username, key_filename=os.path.expanduser(identityfile))
-    sftp = ssh.open_sftp()
-    return (ssh, sftp)
+    @api.multi
+    def execute_local(self, cmd, context, path=False, shell=False):
+        self.log('command : ' + ' '.join(cmd), context)
+        cwd = os.getcwd()
+        if path:
+            self.log('path : ' + path, context)
+            os.chdir(path)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell)
+    #    for line in proc.stdin:
+    #       line = 'stdin : ' + line
+    #       log(line, context=context)
+        out = ''
+        for line in proc.stdout:
+           out += line
+           line = 'stdout : ' + line
+           self.log(line, context)
+    #    for line in proc.stderr:
+    #       line = 'stderr : ' + line
+    #       log(line, context)
+        os.chdir(cwd)
+        return out
 
-def execute(ssh, cmd, context, stdin_arg=False,path=False):
-    log('command : ' + ' '.join(cmd), context)
-    if path:
-        log('path : ' + path, context)
-        cmd.insert(0, 'cd ' + path + ';')
-    stdin, stdout, stderr = ssh.exec_command(' '.join(cmd))
-    if stdin_arg:
-        for arg in stdin_arg:
-            log('command : ' + arg, context)
-            stdin.write(arg)
-            stdin.flush()
-#    _logger.info('stdin : %s', stdin.read())
-    stdout_read = stdout.read()
-    log('stdout : ' + stdout_read, context)
-    log('stderr : ' + stderr.read(), context)
-    return stdout_read
+    @api.multi
+    def exist(self, sftp, path):
+        try:
+            sftp.stat(path)
+        except IOError, e:
+            if e.errno == errno.ENOENT:
+                return False
+            raise
+        else:
+            return True
 
+    @api.multi
+    def local_file_exist(self, file):
+        return os.path.isfile(file)
 
-def send(sftp, source, destination, context):
-    log('send : ' + source + ' to ' + destination, context)
-    sftp.put(source, destination)
+    @api.multi
+    def local_dir_exist(self, file):
+        return os.path.isdir(file)
 
-def execute_local(cmd, context, path=False, shell=False):
-    log('command : ' + ' '.join(cmd), context)
-    cwd = os.getcwd()
-    if path:
-        log('path : ' + path, context)
-        os.chdir(path)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell)
-#    for line in proc.stdin:
-#       line = 'stdin : ' + line
-#       log(line, context=context)
-    out = ''
-    for line in proc.stdout:
-       out += line
-       line = 'stdout : ' + line
-       log(line, context)
-#    for line in proc.stderr:
-#       line = 'stderr : ' + line
-#       log(line, context)
-    os.chdir(cwd)
-    return out
+    @api.multi
+    def execute_write_file(self, file, string):
+        f = open(file, 'a')
+        f.write(string)
+        f.close()
 
-def exist(sftp, path):
-    try:
-        sftp.stat(path)
-    except IOError, e:
-        if e.errno == errno.ENOENT:
-            return False
-        raise
-    else:
-        return True
-
-def local_file_exist(file):
-    return os.path.isfile(file)
-
-def local_dir_exist(file):
-    return os.path.isdir(file)
-
-def execute_write_file(file, string, context):
-    f = open(file, 'a')
-    f.write(string)
-    f.close()
 
 def generate_random_password(size):
     return ''.join(random.choice(string.ascii_uppercase  + string.ascii_lowercase + string.digits) for _ in range(size))
