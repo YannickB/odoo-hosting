@@ -271,6 +271,7 @@ class ClouderSaveSave(models.Model):
         domain_obj = self.env['clouder.domain']
         application_obj = self.env['clouder.application']
         application_version_obj = self.env['clouder.application.version']
+        application_link_obj = self.env['clouder.application.link']
         image_obj = self.env['clouder.image']
         image_version_obj = self.env['clouder.image.version']
         service_obj = self.env['clouder.service']
@@ -316,7 +317,7 @@ class ClouderSaveSave(models.Model):
                 links = []
                 for link, link_vals in ast.literal_eval(self.container_links).iteritems():
                     if not link_vals['name']:
-                        link_apps = application_obj.search([('code','=',link_vals['code'])])
+                        link_apps = application_link_obj.search([('name.code','=',link_vals['code']), ('application_id','=', apps[0])])
                         if link_apps:
                             link_vals['name'] = link_apps[0]
                         else:
@@ -401,7 +402,7 @@ class ClouderSaveSave(models.Model):
                     links = []
                     for link, link_vals in ast.literal_eval(self.service_links).iteritems():
                         if not link_vals['name']:
-                            link_apps = self.pool.get('clouder.application').search([('code','=',link_vals['code'])])
+                            link_apps = application_link_obj.search([('name.code','=',link_vals['code']), ('application_id','=', apps[0])])
                             if link_apps:
                                 link_vals['name'] = link_apps[0]
                             else:
@@ -440,7 +441,7 @@ class ClouderSaveSave(models.Model):
                     links = []
                     for link, link_vals in ast.literal_eval(self.base_links).iteritems():
                         if not link_vals['name']:
-                            link_apps = self.pool.get('clouder.application').search([('code','=',link_vals['code'])])
+                            link_apps = application_link_obj.search([('name.code','=',link_vals['code']), ('application_id','=', apps[0])])
                             if link_apps:
                                 link_vals['name'] = link_apps[0]
                             else:

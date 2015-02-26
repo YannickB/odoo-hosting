@@ -177,6 +177,12 @@ class ClouderApplication(models.Model):
     #     return vals
 
     @api.multi
+    def write(self, vals):
+        if 'code' in vals:
+            raise except_orm(_('Data error!'),_("It's too dangerous to modify the application code!"))
+        return super(ClouderApplication, self).write(vals)
+
+    @api.multi
     def get_current_version(self):
         return False
 

@@ -71,7 +71,7 @@ class ClouderService(models.Model):
         database = False
         for link in self.link_ids:
             if link.target:
-                if link.name.code in ['postgres','mysql']:
+                if link.name.application_id.code in ['postgres','mysql']:
                     database = link.target
         return database
 
@@ -218,26 +218,25 @@ class ClouderService(models.Model):
     def create(self, vals):
         if 'container_id' in vals:
             container = self.env['clouder.container'].browse(vals['container_id'])
-            application = container.application_id
+
             links = {}
-            for link in  application.link_ids:
-                if link.service:
-                    links[link.name.id] = {}
-                    links[link.name.id]['required'] = link.required
-                    links[link.name.id]['name'] = link.name.name
-                    links[link.name.id]['target'] = link.auto and link.next and link.next.id or False
             if 'link_ids' in vals:
                 for link in vals['link_ids']:
                     link = link[2]
-                    if link['name'] in links:
-                        links[link['name']]['target'] = link['target']
+                    links[link['name']] = link
                 del vals['link_ids']
+            for application_link in container.application_id.link_ids:
+                if application_link.service and application_link.id not in links:
+                    links[application_link.id] = {}
+                    links[application_link.id]['name'] = application_link.id
+                    links[application_link.id]['target'] = False
             vals['link_ids'] = []
-            for application_id, link in links.iteritems():
-                if link['required'] and not link['target']:
-                    raise except_orm(_('Data error!'),
-                        _("You need to specify a link to " + link['name'] + " for the service " + vals['name']))
-                vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
+            for application_link_id, link in links.iteritems():
+                if not link['target']:
+                    application_link = self.env['clouder.application.link'].browse(application_link_id)
+                    link['target'] = application_link.auto and application_link.next or False
+                vals['link_ids'].append((0,0,{'name': link['name'], 'target': link['target']}))
+
         return super(ClouderService, self).create(vals)
 
     @api.multi
@@ -456,21 +455,15 @@ class ClouderServiceLink(models.Model):
     _name = 'clouder.service.link'
 
     service_id = fields.Many2one('clouder.service', 'Service', ondelete="cascade", required=True)
-    name = fields.Many2one('clouder.application', 'Application', required=True)
+    name = fields.Many2one('clouder.application.link', 'Application Link', required=True)
     target = fields.Many2one('clouder.container', 'Target')
 
-
-    _sql_constraints = [
-        ('name_uniq', 'unique(service_id,name)', 'Links must be unique per service!'),
-    ]
-
-#TODO a activer apres avoir refactoriser name
-    # @api.one
-    # @api.constrains('application_id')
-    # def _check_required(self):
-    #     if not self.name.required and not self.target:
-    #         raise except_orm(_('Data error!'),
-    #             _("You need to specify a link to " + self.name.application_id.name + " for the service " + self.service_id.name))
+    @api.one
+    @api.constrains('application_id')
+    def _check_required(self):
+        if not self.name.required and not self.target:
+            raise except_orm(_('Data error!'),
+                _("You need to specify a link to " + self.name.application_id.name + " for the service " + self.service_id.name))
 
     # def get_vals(self, cr, uid, id, context={}):
     #     vals = {}

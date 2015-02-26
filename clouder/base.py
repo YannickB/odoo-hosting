@@ -367,24 +367,23 @@ class ClouderBase(models.Model):
                 vals['save_expiration'] = application.base_save_expiration
 
             links = {}
-            for link in application.link_ids:
-                if link.base:
-                    links[link.name.id] = {}
-                    links[link.name.id]['required'] = link.required
-                    links[link.name.id]['name'] = link.name.name
-                    links[link.name.id]['target'] = link.auto and link.next and link.next.id or False
             if 'link_ids' in vals:
                 for link in vals['link_ids']:
                     link = link[2]
-                    if link['name'] in links:
-                        links[link['name']]['target'] = link['target']
+                    links[link['name']] = link
                 del vals['link_ids']
+            for application_link in application.link_ids:
+                if application_link.base and application_link.id not in links:
+                    links[application_link.id] = {}
+                    links[application_link.id]['name'] = application_link.id
+                    links[application_link.id]['target'] = False
             vals['link_ids'] = []
-            for application_id, link in links.iteritems():
-                if link['required'] and not link['target']:
-                    raise except_orm(_('Data error!'),
-                        _("You need to specify a link to " + link['name'] + " for the base " + vals['name']))
-                vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
+            for application_link_id, link in links.iteritems():
+                if not link['target']:
+                    application_link = self.env['clouder.application.link'].browse(application_link_id)
+                    link['target'] = application_link.auto and application_link.next or False
+                vals['link_ids'].append((0,0,{'name': link['name'], 'target': link['target']}))
+
         return super(ClouderBase, self).create(vals)
 
     @api.multi
@@ -619,23 +618,17 @@ class ClouderBaseLink(models.Model):
     _name = 'clouder.base.link'
 
     base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade", required=True)
-    name = fields.Many2one('clouder.application', 'Application', required=True)
+    name = fields.Many2one('clouder.application.link', 'Application Link', required=True)
     target = fields.Many2one('clouder.container', 'Target')
 
     target_base = lambda self : self.target.service_ids and self.target.service_ids[0].base_ids and self.target.service_ids[0].base_ids[0]
 
-    _sql_constraints = [
-        ('name_uniq', 'unique(base_id,name)', 'Links must be unique per base!'),
-    ]
-
-
-#TODO a activer apres avoir refactoriser name
-    # @api.one
-    # @api.constrains('application_id')
-    # def _check_required(self):
-    #     if not self.name.required and not self.target:
-    #         raise except_orm(_('Data error!'),
-    #             _("You need to specify a link to " + self.name.application_id.name + " for the base " + self.base_id.name))
+    @api.one
+    @api.constrains('application_id')
+    def _check_required(self):
+        if not self.name.required and not self.target:
+            raise except_orm(_('Data error!'),
+                _("You need to specify a link to " + self.name.application_id.name + " for the base " + self.base_id.name))
 
     #
     # @api.multi
