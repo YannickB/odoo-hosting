@@ -45,29 +45,37 @@ class ClouderConfigSettings(models.Model):
     end_save_all = fields.Datetime('Last Save All ended at')
     end_reset_bases  = fields.Datetime('Last Reset Bases ended at')
 
-    @api.multi
-    def get_vals(self):
-        config = self.env.ref('clouder.clouder_settings')
+    archive_path = '/opt/archives'
+    services_hostpath = '/opt/services'
+    now = datetime.now()
+    now_date = now.strftime("%Y-%m-%d")
+    now_hour = now.strftime("%H-%M")
+    now_hour_regular = now.strftime("%H:%M:%S")
+    now_bup = now.strftime("%Y-%m-%d-%H%M%S")
 
-        vals = {}
-
-        if not config.email_sysadmin:
-            raise except_orm(_('Data error!'),
-                _("You need to specify the sysadmin email in configuration"))
-
-
-        now = datetime.now()
-        vals.update({
-            'config_email_sysadmin': config.email_sysadmin,
-            'config_archive_path': '/opt/archives',
-            'config_services_hostpath': '/opt/services',
-            'config_home_directory': expanduser("~"),
-            'now_date': now.strftime("%Y-%m-%d"),
-            'now_hour': now.strftime("%H-%M"),
-            'now_hour_regular': now.strftime("%H:%M:%S"),
-            'now_bup': now.strftime("%Y-%m-%d-%H%M%S"),
-        })
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #     config = self.env.ref('clouder.clouder_settings')
+    #
+    #     vals = {}
+    #
+    #     if not config.email_sysadmin:
+    #         raise except_orm(_('Data error!'),
+    #             _("You need to specify the sysadmin email in configuration"))
+    #
+    #
+    #     now = datetime.now()
+    #     vals.update({
+    #         'config_email_sysadmin': config.email_sysadmin,
+    #         'config_archive_path': '/opt/archives',
+    #         'config_services_hostpath': '/opt/services',
+    #         'config_home_directory': expanduser("~"),
+    #         'now_date': now.strftime("%Y-%m-%d"),
+    #         'now_hour': now.strftime("%H-%M"),
+    #         'now_hour_regular': now.strftime("%H:%M:%S"),
+    #         'now_bup': now.strftime("%Y-%m-%d-%H%M%S"),
+    #     })
+    #     return vals
 
     @api.multi
     def reset_keys(self):
@@ -108,21 +116,18 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def purge_expired_saves(self):
-        vals = self.get_vals()
-        self.env['clouder.save.repository'].search([('date_expiration','!=',False),('date_expiration','<',vals['now_date'])]).unlink()
-        self.env['clouder.save.save'].search([('date_expiration','!=',False),('date_expiration','<',vals['now_date'])]).unlink()
+        self.env['clouder.save.repository'].search([('date_expiration','!=',False),('date_expiration','<',self.now_date)]).unlink()
+        self.env['clouder.save.save'].search([('date_expiration','!=',False),('date_expiration','<',self.now_date)]).unlink()
 
     @api.multi
     def purge_expired_logs(self):
-        vals = self.get_vals()
-        self.env['clouder.log'].search([('expiration_date','!=',False),('expiration_date','<',vals['now_date'])]).unlink()
+        self.env['clouder.log'].search([('expiration_date','!=',False),('expiration_date','<',self.now_date)]).unlink()
 
     @api.multi
     def launch_next_saves(self):
         self = self.with_context(save_comment='Auto save')
-        vals = self.get_vals()
-        self.env['clouder.container'].search([('date_next_save','!=',False),('date_next_save','<',vals['now_date'] + ' ' + vals['now_hour_regular'])]).save()
-        self.env['clouder.base'].search([('date_next_save','!=',False),('date_next_save','<',vals['now_date'] + ' ' + vals['now_hour_regular'])]).save()
+        self.env['clouder.container'].search([('date_next_save','!=',False),('date_next_save','<',self.now_date + ' ' + self.now_hour_regular)]).save()
+        self.env['clouder.base'].search([('date_next_save','!=',False),('date_next_save','<',self.now_date + ' ' + self.now_hour_regular)]).save()
 
     @api.multi
     def reset_bases(self):

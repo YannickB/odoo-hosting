@@ -49,31 +49,31 @@ class ClouderImage(models.Model):
         ('name_uniq', 'unique(name)', 'Image name must be unique!')
     ]
 
-    @api.multi
-    def get_vals(self):
-
-        vals = {}
-        vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-
-        ports = {}
-        for port in self.port_ids:
-            ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport}
-
-        volumes = {}
-        for volume in self.volume_ids:
-            volumes[volume.id] = {'id': volume.id, 'name': volume.name}
-
-        vals.update({
-            'image_name': self.name,
-            'image_privileged': self.privileged,
-            'image_parent_id': self.parent_id and self.parent_id.id,
-            'image_parent_from': self.parent_from,
-            'image_ports': ports,
-            'image_volumes': volumes,
-            'image_dockerfile': self.dockerfile
-        })
-
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #
+    #     vals = {}
+    #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
+    #
+    #     ports = {}
+    #     for port in self.port_ids:
+    #         ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport}
+    #
+    #     volumes = {}
+    #     for volume in self.volume_ids:
+    #         volumes[volume.id] = {'id': volume.id, 'name': volume.name}
+    #
+    #     vals.update({
+    #         'image_name': self.name,
+    #         'image_privileged': self.privileged,
+    #         'image_parent_id': self.parent_id and self.parent_id.id,
+    #         'image_parent_from': self.parent_from,
+    #         'image_ports': ports,
+    #         'image_volumes': volumes,
+    #         'image_dockerfile': self.dockerfile
+    #     })
+    #
+    #     return vals
 
     @api.multi
     def build(self):
@@ -139,6 +139,9 @@ class ClouderImageVersion(models.Model):
     registry_id = fields.Many2one('clouder.container', 'Registry')
     container_ids = fields.One2many('clouder.container','image_version_id', 'Containers')
 
+    fullname = lambda self : self.image_id.name + ':' + self.name
+    fullpath = lambda self : self.registry_id and self.registry_id.server_id.ip + ':' + self.registry_id.port + '/' + self.fullname()
+    fullpath_localhost = lambda self : self.registry_id and 'localhost:' + self.registry_id.port + '/' + self.fullname()
 
     _order = 'create_date desc'
 
@@ -146,50 +149,50 @@ class ClouderImageVersion(models.Model):
         ('name_uniq', 'unique(image_id,name)', 'Version name must be unique per image!')
     ]
 
-    @api.multi
-    def get_vals(self):
-
-        vals = {}
-
-        vals.update(self.image_id.get_vals())
-
-        if self.parent_id:
-            parent_vals = self.parent_id.get_vals()
-            vals.update({
-                'image_version_parent_id': parent_vals['image_version_id'],
-                'image_version_parent_fullpath': parent_vals['image_version_fullpath'],
-                'image_version_parent_fullpath_localhost': parent_vals['image_version_fullpath_localhost'],
-                'image_version_parent_registry_server_id': parent_vals['registry_server_id'],
-            })
-
-        if self.registry_id:
-            registry_vals = self.registry_id.get_vals()
-            registry_port = registry_vals['container_ports']['registry']['hostport']
-            vals.update({
-                'registry_id': registry_vals['container_id'],
-                'registry_fullname': registry_vals['container_fullname'],
-                'registry_port': registry_port,
-                'registry_server_id': registry_vals['server_id'],
-                'registry_server_ssh_port': registry_vals['server_ssh_port'],
-                'registry_server_domain': registry_vals['server_domain'],
-                'registry_server_ip': registry_vals['server_ip'],
-            })
-
-        vals.update({
-            'image_version_id': self.id,
-            'image_version_name': self.name,
-            'image_version_fullname': self.image_id.name + ':' + self.name,
-        })
-
-        if self.registry_id:
-            vals.update({
-                'image_version_fullpath': vals['registry_server_ip'] + ':' + vals['registry_port'] + '/' + vals['image_version_fullname'],
-                'image_version_fullpath_localhost': 'localhost:' + vals['registry_port'] + '/' + vals['image_version_fullname']
-            })
-        else:
-            vals['image_version_fullpath'] = ''
-
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #
+    #     vals = {}
+    #
+    #     vals.update(self.image_id.get_vals())
+    #
+    #     if self.parent_id:
+    #         parent_vals = self.parent_id.get_vals()
+    #         vals.update({
+    #             'image_version_parent_id': parent_vals['image_version_id'],
+    #             'image_version_parent_fullpath': parent_vals['image_version_fullpath'],
+    #             'image_version_parent_fullpath_localhost': parent_vals['image_version_fullpath_localhost'],
+    #             'image_version_parent_registry_server_id': parent_vals['registry_server_id'],
+    #         })
+    #
+    #     if self.registry_id:
+    #         registry_vals = self.registry_id.get_vals()
+    #         registry_port = registry_vals['container_ports']['registry']['hostport']
+    #         vals.update({
+    #             'registry_id': registry_vals['container_id'],
+    #             'registry_fullname': registry_vals['container_fullname'],
+    #             'registry_port': registry_port,
+    #             'registry_server_id': registry_vals['server_id'],
+    #             'registry_server_ssh_port': registry_vals['server_ssh_port'],
+    #             'registry_server_domain': registry_vals['server_domain'],
+    #             'registry_server_ip': registry_vals['server_ip'],
+    #         })
+    #
+    #     vals.update({
+    #         'image_version_id': self.id,
+    #         'image_version_name': self.name,
+    #         'image_version_fullname': self.image_id.name + ':' + self.name,
+    #     })
+    #
+    #     if self.registry_id:
+    #         vals.update({
+    #             'image_version_fullpath': vals['registry_server_ip'] + ':' + vals['registry_port'] + '/' + vals['image_version_fullname'],
+    #             'image_version_fullpath_localhost': 'localhost:' + vals['registry_port'] + '/' + vals['image_version_fullname']
+    #         })
+    #     else:
+    #         vals['image_version_fullpath'] = ''
+    #
+    #     return vals
 
     @api.multi
     def unlink(self):
@@ -198,40 +201,41 @@ class ClouderImageVersion(models.Model):
         return super(ClouderImageVersion, self).unlink()
 
     @api.multi
-    def deploy(self, vals):
-        ssh, sftp = self.connect(vals['registry_server_domain'], vals['registry_server_ssh_port'], 'root')
-        dir = '/tmp/' + vals['image_name'] + '_' + vals['image_version_fullname']
+    def deploy(self):
+        ssh, sftp = self.connect(self.registry_id.server_id.domain, self.registry_id.server_id.ssh_port, 'root')
+        dir = '/tmp/' + self.image_id.name + '_' + self.fullname()
         self.execute(ssh, ['mkdir', '-p', dir])
 
         dockerfile = 'FROM '
-        if vals['image_parent_id'] and vals['image_version_parent_id']:
-            if vals['registry_server_id'] == vals['image_version_parent_registry_server_id']:
-                dockerfile += vals['image_version_parent_fullpath_localhost']
+        if self.image_id.parent_id and self.parent_id:
+            if self.registry_id.server_id == self.parent_id.registry.server_id:
+                dockerfile += self.fullpath_localhost()
             else:
-                dockerfile += vals['image_version_parent_fullpath']
-        elif vals['image_parent_from']:
-            dockerfile += vals['image_parent_from']
+                dockerfile += self.parent_id.fullpath()
+        elif self.image_id.parent_from:
+            dockerfile += self.image_id.parent_from
         else:
             raise except_orm(_('Date error!'),_("You need to specify the image to inherit!"))
 
-        dockerfile += '\nMAINTAINER ' + vals['config_email_sysadmin'] + '\n'
+        config = self.env.ref('clouder.clouder_settings')
+        dockerfile += '\nMAINTAINER ' + config.email_sysadmin + '\n'
 
-        dockerfile += vals['image_dockerfile']
-        for key, volume in vals['image_volumes'].iteritems():
-            dockerfile += '\nVOLUME ' + volume['name']
+        dockerfile += self.image_id.dockerfile
+        for volume in self.image_id.volume_ids:
+            dockerfile += '\nVOLUME ' + volume.name
 
         ports = ''
-        for key, port in vals['image_ports'].iteritems():
-            ports += port['localport'] + ' '
+        for port in self.image_id.port_ids:
+            ports += port.localport + ' '
         if ports:
             dockerfile += '\nEXPOSE ' + ports
 
         self.execute(ssh, ['echo "' + dockerfile.replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'])
-        self.execute(ssh, ['sudo','docker', 'build', '-t', vals['image_version_fullname'], dir])
-        self.execute(ssh, ['sudo','docker', 'tag', vals['image_version_fullname'], vals['image_version_fullpath_localhost']])
-        self.execute(ssh, ['sudo','docker', 'push', vals['image_version_fullpath_localhost']])
-        self.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullname']])
-        self.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullpath_localhost']])
+        self.execute(ssh, ['sudo','docker', 'build', '-t', self.fullname(), dir])
+        self.execute(ssh, ['sudo','docker', 'tag', self.fullname(), self.fullpath_localhost()])
+        self.execute(ssh, ['sudo','docker', 'push', self.fullpath_localhost()])
+        self.execute(ssh, ['sudo','docker', 'rmi', self.fullname()])
+        self.execute(ssh, ['sudo','docker', 'rmi', self.fullpath_localhost()])
         self.execute(ssh, ['rm', '-rf', dir])
         ssh.close(), sftp.close()
         return
@@ -241,6 +245,6 @@ class ClouderImageVersion(models.Model):
 # - Make sure the user in the container can access the keys, and if possible make the key belong to the user with 700 rights
 
     @api.multi
-    def purge(self,vals):
+    def purge(self):
         #TODO There is currently no way to delete an image from private registry.
         return

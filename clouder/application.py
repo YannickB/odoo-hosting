@@ -44,33 +44,33 @@ class ClouderApplicationType(models.Model):
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
 
-    @api.multi
-    def get_vals(self):
-
-        vals = {}
-
-        vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-
-        options = {
-            'application': {},
-            'container': {},
-            'service': {},
-            'base': {}
-        }
-        for option in self.option_ids:
-            options[option.type][option.name] = {'id': option.id, 'name': option.name, 'type': option.type, 'default': option.default}
-
-        vals.update({
-            'apptype_name': self.name,
-            'apptype_system_user': self.system_user,
-            'apptype_localpath': self.localpath,
-            'apptype_localpath_services': self.localpath_services,
-            'apptype_options': options,
-            'apptype_symlink': self.symlink,
-            'apptype_multiple_databases': self.multiple_databases,
-        })
-
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #
+    #     vals = {}
+    #
+    #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
+    #
+    #     options = {
+    #         'application': {},
+    #         'container': {},
+    #         'service': {},
+    #         'base': {}
+    #     }
+    #     for option in self.option_ids:
+    #         options[option.type][option.name] = {'id': option.id, 'name': option.name, 'type': option.type, 'default': option.default}
+    #
+    #     vals.update({
+    #         'apptype_name': self.name,
+    #         'apptype_system_user': self.system_user,
+    #         'apptype_localpath': self.localpath,
+    #         'apptype_localpath_services': self.localpath_services,
+    #         'apptype_options': options,
+    #         'apptype_symlink': self.symlink,
+    #         'apptype_multiple_databases': self.multiple_databases,
+    #     })
+    #
+    #     return vals
 
 
 class ClouderApplicationTypeOption(models.Model):
@@ -114,65 +114,79 @@ class ClouderApplication(models.Model):
     base_saverepo_expiration = fields.Integer('Days before base saverepo expiration', required=True)
     base_save_expiration = fields.Integer('Days before base save expiration', required=True)
 
-    _sql_constraints = [
-        ('code_uniq', 'unique(code)', 'Code must be unique!'),
-    ]
+    full_archivepath = lambda self : self.env.ref('clouder.clouder_settings').archive_path() + '/' + self.type_id.name + '-' + self.code
+    full_hostpath = lambda  self : self.env.ref('clouder.clouder_settings').services_hostpath() + '/' + self.type_id.name + '-' + self.code
+    full_localpath = lambda self: self.type_id.localpath and self.type_id.localpath() + '/' + self.type_id.name + '-' + self.code or ''
+    computed_version = lambda self: self.current_version + '.' + datetime.now().strftime('%Y%m%d.%H%M%S')
 
-    @api.multi
-    def get_vals(self):
-
-        vals = {}
-
-        vals.update(self.type_id.get_vals())
-
-        now = datetime.now()
-        computed_version = self.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
-
+    def options(self):
         options = {}
         for option in self.type_id.option_ids:
             if option.type == 'application':
                 options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
         for option in self.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+        return options
 
-        links = {}
-        for link in self.link_ids:
-            links[link.name.code] = {
-                'id': link.id, 'app_id': link.name.id, 'name': link.name.name, 'code': link.name.code,
-                'required': link.required, 'auto': link.auto, 'make_link': link.make_link, 'next': link.next,
-                'container': link.container, 'service': link.service, 'base': link.base
-            }
+    _sql_constraints = [
+        ('code_uniq', 'unique(code)', 'Code must be unique!'),
+    ]
 
-
-        vals.update({
-            'app_id': self.id,
-            'app_name': self.name,
-            'app_code': self.code,
-            'app_full_archivepath': vals['config_archive_path'] + '/' + self.type_id.name + '-' + self.code,
-            'app_full_hostpath': vals['config_services_hostpath'] + self.type_id.name + '-' + self.code,
-            'app_full_localpath': vals['apptype_localpath'] and vals['apptype_localpath'] + '/' + self.type_id.name + '-' + self.code or '',
-            'app_admin_name': self.admin_name,
-            'app_admin_email': self.admin_email,
-            'app_current_version': self.current_version,
-            'app_computed_version': computed_version,
-            'app_buildfile': self.buildfile,
-            'app_options': options,
-            'app_links': links
-        })
-
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #
+    #     vals = {}
+    #
+    #     vals.update(self.type_id.get_vals())
+    #
+    #     now = datetime.now()
+    #     computed_version = self.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
+    #
+    #     options = {}
+    #     for option in self.type_id.option_ids:
+    #         if option.type == 'application':
+    #             options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
+    #     for option in self.option_ids:
+    #         options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+    #
+    #     links = {}
+    #     for link in self.link_ids:
+    #         links[link.name.code] = {
+    #             'id': link.id, 'app_id': link.name.id, 'name': link.name.name, 'code': link.name.code,
+    #             'required': link.required, 'auto': link.auto, 'make_link': link.make_link, 'next': link.next,
+    #             'container': link.container, 'service': link.service, 'base': link.base
+    #         }
+    #
+    #
+    #     vals.update({
+    #         'app_id': self.id,
+    #         'app_name': self.name,
+    #         'app_code': self.code,
+    #         'app_full_archivepath': vals['config_archive_path'] + '/' + self.type_id.name + '-' + self.code,
+    #         'app_full_hostpath': vals['config_services_hostpath'] + self.type_id.name + '-' + self.code,
+    #         'app_full_localpath': vals['apptype_localpath'] and vals['apptype_localpath'] + '/' + self.type_id.name + '-' + self.code or '',
+    #         'app_admin_name': self.admin_name,
+    #         'app_admin_email': self.admin_email,
+    #         'app_current_version': self.current_version,
+    #         'app_computed_version': computed_version,
+    #         'app_buildfile': self.buildfile,
+    #         'app_options': options,
+    #         'app_links': links
+    #     })
+    #
+    #     return vals
 
     @api.multi
-    def get_current_version(self, vals):
+    def get_current_version(self):
         return False
 
     @api.multi
     def build(self):
 
         if not self.archive_id:
-            raise except_orm(_('Date error!'),_("You need to specify the archive where the version must be stored."))
-        vals = self.get_vals()
-        current_version = self.get_current_version(vals)
+            raise except_orm(_('Data error!'),_("You need to specify the archive where the version must be stored."))
+
+        current_version = self.get_current_version()
         if current_version:
             self.write({'current_version': current_version})
         current_version = current_version or self.current_version
@@ -202,41 +216,47 @@ class ClouderApplicationVersion(models.Model):
     archive_id = fields.Many2one('clouder.container', 'Archive', required=True)
     service_ids = fields.One2many('clouder.service','application_version_id', 'Services')
 
+    fullname = lambda self: self.application_id.code + '_' + self.name
+    full_archivepath = lambda self : self.application_id.full_archivepath() + '/' + self.name
+    full_archivepath_targz = lambda self : self.application_id.full_archivepath() + '/' + self.name + '.tar.gz'
+    full_hostpath = lambda self : self.application_id.full_hostpath() + '/' + self.name
+    full_localpath = lambda self : self.application_id.full_localpath() + '/' + self.name
+
     _sql_constraints = [
         ('name_app_uniq', 'unique (name,application_id)', 'The name of the version must be unique per application !')
     ]
 
     _order = 'create_date desc'
 
-    @api.multi
-    def get_vals(self):
-
-        vals = {}
-
-        vals.update(self.application_id.get_vals())
-
-
-        archive_vals = self.archive_id.get_vals()
-        vals.update({
-            'archive_id': archive_vals['container_id'],
-            'archive_fullname': archive_vals['container_fullname'],
-            'archive_server_id': archive_vals['server_id'],
-            'archive_server_ssh_port': archive_vals['server_ssh_port'],
-            'archive_server_domain': archive_vals['server_domain'],
-            'archive_server_ip': archive_vals['server_ip'],
-        })
-
-        vals.update({
-            'app_version_id': self.id,
-            'app_version_name': self.name,
-            'app_version_fullname': vals['app_code'] + '_' + self.name,
-            'app_version_full_archivepath': vals['app_full_archivepath'] + '/' + self.name,
-            'app_version_full_archivepath_targz': vals['app_full_archivepath'] + '/' + self.name + '.tar.gz',
-            'app_version_full_hostpath': vals['app_full_hostpath'] + '/' + self.name,
-            'app_version_full_localpath': vals['app_full_localpath'] + '/' + self.name,
-        })
-
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #
+    #     vals = {}
+    #
+    #     vals.update(self.application_id.get_vals())
+    #
+    #
+    #     archive_vals = self.archive_id.get_vals()
+    #     vals.update({
+    #         'archive_id': archive_vals['container_id'],
+    #         'archive_fullname': archive_vals['container_fullname'],
+    #         'archive_server_id': archive_vals['server_id'],
+    #         'archive_server_ssh_port': archive_vals['server_ssh_port'],
+    #         'archive_server_domain': archive_vals['server_domain'],
+    #         'archive_server_ip': archive_vals['server_ip'],
+    #     })
+    #
+    #     vals.update({
+    #         'app_version_id': self.id,
+    #         'app_version_name': self.name,
+    #         'app_version_fullname': vals['app_code'] + '_' + self.name,
+    #         'app_version_full_archivepath': vals['app_full_archivepath'] + '/' + self.name,
+    #         'app_version_full_archivepath_targz': vals['app_full_archivepath'] + '/' + self.name + '.tar.gz',
+    #         'app_version_full_hostpath': vals['app_full_hostpath'] + '/' + self.name,
+    #         'app_version_full_localpath': vals['app_full_localpath'] + '/' + self.name,
+    #     })
+    #
+    #     return vals
 
     @api.multi
     def unlink(self):
@@ -246,25 +266,25 @@ class ClouderApplicationVersion(models.Model):
 
 
     @api.multi
-    def build_application(self, vals):
+    def build_application(self):
         return
 
     @api.multi
-    def deploy(self, vals):
-        ssh, sftp = self.connect(vals['archive_fullname'])
-        self.execute(ssh, ['mkdir', vals['app_full_archivepath']])
-        self.execute(ssh, ['rm', '-rf', vals['app_version_full_archivepath']])
-        self.execute(ssh, ['mkdir', vals['app_version_full_archivepath']])
-        self.build_application(vals)
-        self.execute(ssh, ['echo "' + vals['app_version_name'] + '" >> ' +  vals['app_version_full_archivepath'] + '/VERSION.txt'])
-        self.execute(ssh, ['tar', 'czf', vals['app_version_full_archivepath_targz'], '-C', vals['app_full_archivepath'] + '/' + vals['app_version_name'], '.'])
+    def deploy(self):
+        ssh, sftp = self.connect(self.archive_id.fullname())
+        self.execute(ssh, ['mkdir', self.application_id.full_archivepath()])
+        self.execute(ssh, ['rm', '-rf', self.full_archivepath()])
+        self.execute(ssh, ['mkdir', self.full_archivepath()])
+        self.build_application()
+        self.execute(ssh, ['echo "' + self.name + '" >> ' +  self.full_archivepath() + '/VERSION.txt'])
+        self.execute(ssh, ['tar', 'czf', self.full_archivepath_targz(), '-C', self.application_id.full_archivepath() + '/' + self.name, '.'])
         ssh.close(), sftp.close()
 
     @api.multi
-    def purge(self, vals):
-        ssh, sftp = self.connect(vals['archive_fullname'])
-        self.execute(ssh, ['rm', '-rf', vals['app_version_full_archivepath']])
-        self.execute(ssh, ['rm', vals['app_version_full_archivepath_targz']])
+    def purge(self):
+        ssh, sftp = self.connect(self.archive_id.fullname())
+        self.execute(ssh, ['rm', '-rf', self.full_archivepath()])
+        self.execute(ssh, ['rm', self.full_archivepath_targz()])
         ssh.close(), sftp.close()
 
 
@@ -280,6 +300,13 @@ class ClouderApplicationLink(models.Model):
     service = fields.Boolean('Service?')
     base = fields.Boolean('Base?')
     next = fields.Many2one('clouder.container', 'Next')
+
+    def get_dict(self):
+        return {
+            'id': self.id, 'app_id': self.name.id, 'name': self.name.name, 'code': self.name.code,
+            'required': self.required, 'auto': self.auto, 'make_link': self.make_link, 'next': self.next,
+            'container': self.container, 'service': self.service, 'base': self.base
+        }
 
     _sql_constraints = [
         ('name_uniq', 'unique(application_id,name)', 'Links must be unique per application!'),

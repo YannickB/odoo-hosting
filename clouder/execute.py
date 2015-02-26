@@ -72,6 +72,13 @@ class ClouderModel(models.AbstractModel):
         auto_join=True,
         string='Logs')
 
+    @api.one
+    @api.constrains('name')
+    def _check_image(self):
+        if not self.env.ref('clouder.clouder_settings').email_sysadmin:
+            raise except_orm(_('Data error!'),
+                _("You need to specify the sysadmin email in configuration"))
+
     @api.multi
     def create_log(self, action):
         if 'log_id' in self.env.context:
@@ -147,8 +154,8 @@ class ClouderModel(models.AbstractModel):
         self = self.with_context(self.create_log('reinstall'))
         vals = self.get_vals()
         self.purge_links()
-        self.purge(vals)
-        self.deploy(vals)
+        self.purge()
+        self.deploy()
         self.deploy_links()
         self.end_log()
 
@@ -157,9 +164,8 @@ class ClouderModel(models.AbstractModel):
         res = super(ClouderModel, self).create(vals)
         # context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         res = res.with_context(res.create_log('create'))
-        vals = res.get_vals()
         try:
-            res.deploy(vals)
+            res.deploy()
             res.deploy_links()
         except:
             res.log('===================')
@@ -173,10 +179,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def unlink(self):
-        vals = self.get_vals()
         try:
             self.purge_links()
-            self.purge(vals)
+            self.purge()
         except:
             pass
         res = super(ClouderModel, self).unlink()

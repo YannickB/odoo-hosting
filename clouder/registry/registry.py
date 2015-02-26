@@ -33,9 +33,9 @@ class ClouderImageVersion(models.Model):
     _inherit = 'clouder.image.version'
 
     @api.multi
-    def deploy(self, vals):
-        if vals['image_name'] != 'img_registry':
-            return super(ClouderImageVersion, self).deploy(vals)
+    def deploy(self):
+        if self.image_id.name != 'img_registry':
+            return super(ClouderImageVersion, self).deploy()
         else:
             return True
 

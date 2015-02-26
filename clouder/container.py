@@ -35,43 +35,45 @@ class ClouderServer(models.Model):
 
     name = fields.Char('Domain name', size=64, required=True)
     ip = fields.Char('IP', size=64, required=True)
-    ssh_port = fields.Char('SSH port', size=12, required=True)
+    ssh_port = fields.Integer('SSH port', required=True)
     mysql_passwd = fields.Char('MySQL Passwd', size=64)
     private_key = fields.Text('SSH Private Key', required=True)
     public_key = fields.Text('SSH Public Key', required=True)
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
 
+    shinken_configfile = lambda self : '/usr/local/shinken/etc/hosts/' + self.name + '.cfg'
+
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
 
-    @api.multi
-    def get_vals(self):
-
-        vals ={}
-
-        vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-
-        vals.update({
-            'server_id': self.id,
-            'server_domain': self.name,
-            'server_ip': self.ip,
-            'server_ssh_port': int(self.ssh_port),
-            'server_mysql_passwd': self.mysql_passwd,
-            'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + self.name + '.cfg',
-            'server_private_key': self.private_key,
-            'server_public_key': self.public_key,
-            'server_start_port': self.start_port,
-            'server_end_port': self.end_port,
-        })
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #
+    #     vals ={}
+    #
+    #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
+    #
+    #     vals.update({
+    #         'server_id': self.id,
+    #         'server_domain': self.name,
+    #         'server_ip': self.ip,
+    #         'server_ssh_port': int(self.ssh_port),
+    #         'server_mysql_passwd': self.mysql_passwd,
+    #         'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + self.name + '.cfg',
+    #         'server_private_key': self.private_key,
+    #         'server_public_key': self.public_key,
+    #         'server_start_port': self.start_port,
+    #         'server_end_port': self.end_port,
+    #     })
+    #     return vals
 
     @api.multi
     def _create_key(self):
-        vals = self.env.ref('clouder.clouder_settings').get_vals()
+        config = self.env.ref('clouder.clouder_settings')
         self.execute_local(['mkdir', '/tmp/key_' + self.env.uid])
-        self.execute_local(['ssh-keygen', '-t', 'rsa', '-C', vals['config_email_sysadmin'], '-f', '/tmp/key_' + self.env.uid + '/key', '-N', ''])
+        self.execute_local(['ssh-keygen', '-t', 'rsa', '-C', config.email_sysadmin, '-f', '/tmp/key_' + self.env.uid + '/key', '-N', ''])
         return True
 
     @api.multi
@@ -119,30 +121,25 @@ class ClouderServer(models.Model):
 
     @api.multi
     def start_containers(self):
-        containers = self.env['clouder.container'].search([('server_id', '=', self.id)])
-        for container in containers:
-            vals = container.get_vals()
-            container.start(vals)
+        self.env['clouder.container'].search([('server_id', '=', self.id)]).start()
 
     @api.multi
     def stop_containers(self):
-        containers = self.env['clouder.container'].search([('server_id', '=', self.id)])
-        for container in containers:
-            vals = container.get_vals()
-            container.stop(vals)
+        self.env['clouder.container'].search([('server_id', '=', self.id)]).stop()
 
     @api.multi
-    def deploy(self, vals):
-        self.purge(vals)
-        key_file = vals['config_home_directory'] + '/.ssh/keys/' + vals['server_domain']
-        self.execute_write_file(key_file, vals['server_private_key'])
+    def deploy(self):
+        self.purge()
+        config = self.env.ref('clouder.clouder_settings')
+        key_file = config.home_directory + '/.ssh/keys/' + self.domain
+        self.execute_write_file(key_file, self.private_key)
         self.execute_local(['chmod', '700', key_file])
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', 'Host ' + vals['server_domain'])
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  HostName ' + vals['server_domain'])
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  Port ' + str(vals['server_ssh_port']))
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  User root')
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  IdentityFile ' + vals['config_home_directory'] + '/.ssh/keys/' + vals['server_domain'])
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n#END ' + vals['server_domain'] + '\n')
+        self.execute_write_file(config.home_directory + '/.ssh/config', 'Host ' + self.domain)
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n  HostName ' + self.domain)
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n  Port ' + str(self.ssh_port))
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n  User root')
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n  IdentityFile ' + config.home_directory + '/.ssh/keys/' + self.domain)
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n#END ' + self.domain + '\n')
 
 #        _logger.info('test %s', vals['shinken_server_domain'])
 #        if 'shinken_server_domain' in vals:
@@ -154,10 +151,10 @@ class ClouderServer(models.Model):
 #            sftp.close()
 
     @api.multi
-    def purge(self, vals):
-
-        self.execute_local([modules.get_module_path('clouder') + '/res/sed.sh', vals['server_domain'], vals['config_home_directory'] + '/.ssh/config'])
-        self.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['server_domain']])
+    def purge(self):
+        config = self.env.ref('clouder.clouder_settings')
+        self.execute_local([modules.get_module_path('clouder') + '/res/sed.sh', self.domain, config.home_directory + '/.ssh/config'])
+        self.execute_local(['rm', '-rf', config.home_directory + '/.ssh/keys/' + self.domain])
 
 #        if 'shinken_server_domain' in vals:
 #            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
@@ -203,6 +200,59 @@ class ClouderContainer(models.Model):
     ports = fields.Text('Ports', compute='_get_ports')
     backup_server_ids = fields.Many2many('clouder.container', 'clouder_container_backup_rel', 'container_id', 'backup_id', 'Backup containers')
 
+    fullname = lambda self : self.name + '_' + self.server_id.domain
+    volumes_save = lambda self : ','.join([volume.name for volume in self.volume_ids if not volume.nosave])
+    ssh_port = lambda self : (port.hostport for port in self.port_ids if port.name == 'ssh') or 22
+    shinken_configfile = lambda self : '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
+    root_password = lambda self : (option.value for option in self.option_ids if option.name == 'root_password')
+
+    def options(self):
+        options = {}
+        for option in self.application_id.type_id.option_ids:
+            if option.type == 'container':
+                options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
+        for option in self.option_ids:
+            options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+        return options
+
+    def ports_dict(self):
+        ports = {}
+        for port in self.port_ids:
+            ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport, 'expose': port.expose, 'udp': port.udp}
+        return ports
+
+    def volumes_dict(self):
+        volumes = {}
+        for volume in self.volume_ids:
+            volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'user': volume.user,'readonly': volume.readonly,'nosave': volume.nosave}
+        return volumes
+
+    def links_dict(self):
+        links = {}
+        for link in self.application_id.link_ids:
+            app_code = link.name.code
+            if link.container or link.make_link:
+                links[app_code] = link.get_dict()
+                links[app_code]['target'] = False
+        for link in self.link_ids:
+            if link.name.code in links and link.target:
+                links[link.name.code]['target'] = {
+                    'link_id': link.target.id,
+                    'link_name': link.target.name,
+                    'link_fullname': link.target.fullname(),
+                    'link_ssh_port': link.target.ssh_port,
+                    'link_server_id': link.target.server_id.id,
+                    'link_server_domain': link.target.server_id.domain,
+                    'link_server_ip': link.target.server_id.ip,
+                }
+        for app_code, link in links.iteritems():
+            if link['required'] and not link['target']:
+                raise except_orm(_('Data error!'),
+                    _("You need to specify a link to " + link['name'] + " for the container " + self.name))
+            if not link['target']:
+                del links[app_code]
+        return links
+
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,name)', 'Name must be unique per server!'),
     ]
@@ -216,7 +266,7 @@ class ClouderContainer(models.Model):
 
     @api.one
     @api.constrains('image_id','image_version_id')
-    def _check_image(self):
+    def _check_config(self):
         if self.image_id.id != self.image_version_id.image_id.id:
             raise except_orm(_('Data error!'),
                 _("The image of image version must be the same than the image of container."))
@@ -230,125 +280,120 @@ class ClouderContainer(models.Model):
             self.privileged = self.application.default_image_id.privileged
             self.image_version_id = self.application.default_image_id.version_ids and self.application.default_image_id.version_ids[0],
 
-    @api.multi
-    def get_vals(self):
-        repo_obj = self.env['clouder.save.repository']
-        vals = {}
-
-        now = datetime.now()
-        if not self.save_repository_id:
-            repo_ids = repo_obj.search([('container_name','=',self.name),('container_server','=',self.server_id.name)])
-            if repo_ids:
-                self.write({'save_repository_id': repo_ids[0]})
-
-        if not self.save_repository_id or datetime.strptime(self.save_repository_id.date_change, "%Y-%m-%d") < now or False:
-            repo_vals ={
-                'name': now.strftime("%Y-%m-%d") + '_' + self.name + '_' + self.server_id.name,
-                'type': 'container',
-                'date_change': (now + timedelta(days=self.saverepo_change or self.application_id.container_saverepo_change)).strftime("%Y-%m-%d"),
-                'date_expiration': (now + timedelta(days=self.saverepo_expiration or self.application_id.container_saverepo_expiration)).strftime("%Y-%m-%d"),
-                'container_name': self.name,
-                'container_server': self.server_id.name,
-            }
-            repo_id = repo_obj.create(repo_vals)
-            self.write({'save_repository_id': repo_id})
-
-        vals.update(self.image_version_id.get_vals())
-        vals.update(self.application_id.get_vals())
-        vals.update(self.save_repository_id.id.get_vals())
-        vals.update(self.server_id.get_vals())
-
-
-        # links = {}
-        # for link in  container.linked_container_ids:
-        #     links[link.id] = {'id': link.id, 'apptype': link.application_id.type_id.name, 'name': link.name}
-
-        ports = {}
-        ssh_port = 22
-        for port in self.port_ids:
-            ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport, 'expose': port.expose, 'udp': port.udp}
-            if port.name == 'ssh':
-                ssh_port = port.hostport
-
-        volumes = {}
-        volumes_save = ''
-        first = True
-        for volume in self.volume_ids:
-            volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'user': volume.user,'readonly': volume.readonly,'nosave': volume.nosave}
-            if not volume.nosave:
-                volumes_save += (not first and ',' or '') + volume.name
-                first = False
-
-        options = {}
-        for option in self.application_id.type_id.option_ids:
-            if option.type == 'container':
-                options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
-        for option in self.option_ids:
-            options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
-
-        links = {}
-        if 'app_links' in vals:
-            for app_code, link in vals['app_links'].iteritems():
-                if link['container'] or link['make_link']:
-                    links[app_code] = link
-                    links[app_code]['target'] = False
-        for link in self.link_ids:
-            if link.name.code in links and link.target:
-                link_vals = link.get_vals()
-                links[link.name.code]['target'] = {
-                    'link_id': link_vals['container_id'],
-                    'link_name': link_vals['container_name'],
-                    'link_fullname': link_vals['container_fullname'],
-                    'link_ssh_port': link_vals['container_ssh_port'],
-                    'link_server_id': link_vals['server_id'],
-                    'link_server_domain': link_vals['server_domain'],
-                    'link_server_ip': link_vals['server_ip'],
-                }
-        for app_code, link in links.iteritems():
-            if link['required'] and not link['target']:
-                raise except_orm(_('Data error!'),
-                    _("You need to specify a link to " + link['name'] + " for the container " + self.name))
-            if not link['target']:
-                del links[app_code]
-
-        backup_servers = []
-        for backup in self.backup_server_ids:
-            backup_vals = backup.get_vals()
-            backup_servers.append({
-                'container_id': backup_vals['container_id'],
-                'container_fullname': backup_vals['container_fullname'],
-                'server_id': backup_vals['server_id'],
-                'server_ssh_port': backup_vals['server_ssh_port'],
-                'server_domain': backup_vals['server_domain'],
-                'server_ip': backup_vals['server_ip'],
-                'backup_method': backup_vals['app_options']['backup_method']['value']
-            })
-
-
-        root_password = False
-        for key, option in options.iteritems():
-            if option['name'] == 'root_password':
-                root_password = option['value']
-
-        unique_name = self.name + '_' + vals['server_domain']
-        vals.update({
-            'container_id': self.id,
-            'container_name': self.name,
-            'container_fullname': unique_name,
-            'container_ports': ports,
-            'container_volumes': volumes,
-            'container_volumes_save': volumes_save,
-            'container_ssh_port': ssh_port,
-            'container_options': options,
-            'container_links': links,
-            'container_backup_servers': backup_servers,
-            'container_no_save': self.nosave,
-            'container_privileged': self.privileged,
-            'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
-            'container_root_password': root_password
-        })
-
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #     repo_obj = self.env['clouder.save.repository']
+    #     vals = {}
+    #
+    #     now = datetime.now()
+    #     if not self.save_repository_id:
+    #         repo_ids = repo_obj.search([('container_name','=',self.name),('container_server','=',self.server_id.name)])
+    #         if repo_ids:
+    #             self.save_repository_id = repo_ids[0]
+    #
+    #     if not self.save_repository_id or datetime.strptime(self.save_repository_id.date_change, "%Y-%m-%d") < now or False:
+    #         repo_vals ={
+    #             'name': now.strftime("%Y-%m-%d") + '_' + self.name + '_' + self.server_id.name,
+    #             'type': 'container',
+    #             'date_change': (now + timedelta(days=self.saverepo_change or self.application_id.container_saverepo_change)).strftime("%Y-%m-%d"),
+    #             'date_expiration': (now + timedelta(days=self.saverepo_expiration or self.application_id.container_saverepo_expiration)).strftime("%Y-%m-%d"),
+    #             'container_name': self.name,
+    #             'container_server': self.server_id.name,
+    #         }
+    #         repo_id = repo_obj.create(repo_vals)
+    #         self.save_repository_id = repo_id
+    #
+    #     vals.update(self.image_version_id.get_vals())
+    #     vals.update(self.application_id.get_vals())
+    #     vals.update(self.save_repository_id.id.get_vals())
+    #     vals.update(self.server_id.get_vals())
+    #
+    #     ports = {}
+    #     ssh_port = 22
+    #     for port in self.port_ids:
+    #         ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport, 'expose': port.expose, 'udp': port.udp}
+    #         if port.name == 'ssh':
+    #             ssh_port = port.hostport
+    #
+    #     volumes = {}
+    #     volumes_save = ''
+    #     first = True
+    #     for volume in self.volume_ids:
+    #         volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'user': volume.user,'readonly': volume.readonly,'nosave': volume.nosave}
+    #         if not volume.nosave:
+    #             volumes_save += (not first and ',' or '') + volume.name
+    #             first = False
+    #
+    #     options = {}
+    #     for option in self.application_id.type_id.option_ids:
+    #         if option.type == 'container':
+    #             options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
+    #     for option in self.option_ids:
+    #         options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+    #
+    #     links = {}
+    #     if 'app_links' in vals:
+    #         for app_code, link in vals['app_links'].iteritems():
+    #             if link['container'] or link['make_link']:
+    #                 links[app_code] = link
+    #                 links[app_code]['target'] = False
+    #     for link in self.link_ids:
+    #         if link.name.code in links and link.target:
+    #             link_vals = link.get_vals()
+    #             links[link.name.code]['target'] = {
+    #                 'link_id': link_vals['container_id'],
+    #                 'link_name': link_vals['container_name'],
+    #                 'link_fullname': link_vals['container_fullname'],
+    #                 'link_ssh_port': link_vals['container_ssh_port'],
+    #                 'link_server_id': link_vals['server_id'],
+    #                 'link_server_domain': link_vals['server_domain'],
+    #                 'link_server_ip': link_vals['server_ip'],
+    #             }
+    #     for app_code, link in links.iteritems():
+    #         if link['required'] and not link['target']:
+    #             raise except_orm(_('Data error!'),
+    #                 _("You need to specify a link to " + link['name'] + " for the container " + self.name))
+    #         if not link['target']:
+    #             del links[app_code]
+    #
+    #     backup_servers = []
+    #     for backup in self.backup_server_ids:
+    #         backup_vals = backup.get_vals()
+    #         backup_servers.append({
+    #             'container_id': backup_vals['container_id'],
+    #             'container_fullname': backup_vals['container_fullname'],
+    #             'server_id': backup_vals['server_id'],
+    #             'server_ssh_port': backup_vals['server_ssh_port'],
+    #             'server_domain': backup_vals['server_domain'],
+    #             'server_ip': backup_vals['server_ip'],
+    #             'backup_method': backup_vals['app_options']['backup_method']['value']
+    #         })
+    #
+    #
+    #     root_password = False
+    #     for key, option in options.iteritems():
+    #         if option['name'] == 'root_password':
+    #             root_password = option['value']
+    #
+    #     unique_name = self.name + '_' + vals['server_domain']
+    #     vals.update({
+    #         'container_id': self.id,
+    #         'container_name': self.name,
+    #         'container_fullname': unique_name,
+    #         'container_ports': ports,
+    #         'container_volumes': volumes,
+    #         'container_volumes_save': volumes_save,
+    #         'container_ssh_port': ssh_port,
+    #         'container_options': options,
+    #         'container_links': links,
+    #         'container_backup_servers': backup_servers,
+    #         'container_no_save': self.nosave,
+    #         'container_privileged': self.privileged,
+    #         'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
+    #         'container_root_password': root_password
+    #     })
+    #
+    #     return vals
 
     @api.multi
     def create_vals(self, vals):
@@ -429,15 +474,15 @@ class ClouderContainer(models.Model):
         self.save()
         return super(ClouderContainer, self).unlink()
 
-    @api.multi
-    def button_stop(self):
-        vals = self.get_vals()
-        self.stop(vals)
-
-    @api.multi
-    def button_start(self):
-        vals = self.get_vals()
-        self.start(vals)
+    # @api.multi
+    # def button_stop(self):
+    #     vals = self.get_vals()
+    #     self.stop(vals)
+    #
+    # @api.multi
+    # def button_start(self):
+    #     vals = self.get_vals()
+    #     self.start(vals)
 
     @api.multi
     def reinstall(self):
@@ -454,36 +499,56 @@ class ClouderContainer(models.Model):
 
         save = False
         now = datetime.now()
+        config = self.env.ref('clouder.clouder_settings')
+        repo_obj = self.env['clouder.save.repository']
+
+        if not self.save_repository_id:
+            repo_ids = repo_obj.search([('container_name','=',self.name),('container_server','=',self.server_id.name)])
+            if repo_ids:
+                self.save_repository_id = repo_ids[0]
+
+        if not self.save_repository_id or datetime.strptime(self.save_repository_id.date_change, "%Y-%m-%d") < now or False:
+            repo_vals ={
+                'name': now.strftime("%Y-%m-%d") + '_' + self.name + '_' + self.server_id.name,
+                'type': 'container',
+                'date_change': (now + timedelta(days=self.saverepo_change or self.application_id.container_saverepo_change)).strftime("%Y-%m-%d"),
+                'date_expiration': (now + timedelta(days=self.saverepo_expiration or self.application_id.container_saverepo_expiration)).strftime("%Y-%m-%d"),
+                'container_name': self.name,
+                'container_server': self.server_id.name,
+            }
+            repo_id = repo_obj.create(repo_vals)
+            self.save_repository_id = repo_id
 
         if 'nosave' in self.env.context or (self.nosave and not 'forcesave' in self.env.context):
             self.log('This base container not be saved or the backup isnt configured in conf, skipping save container')
             return
         self = self.with_context(self.create_log('save'))
-        vals = self.get_vals()
-        for backup_server in vals['container_backup_servers']:
+
+        for backup_server in self.backup_server_ids:
             links = {}
-            for app_code, link in vals['container_links'].iteritems():
+            for link in self.link_ids:
+                app_code = link.name.code
                 links[app_code] = {
-                    'name': link['app_id'],
-                    'name_name': link['name'],
-                    'target': link['target'] and link['target']['link_id'] or False
+                    'name': link.name.id,
+                    'name_name': link.name.name,
+                    'target': link.target_id and link.target_id.id or False
                 }
             save_vals = {
-                'name': vals['now_bup'] + '_' + vals['container_fullname'],
-                'backup_server_id': backup_server['container_id'],
-                'repo_id': vals['saverepo_id'],
+                'name': config.now_bup + '_' + self.container_fullname(),
+                'backup_server_id': backup_server.id,
+                'repo_id': self.saverepo_id.id,
                 'date_expiration': (now + timedelta(days=self.save_expiration or self.application_id.container_save_expiration)).strftime("%Y-%m-%d"),
                 'comment': 'save_comment' in self.env.context and self.env.context['save_comment'] or self.save_comment or 'Manual',
-                'now_bup': vals['now_bup'],
-                'container_id': vals['container_id'],
-                'container_volumes_comma': vals['container_volumes_save'],
-                'container_app': vals['app_code'],
-                'container_img': vals['image_name'],
-                'container_img_version': vals['image_version_name'],
-                'container_ports': str(vals['container_ports']),
-                'container_volumes': str(vals['container_volumes']),
-                'container_options': str(vals['container_options']),
-                'container_links': str(links),
+                'now_bup': config.now_bup,
+                'container_id': self.id,
+                'container_volumes_comma': self.volumes_save(),
+                'container_app': self.application_id.code,
+                'container_img': self.image_id.name,
+                'container_img_version': self.image_version_id.name,
+                'container_ports': str(self.ports_dict()),
+                'container_volumes': str(self.volumes_dict()),
+                'container_options': str(self.options()),
+                'container_links': str(self.links_dict()),
             }
             save = self.env['clouder.save.save'].create(save_vals)
         next = (datetime.now() + timedelta(minutes=self.time_between_save or self.application_id.container_time_between_save)).strftime("%Y-%m-%d %H:%M:%S")
@@ -491,81 +556,78 @@ class ClouderContainer(models.Model):
         self.end_log()
         return save
 
-    @api.multi
-    def reset_key(self):
-        vals = self.get_vals()
-        self.deploy_key(vals)
+    # @api.multi
+    # def reset_key(self):
+    #     vals = self.get_vals()
+    #     self.deploy_key(vals)
 
     @api.multi
-    def deploy_post(self, vals):
+    def deploy_post(self):
         return
 
     @api.multi
-    def deploy(self, vals):
+    def deploy(self):
 
-        self.purge(vals)
+        self.purge()
 
-        ssh, sftp = self.connect(vals['server_domain'], vals['server_ssh_port'], 'root')
+        ssh, sftp = self.connect(self.server_id.domain)
 
         cmd = ['sudo','docker', 'run', '-d']
-        nextport = vals['server_start_port']
-        for key, port in vals['container_ports'].iteritems():
-            if not port['hostport']:
-                while not port['hostport'] and nextport != vals['server_end_port']:
-                    ports = self.env['clouder.container.port'].search([('hostport','=',nextport),('container_id.server_id','=',vals['server_id'])])
+        nextport = self.server_id.start_port
+        for port in self.port_ids:
+            if not port.hostport:
+                while not port.hostport and nextport != self.server_id.end_port:
+                    ports = self.env['clouder.container.port'].search([('hostport','=',nextport),('container_id.server_id','=',self.server_id.id)])
                     if not ports and not self.execute(ssh, ['netstat', '-an', '|', 'grep', str(nextport)]):
-                        self.env['clouder.container.port'].write([port['id']], {'hostport': nextport})
-                        port['hostport'] = nextport
-                        if port['name'] == 'ssh':
-                            vals['container_ssh_port'] = nextport
+                        port.hostport = nextport
                     nextport += 1
-                    _logger.info('nextport %s', nextport)
             udp = ''
-            if port['udp']:
+            if port.udp:
                 udp = '/udp'
             # cmd.extend(['-p', vals['server_ip'] + ':' + str(port['hostport']) + ':' + port['localport'] + udp])
-            cmd.extend(['-p', str(port['hostport']) + ':' + port['localport'] + udp])
-        for key, volume in vals['container_volumes'].iteritems():
-            if volume['hostpath']:
-                arg =  volume['hostpath'] + ':' + volume['name']
-                if volume['readonly']:
+            cmd.extend(['-p', str(port.hostport) + ':' + port.localport + udp])
+        for volume in self.volume_ids:
+            if volume.hostpath:
+                arg = volume.hostpath + ':' + volume.name
+                if volume.readonly:
                     arg += ':ro'
                 cmd.extend(['-v', arg])
-        for key, link in vals['container_links'].iteritems():
-            if link['make_link'] and link['target']['link_server_id'] == vals['server_id']:
-                cmd.extend(['--link', link['target']['link_name'] + ':' + link['code']])
-        if vals['container_privileged']:
+        for link in self.links:
+            if link.make_link and link.target.server_id== self.server_id:
+                cmd.extend(['--link', link.target.name + ':' + link.name.code])
+        if self.privileged:
             cmd.extend(['--privileged'])
-        cmd.extend(['-v', '/opt/keys/' + vals['container_fullname'] + ':/opt/keys', '--name', vals['container_name']])
+        cmd.extend(['-v', '/opt/keys/' + self.fullname() + ':/opt/keys', '--name', self.name])
 
-        if vals['image_name'] == 'img_registry':
-            cmd.extend([vals['image_version_fullname']])
-        elif vals['server_id'] == vals['registry_server_id']:
-            cmd.extend([vals['image_version_fullpath_localhost']])
+        if self.image_id.name == 'img_registry':
+            cmd.extend([self.image_version_id.fullname()])
+        elif self.server_id == self.image_version_id.registry_id.server_id:
+            cmd.extend([self.image_version_id.fullpath_localhost()])
         else:
-            cmd.extend([vals['image_version_fullpath']])
+            cmd.extend([self.image_version_id.fullpath()])
 
         #Deploy key now, otherwise the container will be angry to not find the key. We can't before because vals['container_ssh_port'] may not be set
-        self.deploy_key(vals)
+        self.deploy_key()
 
         #Run container
         self.execute(ssh, cmd)
 
         time.sleep(3)
 
-        self.deploy_post(vals)
+        self.deploy_post()
 
-        self.start(vals)
+        self.start()
 
         ssh.close(), sftp.close()
 
-        for key, links in vals['container_links'].iteritems():
-            if links['name'] == 'postfix':
-                ssh, sftp = self.connect(vals['container_fullname'])
-                self.execute(ssh, ['echo "root=' + vals['config_email_sysadmin'] + '" > /etc/ssmtp/ssmtp.conf'])
+        for link in self.link_ids:
+            if link.name.code == 'postfix':
+                config = self.env.ref('clouder.clouder_settings')
+                ssh, sftp = self.connect(self.fullname())
+                self.execute(ssh, ['echo "root=' + config.email_sysadmin + '" > /etc/ssmtp/ssmtp.conf'])
                 self.execute(ssh, ['echo "mailhub=postfix:25" >> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "rewriteDomain=' + vals['container_fullname'] + '" >> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "hostname=' + vals['container_fullname'] + '" >> /etc/ssmtp/ssmtp.conf'])
+                self.execute(ssh, ['echo "rewriteDomain=' + self.fullname() + '" >> /etc/ssmtp/ssmtp.conf'])
+                self.execute(ssh, ['echo "hostname=' + self.fullname() + '" >> /etc/ssmtp/ssmtp.conf'])
                 self.execute(ssh, ['echo "FromLineOverride=YES" >> /etc/ssmtp/ssmtp.conf'])
                 ssh.close(), sftp.close()
 
@@ -575,34 +637,34 @@ class ClouderContainer(models.Model):
         return
 
     @api.multi
-    def purge(self, vals):
+    def purge(self):
 
-        self.purge_key(vals)
+        self.purge_key()
 
-        ssh, sftp = self.connect(vals['server_domain'], vals['server_ssh_port'], 'root')
-        self.execute(ssh, ['sudo','docker', 'stop', vals['container_name']])
-        self.execute(ssh, ['sudo','docker', 'rm', vals['container_name']])
-        self.execute(ssh, ['rm', '-rf', '/opt/keys/' + vals['container_fullname']])
+        ssh, sftp = self.connect(self.server_id.domain)
+        self.stop()
+        self.execute(ssh, ['sudo','docker', 'rm', self.name])
+        self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname()])
         ssh.close(), sftp.close()
 
         return
 
     @api.multi
-    def stop(self, vals):
-        ssh, sftp = self.connect(vals['server_domain'], vals['server_ssh_port'], 'root')
-        self.execute(ssh, ['docker', 'stop', vals['container_name']])
+    def stop(self):
+        ssh, sftp = self.connect(self.server_id.domain)
+        self.execute(ssh, ['docker', 'stop', self.name])
         ssh.close(), sftp.close()
 
     @api.multi
-    def start(self, vals):
-        self.stop(vals)
-        ssh, sftp = self.connect(vals['server_domain'], vals['server_ssh_port'], 'root')
-        self.execute(ssh, ['docker', 'start', vals['container_name']])
+    def start(self):
+        self.stop()
+        ssh, sftp = self.connect(self.server_id.domain)
+        self.execute(ssh, ['docker', 'start', self.name])
         ssh.close(), sftp.close()
         time.sleep(3)
 
     @api.multi
-    def deploy_key(self, vals):
+    def deploy_key(self):
         # restart_required = False
         # try:
         #     ssh_container, sftp_container = execute.connect(vals['container_fullname'], context=context)
@@ -610,17 +672,19 @@ class ClouderContainer(models.Model):
         #     restart_required = True
         #     pass
 
-        self.purge_key(vals)
-        self.execute_local(['ssh-keygen', '-t', 'rsa', '-C', 'yannick.buron@gmail.com', '-f', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '-N', ''])
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', 'Host ' + vals['container_fullname'])
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  HostName ' + vals['server_domain'])
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  Port ' + str(vals['container_ssh_port']))
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  User root')
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n  IdentityFile ~/.ssh/keys/' + vals['container_fullname'])
-        self.execute_write_file(vals['config_home_directory'] + '/.ssh/config', '\n#END ' + vals['container_fullname'] + '\n')
-        ssh, sftp = self.connect(vals['server_domain'], vals['server_ssh_port'], 'root')
-        self.execute(ssh, ['mkdir', '/opt/keys/' + vals['container_fullname']])
-        sftp.put(vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/opt/keys/' + vals['container_fullname'] + '/authorized_keys')
+        config = self.env.ref('clouder.clouder_settings')
+
+        self.purge_key()
+        self.execute_local(['ssh-keygen', '-t', 'rsa', '-C', config.email_sysadmin, '-f', config.home_directory + '/.ssh/keys/' + self.fullname(), '-N', ''])
+        self.execute_write_file(config.home_directory + '/.ssh/config', 'Host ' + self.fullname())
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n  HostName ' + self.server_id.domain)
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n  Port ' + str(self.ssh_port()))
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n  User root')
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n  IdentityFile ~/.ssh/keys/' + self.fullname())
+        self.execute_write_file(config.home_directory + '/.ssh/config', '\n#END ' + self.fullname() + '\n')
+        ssh, sftp = self.connect(self.server_id.domain)
+        self.execute(ssh, ['mkdir', '/opt/keys/' + self.fullname()])
+        sftp.put(config.home_directory() + '/.ssh/keys/' + self.fullname() + '.pub', '/opt/keys/' + self.fullname() + '/authorized_keys')
         ssh.close(), sftp.close()
 
         # _logger.info('restart required %s', restart_required)
@@ -632,33 +696,33 @@ class ClouderContainer(models.Model):
         #     self.start(cr, uid, vals, context=context)
 
 
-        if vals['apptype_name'] == 'backup':
+        if self.application_id.type_id.name == 'backup':
             shinkens = self.search([('application_id.type_id.name', '=','shinken')])
             if not shinkens:
                 self.log('The shinken isnt configured in conf, skipping deploying backup keys in shinken')
                 return
             for shinken in shinkens:
-                shinken_vals = shinken.get_vals()
-                ssh, sftp = self.connect(shinken_vals['container_fullname'], username='shinken')
-                self.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' + vals['container_fullname'] + '*'])
-                self.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/home/shinken/.ssh/keys/' + vals['container_fullname'] + '.pub')
-                self.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '/home/shinken/.ssh/keys/' + vals['container_fullname'])
+                ssh, sftp = self.connect(shinken.fullname(), username='shinken')
+                self.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' + self.fullname() + '*'])
+                self.send(sftp, config.home_directory + '/.ssh/keys/' + self.fullname() + '.pub', '/home/shinken/.ssh/keys/' + self.fullname() + '.pub')
+                self.send(sftp, config.home_directory + '/.ssh/keys/' + self.fullname(), '/home/shinken/.ssh/keys/' + self.fullname())
                 self.execute(ssh, ['chmod', '-R', '700', '/home/shinken/.ssh'])
-                self.execute(ssh, ['sed', '-i', "'/Host " + vals['container_fullname'] + "/,/END " + vals['container_fullname'] + "/d'", '/home/shinken/.ssh/config'])
-                self.execute(ssh, ['echo "Host ' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, ['echo "    Hostname ' + vals['server_domain'] + '" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, ['echo "    Port ' + str(vals['container_ssh_port']) + '" >> /home/shinken/.ssh/config'])
+                self.execute(ssh, ['sed', '-i', "'/Host " + self.fullname() + "/,/END " + self.fullname() + "/d'", '/home/shinken/.ssh/config'])
+                self.execute(ssh, ['echo "Host ' + self.fullname() + '" >> /home/shinken/.ssh/config'])
+                self.execute(ssh, ['echo "    Hostname ' + self.server_id.domain + '" >> /home/shinken/.ssh/config'])
+                self.execute(ssh, ['echo "    Port ' + str(self.ssh_port) + '" >> /home/shinken/.ssh/config'])
                 self.execute(ssh, ['echo "    User backup" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, ['echo "    IdentityFile  ~/.ssh/keys/' + vals['container_fullname'] + '" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, ['echo "#END ' + vals['container_fullname'] +'" >> ~/.ssh/config'])
+                self.execute(ssh, ['echo "    IdentityFile  ~/.ssh/keys/' + self.fullname() + '" >> /home/shinken/.ssh/config'])
+                self.execute(ssh, ['echo "#END ' + self.fullname() +'" >> ~/.ssh/config'])
 
     @api.multi
-    def purge_key(self, vals):
-        self.execute_local([modules.get_module_path('clouder') + '/res/sed.sh', vals['container_fullname'], vals['config_home_directory'] + '/.ssh/config'])
-        self.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname']])
-        self.execute_local(['rm', '-rf', vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub'])
-        ssh, sftp = self.connect(vals['server_domain'], vals['server_ssh_port'], 'root')
-        self.execute(ssh, ['rm', '-rf', '/opt/keys/' + vals['container_fullname'] + '/authorized_keys'])
+    def purge_key(self):
+        config = self.env.ref('clouder.clouder_settings')
+        self.execute_local([modules.get_module_path('clouder') + '/res/sed.sh', self.fullname(), config.home_directory + '/.ssh/config'])
+        self.execute_local(['rm', '-rf', config.home_directory + '/.ssh/keys/' + self.fullname()])
+        self.execute_local(['rm', '-rf', config.home_directory + '/.ssh/keys/' + self.fullname() + '.pub'])
+        ssh, sftp = self.connect(self.server_id.domain)
+        self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname() + '/authorized_keys'])
         ssh.close(), sftp.close()
 
 
@@ -719,6 +783,14 @@ class ClouderContainerLink(models.Model):
         ('name_uniq', 'unique(container_id,name)', 'Links must be unique per container!'),
     ]
 
+#TODO a activer apres avoir refactoriser name
+    # @api.one
+    # @api.constrains('application_id')
+    # def _check_required(self):
+    #     if not self.name.required and not self.target:
+    #         raise except_orm(_('Data error!'),
+    #             _("You need to specify a link to " + self.name.application_id.name + " for the container " + self.container_id.name))
+
 
     @api.multi
     def get_vals(self):
@@ -738,63 +810,60 @@ class ClouderContainerLink(models.Model):
 
         return vals
 
-    @api.multi
-    def reload(self):
-        vals = self.get_vals()
-        self.deploy(vals)
-        return
+    # @api.multi
+    # def reload(self):
+    #     vals = self.get_vals()
+    #     self.deploy(vals)
+    #     return
 
+    #TODO move in backup.py?
     @api.multi
-    def deploy_link(self, vals):
-        if vals['link_target_app_code'] == 'backup-upl' and vals['apptype_name'] == 'backup':
-
-            directory = '/opt/upload/' + vals['container_fullname']
-            ssh_link, sftp_link = self.connect(vals['link_target_container_fullname'])
+    def deploy_link(self):
+        if self.target.application_id.code == 'backup-upl' and self.application_id.type_id.name == 'backup':
+            config = self.env.ref('clouder.clouder_settings')
+            directory = '/opt/upload/' + self.container_id.fullname()
+            ssh_link, sftp_link = self.connect(self.target.fullname())
             self.execute(ssh_link, ['mkdir', '-p', directory])
             ssh_link.close(), sftp_link.close()
 
-            ssh, sftp = self.connect(vals['container_fullname'], username='backup')
-            self.send(sftp, vals['config_home_directory'] + '/.ssh/config', '/home/backup/.ssh/config')
-            self.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['link_target_container_fullname'] + '.pub', '/home/backup/.ssh/keys/' + vals['link_target_container_fullname'] + '.pub')
-            self.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['link_target_container_fullname'], '/home/backup/.ssh/keys/' + vals['link_target_container_fullname'])
+            ssh, sftp = self.connect(self.container_id.fullname(), username='backup')
+            self.send(sftp, config.home_directory + '/.ssh/config', '/home/backup/.ssh/config')
+            self.send(sftp, config.home_directory + '/.ssh/keys/' + self.target.fullname() + '.pub', '/home/backup/.ssh/keys/' + self.target.fullname() + '.pub')
+            self.send(sftp, config.home_directory + '/.ssh/keys/' + self.target.fullname(), '/home/backup/.ssh/keys/' + self.target.fullname())
             self.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'])
-            self.execute(ssh, ['rsync', '-ra', '/opt/backup/', vals['link_target_container_fullname'] + ':' + directory])
+            self.execute(ssh, ['rsync', '-ra', '/opt/backup/', self.target.fullname() + ':' + directory])
             self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
             ssh.close(), sftp.close()
         return
 
     @api.multi
-    def deploy(self, vals):
-        self.purge(vals)
-        if not 'link_target_container_id' in vals:
-            self.log('The target isnt configured in the link, skipping deploy link')
-            return
-        if vals['link_target_app_code'] not in vals['container_links']:
-            self.log('The target isnt in the application link for container, skipping deploy link')
-            return
-        if not vals['container_links'][vals['link_target_app_code']]['container']:
-            self.log('This application isnt for container, skipping deploy link')
-            return
-        self.deploy_link(vals)
-
-    @api.multi
-    def purge_link(self, vals):
-        if vals['link_target_app_code'] == 'backup_upload' and vals['apptype_name'] == 'backup':
-            directory = '/opt/upload/' + vals['container_fullname']
-            ssh = self.connect(vals['link_target_container_fullname'])
+    def purge_link(self):
+        if self.target.application_id.code == 'backup-upl' and self.application_id.type_id.name == 'backup':
+            directory = '/opt/upload/' + self.container_id.fullname()
+            ssh = self.connect(self.target.fullname())
             self.execute(ssh, ['rm', '-rf', directory])
             ssh.close()
         return
 
     @api.multi
-    def purge(self, vals):
-        if not 'link_target_container_id' in vals:
+    def control(self):
+        if not self.target:
             self.log('The target isnt configured in the link, skipping deploy link')
-            return
-        if vals['link_target_app_code'] not in vals['container_links']:
+            return False
+        app_links = self.search([('container_id','=',self.container_id.id),('name.code','=', self.target.application_id.code)])
+        if not app_links:
             self.log('The target isnt in the application link for container, skipping deploy link')
-            return
-        if not vals['container_links'][vals['link_target_app_code']]['container']:
+            return False
+        if not app_links[0].container:
             self.log('This application isnt for container, skipping deploy link')
-            return
-        self.purge_link(vals)
+            return False
+        return True
+
+    @api.multi
+    def deploy(self):
+        self.purge()
+        self.control() and self.deploy_link()
+
+    @api.multi
+    def purge(self):
+        self.control() and self.purge_link()
