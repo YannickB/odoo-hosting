@@ -792,23 +792,23 @@ class ClouderContainerLink(models.Model):
     #             _("You need to specify a link to " + self.name.application_id.name + " for the container " + self.container_id.name))
 
 
-    @api.multi
-    def get_vals(self):
-        vals = {}
-
-        vals.update(self.container_id.get_vals())
-        if self.target:
-            target_vals = self.target_id.get_vals()
-            vals.update({
-                'link_target_container_id': target_vals['container_id'],
-                'link_target_container_name': target_vals['container_name'],
-                'link_target_container_fullname': target_vals['container_fullname'],
-                'link_target_app_id': target_vals['app_id'],
-                'link_target_app_code': target_vals['app_code'],
-            })
-
-
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #     vals = {}
+    #
+    #     vals.update(self.container_id.get_vals())
+    #     if self.target:
+    #         target_vals = self.target_id.get_vals()
+    #         vals.update({
+    #             'link_target_container_id': target_vals['container_id'],
+    #             'link_target_container_name': target_vals['container_name'],
+    #             'link_target_container_fullname': target_vals['container_fullname'],
+    #             'link_target_app_id': target_vals['app_id'],
+    #             'link_target_app_code': target_vals['app_code'],
+    #         })
+    #
+    #
+    #     return vals
 
     # @api.multi
     # def reload(self):

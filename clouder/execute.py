@@ -72,6 +72,15 @@ class ClouderModel(models.AbstractModel):
         auto_join=True,
         string='Logs')
 
+    email_sysadmin = lambda self : self.env.ref('clouder.clouder_settings').email_sysadmin
+    archive_path = '/opt/archives'
+    services_hostpath = '/opt/services'
+    now = datetime.now()
+    now_date = now.strftime("%Y-%m-%d")
+    now_hour = now.strftime("%H-%M")
+    now_hour_regular = now.strftime("%H:%M:%S")
+    now_bup = now.strftime("%Y-%m-%d-%H%M%S")
+
     @api.one
     @api.constrains('name')
     def _check_image(self):

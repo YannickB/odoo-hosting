@@ -403,7 +403,7 @@
                             <group col="4">
                                 <field name="service_id"/>
                                 <field name="service_name"/>
-                                <field name="service_database_id"/>
+                                <field name="service_app_version"/>
                                 <field name="service_options"/>
                                 <field name="service_links"/>
                             </group>  
@@ -412,7 +412,6 @@
                             <group col="4">
                                 <field name="base_id"/>
                                 <field name="base_title"/>
-                                <field name="base_proxy_id"/>
                                 <field name="base_app_version"/>
                                 <field name="base_admin_passwd"/>
                                 <field name="base_poweruser_name"/>
@@ -484,7 +483,7 @@
                     <group col="4">
                         <field name="name"/>
                         <field name="organisation"/>
-                        <field name="dns_server_id"/>
+                        <field name="dns_id"/>
                         <newline/>
                         <field name="cert_key"/>
                         <field name="cert_cert"/>

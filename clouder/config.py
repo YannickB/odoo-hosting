@@ -45,13 +45,8 @@ class ClouderConfigSettings(models.Model):
     end_save_all = fields.Datetime('Last Save All ended at')
     end_reset_bases  = fields.Datetime('Last Reset Bases ended at')
 
-    archive_path = '/opt/archives'
-    services_hostpath = '/opt/services'
-    now = datetime.now()
-    now_date = now.strftime("%Y-%m-%d")
-    now_hour = now.strftime("%H-%M")
-    now_hour_regular = now.strftime("%H:%M:%S")
-    now_bup = now.strftime("%Y-%m-%d-%H%M%S")
+    now_date = lambda  self : self.env['clouder.model'].now_date
+    now_hour_regular= lambda self : self.env['clouder.model'].now_hour_regular
 
     # @api.multi
     # def get_vals(self):
