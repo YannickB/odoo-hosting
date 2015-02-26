@@ -442,7 +442,7 @@ class ClouderContainer(models.Model):
             for application_id, link in links.iteritems():
                 if link['required'] and not link['target']:
                     raise except_orm(_('Data error!'),
-                        _("You need to specify a link to " + link['name'] + " for the container " + vals['name']))
+                        _("You need to specify a link to " + link['name'] + " for the container " + vals['name'])) #TODO voir si la contrainte dans lien n'est pas suffisante
                 vals['link_ids'].append((0,0,{'name': application_id, 'target': link['target']}))
         vals = self.create_vals(vals)
         return super(ClouderContainer, self).create(vals)
