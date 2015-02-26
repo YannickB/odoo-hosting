@@ -217,8 +217,7 @@ class ClouderImageVersion(models.Model):
         else:
             raise except_orm(_('Date error!'),_("You need to specify the image to inherit!"))
 
-        config = self.env.ref('clouder.clouder_settings')
-        dockerfile += '\nMAINTAINER ' + config.email_sysadmin + '\n'
+        dockerfile += '\nMAINTAINER ' + self.email_sysadmin() + '\n'
 
         dockerfile += self.image_id.dockerfile
         for volume in self.image_id.volume_ids:

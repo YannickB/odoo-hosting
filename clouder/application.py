@@ -114,8 +114,8 @@ class ClouderApplication(models.Model):
     base_saverepo_expiration = fields.Integer('Days before base saverepo expiration', required=True)
     base_save_expiration = fields.Integer('Days before base save expiration', required=True)
 
-    full_archivepath = lambda self : self.env.ref('clouder.clouder_settings').archive_path() + '/' + self.type_id.name + '-' + self.code
-    full_hostpath = lambda  self : self.env.ref('clouder.clouder_settings').services_hostpath() + '/' + self.type_id.name + '-' + self.code
+    full_archivepath = lambda self : self.archive_path() + '/' + self.type_id.name + '-' + self.code
+    full_hostpath = lambda  self : self.services_hostpath() + '/' + self.type_id.name + '-' + self.code
     full_localpath = lambda self: self.type_id.localpath and self.type_id.localpath() + '/' + self.type_id.name + '-' + self.code or ''
     computed_version = lambda self: self.current_version + '.' + datetime.now().strftime('%Y%m%d.%H%M%S')
 

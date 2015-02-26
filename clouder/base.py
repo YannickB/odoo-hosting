@@ -350,12 +350,11 @@ class ClouderBase(models.Model):
             }
             vals['service_id'] = service_obj.create(service_vals)
         if 'application_id' in vals:
-            config = self.env.ref('clouder.clouder_settings')
             application = application_obj.browse(vals['application_id'])
             if 'admin_name' not in vals or not vals['admin_name']:
                 vals['admin_name'] = application.admin_name
             if 'admin_email' not in vals or not vals['admin_email']:
-                vals['admin_email'] = application.admin_email and application.admin_email or config.sysadmin_email
+                vals['admin_email'] = application.admin_email and application.admin_email or self.email_sysadmin()
             if 'backup_server_ids' not in vals or not vals['backup_server_ids'] or not vals['backup_server_ids'][0][2]:
                 vals['backup_server_ids'] = [(6,0,[b.id for b in application.base_backup_ids])]
             if 'time_between_save' not in vals or not vals['time_between_save']:
@@ -418,7 +417,6 @@ class ClouderBase(models.Model):
 
     @api.multi
     def save(self):
-        config = self.env.ref('clouder.clouder_settings')
         save_obj = self.pool.get('clouder.save.save')
         repo_obj = self.pool.get('clouder.save.repository')
 
