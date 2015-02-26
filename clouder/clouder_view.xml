@@ -529,6 +529,8 @@
                         <tree string="Options" editable="bottom">
                             <field name="name"/>
                             <field name="type"/>
+                            <field name="auto"/>
+                            <field name="required"/>
                             <field name="default"/>
                         </tree>
                     </field>

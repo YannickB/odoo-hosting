@@ -192,6 +192,57 @@ class ClouderBase(models.Model):
                 raise except_orm(_('Data error!'),
                     _("The application of base must be the same than the application of service."))
 
+
+    @api.one
+    @api.constrains('option_ids')
+    def _check_option_ids(self):
+        for type_option in self.application_id.type_id.option_ids:
+            if type_option.type == 'base' and type_option.required:
+                test = False
+                for option in self.option_ids:
+                    if option.name == type_option and option.value:
+                        test = True
+                if not test:
+                    raise except_orm(_('Data error!'),
+                        _("You need to specify a value for the option " + type_option.name + " for the base " + self.name + "."))
+
+    @api.one
+    @api.constrains('link_ids')
+    def _check_link_ids(self):
+        for app_link in self.application_id.link_ids:
+            if app_link.base and app_link.required:
+                test = False
+                for link in self.link_ids:
+                    if link.name == app_link and link.target:
+                        test = True
+                if not test:
+                    raise except_orm(_('Data error!'),
+                        _("You need to specify a link to " + app_link.name + " for the container " + self.name))
+
+
+    @api.multi
+    @api.onchange('application_id')
+    def onchange_application_id(self):
+        if self.application_id:
+
+            for type_option in self.application_id.type_id.option_ids:
+                if type_option.type == 'base' and type_option.auto:
+                    test = False
+                    for option in self.option_ids:
+                        if option.name == type_option:
+                            test = True
+                    if not test:
+                        self.link_ids = [(0,0,{'name': type_option, 'value': type_option.default})]
+
+            for app_link in self.application_id.link_ids:
+                if app_link.base and app_link.auto:
+                    test = False
+                    for link in self.link_ids:
+                        if link.name == app_link:
+                            test = True
+                    if not test:
+                        self.link_ids = [(0,0,{'name': app_link, 'target': app_link.next})]
+
 #########TODO La liaison entre base et service est un many2many � cause du loadbalancing. Si le many2many est vide, un service est cr�� automatiquement. Finalement il y aura un many2one pour le principal, et un many2many pour g�rer le loadbalancing
 #########Contrainte : L'application entre base et service doit �tre la m�me, de plus la bdd/host/db_user/db_password doit �tre la m�me entre tous les services d'une m�me base
 
@@ -612,6 +663,14 @@ class ClouderBaseOption(models.Model):
     _sql_constraints = [
         ('name_uniq', 'unique(base_id,name)', 'Option name must be unique per base!'),
     ]
+
+
+    @api.one
+    @api.constrains('application_id')
+    def _check_required(self):
+        if not self.name.required and not self.value:
+            raise except_orm(_('Data error!'),
+                _("You need to specify a value for the option " + self.name.name + " for the base " + self.base_id.name + "."))
 
 
 class ClouderBaseLink(models.Model):

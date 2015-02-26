@@ -230,6 +230,32 @@ class ClouderContainer(models.Model):
             raise except_orm(_('Data error!'),
                 _("The image of image version must be the same than the image of container."))
 
+    @api.one
+    @api.constrains('option_ids')
+    def _check_option_ids(self):
+        for type_option in self.application_id.type_id.option_ids:
+            if type_option.type == 'container' and type_option.required:
+                test = False
+                for option in self.option_ids:
+                    if option.name == type_option and option.value:
+                        test = True
+                if not test:
+                    raise except_orm(_('Data error!'),
+                        _("You need to specify a value for the option " + type_option.name + " for the container " + self.name + "."))
+
+    @api.one
+    @api.constrains('link_ids')
+    def _check_link_ids(self):
+        for app_link in self.application_id.link_ids:
+            if app_link.container and app_link.required:
+                test = False
+                for link in self.link_ids:
+                    if link.name == app_link and link.target:
+                        test = True
+                if not test:
+                    raise except_orm(_('Data error!'),
+                        _("You need to specify a link to " + app_link.name + " for the container " + self.name))
+
     @api.multi
     @api.onchange('application_id')
     def onchange_application_id(self):
@@ -237,7 +263,25 @@ class ClouderContainer(models.Model):
             self.server_id = self.application.next_server_id
             self.image_id = self.application.default_image_id
             self.privileged = self.application.default_image_id.privileged
-            self.image_version_id = self.application.default_image_id.version_ids and self.application.default_image_id.version_ids[0],
+            self.image_version_id = self.application.default_image_id.version_ids and self.application.default_image_id.version_ids[0]
+
+            for type_option in self.application_id.type_id.option_ids:
+                if type_option.type == 'container' and type_option.auto:
+                    test = False
+                    for option in self.option_ids:
+                        if option.name == type_option:
+                            test = True
+                    if not test:
+                        self.link_ids = [(0,0,{'name': type_option, 'value': type_option.default})]
+
+            for app_link in self.application_id.link_ids:
+                if app_link.container and app_link.auto:
+                    test = False
+                    for link in self.link_ids:
+                        if link.name == app_link:
+                            test = True
+                    if not test:
+                        self.link_ids = [(0,0,{'name': app_link, 'target': app_link.next})]
 
     # @api.multi
     # def get_vals(self):
@@ -384,6 +428,7 @@ class ClouderContainer(models.Model):
             if 'save_expiration' not in vals or not vals['save_expiration']:
                 vals['save_expiration'] = application.container_save_expiration
 
+#TODO a verifier si toujours utile apres la mise en place du onchange
             links = {}
             if 'link_ids' in vals:
                 for link in vals['link_ids']:
@@ -706,6 +751,13 @@ class ClouderContainerOption(models.Model):
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)', 'Option name must be unique per container!'),
     ]
+
+    @api.one
+    @api.constrains('application_id')
+    def _check_required(self):
+        if not self.name.required and not self.value:
+            raise except_orm(_('Data error!'),
+                _("You need to specify a value for the option " + self.name.name + " for the container " + self.container_id.name + "."))
 
 
 class ClouderContainerLink(models.Model):

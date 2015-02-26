@@ -79,6 +79,8 @@ class ClouderApplicationTypeOption(models.Model):
     apptype_id = fields.Many2one('clouder.application.type', 'Application Type', ondelete="cascade", required=True)
     name = fields.Char('Name', size=64, required=True)
     type = fields.Selection([('application','Application'),('container','Container'),('service','Service'),('base','Base')], 'Type', required=True)
+    auto = fields.Boolean('Auto?')
+    required = fields.Boolean('Required?')
     default = fields.Text('Default value')
 
     _sql_constraints = [
@@ -131,6 +133,20 @@ class ClouderApplication(models.Model):
     _sql_constraints = [
         ('code_uniq', 'unique(code)', 'Code must be unique!'),
     ]
+
+
+    @api.multi
+    @api.onchange('type_id')
+    def onchange_type_id(self):
+        if self.type_id:
+            for type_option in self.type_id.option_ids:
+                if type_option.type == 'application' and type_option.auto:
+                    test = False
+                    for option in self.option_ids:
+                        if option.name == type_option:
+                            test = True
+                    if not test:
+                        self.link_ids = [(0,0,{'name': type_option, 'value': type_option.default})]
 
     # @api.multi
     # def get_vals(self):
