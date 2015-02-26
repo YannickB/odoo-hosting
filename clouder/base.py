@@ -450,27 +450,6 @@ class ClouderBase(models.Model):
         if not self.backup_server_ids:
             self.log('The backup isnt configured in conf, skipping save base')
         for backup_server in self.backup_server_ids:
-            container_links = {}
-            for app_code, link in vals['container_links'].iteritems():
-                container_links[app_code] = {
-                    'name': link['app_id'],
-                    'name_name': link['name'],
-                    'target': link['target'] and link['target']['link_id'] or False
-                }
-            service_links = {}
-            for app_code, link in vals['service_links'].iteritems():
-                service_links[app_code] = {
-                    'name': link['app_id'],
-                    'name_name': link['name'],
-                    'target': link['target'] and link['target']['link_id'] or False
-                }
-            base_links = {}
-            for app_code, link in vals['base_links'].iteritems():
-                base_links[app_code] = {
-                    'name': link['app_id'],
-                    'name_name': link['name'],
-                    'target': link['target'] and link['target']['link_id'] or False
-                }
             save_vals = {
                 'name': self.now_bup + '_' + self.unique_name,
                 'backup_server_id': backup_server.id,
@@ -479,33 +458,8 @@ class ClouderBase(models.Model):
                 'comment': 'save_comment' in self.env.context and self.env.context['save_comment'] or self.save_comment or 'Manual',
                 'now_bup': self.now_bup,
                 'container_id': self.service_id.container_id.id,
-                'container_volumes_comma': self.service_id.container_id.volumes_save,
-                'container_app': self.service_id.container_id.application_id.code,
-                'container_img': self.service_id.container_id.image_id.name,
-                'container_img_version': self.service_id.container_id.image_version_id.name,
-                'container_ports': str(vals['container_ports']),
-                'container_volumes': str(vals['container_volumes']),
-                'container_options': str(self.service_id.container_id.options()),
-                'container_links': str(container_links),
                 'service_id': self.service_id.id,
-                'service_name': self.service_id.name,
-                'service_app_version': self.service_id.application_version_id.name,
-                'service_options': str(self.service_id.options()),
-                'service_links': str(service_links),
                 'base_id': self.id,
-                'base_title': self.title,
-                'base_container_name': self.service_id.container_id.name,
-                'base_container_server': self.service_id.container_id.server_id.name,
-                'base_admin_passwd': self.admin_passwd,
-                'base_poweruser_name': self.poweruser_name,
-                'base_poweruser_password': self.poweruser_password,
-                'base_poweruser_email': self.poweruser_email,
-                'base_build': self.build,
-                'base_test': self.test,
-                'base_lang': self.lang,
-                'base_nosave': self.nosave,
-                'base_options': str(self.options()),
-                'base_links': str(base_links),
             }
             save = save_obj.create(save_vals)
         next = (datetime.now() + timedelta(minutes=self.time_between_save or self.application_id.base_time_between_save)).strftime("%Y-%m-%d %H:%M:%S")

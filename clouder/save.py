@@ -172,6 +172,85 @@ class ClouderSaveSave(models.Model):
     #     return vals
 
     @api.multi
+    def create(self, vals):
+        if 'container_id' in vals:
+            container = self.env['clouder.container'].browse(vals['container_id'])
+
+            container_ports = {}
+            for port in container.port_ids:
+                container_ports[port.name] = {'name': port.name, 'localport': port.localport, 'expose': port.expose, 'udp': port.udp}
+
+            container_volumes = {}
+            for volume in container.volume_ids:
+                container_volumes[volume.id] = {'name': volume.name, 'hostpath': volume.hostpath, 'user': volume.user,'readonly': volume.readonly,'nosave': volume.nosave}
+
+            container_links = {}
+            for link in container.link_ids:
+                container_links[link.name.code] = {
+                    'name': link.name.id,
+                    'code': link.name.code,
+                    'target': link.target and link.target.id
+                }
+
+            vals.update({
+                'container_volumes_comma': container.volumes_save,
+                'container_app': container.application_id.code,
+                'container_img': container.image_id.name,
+                'container_img_version': container.image_version_id.name,
+                'container_ports': str(container_ports),
+                'container_volumes': str(container_volumes),
+                'container_options': str(container.options()),
+                'container_links': str(container_links),
+            })
+
+        if 'service_id' in vals:
+            service = self.env['clouder.service'].browse(vals['service_id'])
+
+            service_links = {}
+            for link in service.link_ids:
+                service_links[link.name.code] = {
+                    'name': link.name.id,
+                    'code': link.name.code,
+                    'target': link.target and link.target.id
+                }
+
+            vals.update({
+                'service_name': service.name,
+                'service_app_version': service.application_version_id.name,
+                'service_options': str(service.options()),
+                'service_links': str(service_links),
+            })
+
+        if 'base_id' in vals:
+            base = self.env['clouder.base'].browse(vals['base_id'])
+
+            base_links = {}
+            for link in base.link_ids:
+                base_links[link.name.code] = {
+                    'name': link.name.id,
+                    'code': link.name.code,
+                    'target': link.target and link.target.id
+                }
+
+            vals.update({
+                'base_title': base.title,
+                'base_container_name': base.service_id.container_id.name,
+                'base_container_server': base.service_id.container_id.server_id.name,
+                'base_admin_passwd': base.admin_passwd,
+                'base_poweruser_name': base.poweruser_name,
+                'base_poweruser_password': base.poweruser_password,
+                'base_poweruser_email': base.poweruser_email,
+                'base_build': base.build,
+                'base_test': base.test,
+                'base_lang': base.lang,
+                'base_nosave': base.nosave,
+                'base_options': str(base.options()),
+                'base_links': str(base_links),
+            })
+
+        return super(ClouderSaveSave, self).create(vals)
+
+    @api.multi
     def purge(self):
         ssh, sftp = self.connect(self.backup_id.fullname())
         self.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + self.repo_id.name + '/'+ self.name])
@@ -226,12 +305,9 @@ class ClouderSaveSave(models.Model):
 
                 ports = []
                 for port, port_vals in ast.literal_eval(self.container_ports).iteritems():
-                    del port_vals['id']
-                    del port_vals['hostport']
                     ports.append((0,0,port_vals))
                 volumes = []
                 for volume, volume_vals in ast.literal_eval(self.container_volumes).iteritems():
-                    del volume_vals['id']
                     volumes.append((0,0,volume_vals))
                 options = []
                 for option, option_vals in ast.literal_eval(self.container_options).iteritems():
@@ -240,12 +316,11 @@ class ClouderSaveSave(models.Model):
                 links = []
                 for link, link_vals in ast.literal_eval(self.container_links).iteritems():
                     if not link_vals['name']:
-                        link_apps = application_obj.search([('code','=',link_vals['name_name'])])
+                        link_apps = application_obj.search([('code','=',link_vals['code'])])
                         if link_apps:
                             link_vals['name'] = link_apps[0]
                         else:
                             continue
-                    del link_vals['name_name']
                     links.append((0,0,link_vals))
                 container_vals = {
                     'name': self.computed_container_restore_to_name,
@@ -326,7 +401,7 @@ class ClouderSaveSave(models.Model):
                     links = []
                     for link, link_vals in ast.literal_eval(self.service_links).iteritems():
                         if not link_vals['name']:
-                            link_apps = self.pool.get('clouder.application').search([('code','=',link_vals['name_name'])])
+                            link_apps = self.pool.get('clouder.application').search([('code','=',link_vals['code'])])
                             if link_apps:
                                 link_vals['name'] = link_apps[0]
                             else:
@@ -365,7 +440,7 @@ class ClouderSaveSave(models.Model):
                     links = []
                     for link, link_vals in ast.literal_eval(self.base_links).iteritems():
                         if not link_vals['name']:
-                            link_apps = self.pool.get('clouder.application').search([('code','=',link_vals['name_name'])])
+                            link_apps = self.pool.get('clouder.application').search([('code','=',link_vals['code'])])
                             if link_apps:
                                 link_vals['name'] = link_apps[0]
                             else:

@@ -215,44 +215,6 @@ class ClouderContainer(models.Model):
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
         return options
 
-    def ports_dict(self):
-        ports = {}
-        for port in self.port_ids:
-            ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport, 'expose': port.expose, 'udp': port.udp}
-        return ports
-
-    def volumes_dict(self):
-        volumes = {}
-        for volume in self.volume_ids:
-            volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'user': volume.user,'readonly': volume.readonly,'nosave': volume.nosave}
-        return volumes
-
-    def links_dict(self):
-        links = {}
-        for link in self.application_id.link_ids:
-            app_code = link.name.code
-            if link.container or link.make_link:
-                links[app_code] = link.get_dict()
-                links[app_code]['target'] = False
-        for link in self.link_ids:
-            if link.name.code in links and link.target:
-                links[link.name.code]['target'] = {
-                    'link_id': link.target.id,
-                    'link_name': link.target.name,
-                    'link_fullname': link.target.fullname(),
-                    'link_ssh_port': link.target.ssh_port,
-                    'link_server_id': link.target.server_id.id,
-                    'link_server_domain': link.target.server_id.name,
-                    'link_server_ip': link.target.server_id.ip,
-                }
-        for app_code, link in links.iteritems():
-            if link['required'] and not link['target']:
-                raise except_orm(_('Data error!'),
-                    _("You need to specify a link to " + link['name'] + " for the container " + self.name))
-            if not link['target']:
-                del links[app_code]
-        return links
-
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,name)', 'Name must be unique per server!'),
     ]
@@ -525,14 +487,6 @@ class ClouderContainer(models.Model):
         self = self.with_context(self.create_log('save'))
 
         for backup_server in self.backup_server_ids:
-            links = {}
-            for link in self.link_ids:
-                app_code = link.name.code
-                links[app_code] = {
-                    'name': link.name.id,
-                    'name_name': link.name.name,
-                    'target': link.target_id and link.target_id.id or False
-                }
             save_vals = {
                 'name': config.now_bup + '_' + self.container_fullname(),
                 'backup_server_id': backup_server.id,
@@ -541,14 +495,6 @@ class ClouderContainer(models.Model):
                 'comment': 'save_comment' in self.env.context and self.env.context['save_comment'] or self.save_comment or 'Manual',
                 'now_bup': config.now_bup,
                 'container_id': self.id,
-                'container_volumes_comma': self.volumes_save(),
-                'container_app': self.application_id.code,
-                'container_img': self.image_id.name,
-                'container_img_version': self.image_version_id.name,
-                'container_ports': str(self.ports_dict()),
-                'container_volumes': str(self.volumes_dict()),
-                'container_options': str(self.options()),
-                'container_links': str(self.links_dict()),
             }
             save = self.env['clouder.save.save'].create(save_vals)
         next = (datetime.now() + timedelta(minutes=self.time_between_save or self.application_id.container_time_between_save)).strftime("%Y-%m-%d %H:%M:%S")
