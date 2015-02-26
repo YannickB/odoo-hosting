@@ -31,6 +31,8 @@ import string
 import errno
 import random
 
+from os.path import expanduser
+
 import logging
 _logger = logging.getLogger(__name__)
 
@@ -75,6 +77,7 @@ class ClouderModel(models.AbstractModel):
     email_sysadmin = lambda self : self.env.ref('clouder.clouder_settings').email_sysadmin
     archive_path = '/opt/archives'
     services_hostpath = '/opt/services'
+    home_directory = expanduser("~")
     now = datetime.now()
     now_date = now.strftime("%Y-%m-%d")
     now_hour = now.strftime("%H-%M")

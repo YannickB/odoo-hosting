@@ -51,16 +51,16 @@ class ClouderContainer(models.Model):
     #     return res
 
     @api.multi
-    def deploy(self, vals):
-        if vals['image_name'] == 'img_registry':
-            ssh, sftp = self.connect(vals['server_domain'], vals['server_ssh_port'], 'root')
-            dir = '/tmp/' + vals['image_name'] + '_' + vals['image_version_fullname']
+    def deploy(self):
+        if self.image_id.name == 'img_registry':
+            ssh, sftp = self.connect(self.server_id.name)
+            dir = '/tmp/' + self.image_id.name + '_' + self.image_version_id.fullname()
             self.execute(ssh, ['mkdir', '-p', dir])
 
-            self.execute(ssh, ['echo "' + vals['image_dockerfile'].replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'])
-            self.execute(ssh, ['sudo','docker', 'rmi', vals['image_version_fullname']])
-            self.execute(ssh, ['sudo','docker', 'build', '-t', vals['image_version_fullname'], dir])
+            self.execute(ssh, ['echo "' + self.image_id.dockerfile.replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'])
+            self.execute(ssh, ['sudo','docker', 'rmi', self.image_version_id.fullname()])
+            self.execute(ssh, ['sudo','docker', 'build', '-t', self.image_version_id.fullname(), dir])
             self.execute(ssh, ['rm', '-rf', dir])
-        return super(ClouderContainer, self).deploy(vals)
+        return super(ClouderContainer, self).deploy()
 
 

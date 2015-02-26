@@ -24,7 +24,6 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 
 from datetime import datetime
-from os.path import expanduser
 
 import logging
 _logger = logging.getLogger(__name__)

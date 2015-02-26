@@ -202,7 +202,7 @@ class ClouderImageVersion(models.Model):
 
     @api.multi
     def deploy(self):
-        ssh, sftp = self.connect(self.registry_id.server_id.domain, self.registry_id.server_id.ssh_port, 'root')
+        ssh, sftp = self.connect(self.registry_id.server_id.name)
         dir = '/tmp/' + self.image_id.name + '_' + self.fullname()
         self.execute(ssh, ['mkdir', '-p', dir])
 

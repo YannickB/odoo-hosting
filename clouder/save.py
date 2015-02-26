@@ -47,26 +47,26 @@ class ClouderSaveRepository(models.Model):
 
     _order = 'create_date desc'
 
-    @api.multi
-    def get_vals(self):
-
-        vals = {}
-
-        vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-
-        vals.update({
-            'saverepo_id': self.id,
-            'saverepo_name': self.name,
-            'saverepo_type': self.type,
-            'saverepo_date_change': self.date_change,
-            'saverepo_date_expiration': self.date_expiration,
-            'saverepo_container_name': self.container_name,
-            'saverepo_container_server': self.container_server,
-            'saverepo_base_name': self.base_name,
-            'saverepo_base_domain': self.base_domain,
-        })
-
-        return vals
+    # @api.multi
+    # def get_vals(self):
+    #
+    #     vals = {}
+    #
+    #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
+    #
+    #     vals.update({
+    #         'saverepo_id': self.id,
+    #         'saverepo_name': self.name,
+    #         'saverepo_type': self.type,
+    #         'saverepo_date_change': self.date_change,
+    #         'saverepo_date_expiration': self.date_expiration,
+    #         'saverepo_container_name': self.container_name,
+    #         'saverepo_container_server': self.container_server,
+    #         'saverepo_base_name': self.base_name,
+    #         'saverepo_base_domain': self.base_domain,
+    #     })
+    #
+    #     return vals
 
 class ClouderSaveSave(models.Model):
     _name = 'clouder.save.save'
@@ -74,7 +74,7 @@ class ClouderSaveSave(models.Model):
 
     name = fields.Char('Name', size=256, required=True)
     type = fields.Selection([('container','Container'),('base','Base')], 'Type', related='repo_id.type', readonly=True)
-    backup_server_id = fields.Many2one('clouder.container', 'Backup Server', required=True)
+    backup_id = fields.Many2one('clouder.container', 'Backup Server', required=True)
     repo_id = fields.Many2one('clouder.save.repository', 'Repository', ondelete='cascade', required=True)
     date_expiration = fields.Date('Expiration Date')
     comment = fields.Text('Comment')
@@ -118,469 +118,457 @@ class ClouderSaveSave(models.Model):
     base_restore_to_domain_id = fields.Many2one('clouder.domain', 'Restore to (Domain)')
     create_date = fields.Datetime('Create Date')
 
+    now_epoch = lambda self : (datetime.strptime(self.now_bup, "%Y-%m-%d-%H%M%S") - datetime(1970,1,1)).total_seconds()
+    backup_method = lambda self : self.backup_id.options()['backup_method']['value']
+    base_dumpfile = lambda self : self.repo_id.type == 'base' and self.container_app + '_' + self.base_name.replace('-','_') + '_' + self.base_domain.replace('-','_').replace('.','_') + '.dump'
+    computed_container_restore_to_name = lambda self : self.container_restore_to_name or self.base_container_name or self.repo_id.container_name
+    computed_container_restore_to_server = lambda self : self.container_restore_to_server_id.name or self.base_container_server or self.repo_id.container_server
+    computed_base_restore_to_name = lambda self : self.base_restore_to_name or self.repo_id.base_name
+    computed_base_restore_to_domain = lambda self : self.base_restore_to_domain_id.name or self.repo_id.base_domain
+
+
 
     _order = 'create_date desc'
 
+    # @api.multi
+    # def get_vals(self):
+    #     vals = {}
+    #
+    #     if self.base_id:
+    #         vals.update(self.base_id.get_vals())
+    #     elif self.service_id:
+    #         vals.update(self.service_id.get_vals())
+    #     elif self.container_id:
+    #         vals.update(self.container_id.get_vals())
+    #
+    #     vals.update(self.repo_id.get_vals())
+    #
+    #     backup_server_vals = self.backup_id.get_vals()
+    #     vals.update({
+    #         'backup_id': backup_server_vals['container_id'],
+    #         'backup_fullname': backup_server_vals['container_fullname'],
+    #         'backup_id': backup_server_vals['server_id'],
+    #         'backup_server_ssh_port': backup_server_vals['server_ssh_port'],
+    #         'backup_server_domain': backup_server_vals['server_domain'],
+    #         'backup_server_ip': backup_server_vals['server_ip'],
+    #         'backup_method': backup_server_vals['app_options']['backup_method']['value']
+    #     })
+    #
+    #     vals.update({
+    #         'save_id': self.id,
+    #         'save_name': self.name,
+    #         'saverepo_date_expiration': self.date_expiration,
+    #         'save_comment': self.comment,
+    #         'save_now_bup': self.now_bup,
+    #         'save_now_epoch': (datetime.strptime(self.now_bup, "%Y-%m-%d-%H%M%S") - datetime(1970,1,1)).total_seconds(),
+    #         'save_base_id': self.base_id.id,
+    #         'save_container_volumes': self.container_volumes_comma,
+    #         'save_container_restore_to_name': self.container_restore_to_name or self.base_container_name or vals['saverepo_container_name'],
+    #         'save_container_restore_to_server': self.container_restore_to_server_id.name or self.base_container_server or vals['saverepo_container_server'],
+    #         'save_base_restore_to_name': self.base_restore_to_name or vals['saverepo_base_name'],
+    #         'save_base_restore_to_domain': self.base_restore_to_domain_id.name or vals['saverepo_base_domain'],
+    #         'save_base_dumpfile': vals['saverepo_type'] == 'base' and self.container_app + '_' + self.base_name.replace('-','_') + '_' + self.base_domain.replace('-','_').replace('.','_') + '.dump'
+    #     })
+    #     return vals
+
     @api.multi
-    def get_vals(self):
-        vals = {}
-
-        if self.base_id:
-            vals.update(self.base_id.get_vals())
-        elif self.service_id:
-            vals.update(self.service_id.get_vals())
-        elif self.container_id:
-            vals.update(self.container_id.get_vals())
-
-        vals.update(self.repo_id.get_vals())
-
-        backup_server_vals = self.backup_server_id.get_vals()
-        vals.update({
-            'backup_id': backup_server_vals['container_id'],
-            'backup_fullname': backup_server_vals['container_fullname'],
-            'backup_server_id': backup_server_vals['server_id'],
-            'backup_server_ssh_port': backup_server_vals['server_ssh_port'],
-            'backup_server_domain': backup_server_vals['server_domain'],
-            'backup_server_ip': backup_server_vals['server_ip'],
-            'backup_method': backup_server_vals['app_options']['backup_method']['value']
-        })
-
-        vals.update({
-            'save_id': self.id,
-            'save_name': self.name,
-            'saverepo_date_expiration': self.date_expiration,
-            'save_comment': self.comment,
-            'save_now_bup': self.now_bup,
-            'save_now_epoch': (datetime.strptime(self.now_bup, "%Y-%m-%d-%H%M%S") - datetime(1970,1,1)).total_seconds(),
-            'save_base_id': self.base_id.id,
-            'save_container_volumes': self.container_volumes_comma,
-            'save_container_restore_to_name': self.container_restore_to_name or self.base_container_name or vals['saverepo_container_name'],
-            'save_container_restore_to_server': self.container_restore_to_server_id.name or self.base_container_server or vals['saverepo_container_server'],
-            'save_base_restore_to_name': self.base_restore_to_name or vals['saverepo_base_name'],
-            'save_base_restore_to_domain': self.base_restore_to_domain_id.name or vals['saverepo_base_domain'],
-            'save_base_dumpfile': vals['saverepo_type'] == 'base' and self.container_app + '_' + self.base_name.replace('-','_') + '_' + self.base_domain.replace('-','_').replace('.','_') + '.dump'
-        })
-        return vals
-
-    def unlink(self, cr, uid, ids, context={}):
-        for save in self.browse(cr, uid, ids, context=context):
-            vals = self.get_vals(cr, uid, save.id, context=context)
-            self.purge(cr, uid, vals, context=context)
-        return super(ClouderSaveSave, self).unlink(cr, uid, ids, context=context)
-
-    def purge(self, cr, uid, vals, context={}):
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        ssh, sftp = execute.connect(vals['backup_fullname'], context=context)
-        execute.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + vals['saverepo_name'] + '/'+ vals['save_name']], context)
-        if self.search(cr, uid, [('repo_id','=',vals['saverepo_id'])], context=context) == [vals['save_id']]:
-            execute.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + vals['saverepo_name']], context)
-            execute.execute(ssh, ['git', '--git-dir=/opt/backup/bup', 'branch', '-D', vals['saverepo_name']], context)
-        ssh.close()
-        sftp.close()
+    def purge(self):
+        ssh, sftp = self.connect(self.backup_id.fullname())
+        self.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + self.repo_id.name + '/'+ self.name])
+        if self.search([('repo_id','=',self.repo_id)]) == [self]:
+            self.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' + self.repo_id.name])
+            self.execute(ssh, ['git', '--git-dir=/opt/backup/bup', 'branch', '-D', self.repo_id.name])
+        ssh.close(), sftp.close()
         return
 
-    def restore_base(self, cr, uid, vals, context=None):
+    @api.multi
+    def restore_base(self):
         return
 
-    def restore(self, cr, uid, ids, context={}):
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        container_obj = self.pool.get('clouder.container')
-        base_obj = self.pool.get('clouder.base')
-        server_obj = self.pool.get('clouder.server')
-        domain_obj = self.pool.get('clouder.domain')
-        application_obj = self.pool.get('clouder.application')
-        application_version_obj = self.pool.get('clouder.application.version')
-        image_obj = self.pool.get('clouder.image')
-        image_version_obj = self.pool.get('clouder.image.version')
-        service_obj = self.pool.get('clouder.service')
-        for save in self.browse(cr, uid, ids, context=context):
-            context = self.create_log(cr, uid, save.id, 'restore', context)
-            vals = self.get_vals(cr, uid, save.id, context=context)
+    def restore(self):
+        container_obj = self.env['clouder.container']
+        base_obj = self.env['clouder.base']
+        server_obj = self.env['clouder.server']
+        domain_obj = self.env['clouder.domain']
+        application_obj = self.env['clouder.application']
+        application_version_obj = self.env['clouder.application.version']
+        image_obj = self.env['clouder.image']
+        image_version_obj = self.env['clouder.image.version']
+        service_obj = self.env['clouder.service']
 
-            app_ids = application_obj.search(cr, uid, [('code','=',save.container_app)], context=context)
-            if not app_ids:
-                raise except_orm(_('Error!'),_("Couldn't find application " + save.container_app + ", aborting restoration."))
-            img_ids = image_obj.search(cr, uid, [('name','=',save.container_img)], context=context)
-            if not img_ids:
-                raise except_orm(_('Error!'),_("Couldn't find image " + save.container_img + ", aborting restoration."))
-            img_version_ids = image_version_obj.search(cr, uid, [('name','=',save.container_img_version)], context=context)
-            # upgrade = True
-            if not img_version_ids:
-                execute.log("Warning, couldn't find the image version, using latest", context)
+        self = self.with_context(self.create_log('restore'))
+
+        apps = application_obj.search([('code','=',self.container_app)])
+        if not apps:
+            raise except_orm(_('Error!'),_("Couldn't find application " + self.container_app + ", aborting restoration."))
+        imgs = image_obj.search([('name','=',self.container_img)])
+        if not imgs:
+            raise except_orm(_('Error!'),_("Couldn't find image " + self.container_img + ", aborting restoration."))
+        img_versions = image_version_obj.search([('name','=',self.container_img_version)])
+        # upgrade = True
+        if not img_versions:
+            self.log("Warning, couldn't find the image version, using latest")
+            #We do not want to force the upgrade if we had to use latest
+            # upgrade = False
+            versions = imgs[0].version_ids
+            if not versions:
+                raise except_orm(_('Error!'),_("Couldn't find versions for image " + self.container_img + ", aborting restoration."))
+            img_versions = [versions[0]]
+
+        if self.container_restore_to_name or not self.container_id:
+            containers = container_obj.search([('name','=', self.computed_container_restore_to_name),('server_id.name','=',self.computed_container_restore_to_server)])
+
+            if not containers:
+                self.log("Can't find any corresponding container, creating a new one")
+                servers = server_obj.search([('name','=', self.computed_container_restore_to_server)])
+                if not servers:
+                    raise except_orm(_('Error!'),_("Couldn't find server " + self.computed_container_restore_to_server + ", aborting restoration."))
+
+                ports = []
+                for port, port_vals in ast.literal_eval(self.container_ports).iteritems():
+                    del port_vals['id']
+                    del port_vals['hostport']
+                    ports.append((0,0,port_vals))
+                volumes = []
+                for volume, volume_vals in ast.literal_eval(self.container_volumes).iteritems():
+                    del volume_vals['id']
+                    volumes.append((0,0,volume_vals))
+                options = []
+                for option, option_vals in ast.literal_eval(self.container_options).iteritems():
+                    del option_vals['id']
+                    options.append((0,0,option_vals))
+                links = []
+                for link, link_vals in ast.literal_eval(self.container_links).iteritems():
+                    if not link_vals['name']:
+                        link_apps = application_obj.search([('code','=',link_vals['name_name'])])
+                        if link_apps:
+                            link_vals['name'] = link_apps[0]
+                        else:
+                            continue
+                    del link_vals['name_name']
+                    links.append((0,0,link_vals))
+                container_vals = {
+                    'name': self.computed_container_restore_to_name,
+                    'server_id': servers[0],
+                    'application_id': apps[0],
+                    'image_id': imgs[0],
+                    'image_version_id': img_versions[0],
+                    'port_ids': ports,
+                    'volume_ids': volumes,
+                    'option_ids': options,
+                    'link_ids': links
+                }
+                container = container_obj.create(container_vals)
+
+            else:
+                self.log("A corresponding container was found")
+                container = containers[0]
+        else:
+            self.log("A container_id was linked in the save")
+            container = self.container_id
+
+        if self.repo_id.type == 'container':
+            # vals = self.get_vals(cr, uid, save.id, context=context)
+            # vals_container = container_obj.get_vals(cr, uid, container_id, context=context)
+            if container.image_version_id != img_versions[0]:
+            # if upgrade:
+                container.image_version_id = img_versions[0]
+                self = self.with_context(forcesave=False)
+                self = self.with_context(nosave=True)
+
+            self = self.with_context(save_comment='Before restore ' + self.name)
+            container.save()
+
+            # vals = self.get_vals(cr, uid, save.id, context=context)
+            # vals_container = container_obj.get_vals(cr, uid, container_id, context=con
+            ssh, sftp = self.connect(container.fullname())
+            self.execute(ssh, ['supervisorctl', 'stop', 'all'])
+            self.execute(ssh, ['supervisorctl', 'start', 'sshd'])
+            self.restore_action(container)
+            # ssh, sftp = execute.connect(vals['saverepo_container_server'], 22, 'root', context)
+            # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['saverepo_container_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'container', vals['saverepo_name'], vals['save_now_bup'], vals['save_container_volumes']], context)
+            # ssh.close()
+            # sftp.close()
+
+
+            for volume in container.volume_ids:
+                if volume.user:
+                    execute.execute(ssh, ['chown', '-R', volume.user + ':' + volume.user, volume.name])
+            # execute.execute(ssh, ['supervisorctl', 'start', 'all'], context)
+            ssh.close(), sftp.close()
+            container.start()
+
+            container.deploy_links()
+            self.end_log()
+            res = container
+
+
+        else:
+            # upgrade = False
+            app_versions = application_version_obj.search([('name','=',self.base_app_version),('application_id','=', apps[0])])
+            if not app_versions:
+                self.log("Warning, couldn't find the application version, using latest")
                 #We do not want to force the upgrade if we had to use latest
                 # upgrade = False
-                versions = image_obj.browse(cr, uid, img_ids[0], context=context).version_ids
-                if not versions: 
-                    raise except_orm(_('Error!'),_("Couldn't find versions for image " + save.container_img + ", aborting restoration."))
-                img_version_ids = [versions[0].id]
+                versions = application_obj.browse(apps[0]).version_ids
+                if not versions:
+                    raise except_orm(_('Error!'),_("Couldn't find versions for application " + self.container_app + ", aborting restoration."))
+                app_versions = [versions[0]]
+            if not self.service_id or self.service_id.container_id != container:
+                services = service_obj.search([('name','=',self.service_name),('container_id.id','=',container)])
 
-            if save.container_restore_to_name or not save.container_id:
-                container_ids = container_obj.search(cr, uid, [('name','=',vals['save_container_restore_to_name']),('server_id.name','=',vals['save_container_restore_to_server'])], context=context)
-
-                if not container_ids:
-                    execute.log("Can't find any corresponding container, creating a new one", context)
-                    server_ids = server_obj.search(cr, uid, [('name','=',vals['save_container_restore_to_server'])], context=context)
-                    if not server_ids:
-                        raise except_orm(_('Error!'),_("Couldn't find server " + vals['save_container_restore_to_server'] + ", aborting restoration."))
- 
-                    ports = []
-                    for port, port_vals in ast.literal_eval(save.container_ports).iteritems():
-                        del port_vals['id']
-                        del port_vals['hostport']
-                        ports.append((0,0,port_vals))
-                    volumes = []
-                    for volume, volume_vals in ast.literal_eval(save.container_volumes).iteritems():
-                        del volume_vals['id']
-                        volumes.append((0,0,volume_vals))
+                if not services:
+                    self.log("Can't find any corresponding service, creating a new one")
                     options = []
-                    for option, option_vals in ast.literal_eval(save.container_options).iteritems():
+                    for option, option_vals in ast.literal_eval(self.service_options).iteritems():
                         del option_vals['id']
                         options.append((0,0,option_vals))
                     links = []
-                    for link, link_vals in ast.literal_eval(save.container_links).iteritems():
+                    for link, link_vals in ast.literal_eval(self.service_links).iteritems():
                         if not link_vals['name']:
-                            link_app_ids = self.pool.get('clouder.application').search(cr, uid, [('code','=',link_vals['name_name'])], context=context)
-                            if link_app_ids:
-                                link_vals['name'] = link_app_ids[0]
+                            link_apps = self.pool.get('clouder.application').search([('code','=',link_vals['name_name'])])
+                            if link_apps:
+                                link_vals['name'] = link_apps[0]
                             else:
                                 continue
                         del link_vals['name_name']
                         links.append((0,0,link_vals))
-                    container_vals = {
-                        'name': vals['save_container_restore_to_name'],
-                        'server_id': server_ids[0],
-                        'application_id': app_ids[0],
-                        'image_id': img_ids[0],
-                        'image_version_id': img_version_ids[0],
-                        'port_ids': ports,
-                        'volume_ids': volumes,
+                    service_vals = {
+                        'name': self.service_name,
+                        'container_id': container,
+                        'database_container_id': self.service_database_id.id,
+                        'application_version_id': app_versions[0],
                         'option_ids': options,
                         'link_ids': links
                     }
-                    container_id = container_obj.create(cr, uid, container_vals, context=context)
+                    service = service_obj.create(service_vals)
 
                 else:
-                    execute.log("A corresponding container was found", context)
-                    container_id = container_ids[0]
+                    self.log("A corresponding service was found")
+                    service = services[0]
             else:
-                execute.log("A container_id was linked in the save", context)
-                container_id = save.container_id.id
+                self.log("A service_id was linked in the save")
+                service = self.service_id
 
-            if vals['saverepo_type'] == 'container':
-                vals = self.get_vals(cr, uid, save.id, context=context)
-                vals_container = container_obj.get_vals(cr, uid, container_id, context=context)
-                if vals_container['image_version_id'] != img_version_ids[0]:
-                # if upgrade:
-                    container_obj.write(cr, uid, [container_id], {'image_version_id': img_version_ids[0]}, context=context)
-                    del context['forcesave']
-                    context['nosave'] = True
+            if self.base_restore_to_name or not self.base_id:
+                bases = base_obj.search([('name','=', self.computed_base_restore_to_name),('domain_id.name','=', self.computed_base_restore_to_domain)])
 
-                context['save_comment'] = 'Before restore ' + save.name
-                container_obj.save(cr, uid, [container_id], context=context)
+                if not bases:
+                    self.log("Can't find any corresponding base, creating a new one")
+                    domains = domain_obj.search([('name','=', self.computed_base_restore_to_domain)])
+                    if not domains:
+                        raise except_orm(_('Error!'),_("Couldn't find domain " + self.computed_base_restore_to_domain + ", aborting restoration."))
+                    options = []
+                    for option, option_vals in ast.literal_eval(self.base_options).iteritems():
+                        del option_vals['id']
+                        options.append((0,0,option_vals))
+                    links = []
+                    for link, link_vals in ast.literal_eval(self.base_links).iteritems():
+                        if not link_vals['name']:
+                            link_apps = self.pool.get('clouder.application').search([('code','=',link_vals['name_name'])])
+                            if link_apps:
+                                link_vals['name'] = link_apps[0]
+                            else:
+                                continue
+                        del link_vals['name_name']
+                        links.append((0,0,link_vals))
+                    base_vals = {
+                        'name': self.computed_base_restore_to_name,
+                        'service_id': service,
+                        'application_id': apps[0],
+                        'domain_id': domains[0],
+                        'title': self.base_title,
+                        'admin_passwd': self.base_admin_passwd,
+                        'poweruser_name': self.base_poweruser_name,
+                        'poweruser_passwd': self.base_poweruser_password,
+                        'poweruser_email': self.base_poweruser_email,
+                        'build': self.base_build,
+                        'test': self.base_test,
+                        'lang': self.base_lang,
+                        'nosave': self.base_nosave,
+                        'option_ids': options,
+                        'link_ids': links,
+                    }
+                    self = self.with_context(base_restoration=True)
+                    base = base_obj.create(base_vals)
 
-                # vals = self.get_vals(cr, uid, save.id, context=context)
-                # vals_container = container_obj.get_vals(cr, uid, container_id, context=context)
-                context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-                ssh, sftp = execute.connect(vals_container['container_fullname'], context=context)
-                execute.execute(ssh, ['supervisorctl', 'stop', 'all'], context)
-                execute.execute(ssh, ['supervisorctl', 'start', 'sshd'], context)
-                self.restore_action(cr, uid, vals, context=context)
-                # ssh, sftp = execute.connect(vals['saverepo_container_server'], 22, 'root', context)
-                # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['saverepo_container_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'container', vals['saverepo_name'], vals['save_now_bup'], vals['save_container_volumes']], context)
-                # ssh.close()
-                # sftp.close()
-
-
-                for key, volume in vals_container['container_volumes'].iteritems():
-                    if volume['user']:
-                        execute.execute(ssh, ['chown', '-R', volume['user'] + ':' + volume['user'], volume['name']], context)
-                # execute.execute(ssh, ['supervisorctl', 'start', 'all'], context)
-                ssh.close()
-                sftp.close()
-                container_obj.start(cr, uid, vals_container, context=context)
-
-                container_obj.deploy_links(cr, uid, [container_id], context=context)
-                self.end_log(cr, uid, save.id, context=context)
-                res = container_id
-
-
+                else:
+                    self.log("A corresponding base was found")
+                    base = bases[0]
             else:
-                # upgrade = False
-                app_version_ids = application_version_obj.search(cr, uid, [('name','=',save.base_app_version),('application_id','=', app_ids[0])], context=context)
-                if not app_version_ids:
-                    execute.log("Warning, couldn't find the application version, using latest", context)
-                    #We do not want to force the upgrade if we had to use latest
-                    # upgrade = False
-                    versions = application_obj.browse(cr, uid, app_version_ids[0], context=context).version_ids
-                    if not versions: 
-                        raise except_orm(_('Error!'),_("Couldn't find versions for application " + save.container_app + ", aborting restoration."))
-                    app_version_ids = [versions[0].id]
-                if not save.service_id or save.service_id.container_id.id != container_id:
-                    service_ids = service_obj.search(cr, uid, [('name','=',save.service_name),('container_id.id','=',container_id)], context=context)
+                self.log("A base_id was linked in the save")
+                base = self.base_id.id
 
-                    if not service_ids:
-                        execute.log("Can't find any corresponding service, creating a new one", context)
-                        options = []
-                        for option, option_vals in ast.literal_eval(save.service_options).iteritems():
-                            del option_vals['id']
-                            options.append((0,0,option_vals))
-                        links = []
-                        for link, link_vals in ast.literal_eval(save.service_links).iteritems():
-                            if not link_vals['name']:
-                                link_app_ids = self.pool.get('clouder.application').search(cr, uid, [('code','=',link_vals['name_name'])], context=context)
-                                if link_app_ids:
-                                    link_vals['name'] = link_app_ids[0]
-                                else:
-                                    continue
-                            del link_vals['name_name']
-                            links.append((0,0,link_vals))
-                        service_vals = {
-                            'name': save.service_name,
-                            'container_id': container_id,
-                            'database_container_id': save.service_database_id.id,
-                            'application_version_id': app_version_ids[0],
-#                            'option_ids': options,
-                            'link_ids': links
-                        }
-                        service_id = service_obj.create(cr, uid, service_vals, context=context)
 
-                    else:
-                        execute.log("A corresponding service was found", context)
-                        service_id = service_ids[0]
+            if base.service_id.application_version_id != app_versions[0]:
+            # if upgrade:
+                base.application_version_id = app_versions[0]
+
+            self = self.with_context(save_comment='Before restore ' + self.name)
+            base.save()
+
+            self.restore_action(base)
+
+            base.purge_db()
+            ssh, sftp = self.connect(base.service_id.container_id.fullname(), username=base.application_id.type_id.system_user)
+            for key, database in base.databases().iteritems():
+                if base.service_id.database_type() != 'mysql':
+                    self.execute(ssh, ['createdb', '-h', base.service_id.database_server(), '-U', base.service_id.db_user(), base.unique_name_])
+                    self.execute(ssh, ['cat', '/base-backup/' + self.repo_id.name + '/' + self.base_dumpfile, '|', 'psql', '-q', '-h', base.service_id.database_server(), '-U', base.service_id.db_user(), base.unique_name_])
                 else:
-                    execute.log("A service_id was linked in the save", context)
-                    service_id = save.service_id.id
+                    ssh_mysql, sftp_mysql = self.connect(base.service_id.database().fullname())
+                    self.execute(ssh_mysql, ["mysql -u root -p'" + base.service_id.database().root_password + "' -se \"create database " + database + ";\""])
+                    self.execute(ssh_mysql, ["mysql -u root -p'" + base.service_id.database().root_password + "' -se \"grant all on " + database + ".* to '" + base.service_id.db_user() + "';\""])
+                    ssh_mysql.close(), sftp_mysql.close()
+                    self.execute(ssh, ['mysql', '-h', base.service_id.database_server(), '-u', base.service_id.db_user(), '-p' + base.service_id.database_password, database, '<', '/base-backup/' + self.repo_id.name + '/' +  database + '.dump'])
 
-                if save.base_restore_to_name or not save.base_id:
-                    base_ids = base_obj.search(cr, uid, [('name','=',vals['save_base_restore_to_name']),('domain_id.name','=',vals['save_base_restore_to_domain'])], context=context)
+            self.restore_base()
 
-                    if not base_ids:
-                        execute.log("Can't find any corresponding base, creating a new one", context)
-                        domain_ids = domain_obj.search(cr, uid, [('name','=',vals['save_base_restore_to_domain'])], context=context)
-                        if not domain_ids:
-                            raise except_orm(_('Error!'),_("Couldn't find domain " + vals['save_base_restore_to_domain'] + ", aborting restoration."))
-                        options = []
-                        for option, option_vals in ast.literal_eval(save.base_options).iteritems():
-                            del option_vals['id']
-                            options.append((0,0,option_vals))
-                        links = []
-                        for link, link_vals in ast.literal_eval(save.base_links).iteritems():
-                            if not link_vals['name']:
-                                link_app_ids = self.pool.get('clouder.application').search(cr, uid, [('code','=',link_vals['name_name'])], context=context)
-                                if link_app_ids:
-                                    link_vals['name'] = link_app_ids[0]
-                                else:
-                                    continue
-                            del link_vals['name_name']
-                            links.append((0,0,link_vals))
-                        base_vals = {
-                            'name': vals['save_base_restore_to_name'],
-                            'service_id': service_id,
-                            'application_id': app_ids[0],
-                            'domain_id': domain_ids[0],
-                            'title': save.base_title,
-                            'proxy_id': save.base_proxy_id.id,
-                            'mail_id': save.base_mail_id.id,
-                            'admin_passwd': save.base_admin_passwd,
-                            'poweruser_name': save.base_poweruser_name,
-                            'poweruser_passwd': save.base_poweruser_password,
-                            'poweruser_email': save.base_poweruser_email,
-                            'build': save.base_build,
-                            'test': save.base_test,
-                            'lang': save.base_lang,
-                            'nosave': save.base_nosave,
-#                            'option_ids': options,
-                            'link_ids': links,
-                        }
-                        context['base_restoration'] = True
-                        base_id = base_obj.create(cr, uid, base_vals, context=context)
+            base_obj.deploy_links()
 
-                    else:
-                        execute.log("A corresponding base was found", context)
-                        base_id = base_ids[0]
-                else:
-                    execute.log("A base_id was linked in the save", context)
-                    base_id = save.base_id.id
+            self.execute(ssh, ['rm', '-rf', '/base-backup/' + self.repo_id.name])
+            ssh.close(), sftp.close()
 
-                vals = self.get_vals(cr, uid, save.id, context=context)
-                base_vals = base_obj.get_vals(cr, uid, base_id, context=context)
-                if base_vals['app_version_id'] != app_version_ids[0]:
-                # if upgrade:
-                    base_obj.write(cr, uid, [base_id], {'application_version_id': app_version_ids[0]}, context=context)
-
-                context['save_comment'] = 'Before restore ' + save.name
-                base_obj.save(cr, uid, [base_id], context=context)
-
-
-
-                self.restore_action(cr, uid, vals, context=context)
-
-                base_obj.purge_db(cr, uid, base_vals, context=context)
-                ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
-                for key, database in base_vals['base_databases'].iteritems():
-                    if vals['database_type'] != 'mysql':
-                        execute.execute(ssh, ['createdb', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
-                        execute.execute(ssh, ['cat', '/base-backup/' + vals['saverepo_name'] + '/' + vals['save_base_dumpfile'], '|', 'psql', '-q', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], base_vals['base_unique_name_']], context)
-                    else:
-                        ssh_mysql, sftp_mysql = execute.connect(base_vals['database_fullname'], context=context)
-                        execute.execute(ssh_mysql, ["mysql -u root -p'" + base_vals['database_root_password'] + "' -se \"create database " + database + ";\""], context)
-                        execute.execute(ssh_mysql, ["mysql -u root -p'" + base_vals['database_root_password'] + "' -se \"grant all on " + database + ".* to '" + base_vals['service_db_user'] + "';\""], context)
-                        ssh_mysql.close()
-                        sftp_mysql.close()
-                        execute.execute(ssh, ['mysql', '-h', base_vals['database_server'], '-u', base_vals['service_db_user'], '-p' + base_vals['service_db_password'], database, '<', '/base-backup/' + vals['saverepo_name'] + '/' +  database + '.dump'], context)
-
-                self.restore_base(cr, uid, base_vals, context=context)
-
-                base_obj.deploy_links(cr, uid, [base_id], context=context)
-
-                execute.execute(ssh, ['rm', '-rf', '/base-backup/' + vals['saverepo_name']], context)
-                ssh.close()
-                sftp.close()
-
-                self.end_log(cr, uid, save.id, context=context)
-                res = base_id
-            self.write(cr, uid, [save.id], {'container_restore_to_name': False, 'container_restore_to_server_id': False, 'base_restore_to_name': False, 'base_restore_to_domain_id': False}, context=context)
+            self.end_log()
+            res = base
+        self.write({'container_restore_to_name': False, 'container_restore_to_server_id': False, 'base_restore_to_name': False, 'base_restore_to_domain_id': False})
 
         return res
 
-    def restore_action(self, cr, uid, vals, context={}):
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
+    @api.multi
+    def restore_action(self, object):
         #
         # context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        # ssh, sftp = execute.connect(vals['save_container_restore_to_server'], 22, 'root', context)
-        # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'base', vals['saverepo_name'], vals['save_now_bup']], context)
+        # ssh, sftp = execute.connect(vals['save_computed_container_restore_to_server'], 22, 'root', context)
+        # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_computed_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'base', vals['saverepo_name'], vals['save_now_bup']], context)
         # ssh.close()
         # sftp.close()
         #
 
-        directory = '/tmp/restore-' + vals['saverepo_name']
-        ssh, sftp = execute.connect(vals['backup_fullname'], username='backup', context=context)
-        execute.send(sftp, vals['config_home_directory'] + '/.ssh/config', '/home/backup/.ssh/config', context)
-        execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/home/backup/.ssh/keys/' + vals['container_fullname'] + '.pub', context)
-        execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '/home/backup/.ssh/keys/' + vals['container_fullname'], context)
-        execute.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'], context)
-        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
-        execute.execute(ssh, ['mkdir', '-p', directory], context)
-        if vals['backup_method'] == 'simple':
-            execute.execute(ssh, ['cp', '-R', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name'] + '/*', directory], context)
-        if vals['backup_method'] == 'bup':
-            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup restore -C ' + directory + ' ' +  vals['saverepo_name'] + '/' + vals['save_now_bup']], context)
-            execute.execute(ssh, ['mv', directory + '/' + vals['save_now_bup'] + '/*', directory], context)
-            execute.execute(ssh, ['rm -rf', directory + '/' + vals['save_now_bup']], context)
-        execute.execute(ssh, ['rsync', '-ra', directory + '/', vals['container_fullname'] + ':' + directory], context)
-        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
-        execute.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'], context)
-        ssh.close()
-        sftp.close()
-
-
-        ssh, sftp = execute.connect(vals['container_fullname'], context=context)
-
-        if vals['saverepo_type'] == 'container':
-            for volume in vals['save_container_volumes'].split(','):
-                execute.execute(ssh, ['rm', '-rf', volume + '/*'], context)
+        if object._name == 'clouder.base':
+            container = object.service_id.container_id
         else:
-            execute.execute(ssh, ['rm', '-rf', '/base-backup/' + vals['saverepo_name']], context)
+            container = object
+
+        directory = '/tmp/restore-' + self.repo_id.name
+        ssh, sftp = self.connect(self.backup_id.fullname(), username='backup')
+        self.send(sftp, self.home_directory + '/.ssh/config', '/home/backup/.ssh/config')
+        self.send(sftp, self.home_directory + '/.ssh/keys/' + container.fullname() + '.pub', '/home/backup/.ssh/keys/' + container.fullname() + '.pub')
+        self.send(sftp, self.home_directory + '/.ssh/keys/' + container.fullname(), '/home/backup/.ssh/keys/' + container.fullname())
+        self.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'])
+        self.execute(ssh, ['rm', '-rf', directory + '*'])
+        self.execute(ssh, ['mkdir', '-p', directory])
+        if self.backup_method() == 'simple':
+            self.execute(ssh, ['cp', '-R', '/opt/backup/simple/' + self.repo_id.name + '/' + self.name + '/*', directory])
+        if self.backup_method() == 'bup':
+            self.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup restore -C ' + directory + ' ' +  self.repo_id.name + '/' + self.now_bup()])
+            self.execute(ssh, ['mv', directory + '/' + self.now_bup() + '/*', directory])
+            self.execute(ssh, ['rm -rf', directory + '/' + self.now_bup()])
+        self.execute(ssh, ['rsync', '-ra', directory + '/', container.fullname() + ':' + directory])
+        self.execute(ssh, ['rm', '-rf', directory + '*'])
+        self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
+        ssh.close(), sftp.close()
 
 
-        execute.execute(ssh, ['rm', '-rf', directory + '/backup-date'], context)
-        if vals['saverepo_type'] == 'container':
-            execute.execute(ssh, ['cp', '-R', directory + '/*', '/'], context)
+        ssh, sftp = self.connect(container.fullname())
+
+        if self.repo_id.type == 'container':
+            for volume in container.volume_ids:
+                self.execute(ssh, ['rm', '-rf', volume.name + '/*'])
         else:
-            execute.execute(ssh, ['cp', '-R', directory, '/base-backup/' + vals['saverepo_name']], context)
-            execute.execute(ssh, ['chmod', '-R', '777', '/base-backup/' + vals['saverepo_name']], context)
-        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
-        ssh.close()
-        sftp.close()
+            self.execute(ssh, ['rm', '-rf', '/base-backup/' + self.repo_id.name])
 
-    def deploy_base(self, cr, uid, vals, context=None):
+
+        self.execute(ssh, ['rm', '-rf', directory + '/backup-date'])
+        if self.repo_id.type == 'container':
+            self.execute(ssh, ['cp', '-R', directory + '/*', '/'])
+        else:
+            self.execute(ssh, ['cp', '-R', directory, '/base-backup/' + self.repo_id.name])
+            self.execute(ssh, ['chmod', '-R', '777', '/base-backup/' + self.repo_id.name])
+        self.execute(ssh, ['rm', '-rf', directory + '*'])
+        ssh.close(), sftp.close()
+
+    @api.multi
+    def deploy_base(self):
         return
 
-    def deploy(self, cr, uid, vals, context={}):
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        execute.log('Saving ' + vals['save_name'], context)
-        execute.log('Comment: ' + vals['save_comment'], context)
+    @api.multi
+    def deploy(self):
+        self.log('Saving ' + self.name)
+        self.log('Comment: ' + self.comment)
 
-        if vals['saverepo_type'] == 'base':
-            base_vals = self.pool.get('clouder.base').get_vals(cr, uid, vals['save_base_id'], context=context)
-            ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
-            execute.execute(ssh, ['mkdir', '-p', '/base-backup/' + vals['saverepo_name']], context)
-            for key, database in base_vals['base_databases'].iteritems():
-                if vals['database_type'] != 'mysql':
-                    execute.execute(ssh, ['pg_dump', '-O', '-h', base_vals['database_server'], '-U', base_vals['service_db_user'], database, '>', '/base-backup/' + vals['saverepo_name'] + '/' + database + '.dump'], context)
+        if self.repo_id.type == 'base' and self.base_id:
+            base = self.base_id
+            ssh, sftp = execute.connect(base.service_id.container_id.fullname(), username=base.application_id.type_id.system_user)
+            self.execute(ssh, ['mkdir', '-p', '/base-backup/' + self.repo_id.name])
+            for key, database in base.databases().iteritems():
+                if base.service_id.database_type() != 'mysql':
+                    self.execute(ssh, ['pg_dump', '-O', '-h', base.service_id.database_server(), '-U', base.service_id.db_user(), database, '>', '/base-backup/' + self.repo_id.name + '/' + database + '.dump'])
                 else:
-                    execute.execute(ssh, ['mysqldump', '-h', base_vals['database_server'], '-u', base_vals['service_db_user'], '-p' + base_vals['service_db_password'], database, '>', '/base-backup/' + vals['saverepo_name'] + '/' +  database + '.dump'], context)
-            self.deploy_base(cr, uid, base_vals, context=context)
-            execute.execute(ssh, ['chmod', '-R', '777', '/base-backup/' + vals['saverepo_name']], context)
-            ssh.close()
-            sftp.close()
+                    self.execute(ssh, ['mysqldump', '-h', base.service_id.database_server(), '-u', base.service_id.db_user(), '-p' + base.service_id.database_password(), database, '>', '/base-backup/' + self.repo_id.name + '/' +  database + '.dump'])
+            base.deploy_base()
+            self.execute(ssh, ['chmod', '-R', '777', '/base-backup/' + self.repo_id.name])
+            ssh.close(), sftp.close()
 
         #
-        # ssh, sftp = execute.connect(vals['save_container_restore_to_server'], 22, 'root', context)
-        # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/save', vals['saverepo_type'], vals['saverepo_name'], str(int(vals['save_now_epoch'])), vals['save_container_volumes'] or ''], context)
+        # ssh, sftp = execute.connect(vals['save_computed_container_restore_to_server'], 22, 'root', context)
+        # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_computed_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/save', vals['saverepo_type'], vals['saverepo_name'], str(int(vals['save_now_epoch'])), vals['save_container_volumes'] or ''], context)
         # ssh.close()
         # sftp.close()
 
-        directory = '/tmp/' + vals['saverepo_name']
-        ssh, sftp = execute.connect(vals['container_fullname'], context=context)
-        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
-        execute.execute(ssh, ['mkdir', directory], context)
-        if vals['saverepo_type'] == 'container':
-            for volume in vals['save_container_volumes'].split(','):
-                execute.execute(ssh, ['cp', '-R', '--parents', volume, directory], context)
+        directory = '/tmp/' + self.repo_id.name
+        ssh, sftp = self.connect(self.container_id.fullname())
+        self.execute(ssh, ['rm', '-rf', directory + '*'])
+        self.execute(ssh, ['mkdir', directory])
+        if self.repo_id.type == 'container':
+            for volume in self.container_volumes.split(','):
+                self.execute(ssh, ['cp', '-R', '--parents', volume, directory])
         else:
-            execute.execute(ssh, ['cp', '-R', '/base-backup/' + vals['saverepo_name'] + '/*', directory], context)
+            self.execute(ssh, ['cp', '-R', '/base-backup/' + self.repo_id.name + '/*', directory])
 
-        execute.execute(ssh, ['echo "' + vals['now_date'] + '" > ' + directory + '/backup-date'], context)
-        execute.execute(ssh, ['chmod', '-R', '777', directory + '*'], context)
-        ssh.close()
-        sftp.close()
+        self.execute(ssh, ['echo "' + self.now_date() + '" > ' + directory + '/backup-date'])
+        self.execute(ssh, ['chmod', '-R', '777', directory + '*'])
+        ssh.close(), sftp.close()
 
-        ssh, sftp = execute.connect(vals['backup_fullname'], username='backup', context=context)
-        if vals['saverepo_type'] == 'container':
-            name = vals['container_fullname']
+        ssh, sftp = self.connect(self.backup_id.fullname(), username='backup')
+        if self.repo_id.type == 'container':
+            name = self.container_id.fullname()
         else:
-            name = vals['base_unique_name_']
-        execute.execute(ssh, ['rm', '-rf', '/opt/backup/list/' + name], context)
-        execute.execute(ssh, ['mkdir', '-p', '/opt/backup/list/' + name], context)
-        execute.execute(ssh, ['echo "' + vals['saverepo_name'] + '" > /opt/backup/list/' + name + '/repo'], context)
+            name = self.base_id.unique_name_
+        self.execute(ssh, ['rm', '-rf', '/opt/backup/list/' + name])
+        self.execute(ssh, ['mkdir', '-p', '/opt/backup/list/' + name])
+        self.execute(ssh, ['echo "' + self.repo_id.name + '" > /opt/backup/list/' + name + '/repo'])
 
 
-        execute.send(sftp, vals['config_home_directory'] + '/.ssh/config', '/home/backup/.ssh/config', context)
-        execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'] + '.pub', '/home/backup/.ssh/keys/' + vals['container_fullname'] + '.pub', context)
-        execute.send(sftp, vals['config_home_directory'] + '/.ssh/keys/' + vals['container_fullname'], '/home/backup/.ssh/keys/' + vals['container_fullname'], context)
-        execute.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'], context)
+        self.send(sftp, self.home_directory + '/.ssh/config', '/home/backup/.ssh/config')
+        self.send(sftp, self.home_directory + '/.ssh/keys/' + self.container_id.fullname() + '.pub', '/home/backup/.ssh/keys/' + self.container_id.fullname() + '.pub')
+        self.send(sftp, self.home_directory + '/.ssh/keys/' + self.container_id.fullname(), '/home/backup/.ssh/keys/' + self.container_id.fullname())
+        self.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'])
 
-        execute.execute(ssh, ['rm', '-rf', directory], context)
-        execute.execute(ssh, ['mkdir', directory], context)
-        execute.execute(ssh, ['rsync', '-ra', vals['container_fullname'] + ':' + directory + '/', directory], context)
+        self.execute(ssh, ['rm', '-rf', directory])
+        self.execute(ssh, ['mkdir', directory])
+        self.execute(ssh, ['rsync', '-ra', self.container_id.fullname() + ':' + directory + '/', directory])
 
-        if vals['backup_method'] == 'simple':
-            execute.execute(ssh, ['mkdir', '-p', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name']], context)
-            execute.execute(ssh, ['cp', '-R', directory + '/*', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name']], context)
-            execute.execute(ssh, ['rm', '/opt/backup/simple/' + vals['saverepo_name'] + '/latest'], context)
-            execute.execute(ssh, ['ln', '-s', '/opt/backup/simple/' + vals['saverepo_name'] + '/' + vals['save_name'], '/opt/backup/simple/' + vals['saverepo_name'] + '/latest'], context)
-        if vals['backup_method'] == 'bup':
-            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup index ' + directory], context)
-            execute.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup save -n ' + vals['saverepo_name'] + ' -d ' + str(int(vals['save_now_epoch'])) + ' --strip ' + directory], context)
-        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
-        execute.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'], context)
-        ssh.close()
-        sftp.close()
-
-
-        ssh, sftp = execute.connect(vals['container_fullname'], context=context)
-        execute.execute(ssh, ['rm', '-rf', directory + '*'], context)
-        ssh.close()
-        sftp.close()
-
-        if vals['saverepo_type'] == 'base':
-            base_vals = self.pool.get('clouder.base').get_vals(cr, uid, vals['save_base_id'], context=context)
-            ssh, sftp = execute.connect(base_vals['container_fullname'], username=base_vals['apptype_system_user'], context=context)
-            execute.execute(ssh, ['rm', '-rf', '/base-backup/' + vals['saverepo_name']], context)
-            ssh.close()
-            sftp.close()
+        if self.backup_method() == 'simple':
+            self.execute(ssh, ['mkdir', '-p', '/opt/backup/simple/' + self.repo_id.name + '/' + self.name])
+            self.execute(ssh, ['cp', '-R', directory + '/*', '/opt/backup/simple/' + self.repo_id.name + '/' + self.name])
+            self.execute(ssh, ['rm', '/opt/backup/simple/' + self.repo.name + '/latest'])
+            self.execute(ssh, ['ln', '-s', '/opt/backup/simple/' + self.repo.name + '/' + self.name, '/opt/backup/simple/' + self.repo_id.name + '/latest'])
+        if self.backup_method() == 'bup':
+            self.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup index ' + directory])
+            self.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup save -n ' + self.repo_id.name + ' -d ' + str(int(self.now_epoch)) + ' --strip ' + directory])
+        self.execute(ssh, ['rm', '-rf', directory + '*'])
+        self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
+        ssh.close(), sftp.close()
 
 
+        ssh, sftp = execute.connect(self.container_id.fullname())
+        self.execute(ssh, ['rm', '-rf', directory + '*'])
+        ssh.close(), sftp.close()
+
+        if self.repo.type == 'base':
+            ssh, sftp = self.connect(self.base_id.service_id.container_id.fullname(), username=self.base_id.application_id.type_id.system_user)
+            self.execute(ssh, ['rm', '-rf', '/base-backup/' + self.repo_id.name])
+            ssh.close(), sftp.close()
         return
 

@@ -81,7 +81,7 @@ class ClouderService(models.Model):
         if self.database().server_id == self.container_id.server_id:
             return self.database().name
         else:
-            return self.database().server_id.domain
+            return self.database().server_id.name
 
     def db_user(self):
         db_user = self.fullname.replace('-','_')
@@ -394,7 +394,7 @@ class ClouderService(models.Model):
         if self in services:
             services.remove(self)
         if not services:
-            ssh, sftp = self.connect(self.container_id.server_id.domain)
+            ssh, sftp = self.connect(self.container_id.server_id.name)
             self.execute(ssh, ['rm', '-rf', self.application_version_id.full_hostpath])
             ssh.close(), sftp.close()
 
@@ -402,7 +402,7 @@ class ClouderService(models.Model):
     def deploy_files(self):
         base_obj = self.env['clouder.base']
         self.purge_files()
-        ssh, sftp = self.connect(self.container_id.server_id.domain)
+        ssh, sftp = self.connect(self.container_id.server_id.name)
 
         if not self.exist(sftp, self.application_version_id.full_hostpath):
             ssh_archive, sftp_archive = self.connect(self.application_version_id.archive_id.fullname())
