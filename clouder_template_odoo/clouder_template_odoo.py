@@ -61,7 +61,7 @@ class ClouderService(models.Model):
 
             config_file = '/opt/odoo/' + self.name + '/etc/config'
             self.execute(ssh, ['mkdir', '-p', '/opt/odoo/' + self.name + '/etc'])
-            sftp.put(modules.get_module_path('clouder_odoo') + '/res/openerp.config', config_file)
+            self.send(sftp, modules.get_module_path('clouder_odoo') + '/res/openerp.config', config_file)
             addons_path = '/opt/odoo/' + self.name + '/files/parts/odoo/addons,'
             for dir in  sftp.listdir('/opt/odoo/' + self.name + '/files/extra'):
                 addons_path += '/opt/odoo/' + self.name + '/files/extra/' + dir + ','

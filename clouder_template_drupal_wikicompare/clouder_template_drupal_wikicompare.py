@@ -30,8 +30,8 @@ class ClouderApplicationVersion(models.Model):
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'drupal' and self.application_id.code == 'wkc':
             ssh, sftp = self.connect(self.archive_id.fullname())
-            sftp.put(modules.get_module_path('clouder_drupal') + '/res/wikicompare.script', self.full_archivepath() + '/wikicompare.script')
-            sftp.put(modules.get_module_path('clouder_drupal') + '/res/patch/revisioning_postgres.patch', self.full_archivepath() + '/revisioning_postgres.patch')
+            self.send(sftp, modules.get_module_path('clouder_drupal') + '/res/wikicompare.script', self.full_archivepath() + '/wikicompare.script')
+            self.send(sftp, modules.get_module_path('clouder_drupal') + '/res/patch/revisioning_postgres.patch', self.full_archivepath() + '/revisioning_postgres.patch')
             self.execute(ssh, ['patch', '-p0', '-d', self.full_archivepath() + '/sites/all/modules/revisioning/', '<', self.full_archivepath() + '/revisioning_postgres.patch'])
             ssh.close(), sftp.close()
 

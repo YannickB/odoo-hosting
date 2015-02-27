@@ -469,7 +469,7 @@ class ClouderService(models.Model):
             ssh_archive.close(), sftp_archive.close()
             self.execute(ssh, ['mkdir', '-p', self.application_version_id.full_hostpath])
             self.log('sftp put ' + tmp + ' ' + self.application_version_id.full_hostpath + '.tar.gz')
-            sftp.put(tmp, self.application_version_id.full_hostpath + '.tar.gz')
+            self.send(sftp, tmp, self.application_version_id.full_hostpath + '.tar.gz')
             self.execute(ssh, ['tar', '-xf', self.application_version_id.full_hostpath + '.tar.gz', '-C', self.application_version_id.full_hostpath])
             self.execute(ssh, ['rm', self.application_id.full_hostpath + '/' + self.application_version_id.name + '.tar.gz'])
 

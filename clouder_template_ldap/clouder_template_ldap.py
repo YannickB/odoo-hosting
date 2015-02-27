@@ -63,7 +63,7 @@ class ClouderContainer(models.Model):
             self.execute(ssh, ['dpkg-reconfigure', '-f', 'noninteractive', 'slapd'])
 
             config_file = '/etc/ldap/schema/' + self.options()['domain']['value'] + '.ldif'
-            sftp.put(modules.get_module_path('clouder_ldap') + '/res/ldap.ldif', config_file)
+            self.send(sftp, modules.get_module_path('clouder_ldap') + '/res/ldap.ldif', config_file)
             domain_dc = ''
             for dc in self.options()['value'].split('.'):
                 if domain_dc:

@@ -45,7 +45,7 @@ class ClouderContainerLink(models.Model):
             file = 'container-shinken'
             if self.container_id.nosave:
                 file = 'container-shinken-nosave'
-            sftp.put(modules.get_module_path('clouder_shinken') + '/res/' + file + '.config', self.container_id.shinken_configfile())
+            self.send(sftp, modules.get_module_path('clouder_shinken') + '/res/' + file + '.config', self.container_id.shinken_configfile())
             self.execute(ssh, ['sed', '-i', '"s/METHOD/' + self.container_id.backup_ids[0].options()['restore_method']['value'] + '/g"', self.container_id.shinken_configfile()])
             self.execute(ssh, ['sed', '-i', '"s/TYPE/container/g"', self.container_id.shinken_configfile()])
             self.execute(ssh, ['sed', '-i', '"s/CONTAINER/' + self.container_id.backup_ids[0].fullname() + '/g"', self.container_id.shinken_configfile()])
@@ -77,7 +77,7 @@ class ClouderBaseLink(models.Model):
             file = 'base-shinken'
             if self.base_id.nosave:
                 file = 'base-shinken-nosave'
-            sftp.put(modules.get_module_path('clouder_shinken') + '/res/' + file + '.config', self.base_id.shinken_configfile())
+            self.send(sftp, modules.get_module_path('clouder_shinken') + '/res/' + file + '.config', self.base_id.shinken_configfile())
             self.execute(ssh, ['sed', '-i', '"s/TYPE/base/g"', self.base_id.shinken_configfile()])
             self.execute(ssh, ['sed', '-i', '"s/UNIQUE_NAME/' + self.base_id.unique_name_() + '/g"', self.base_id.shinken_configfile()])
             self.execute(ssh, ['sed', '-i', '"s/DATABASES/' + self.base_id.databases_comma() + '/g"', self.base_id.shinken_configfile()])

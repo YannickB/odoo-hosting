@@ -33,7 +33,7 @@ class ClouderDomain(models.Model):
     @api.multi
     def deploy(self):
         ssh, sftp = self.connect(self.dns_id.fullname())
-        sftp.put(modules.get_module_path('clouder_template_bind') + '/res/bind.config', self.configfile())
+        self.send(sftp, modules.get_module_path('clouder_template_bind') + '/res/bind.config', self.configfile())
         self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + self.name + '/g"', self.configfile()])
         self.execute(ssh, ['sed', '-i', '"s/IP/' + self.dns_id.server_id.ip + '/g"', self.configfile()])
         self.execute(ssh, ["echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])

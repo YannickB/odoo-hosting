@@ -252,7 +252,8 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def send(self, sftp, source, destination):
         self.log('send : ' + source + ' to ' + destination)
-        sftp.put(source, destination)
+        self.send(sftp, source, destination)
+
 
     @api.multi
     def execute_local(self, cmd, path=False, shell=False):

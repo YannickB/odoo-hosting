@@ -51,7 +51,7 @@ class ClouderBase(models.Model):
 
             ssh, sftp = self.connect(self.service_id.container_id.fullname())
             config_file = '/etc/nginx/sites-available/' + self.fullname()
-            sftp.put(modules.get_module_path('clouder_piwik') + '/res/nginx.config', config_file)
+            self.send(sftp, modules.get_module_path('clouder_piwik') + '/res/nginx.config', config_file)
             self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"', config_file])
             self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + self.domain_id.name + '/g"', config_file])
             self.execute(ssh, ['sed', '-i', '"s/PATH/' + self.service_id.full_localpath_file().replace('/','\/') + '/g"', config_file])

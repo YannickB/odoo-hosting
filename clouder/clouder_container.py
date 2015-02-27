@@ -142,7 +142,7 @@ class ClouderServer(models.Model):
 #        _logger.info('test %s', vals['shinken_server_domain'])
 #        if 'shinken_server_domain' in vals:
 #            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-#            sftp.put(modules.get_module_path('clouder_shinken') + '/res/server-shinken.config', vals['server_shinken_configfile'])
+#            self.send(sftp, modules.get_module_path('clouder_shinken') + '/res/server-shinken.config', vals['server_shinken_configfile'])
 #            execute.execute(ssh, ['sed', '-i', '"s/NAME/' + vals['server_domain'] + '/g"', vals['server_shinken_configfile']], context)
 #            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
 #            ssh.close()
@@ -666,7 +666,7 @@ class ClouderContainer(models.Model):
         self.execute_write_file(self.home_directory() + '/.ssh/config', '\n#END ' + self.fullname() + '\n')
         ssh, sftp = self.connect(self.server_id.name)
         self.execute(ssh, ['mkdir', '/opt/keys/' + self.fullname()])
-        sftp.put(self.home_directory() + '/.ssh/keys/' + self.fullname() + '.pub', '/opt/keys/' + self.fullname() + '/authorized_keys')
+        self.send(sftp, self.home_directory() + '/.ssh/keys/' + self.fullname() + '.pub', '/opt/keys/' + self.fullname() + '/authorized_keys')
         ssh.close(), sftp.close()
 
         # _logger.info('restart required %s', restart_required)
