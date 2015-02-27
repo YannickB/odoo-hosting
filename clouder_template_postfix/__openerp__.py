@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Postfix',
+    'name': 'Clouder Template Postfix',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder'],
@@ -28,10 +28,10 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    Clouder Postfix
+    Clouder Template Postfix
     """,
     'demo': [],
-    'data': ['clouder_postfix_data.xml'],
+    'data': ['clouder_template_postfix_data.xml'],
     'installable': True,
     'application': True,
 }

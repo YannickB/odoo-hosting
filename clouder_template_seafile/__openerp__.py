@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Seafile',
+    'name': 'Clouder Template Seafile',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder'],
@@ -31,7 +31,7 @@
     Clouder Seafile
     """,
     'demo': [],
-    'data': ['clouder_seafile_data.xml'],
+    'data': ['clouder_template_seafile_data.xml'],
     'installable': True,
     'application': True,
 }

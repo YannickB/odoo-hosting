@@ -23,7 +23,7 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 
-import execute
+import clouder_model
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -97,10 +97,17 @@ class ClouderService(models.Model):
                 options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
         for option in self.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+
+        if 'port' in options:
+            test = False
+            for port in self.port_ids:
+                if options['port']['value'] == port.localport:
+                    options['port']['localport'] = port.localport
+                    options['port']['hostport'] = port.hostport
         return options
 
     _defaults = {
-      'database_password': execute.generate_random_password(20),
+      'database_password': clouder_model.generate_random_password(20),
     }
 
     _sql_constraints = [

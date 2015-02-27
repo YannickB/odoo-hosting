@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Proxy',
+    'name': 'Clouder Template Proxy',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder'],
@@ -28,10 +28,10 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    Clouder Proxy
+    Clouder Template Proxy
     """,
     'demo': [],
-    'data': ['clouder_proxy_data.xml'],
+    'data': ['clouder_template_proxy_data.xml'],
     'installable': True,
     'application': True,
 }

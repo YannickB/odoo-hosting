@@ -20,18 +20,15 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Drupal',
+    'name': 'Clouder Template Drupal',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder_template_postgres', 'clouder_template_piwik'],
     'author': 'Yannick Buron',
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
-    'description': """
-    Clouder Drupal
-    """,
     'demo': [],
-    'data': ['clouder_drupal_data.xml'],
+    'data': ['clouder_template_drupal_data.xml'],
     'installable': True,
     'application': True,
 }

@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Bind',
+    'name': 'Clouder Template Bind',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder'],
@@ -28,10 +28,10 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    Clouder Bind
+    Clouder Template Bind
     """,
     'demo': [],
-    'data': ['clouder_bind_data.xml'],
+    'data': ['clouder_template_bind_data.xml'],
     'installable': True,
     'application': True,
 }

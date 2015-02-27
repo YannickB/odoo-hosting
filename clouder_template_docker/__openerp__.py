@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Docker',
+    'name': 'Clouder Template Docker',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder'],
@@ -28,10 +28,10 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    Clouder Docker
+    Clouder Template Docker
     """,
     'demo': [],
-    'data': ['clouder_docker_data.xml'],
+    'data': ['clouder_template_docker_data.xml'],
     'installable': True,
     'application': True,
 }

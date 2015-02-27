@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Odoo',
+    'name': 'Clouder Template Odoo',
     'version': '1.0',
     'category': 'Community',
     'depends': [
@@ -39,7 +39,7 @@
     """,
     'demo': [],
     'data': [
-        'clouder_odoo_data.xml'
+        'clouder_template_odoo_data.xml'
     ],
     'installable': True,
     'application': True,

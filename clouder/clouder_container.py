@@ -195,12 +195,11 @@ class ClouderContainer(models.Model):
     link_ids = fields.One2many('clouder.container.link', 'container_id', 'Links')
     service_ids = fields.One2many('clouder.service', 'container_id', 'Services')
     ports = fields.Text('Ports', compute='_get_ports')
-    backup_server_ids = fields.Many2many('clouder.container', 'clouder_container_backup_rel', 'container_id', 'backup_id', 'Backup containers')
+    backup_ids = fields.Many2many('clouder.container', 'clouder_container_backup_rel', 'container_id', 'backup_id', 'Backup containers')
 
     fullname = lambda self : self.name + '_' + self.server_id.name
     volumes_save = lambda self : ','.join([volume.name for volume in self.volume_ids if not volume.nosave])
     ssh_port = lambda self : (port.hostport for port in self.port_ids if port.name == 'ssh') or 22
-    shinken_configfile = lambda self : '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
     root_password = lambda self : (option.value for option in self.option_ids if option.name == 'root_password')
 
     def options(self):

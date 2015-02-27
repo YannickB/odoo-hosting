@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Shinken',
+    'name': 'Clouder Template Shinken',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder_template_postfix'],
@@ -31,7 +31,7 @@
     Clouder Shinken
     """,
     'demo': [],
-    'data': ['clouder_shinken_data.xml'],
+    'data': ['clouder_template_shinken_data.xml'],
     'installable': True,
     'application': True,
 }

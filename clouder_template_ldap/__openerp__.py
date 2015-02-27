@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder LDAP',
+    'name': 'Clouder Template LDAP',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder'],
@@ -28,10 +28,10 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    Clouder LDAP
+    Clouder Template LDAP
     """,
     'demo': [],
-    'data': ['clouder_ldap_data.xml'],
+    'data': ['clouder_template_ldap_data.xml'],
     'installable': True,
     'application': True,
 }

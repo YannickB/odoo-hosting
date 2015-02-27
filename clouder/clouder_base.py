@@ -19,12 +19,11 @@
 #
 ##############################################################################
 
-from openerp import modules
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 
 from datetime import datetime, timedelta
-import execute
+import clouder_model
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -39,8 +38,6 @@ class ClouderDomain(models.Model):
     dns_id = fields.Many2one('clouder.container', 'DNS Server', required=True)
     cert_key = fields.Text('Wildcard Cert Key')
     cert_cert = fields.Text('Wildcart Cert')
-
-    domain_configfile = lambda self : '/etc/bind/db.' + self.name
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
@@ -76,29 +73,7 @@ class ClouderDomain(models.Model):
     #     return vals
 
 
-    @api.multi
-    def deploy(self):
-        ssh, sftp = self.connect(self.dns_id.fullname())
-        sftp.put(modules.get_module_path('clouder') + '/res/bind.config', self.domain_configfile)
-        self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + self.name + '/g"', self.domain_configfile])
-        self.execute(ssh, ['sed', '-i', '"s/IP/' + self.dns_id.server_id.ip + '/g"', self.domain_configfile])
-        self.execute(ssh, ["echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
-        self.execute(ssh, ['echo "type master;" >> /etc/bind/named.conf'])
-        self.execute(ssh, ['echo "allow-transfer {213.186.33.199;};" >> /etc/bind/named.conf'])
-        self.execute(ssh, ["echo 'file \"/etc/bind/db." + self.name + "\";' >> /etc/bind/named.conf"])
-        self.execute(ssh, ['echo "notify yes;" >> /etc/bind/named.conf'])
-        self.execute(ssh, ['echo "};" >> /etc/bind/named.conf'])
-        self.execute(ssh, ['echo "//END ' + self.name + '" >> /etc/bind/named.conf'])
-        self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
-        ssh.close(), sftp.close()
 
-    @api.multi
-    def purge(self):
-        ssh, sftp = self.connect(self.dns_id.fullname())
-        self.execute(ssh, ['sed', '-i', "'/zone\s\"" + self.name + "\"/,/END\s" + self.name + "/d'", '/etc/bind/named.conf'])
-        self.execute(ssh, ['rm', self.configfile])
-        self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
-        ssh.close(), sftp.close()
 
 
 class ClouderBase(models.Model):
@@ -143,14 +118,12 @@ class ClouderBase(models.Model):
     cert_key = fields.Text('Cert Key')
     cert_cert = fields.Text('Cert')
     parent_id = fields.Many2one('clouder.base','Parent Base')
-    backup_server_ids = fields.Many2many('clouder.container', 'clouder_base_backup_rel', 'base_id', 'backup_id', 'Backup containers', required=True)
+    backup_ids = fields.Many2many('clouder.container', 'clouder_base_backup_rel', 'base_id', 'backup_id', 'Backup containers', required=True)
 
     fullname = lambda self : (self.application_id.code + '-' + self.name + '-' + self.domain_id.name).replace('.','-')
     unique_name_ = lambda self : self.fullname
     unique_name_ = lambda self : self.unique_name.replace('-','_')
     fulldomain = lambda self : self.name + '.' + self.domain_id.name
-    nginx_configfile = lambda self : '/etc/nginx/sites-available/' + self.unique_name
-    shinken_configfile = lambda self : '/usr/local/shinken/etc/services/' + self.unique_name + '.cfg',
 
     def databases(self):
         databases = {'single': self.unique_name_}
@@ -172,8 +145,8 @@ class ClouderBase(models.Model):
 
     _defaults = {
       'build': 'restore',
-      'admin_passwd': execute.generate_random_password(20),
-      'poweruser_passwd': execute.generate_random_password(12),
+      'admin_passwd': clouder_model.generate_random_password(20),
+      'poweruser_passwd': clouder_model.generate_random_password(12),
       'lang': 'en_US'
     }
 

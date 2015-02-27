@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Wordpress',
+    'name': 'Clouder Template Wordpress',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder'],
@@ -32,7 +32,7 @@
     """,
     'demo': [],
     'data': [
-        'clouder_wordpress_data.xml'
+        'clouder_template_wordpress_data.xml'
     ],
     'installable': True,
     'application': True,

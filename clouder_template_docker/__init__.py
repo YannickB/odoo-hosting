@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-import docker
+import clouder_template_docker

@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-import base
+import clouder_template_bind

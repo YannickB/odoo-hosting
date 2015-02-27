@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-import deploy
+import clouder_template_postfix

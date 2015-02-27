@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Piwik',
+    'name': 'Clouder Template Piwik',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder_template_mysql', 'clouder_template_bind', 'clouder_template_proxy', 'clouder_template_shinken'],
@@ -28,10 +28,10 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    Clouder Piwik
+    Clouder Template Piwik
     """,
     'demo': [],
-    'data': ['clouder_piwik_data.xml'],
+    'data': ['clouder_template_piwik_data.xml'],
     'installable': True,
     'application': True,
 }

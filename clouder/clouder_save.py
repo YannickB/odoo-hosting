@@ -24,7 +24,6 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 
 from datetime import datetime
-import execute
 import ast
 
 import logging
@@ -369,7 +368,7 @@ class ClouderSaveSave(models.Model):
 
             for volume in container.volume_ids:
                 if volume.user:
-                    execute.execute(ssh, ['chown', '-R', volume.user + ':' + volume.user, volume.name])
+                    self.execute(ssh, ['chown', '-R', volume.user + ':' + volume.user, volume.name])
             # execute.execute(ssh, ['supervisorctl', 'start', 'all'], context)
             ssh.close(), sftp.close()
             container.start()
@@ -575,7 +574,7 @@ class ClouderSaveSave(models.Model):
 
         if self.repo_id.type == 'base' and self.base_id:
             base = self.base_id
-            ssh, sftp = execute.connect(base.service_id.container_id.fullname(), username=base.application_id.type_id.system_user)
+            ssh, sftp = self.connect(base.service_id.container_id.fullname(), username=base.application_id.type_id.system_user)
             self.execute(ssh, ['mkdir', '-p', '/base-backup/' + self.repo_id.name])
             for key, database in base.databases().iteritems():
                 if base.service_id.database_type() != 'mysql':
@@ -638,7 +637,7 @@ class ClouderSaveSave(models.Model):
         ssh.close(), sftp.close()
 
 
-        ssh, sftp = execute.connect(self.container_id.fullname())
+        ssh, sftp = self.connect(self.container_id.fullname())
         self.execute(ssh, ['rm', '-rf', directory + '*'])
         ssh.close(), sftp.close()
 

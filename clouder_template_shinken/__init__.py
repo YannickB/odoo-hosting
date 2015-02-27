@@ -1,3 +1,2 @@
 # -*- coding: utf-8 -*-
-import container
-import base
+import clouder_template_shinken

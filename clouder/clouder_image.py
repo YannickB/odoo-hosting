@@ -24,7 +24,6 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 
 from datetime import datetime
-#import execute #TODO rename clouder_model
 
 import logging
 _logger = logging.getLogger(__name__)

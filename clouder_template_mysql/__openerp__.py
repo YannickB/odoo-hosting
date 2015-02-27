@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder MySQL',
+    'name': 'Clouder Template MySQL',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder'],
@@ -28,10 +28,10 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    Clouder MySQL
+    Clouder Template MySQL
     """,
     'demo': [],
-    'data': ['clouder_mysql_data.xml'],
+    'data': ['clouder_template_mysql_data.xml'],
     'installable': True,
     'application': True,
 }

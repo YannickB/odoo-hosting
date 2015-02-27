@@ -20,7 +20,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Postgres',
+    'name': 'Clouder Template Postgres',
     'version': '1.0',
     'category': 'Community',
     'depends': ['clouder'],
@@ -28,10 +28,10 @@
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
     'description': """
-    Clouder Postgres
+    Clouder Template Postgres
     """,
     'demo': [],
-    'data': ['clouder_postgres_data.xml'],
+    'data': ['clouder_template_postgres_data.xml'],
     'installable': True,
     'application': True,
 }
