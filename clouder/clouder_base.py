@@ -21,6 +21,7 @@
 
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
+import re
 
 from datetime import datetime, timedelta
 import clouder_model
@@ -38,10 +39,22 @@ class ClouderDomain(models.Model):
     dns_id = fields.Many2one('clouder.container', 'DNS Server', required=True)
     cert_key = fields.Text('Wildcard Cert Key')
     cert_cert = fields.Text('Wildcart Cert')
+    public = fields.Boolean('Public?')
+    partner_id = fields.Many2one('res.partner', 'Manager')
+
+    _defaults = {
+        'partner_id': lambda self: self.env.user.partner_id
+    }
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
+
+    @api.one
+    @api.constrains('name')
+    def _validate_data(self) :
+        if not re.match("^[\w\d.-]*$", self.name):
+            raise except_orm(_('Data error!'),_("Name can only contains letters, digits - and dot"))
 
     # @api.multi
     # def get_vals(self):
@@ -119,6 +132,9 @@ class ClouderBase(models.Model):
     cert_cert = fields.Text('Cert')
     parent_id = fields.Many2one('clouder.base','Parent Base')
     backup_ids = fields.Many2many('clouder.container', 'clouder_base_backup_rel', 'base_id', 'backup_id', 'Backup containers', required=True)
+    public = fields.Boolean('Public?')
+    partner_id = fields.Many2one('res.partner', 'Manager')
+    partner_ids = fields.Many2many('res.partner', 'clouder_base_partner_rel', 'base_id', 'partner_id', 'Users')
 
     fullname = lambda self : (self.application_id.code + '-' + self.name + '-' + self.domain_id.name).replace('.','-')
     unique_name_ = lambda self : self.fullname
@@ -144,15 +160,28 @@ class ClouderBase(models.Model):
         return options
 
     _defaults = {
-      'build': 'restore',
-      'admin_passwd': clouder_model.generate_random_password(20),
-      'poweruser_passwd': clouder_model.generate_random_password(12),
-      'lang': 'en_US'
+        'partner_id': lambda self: self.env.user.partner_id,
+        'build': 'restore',
+        'admin_passwd': clouder_model.generate_random_password(20),
+        'poweruser_passwd': clouder_model.generate_random_password(12),
+        'lang': 'en_US'
     }
 
     _sql_constraints = [
         ('name_uniq', 'unique (name,domain_id)', 'Name must be unique per domain !')
     ]
+
+    @api.one
+    @api.constrains('name', 'admin_name', 'admin_email', 'poweruser_email')
+    def _validate_data(self) :
+        if not re.match("^[\w\d_]*$", self.name):
+            raise except_orm(_('Data error!'),_("Name can only contains letters, digits and underscore"))
+        if not re.match("^[\w\d_]*$", self.admin_name):
+            raise except_orm(_('Data error!'),_("Admin name can only contains letters, digits and underscore"))
+        if not re.match("^[\w\d_.@-]*$", self.admin_email):
+            raise except_orm(_('Data error!'),_("Admin email can only contains letters, digits, underscore, - and @"))
+        if not re.match("^[\w\d_.@-]*$", self.poweruser_email):
+            raise except_orm(_('Data error!'),_("Poweruser email can only contains letters, digits, underscore, - and @"))
 
     @api.one
     @api.constrains('service_id','service_ids','application_id')

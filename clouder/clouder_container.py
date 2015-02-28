@@ -22,6 +22,7 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 from openerp import modules
+import re
 
 import time
 from datetime import datetime, timedelta
@@ -41,12 +42,26 @@ class ClouderServer(models.Model):
     public_key = fields.Text('SSH Public Key', required=True)
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
+    public = fields.Boolean('Public?')
+    partner_id = fields.Many2one('res.partner', 'Manager')
+
+    _defaults = {
+        'partner_id': lambda self: self.env.user.partner_id
+    }
 
     shinken_configfile = lambda self : '/usr/local/shinken/etc/hosts/' + self.name + '.cfg'
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
+
+    @api.one
+    @api.constrains('name', 'ip')
+    def _validate_data(self) :
+        if not re.match("^[\w\d.-]*$", self.name):
+            raise except_orm(_('Data error!'),_("Name can only contains letters, digits, - and ."))
+        if not re.match("^[\d:.]*$", self.ip):
+            raise except_orm(_('Data error!'),_("Admin name can only contains digits, dots and :"))
 
     # @api.multi
     # def get_vals(self):
@@ -196,6 +211,9 @@ class ClouderContainer(models.Model):
     service_ids = fields.One2many('clouder.service', 'container_id', 'Services')
     ports = fields.Text('Ports', compute='_get_ports')
     backup_ids = fields.Many2many('clouder.container', 'clouder_container_backup_rel', 'container_id', 'backup_id', 'Backup containers')
+    public = fields.Boolean('Public?')
+    partner_id = fields.Many2one('res.partner', 'Manager')
+    partner_ids = fields.Many2many('res.partner', 'clouder_container_partner_rel', 'container_id', 'partner_id', 'Users')
 
     fullname = lambda self : self.name + '_' + self.server_id.name
     volumes_save = lambda self : ','.join([volume.name for volume in self.volume_ids if not volume.nosave])
@@ -211,9 +229,19 @@ class ClouderContainer(models.Model):
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
         return options
 
+    _defaults = {
+        'partner_id': lambda self: self.env.user.partner_id
+    }
+
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,name)', 'Name must be unique per server!'),
     ]
+
+    @api.one
+    @api.constrains('name')
+    def _validate_data(self) :
+        if not re.match("^[\w\d_]*$", self.name):
+            raise except_orm(_('Data error!'),_("Name can only contains letters, digits and underscore"))
 
     @api.one
     @api.constrains('application_id')

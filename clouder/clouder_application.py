@@ -23,6 +23,7 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 from datetime import datetime
+import re
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -43,6 +44,12 @@ class ClouderApplicationType(models.Model):
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
+
+    @api.one
+    @api.constrains('name','system_user')
+    def _validate_data(self) :
+        if not re.match("^[\w\d_]*$", self.name) or not re.match("^[\w\d_]*$", self.systemuser):
+            raise except_orm(_('Data error!'),_("Name and system_user can only contains letters, digits and underscore"))
 
     # @api.multi
     # def get_vals(self):
@@ -115,6 +122,8 @@ class ClouderApplication(models.Model):
     base_saverepo_change = fields.Integer('Days before base saverepo change', required=True)
     base_saverepo_expiration = fields.Integer('Days before base saverepo expiration', required=True)
     base_save_expiration = fields.Integer('Days before base save expiration', required=True)
+    public = fields.Boolean('Public?')
+    partner_id = fields.Many2one('res.partner', 'Manager')
 
     full_archivepath = lambda self : self.archive_path() + '/' + self.type_id.name + '-' + self.code
     full_hostpath = lambda  self : self.services_hostpath() + '/' + self.type_id.name + '-' + self.code
@@ -130,10 +139,23 @@ class ClouderApplication(models.Model):
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
         return options
 
+    _defaults = {
+        'partner_id': lambda self: self.env.user.partner_id
+    }
+
     _sql_constraints = [
         ('code_uniq', 'unique(code)', 'Code must be unique!'),
     ]
 
+    @api.one
+    @api.constrains('code', 'admin_name', 'admin_email')
+    def _validate_data(self) :
+        if not re.match("^[\w\d_]*$", self.code) or self.code.lengh() > 10:
+            raise except_orm(_('Data error!'),_("Code can only contains letters, digits and underscore and shall be less than 10 characters"))
+        if not re.match("^[\w\d_]*$", self.admin_name):
+            raise except_orm(_('Data error!'),_("Admin name can only contains letters, digits and underscore"))
+        if not re.match("^[\w\d_-.@]*$", self.admin_email):
+            raise except_orm(_('Data error!'),_("Admin email can only contains letters, digits, underscore, - and @"))
 
     @api.multi
     @api.onchange('type_id')
@@ -247,6 +269,12 @@ class ClouderApplicationVersion(models.Model):
     _sql_constraints = [
         ('name_app_uniq', 'unique (name,application_id)', 'The name of the version must be unique per application !')
     ]
+
+    @api.one
+    @api.constrains('name')
+    def _validate_data(self) :
+        if not re.match("^[\w\d_.]*$", self.name):
+            raise except_orm(_('Data error!'),_("Application version can only contains letters, digits and underscore and dot"))
 
     _order = 'create_date desc'
 

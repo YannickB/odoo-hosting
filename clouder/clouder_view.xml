@@ -47,6 +47,9 @@
                         <newline/>
                         <field name="parent_id"/>
                         <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
+                        <field name="public"/>
+                        <field name="partner_id"/>
+                        <field name="partner_ids"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -122,6 +125,9 @@
                         <newline/>
                         <field name="parent_id"/>
                         <button name="deploy_to_parent" string="Deploy to parent" type="object" attrs="{'invisible': [('parent_id','=', False)]}"/>
+                        <field name="public"/>
+                        <field name="partner_id"/>
+                        <field name="partner_ids"/>
                     </group>
                     <group col="4" attrs="{'invisible': [('parent_id','!=', False)]}">
                         <button name="install_formation" string="Install Formation" type="object"/>
@@ -184,6 +190,9 @@
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
                         <field name="nosave"/>
                         <field name="privileged"/>
+                        <field name="public"/>
+                        <field name="partner_id"/>
+                        <field name="partner_ids"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -283,6 +292,8 @@
                         <field name="public_key"/>
                         <field name="start_port"/>
                         <field name="end_port"/>
+                        <field name="public"/>
+                        <field name="partner_id"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
                     <button name="start_containers" string="Restart Containers" type="object"/>
@@ -487,6 +498,8 @@
                         <newline/>
                         <field name="cert_key"/>
                         <field name="cert_cert"/>
+                        <field name="public"/>
+                        <field name="partner_id"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
                     <field name="log_ids" colspan="4"/>
@@ -571,6 +584,8 @@
                         <field name="next_server_id"/>
                         <field name="admin_name"/>
                         <field name="admin_email"/>
+                        <field name="public"/>
+                        <field name="partner_id"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -728,6 +743,8 @@
                         <field name="current_version"/>
                         <field name="parent_id"/>
                         <field name="privileged"/>
+                        <field name="public"/>
+                        <field name="partner_id"/>
                     </group>
                     <field name="dockerfile" colspan="4"/>
                     <field name="volume_ids" colspan="4">

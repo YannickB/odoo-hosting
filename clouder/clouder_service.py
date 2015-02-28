@@ -22,6 +22,7 @@
 
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
+import re
 
 import clouder_model
 
@@ -62,6 +63,9 @@ class ClouderService(models.Model):
     parent_id = fields.Many2one('clouder.service', 'Parent Service')
     sub_service_name = fields.Char('Subservice Name', size=64)
     custom_version = fields.Boolean('Custom Version?')
+    public = fields.Boolean('Public?')
+    partner_id = fields.Many2one('res.partner', 'Manager')
+    partner_ids = fields.Many2many('res.partner', 'clouder_service_partner_rel', 'service_id', 'partner_id', 'Users')
 
     fullname = lambda self : self.container_id.name + '-' + self.name
     full_localpath = lambda self : self.application_id.type_id.localpath_services + '/' + self.name
@@ -107,12 +111,21 @@ class ClouderService(models.Model):
         return options
 
     _defaults = {
-      'database_password': clouder_model.generate_random_password(20),
+        'partner_id': lambda self: self.env.user.partner_id,
+        'database_password': clouder_model.generate_random_password(20),
     }
 
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)', 'Name must be unique per container!'),
     ]
+
+    @api.one
+    @api.constrains('name', 'sub_service_name')
+    def _validate_data(self) :
+        if not re.match("^[\w\d_]*$", self.name):
+            raise except_orm(_('Data error!'),_("Name can only contains letters, digits and underscore "))
+        if not re.match("^[\w\d_]*$", self.sub_service_name):
+            raise except_orm(_('Data error!'),_("Sub service name can only contains letters, digits and underscore "))
 
     @api.one
     @api.constrains('container_id')

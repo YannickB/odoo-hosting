@@ -22,7 +22,7 @@
 
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
-
+import re
 from datetime import datetime
 
 import logging
@@ -43,10 +43,23 @@ class ClouderImage(models.Model):
     volume_ids = fields.One2many('clouder.image.volume', 'image_id', 'Volumes')
     port_ids = fields.One2many('clouder.image.port', 'image_id', 'Ports')
     version_ids = fields.One2many('clouder.image.version','image_id', 'Versions')
+    public = fields.Boolean('Public?')
+    partner_id = fields.Many2one('res.partner', 'Manager')
+
+    _defaults = {
+        'partner_id': lambda self: self.env.user.partner_id
+    }
+
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Image name must be unique!')
     ]
+
+    @api.one
+    @api.constrains('name')
+    def _validate_data(self) :
+        if not re.match("^[\w\d_]*$", self.name):
+            raise except_orm(_('Data error!'),_("Name can only contains letters, digits and underscore"))
 
     # @api.multi
     # def get_vals(self):
@@ -147,6 +160,13 @@ class ClouderImageVersion(models.Model):
     _sql_constraints = [
         ('name_uniq', 'unique(image_id,name)', 'Version name must be unique per image!')
     ]
+
+    @api.one
+    @api.constrains('name')
+    def _validate_data(self) :
+        if not re.match("^[\w\d_.]*$", self.name):
+            raise except_orm(_('Data error!'),_("Image version can only contains letters, digits and underscore and dot"))
+
 
     # @api.multi
     # def get_vals(self):

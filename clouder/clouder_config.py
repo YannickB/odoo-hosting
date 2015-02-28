@@ -22,6 +22,7 @@
 
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
+import re
 
 from datetime import datetime
 
@@ -70,6 +71,12 @@ class ClouderConfigSettings(models.Model):
     #         'now_bup': now.strftime("%Y-%m-%d-%H%M%S"),
     #     })
     #     return vals
+
+    @api.one
+    @api.constrains('email_sysadmin')
+    def _validate_data(self) :
+        if not re.match("^[\w\d_.@-]*$", self.email_sysadmin):
+            raise except_orm(_('Data error!'),_("Sysadmin email can only contains letters, digits, underscore, - and @"))
 
     @api.multi
     def reset_keys(self):
