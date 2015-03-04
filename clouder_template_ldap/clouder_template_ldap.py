@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -31,21 +31,26 @@ class ClouderContainer(models.Model):
     def create_vals(self):
         vals = super(ClouderContainer, self).create_vals()
         if 'application_id' in vals and vals['application_id']:
-            application = self.env['clouder.application'].browse(vals['application_id'])
+            application = self.env['clouder.application'].browse(
+                vals['application_id'])
             if application.type_id.name == 'openldap':
                 if not 'option_ids' in vals:
                     vals['options_ids'] = []
 
-                password_option = self.env.ref('clouder_ldap.apptype_openldap_option2').id
+                password_option = self.env.ref(
+                    'clouder_ldap.apptype_openldap_option2').id
                 flag = False
                 for option in vals['option_ids']:
                     if option[2]['name'] == password_option:
                         if not option[2]['value']:
-                            option[2]['value'] = clouder_model.generate_random_password(20)
+                            option[2]['value'] = \
+                                clouder_model.generate_random_password(20)
                         flag = True
 
                 if not flag:
-                    vals['option_ids'].append((0,0,{'name': password_option, 'value': clouder_model.generate_random_password(20)}))
+                    vals['option_ids'].append((0, 0, {
+                        'name': password_option,
+                        'value': clouder_model.generate_random_password(20)}))
         return vals
 
     @api.multi
@@ -54,28 +59,53 @@ class ClouderContainer(models.Model):
         if self.application_id.type_id.name == 'openldap':
             ssh, sftp = self.connect(self.fullname())
 
-            self.execute(ssh, ['echo "slapd slapd/internal/generated_adminpw password ' + self.options()['password']['value'] + '"', '|', 'debconf-set-selections'])
-            self.execute(ssh, ['echo "slapd slapd/password2 password ' + self.options()['password']['value'] + '"', '|', 'debconf-set-selections'])
-            self.execute(ssh, ['echo "slapd slapd/internal/adminpw password ' + self.options()['password']['value'] + '"', '|', 'debconf-set-selections'])
-            self.execute(ssh, ['echo "slapd slapd/password1 password ' + self.options()['password']['value'] + '"', '|', 'debconf-set-selections'])
-            self.execute(ssh, ['echo "slapd shared/organization string ' + self.options()['organization']['value'] + '"', '|', 'debconf-set-selections'])
-            self.execute(ssh, ['echo "slapd slapd/domain string ' + self.options()['domain']['value'] + '"', '|', 'debconf-set-selections'])
-            self.execute(ssh, ['dpkg-reconfigure', '-f', 'noninteractive', 'slapd'])
+            self.execute(ssh, [
+                'echo "slapd slapd/internal/generated_adminpw password ' +
+                self.options()['password']['value'] + '"', '|',
+                'debconf-set-selections'])
+            self.execute(ssh, ['echo "slapd slapd/password2 password ' +
+                               self.options()['password']['value'] + '"', '|',
+                               'debconf-set-selections'])
+            self.execute(ssh, ['echo "slapd slapd/internal/adminpw password ' +
+                               self.options()['password']['value'] + '"', '|',
+                               'debconf-set-selections'])
+            self.execute(ssh, ['echo "slapd slapd/password1 password ' +
+                               self.options()['password']['value'] + '"', '|',
+                               'debconf-set-selections'])
+            self.execute(ssh, ['echo "slapd shared/organization string ' +
+                               self.options()['organization']['value'] + '"',
+                               '|', 'debconf-set-selections'])
+            self.execute(ssh, ['echo "slapd slapd/domain string ' +
+                               self.options()['domain']['value'] + '"', '|',
+                               'debconf-set-selections'])
+            self.execute(ssh,
+                         ['dpkg-reconfigure', '-f', 'noninteractive', 'slapd'])
 
-            config_file = '/etc/ldap/schema/' + self.options()['domain']['value'] + '.ldif'
-            self.send(sftp, modules.get_module_path('clouder_ldap') + '/res/ldap.ldif', config_file)
+            config_file = '/etc/ldap/schema/' + \
+                          self.options()['domain']['value'] + '.ldif'
+            self.send(sftp, modules.get_module_path('clouder_ldap') +
+                      '/res/ldap.ldif', config_file)
             domain_dc = ''
             for dc in self.options()['value'].split('.'):
                 if domain_dc:
                     domain_dc += ','
                 domain_dc += 'dc=' + dc
 
-            self.execute(ssh, ['sed', '-i', '"s/\$DOMAIN/' + domain_dc + '/g"', config_file])
-            self.execute(ssh, ['sed', '-i', '"s/\$PASSWORD/' + self.options()['password']['value'] + '/g"', config_file])
-            self.execute(ssh, ['sed', '-i', '"s/\$ORGANIZATION/' + self.options()['organization']['value'] + '/g"', config_file])
-            self.execute(ssh, ['sed', '-i', '"s/dc=example,dc=com/' + domain_dc + '/g"', '/etc/phpldapadmin/config.php'])
+            self.execute(ssh, ['sed', '-i', '"s/\$DOMAIN/' + domain_dc + '/g"',
+                               config_file])
+            self.execute(ssh, ['sed', '-i',
+                               '"s/\$PASSWORD/' +
+                               self.options()['password']['value'] + '/g"',
+                               config_file])
+            self.execute(ssh, ['sed', '-i', '"s/\$ORGANIZATION/' +
+                               self.options()['organization']['value'] + '/g"',
+                               config_file])
+            self.execute(ssh, ['sed', '-i',
+                               '"s/dc=example,dc=com/' + domain_dc + '/g"',
+                               '/etc/phpldapadmin/config.php'])
             ssh.close(), sftp.close()
             self.start()
             ssh, sftp = self.connect(self.container.fullname())
-            self.execute(ssh, ['ldapadd', '-Y', 'EXTERNAL', '-H', 'ldapi:///', '-f', config_file])
+            self.execute(ssh, ['ldapadd', '-Y', 'EXTERNAL',
+                               '-H', 'ldapi:///', '-f', config_file])
             ssh.close(), sftp.close()

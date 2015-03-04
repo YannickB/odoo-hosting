@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -26,6 +26,7 @@ from openerp.exceptions import except_orm
 from .. import execute
 
 import logging
+
 _logger = logging.getLogger(__name__)
 
 
@@ -35,18 +36,27 @@ class ClouderContainerLink(models.Model):
     @api.multi
     def deploy_link(self):
 
-        if self.target.application_id.code == 'backup-upl' and self.application_id.type_id.name == 'backup':
+        if self.target.application_id.code == 'backup-upl' \
+                and self.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.container_id.fullname()
             ssh_link, sftp_link = self.connect(self.target.fullname())
             self.execute(ssh_link, ['mkdir', '-p', directory])
             ssh_link.close(), sftp_link.close()
 
-            ssh, sftp = self.connect(self.container_id.fullname(), username='backup')
-            self.send(sftp, self.home_directory() + '/.ssh/config', '/home/backup/.ssh/config')
-            self.send(sftp, self.home_directory() + '/.ssh/keys/' + self.target.fullname() + '.pub', '/home/backup/.ssh/keys/' + self.target.fullname() + '.pub')
-            self.send(sftp, self.home_directory() + '/.ssh/keys/' + self.target.fullname(), '/home/backup/.ssh/keys/' + self.target.fullname())
+            ssh, sftp = self.connect(self.container_id.fullname(),
+                                     username='backup')
+            self.send(sftp, self.home_directory() + '/.ssh/config',
+                      '/home/backup/.ssh/config')
+            self.send(sftp, self.home_directory() + '/.ssh/keys/' +
+                      self.target.fullname() + '.pub',
+                      '/home/backup/.ssh/keys/' +
+                      self.target.fullname() + '.pub')
+            self.send(sftp, self.home_directory() + '/.ssh/keys/' +
+                      self.target.fullname(),
+                      '/home/backup/.ssh/keys/' + self.target.fullname())
             self.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'])
-            self.execute(ssh, ['rsync', '-ra', '/opt/backup/', self.target.fullname() + ':' + directory])
+            self.execute(ssh, ['rsync', '-ra', '/opt/backup/',
+                               self.target.fullname() + ':' + directory])
             self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
             ssh.close(), sftp.close()
 
@@ -54,7 +64,8 @@ class ClouderContainerLink(models.Model):
 
     @api.multi
     def purge_link(self):
-        if self.target.application_id.code == 'backup-upl' and self.application_id.type_id.name == 'backup':
+        if self.target.application_id.code == 'backup-upl' \
+                and self.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.container_id.fullname()
             ssh = self.connect(self.target.fullname())
             self.execute(ssh, ['rm', '-rf', directory])

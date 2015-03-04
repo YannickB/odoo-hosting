@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -33,18 +33,26 @@ class ClouderContainer(models.Model):
 
         if self.application_id.type_id.name == 'mysql':
             ssh, sftp = self.connect(self.fullname())
-            self.execute(ssh, ['sed', '-i', '"/bind-address/d"', '/etc/mysql/my.cnf'])
+            self.execute(ssh, ['sed', '-i', '"/bind-address/d"',
+                               '/etc/mysql/my.cnf'])
             if self.options()['root_password']['value']:
                 password = self.options()['root_password']['value']
             else:
                 password = clouder_model.generate_random_password(20)
                 option_obj = self.env['clouder.container.option']
-                options = option_obj.search([('container_id','=',self),('name','=','root_password')])
+                options = option_obj.search([('container_id', '=', self),
+                                             ('name', '=', 'root_password')])
                 if options:
                     options.value = password
                 else:
-                    type_option_obj = self.env['clouder.application.type.option']
-                    type_options = type_option_obj.search([('apptype_id.name','=','mysql'),('name','=','root_password')])
+                    type_option_obj = self.env[
+                        'clouder.application.type.option']
+                    type_options = type_option_obj.search(
+                        [('apptype_id.name', '=', 'mysql'),
+                         ('name', '=', 'root_password')])
                     if type_options:
-                        option_obj.create({'container_id': self, 'name': type_options[0], 'value': password})
-            self.execute(ssh, ['mysqladmin', '-u', 'root', 'password', password])
+                        option_obj.create({'container_id': self,
+                                           'name': type_options[0],
+                                           'value': password})
+            self.execute(ssh,
+                         ['mysqladmin', '-u', 'root', 'password', password])

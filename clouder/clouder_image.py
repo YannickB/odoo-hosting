@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -26,6 +26,7 @@ import re
 from datetime import datetime
 
 import logging
+
 _logger = logging.getLogger(__name__)
 
 
@@ -35,14 +36,20 @@ class ClouderImage(models.Model):
     name = fields.Char('Image name', size=64, required=True)
     current_version = fields.Char('Current version', size=64, required=True)
     parent_id = fields.Many2one('clouder.image', 'Parent image')
-    parent_version_id = fields.Many2one('clouder.image.version', 'Parent version')
+    parent_version_id = fields.Many2one(
+        'clouder.image.version', 'Parent version')
     parent_from = fields.Char('From', size=64)
-    privileged = fields.Boolean('Privileged?', help="Indicate if the containers shall be in privilaged mode. Warning : Theses containers will have access to the host system.")
+    privileged = fields.Boolean(
+        'Privileged?',
+        help="Indicate if the containers shall be in privilaged mode. "
+             "Warning : Theses containers will have access to the host system."
+    )
     registry_id = fields.Many2one('clouder.container', 'Registry')
     dockerfile = fields.Text('DockerFile')
     volume_ids = fields.One2many('clouder.image.volume', 'image_id', 'Volumes')
     port_ids = fields.One2many('clouder.image.port', 'image_id', 'Ports')
-    version_ids = fields.One2many('clouder.image.version','image_id', 'Versions')
+    version_ids = fields.One2many(
+        'clouder.image.version', 'image_id', 'Versions')
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one('res.partner', 'Manager')
 
@@ -50,16 +57,16 @@ class ClouderImage(models.Model):
         'partner_id': lambda self: self.env.user.partner_id
     }
 
-
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Image name must be unique!')
     ]
 
     @api.one
     @api.constrains('name')
-    def _validate_data(self) :
+    def _validate_data(self):
         if not re.match("^[\w\d_]*$", self.name):
-            raise except_orm(_('Data error!'),_("Name can only contains letters, digits and underscore"))
+            raise except_orm(_('Data error!'), _(
+                "Name can only contains letters, digits and underscore"))
 
     # @api.multi
     # def get_vals(self):
@@ -93,26 +100,33 @@ class ClouderImage(models.Model):
         if not self.dockerfile:
             return
         if not self.registry_id and self.name != 'img_registry':
-            raise except_orm(_('Date error!'),_("You need to specify the registry where the version must be stored."))
+            raise except_orm(
+                _('Date error!'), _(
+                "You need to specify the registry "
+                "where the version must be stored."))
         now = datetime.now()
         version = self.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
-        self.env['clouder.image.version'].create({'image_id': self.id, 'name': version, 'registry_id': self.registry_id and self.registry_id.id, 'parent_id': self.parent_version_id and self.parent_version_id.id})
+        self.env['clouder.image.version'].create({
+            'image_id': self.id, 'name': version,
+            'registry_id': self.registry_id and self.registry_id.id,
+            'parent_id': self.parent_version_id and self.parent_version_id.id})
 
-    # def unlink(self, cr, uid, ids, context={}):
-    #     for image in self.browse(cr, uid, ids, context=context):
-    #         vals = self.get_vals(cr, uid, image.id, context=context)
-    #         self.purge(cr, uid, vals, context=context)
-    #     return super(clouder_image, self).unlink(cr, uid, ids, context=context)
-    #
-    # def purge(self, cr, uid, vals, context={}):
-    #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-    #     execute.execute_local(['sudo','docker', 'rmi', vals['image_name'] + ':latest'], context)
+        # def unlink(self, cr, uid, ids, context={}):
+        #     for image in self.browse(cr, uid, ids, context=context):
+        #         vals = self.get_vals(cr, uid, image.id, context=context)
+        #         self.purge(cr, uid, vals, context=context)
+        #     return super(clouder_image, self).unlink(cr, uid, ids, context=context)
+        #
+        # def purge(self, cr, uid, vals, context={}):
+        #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
+        #     execute.execute_local(['sudo','docker', 'rmi', vals['image_name'] + ':latest'], context)
 
 
 class ClouderImageVolume(models.Model):
     _name = 'clouder.image.volume'
 
-    image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade", required=True)
+    image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
+                               required=True)
     name = fields.Char('Path', size=128, required=True)
     hostpath = fields.Char('Host path', size=128)
     user = fields.Char('System User', size=64)
@@ -120,17 +134,21 @@ class ClouderImageVolume(models.Model):
     nosave = fields.Boolean('No save?')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)', 'Volume name must be unique per image!')
+        ('name_uniq', 'unique(image_id,name)',
+         'Volume name must be unique per image!')
     ]
 
 
 class ClouderImagePort(models.Model):
     _name = 'clouder.image.port'
 
-    image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade", required=True)
+    image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
+                               required=True)
     name = fields.Char('Name', size=64, required=True)
     localport = fields.Char('Local port', size=12, required=True)
-    expose = fields.Selection([('internet','Internet'),('local','Local'),('none','None')],'Expose?', required=True)
+    expose = fields.Selection(
+        [('internet', 'Internet'), ('local', 'Local'), ('none', 'None')],
+        'Expose?', required=True)
     udp = fields.Boolean('UDP?')
 
     _defaults = {
@@ -138,34 +156,51 @@ class ClouderImagePort(models.Model):
     }
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)', 'Port name must be unique per image!')
+        ('name_uniq', 'unique(image_id,name)',
+         'Port name must be unique per image!')
     ]
+
 
 class ClouderImageVersion(models.Model):
     _name = 'clouder.image.version'
     _inherit = ['clouder.model']
 
-    image_id = fields.Many2one('clouder.image','Image', ondelete='cascade', required=True)
+    image_id = fields.Many2one(
+        'clouder.image', 'Image', ondelete='cascade', required=True)
     name = fields.Char('Version', size=64, required=True)
     parent_id = fields.Many2one('clouder.image.version', 'Parent version')
     registry_id = fields.Many2one('clouder.container', 'Registry')
-    container_ids = fields.One2many('clouder.container','image_version_id', 'Containers')
+    container_ids = fields.One2many(
+        'clouder.container', 'image_version_id', 'Containers')
 
-    fullname = lambda self : self.image_id.name + ':' + self.name
-    fullpath = lambda self : self.registry_id and self.registry_id.server_id.ip + ':' + self.registry_id.port + '/' + self.fullname()
-    fullpath_localhost = lambda self : self.registry_id and 'localhost:' + self.registry_id.port + '/' + self.fullname()
+    @property
+    def fullname(self):
+        return self.image_id.name + ':' + self.name
+
+    @property
+    def fullpath(self):
+        return self.registry_id and self.registry_id.server_id.ip + ':' + \
+                                    self.registry_id.port + '/' + self.fullname
+
+    @property
+    def fullpath_localhost(self):
+        return self.registry_id and 'localhost:' + \
+                                    self.registry_id.port + '/' + self.fullname
 
     _order = 'create_date desc'
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)', 'Version name must be unique per image!')
+        ('name_uniq', 'unique(image_id,name)',
+         'Version name must be unique per image!')
     ]
 
     @api.one
     @api.constrains('name')
-    def _validate_data(self) :
+    def _validate_data(self):
         if not re.match("^[\w\d_.]*$", self.name):
-            raise except_orm(_('Data error!'),_("Image version can only contains letters, digits and underscore and dot"))
+            raise except_orm(_('Data error!'), _(
+                "Image version can only contains letters, "
+                "digits and underscore and dot"))
 
 
     # @api.multi
@@ -216,7 +251,10 @@ class ClouderImageVersion(models.Model):
     @api.multi
     def unlink(self):
         if self.container_ids:
-            raise except_orm(_('Inherit error!'),_("A container is linked to this image version, you can't delete it!"))
+            raise except_orm(
+                _('Inherit error!'),
+                _("A container is linked to this image version, "
+                  "you can't delete it!"))
         return super(ClouderImageVersion, self).unlink()
 
     @api.multi
@@ -234,7 +272,8 @@ class ClouderImageVersion(models.Model):
         elif self.image_id.parent_from:
             dockerfile += self.image_id.parent_from
         else:
-            raise except_orm(_('Date error!'),_("You need to specify the image to inherit!"))
+            raise except_orm(_('Date error!'),
+                             _("You need to specify the image to inherit!"))
 
         dockerfile += '\nMAINTAINER ' + self.email_sysadmin() + '\n'
 
@@ -248,19 +287,24 @@ class ClouderImageVersion(models.Model):
         if ports:
             dockerfile += '\nEXPOSE ' + ports
 
-        self.execute(ssh, ['echo "' + dockerfile.replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'])
-        self.execute(ssh, ['sudo','docker', 'build', '-t', self.fullname(), dir])
-        self.execute(ssh, ['sudo','docker', 'tag', self.fullname(), self.fullpath_localhost()])
-        self.execute(ssh, ['sudo','docker', 'push', self.fullpath_localhost()])
-        self.execute(ssh, ['sudo','docker', 'rmi', self.fullname()])
-        self.execute(ssh, ['sudo','docker', 'rmi', self.fullpath_localhost()])
+        self.execute(ssh, [
+            'echo "' + dockerfile.replace('"', '\\"') +
+            '" >> ' + dir + '/Dockerfile'])
+        self.execute(ssh,
+                     ['sudo', 'docker', 'build', '-t', self.fullname(), dir])
+        self.execute(ssh, ['sudo', 'docker', 'tag', self.fullname(),
+                           self.fullpath_localhost()])
+        self.execute(ssh,
+                     ['sudo', 'docker', 'push', self.fullpath_localhost()])
+        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname()])
+        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost()])
         self.execute(ssh, ['rm', '-rf', dir])
         ssh.close(), sftp.close()
         return
 
-#In case of problems with ssh authentification
-# - Make sure the /opt/keys belong to root:root with 700 rights
-# - Make sure the user in the container can access the keys, and if possible make the key belong to the user with 700 rights
+    #In case of problems with ssh authentification
+    # - Make sure the /opt/keys belong to root:root with 700 rights
+    # - Make sure the user in the container can access the keys, and if possible make the key belong to the user with 700 rights
 
     @api.multi
     def purge(self):

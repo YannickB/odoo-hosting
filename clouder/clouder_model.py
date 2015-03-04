@@ -53,7 +53,9 @@ class ClouderLog(models.Model):
     name = fields.Char('Name', compute='_get_name', size=128)
     action = fields.Char('Action', size=64)
     description = fields.Text('Description')
-    state = fields.Selection([('unfinished','Not finished'),('ok','Ok'),('ko','Ko')], 'State', required=True)
+    state = fields.Selection(
+        [('unfinished','Not finished'),('ok','Ok'),('ko','Ko')],
+        'State', required=True)
     create_date = fields.Datetime('Launch Date')
     finish_date = fields.Datetime('Finish Date')
     expiration_date = fields.Datetime('Expiration Date')
@@ -63,6 +65,7 @@ class ClouderLog(models.Model):
     }
 
     _order = 'create_date desc'
+
 
 class ClouderModel(models.AbstractModel):
     _name = 'clouder.model'
@@ -74,15 +77,41 @@ class ClouderModel(models.AbstractModel):
         auto_join=True,
         string='Logs')
 
-    email_sysadmin = lambda self : self.env.ref('clouder.clouder_settings').email_sysadmin
-    archive_path = '/opt/archives'
-    services_hostpath = '/opt/services'
-    home_directory = expanduser("~")
-    now = datetime.now()
-    now_date = now.strftime("%Y-%m-%d")
-    now_hour = now.strftime("%H-%M")
-    now_hour_regular = now.strftime("%H:%M:%S")
-    now_bup = now.strftime("%Y-%m-%d-%H%M%S")
+    @property
+    def email_sysadmin(self):
+        return self.env.ref('clouder.clouder_settings').email_sysadmin
+
+    @property
+    def archive_path(self):
+        return '/opt/archives'
+
+    @property
+    def services_hostpath(self):
+        return '/opt/services'
+
+    @property
+    def home_directory(self):
+        return expanduser("~")
+
+    @property
+    def now_date(self):
+        now = datetime.now()
+        return now.strftime("%Y-%m-%d")
+
+    @property
+    def now_hour(self):
+        now = datetime.now()
+        return now.strftime("%H-%M")
+
+    @property
+    def now_hour_regular(self):
+        now = datetime.now()
+        return now.strftime("%H:%M:%S")
+
+    @property
+    def now_bup(self):
+        now = datetime.now()
+        return now.strftime("%Y-%m-%d-%H%M%S")
 
     @api.one
     @api.constrains('name')
@@ -106,8 +135,11 @@ class ClouderModel(models.AbstractModel):
         now = datetime.now()
         #_logger.info('start log model %s, res %s', self._name, id)
         if not self.id in logs[self._name]:
-            expiration_date = (now + timedelta(days=self._log_expiration_days)).strftime("%Y-%m-%d")
-            log_id = self.env['clouder.log'].create({'model': self._name, 'res_id': self.id, 'action': action,'expiration_date':expiration_date})
+            expiration_date = (now + timedelta(days=self._log_expiration_days)
+            ).strftime("%Y-%m-%d")
+            log_id = self.env['clouder.log'].create({
+                'model': self._name, 'res_id': self.id,
+                'action': action,'expiration_date':expiration_date})
             logs[self._name][self.id] = {}
             logs[self._name][self.id]['log_model'] = self._name
             logs[self._name][self.id]['log_res_id'] = self.id
@@ -122,7 +154,8 @@ class ClouderModel(models.AbstractModel):
         log_obj = self.env['clouder.log']
         #_logger.info('end log model %s, res %s', self._name, id)
         if 'logs' in self.env.context:
-            log = log_obj.browse(self.env.context['logs'][self._name][self.id]['log_id'])
+            log = log_obj.browse(
+                self.env.context['logs'][self._name][self.id]['log_id'])
             if log.state == 'unfinished':
                 log.state = 'ok'
 
@@ -133,8 +166,10 @@ class ClouderModel(models.AbstractModel):
         log_obj = self.env['clouder.log']
         if 'logs' in self.env.context:
             for model, model_vals in self.env.context['logs'].iteritems():
-                for res_id, vals in self.env.context['logs'][model].iteritems():
-                    log = log_obj.browse(self.env.context['logs'][model][res_id]['log_id'])
+                for res_id, vals in \
+                        self.env.context['logs'][model].iteritems():
+                    log = log_obj.browse(
+                        self.env.context['logs'][model][res_id]['log_id'])
                     log.description = (log.description or '') + message + '\n'
 
     @api.multi
@@ -142,10 +177,11 @@ class ClouderModel(models.AbstractModel):
         log_obj = self.env['clouder.log']
         if 'logs' in self.env.context:
             for model, model_vals in self.env.context['logs'].iteritems():
-                for res_id, vals in self.env.context['logs'][model].iteritems():
-                    log = log_obj.browse(self.env.context['logs'][model][res_id]['log_id'])
+                for res_id, vals in \
+                        self.env.context['logs'][model].iteritems():
+                    log = log_obj.browse(
+                        self.env.context['logs'][model][res_id]['log_id'])
                     log.state = 'ko'
-
 
     @api.multi
     def deploy_links(self):
@@ -198,16 +234,19 @@ class ClouderModel(models.AbstractModel):
             pass
         res = super(ClouderModel, self).unlink()
         #Security to prevent log to write in a removed clouder.log
-        if 'logs' in self.env.context and self._name in self.env.context['logs'] and self.id in self.env.context['logs'][self._name]:
+        if 'logs' in self.env.context \
+                and self._name in self.env.context['logs'] \
+                and self.id in self.env.context['logs'][self._name]:
             del self.env.context['logs'][self._name][self.id]
-        log_ids = self.env['clouder.log'].search([('model','=',self._name),('res_id','=',self.id)])
+        log_ids = self.env['clouder.log'].search(
+            [('model','=',self._name),('res_id','=',self.id)])
         log_ids.unlink()
         return res
 
-
     @api.multi
     def connect(self, host, port=False, username=False):
-        self.log('connect: ssh ' + (username and username + '@' or '') + host + (port and ' -p ' + str(port) or ''))
+        self.log('connect: ssh ' + (username and username + '@' or '') +
+                 host + (port and ' -p ' + str(port) or ''))
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
@@ -227,7 +266,8 @@ class ClouderModel(models.AbstractModel):
             if not port:
                 port = user_config['port']
 
-        ssh.connect(host, port=int(port), username=username, key_filename=os.path.expanduser(identityfile))
+        ssh.connect(host, port=int(port), username=username,
+                    key_filename=os.path.expanduser(identityfile))
         sftp = ssh.open_sftp()
         return ssh, sftp
 
@@ -262,7 +302,8 @@ class ClouderModel(models.AbstractModel):
         if path:
             self.log('path : ' + path)
             os.chdir(path)
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=shell)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=shell)
     #    for line in proc.stdin:
     #       line = 'stdin : ' + line
     #       log(line, context=context)
@@ -304,5 +345,8 @@ class ClouderModel(models.AbstractModel):
 
 
 def generate_random_password(size):
-    return ''.join(random.choice(string.ascii_uppercase  + string.ascii_lowercase + string.digits) for _ in range(size))
+    return ''.join(
+        random.choice(string.ascii_uppercase  + string.ascii_lowercase
+                      + string.digits)
+        for _ in range(size))
 

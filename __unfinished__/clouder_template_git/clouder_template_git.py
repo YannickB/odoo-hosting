@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -22,6 +22,7 @@
 
 from openerp import models, fields, api, _
 
+
 class ClouderApplicationVersion(models.Model):
     _inherit = 'clouder.application.version'
 
@@ -30,14 +31,17 @@ class ClouderApplicationVersion(models.Model):
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.code == 'gitlab':
             ssh, sftp = self.connect(self.archive_id.fullname())
-            self.execute(ssh,['git', 'clone', 'https://gitlab.com/gitlab-org/gitlab-ce.git', '-b', '7-5-stable', 'gitlab'], path=self.full_archivepath())
-            self.execute(ssh,['mv', 'gitlab/*', './'], path=self.full_archivepath())
-            self.execute(ssh,['rm', '-r', 'gitlab'], path=self.full_archivepath())
+            self.execute(ssh, ['git', 'clone',
+                               'https://gitlab.com/gitlab-org/gitlab-ce.git',
+                               '-b', '7-5-stable', 'gitlab'],
+                         path=self.full_archivepath())
+            self.execute(ssh, ['mv', 'gitlab/*', './'],
+                         path=self.full_archivepath())
+            self.execute(ssh, ['rm', '-r', 'gitlab'],
+                         path=self.full_archivepath())
             ssh.close(), sftp.close()
 
         return
-
-
 
 
 class ClouderService(models.Model):
@@ -48,22 +52,46 @@ class ClouderService(models.Model):
         super(ClouderService, self).deploy_post_service()
         if self.application_id.code == 'gitlab':
             ssh, sftp = self.connect(self.container_id.fullname())
-            self.execute(ssh, ['cp', self.full_localpath_files() + '/config/gitlab.yml.example', self.full_localpath_files() + '/config/gitlab.yml'])
-            self.execute(ssh, ['chown', '-R', 'git', self.full_localpath_files() + '/log'])
-            self.execute(ssh, ['chown', '-R', 'git', self.full_localpath_files() + '/tmp'])
-            self.execute(ssh, ['chmod', '-R', 'u+rwX,go-w', self.full_localpath_files() + '/log'])
-            self.execute(ssh, ['chmod', '-R', 'u+rwX,go-w', self.full_localpath_files() + '/tmp'])
+            self.execute(ssh, [
+                'cp',
+                self.full_localpath_files() + '/config/gitlab.yml.example',
+                self.full_localpath_files() + '/config/gitlab.yml'])
+            self.execute(ssh, ['chown', '-R', 'git',
+                               self.full_localpath_files() + '/log'])
+            self.execute(ssh, ['chown', '-R', 'git',
+                               self.full_localpath_files() + '/tmp'])
+            self.execute(ssh, ['chmod', '-R', 'u+rwX,go-w',
+                               self.full_localpath_files() + '/log'])
+            self.execute(ssh, ['chmod', '-R', 'u+rwX,go-w',
+                               self.full_localpath_files() + '/tmp'])
 
-            self.execute(ssh, ['mkdir', self.full_localpath() + '/gitlab-satellites'])
-            self.execute(ssh, ['chmod', '-R', 'u+rwx,g=rx,o-rwx', self.full_localpath() + '/gitlab-satellites'])
+            self.execute(ssh, ['mkdir',
+                               self.full_localpath() + '/gitlab-satellites'])
+            self.execute(ssh, ['chmod', '-R', 'u+rwx,g=rx,o-rwx',
+                               self.full_localpath() + '/gitlab-satellites'])
 
-            self.execute(ssh, ['chmod', '-R', 'u+rwX', self.full_localpath_files() + '/tmp/pids'])
-            self.execute(ssh, ['chmod', '-R', 'u+rwX', self.full_localpath_files() + '/tmp/sockets'])
-            self.execute(ssh, ['chmod', '-R', 'u+rwX', self.full_localpath_files() + '/public/uploads'])
+            self.execute(ssh, ['chmod', '-R', 'u+rwX',
+                               self.full_localpath_files() + '/tmp/pids'])
+            self.execute(ssh, ['chmod', '-R', 'u+rwX',
+                               self.full_localpath_files() + '/tmp/sockets'])
+            self.execute(ssh, ['chmod', '-R', 'u+rwX',
+                               self.full_localpath_files() +
+                               '/public/uploads'])
 
-            self.execute(ssh, ['cp', self.full_localpath_files() + '/config/unicorn.rb.example', self.full_localpath_files() + '/config/unicorn.rb'])
-            self.execute(ssh, ['cp', self.full_localpath_files() + '/config/initializers/rack_attack.rb.example', self.full_localpath_files() + '/config/initializers/rack_attack.rb'])
-            self.execute(ssh, ['cp', self.full_localpath_files() + '/config/resque.yml.example', self.full_localpath_files() + '/config/resque.yml'])
+            self.execute(ssh, [
+                'cp',
+                self.full_localpath_files() + '/config/unicorn.rb.example',
+                self.full_localpath_files() + '/config/unicorn.rb'])
+            self.execute(ssh, [
+                'cp',
+                self.full_localpath_files() +
+                '/config/initializers/rack_attack.rb.example',
+                self.full_localpath_files() +
+                '/config/initializers/rack_attack.rb'])
+            self.execute(ssh, [
+                'cp',
+                self.full_localpath_files() + '/config/resque.yml.example',
+                self.full_localpath_files() + '/config/resque.yml'])
             self.execute(ssh, ['chown', '-R', 'git', self.full_localpath()])
             ssh.close(), sftp.close()
 
@@ -78,12 +106,24 @@ class ClouderBase(models.Model):
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.code == 'gitlab':
             ssh, sftp = self.connect(self.service_id.container_id.fullname())
-            database_file = self.service_id.full_localpath_files() + '/config/database.yml'
-            self.execute(ssh, ['cp', self.full_localpath_files() + '/config/database.yml.postgresql', database_file])
-            self.execute(ssh, ['sed', '-i', 's/gitlabhq_production/' + self.unique_name_() + '/g', database_file])
-            self.execute(ssh, ['sed', '-i', 's/#\ username:\ git/username:\ ' + self.service_id.db_user() + '/g', database_file])
-            self.execute(ssh, ['sed', '-i', 's/#\ password:/password:\ ' + self.service_id.database_password + '/g', database_file])
-            self.execute(ssh, ['sed', '-i', 's/#\ host:\ localhost/host:\ ' + self.service_id.database_server + '/g', database_file])
+            database_file = \
+                self.service_id.full_localpath_files() + '/config/database.yml'
+            self.execute(ssh, ['cp', self.full_localpath_files() +
+                               '/config/database.yml.postgresql',
+                               database_file])
+            self.execute(ssh, [
+                'sed', '-i',
+                's/gitlabhq_production/' + self.unique_name_() + '/g',
+                database_file])
+            self.execute(ssh, ['sed', '-i', 's/#\ username:\ git/username:\ ' +
+                               self.service_id.db_user() + '/g',
+                               database_file])
+            self.execute(ssh, ['sed', '-i', 's/#\ password:/password:\ ' +
+                               self.service_id.database_password + '/g',
+                               database_file])
+            self.execute(ssh, ['sed', '-i', 's/#\ host:\ localhost/host:\ ' +
+                               self.service_id.database_server + '/g',
+                               database_file])
             ssh.close(), sftp.close()
         return res
 

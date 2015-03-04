@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -31,7 +31,8 @@ class ClouderContainer(models.Model):
     def write(self, vals):
         res = super(ClouderContainer, self).write(vals)
         if 'option_ids' in vals:
-            if self.application_id.type_id.name == 'docker' and 'public_key' in self.options():
+            if self.application_id.type_id.name == 'docker' \
+                    and 'public_key' in self.options():
                 self.deploy_post()
         return res
 
@@ -56,14 +57,17 @@ class ClouderContainer(models.Model):
                 if start_port < end_port:
                     i = start_port
                     while i <= end_port:
-                        vals['port_ids'].append((0,0,{'name':str(i),'localport':str(i),'hostport':str(i),'expose':'internet'}))
+                        vals['port_ids'].append((0, 0, {
+                            'name': str(i), 'localport': str(i),
+                            'hostport': str(i), 'expose': 'internet'}))
                         i += 1
                 else:
-                    raise except_orm(_('Data error!'),
-                    _("Start port need to be inferior to end port"))
+                    raise except_orm(
+                        _('Data error!'),
+                        _("Start port need to be inferior to end port"))
             else:
                 raise except_orm(_('Data error!'),
-                _("You need to specify a start and end port"))
+                                 _("You need to specify a start and end port"))
 
         return vals
 
@@ -73,6 +77,8 @@ class ClouderContainer(models.Model):
         if self.application_id.type_id.name == 'docker':
             if 'public_key' in self.options():
                 ssh, sftp = self.connect(self.fullname())
-                self.execute(ssh, ['echo "' + self.options()['public_key']['value'] + '" > /root/.ssh/authorized_keys2'])
+                self.execute(ssh, [
+                    'echo "' + self.options()['public_key']['value'] +
+                    '" > /root/.ssh/authorized_keys2'])
                 ssh.close(), sftp.close()
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -27,7 +27,9 @@ import re
 from datetime import datetime
 
 import logging
+
 _logger = logging.getLogger(__name__)
+
 
 class ClouderConfigBackupMethod(models.Model):
     _name = 'clouder.config.backup.method'
@@ -43,10 +45,15 @@ class ClouderConfigSettings(models.Model):
     email_sysadmin = fields.Char('Email SysAdmin', size=128)
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')
-    end_reset_bases  = fields.Datetime('Last Reset Bases ended at')
+    end_reset_bases = fields.Datetime('Last Reset Bases ended at')
 
-    now_date = lambda  self : self.env['clouder.model'].now_date
-    now_hour_regular= lambda self : self.env['clouder.model'].now_hour_regular
+    @property
+    def now_date(self):
+        return self.env['clouder.model'].now_date
+
+    @property
+    def now_hour_regular(self):
+        return self.env['clouder.model'].now_hour_regular
 
     # @api.multi
     # def get_vals(self):
@@ -74,9 +81,11 @@ class ClouderConfigSettings(models.Model):
 
     @api.one
     @api.constrains('email_sysadmin')
-    def _validate_data(self) :
+    def _validate_data(self):
         if not re.match("^[\w\d_.@-]*$", self.email_sysadmin):
-            raise except_orm(_('Data error!'),_("Sysadmin email can only contains letters, digits, underscore, - and @"))
+            raise except_orm(_('Data error!'), _(
+                "Sysadmin email can only contains letters, "
+                "digits, underscore, - and @"))
 
     @api.multi
     def reset_keys(self):
@@ -91,22 +100,31 @@ class ClouderConfigSettings(models.Model):
     def save_all(self):
         self = self.with_context(save_comment='Save before upload_save')
 
-        backups = self.env['clouder.container'].search([('application_id.type_id.name','=','backup')])
+        backups = self.env['clouder.container'].search(
+            [('application_id.type_id.name', '=', 'backup')])
         for backup in backups:
             vals = backup.get_vals()
-            ssh, sftp = backup.connect(vals['container_fullname'], username='backup')
-            backup.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-r'])
+            ssh, sftp = backup.connect(vals['container_fullname'],
+                                       username='backup')
+            backup.execute(ssh,
+                           ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
+                            '-r'])
             #http://stackoverflow.com/questions/1904860/how-to-remove-unreferenced-blobs-from-my-git-repo
             #https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
             #https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
-            backup.execute(ssh, ['git', 'gc', '--prune=now'], path='/opt/backup/bup')
-            backup.execute(ssh, ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck', '-g'])
+            backup.execute(ssh, ['git', 'gc', '--prune=now'],
+                           path='/opt/backup/bup')
+            backup.execute(ssh,
+                           ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
+                            '-g'])
             ssh.close(), sftp.close()
 
-        self.env['clouder.container'].search([('nosave','=',False)]).save()
-        self.env['clouder.base'].search([('nosave','=',False)]).save()
+        self.env['clouder.container'].search([('nosave', '=', False)]).save()
+        self.env['clouder.base'].search([('nosave', '=', False)]).save()
 
-        links = self.env['clouder.container.link'].search([('container_id.application_id.type_id.name','=','backup'),('name.code','=','backup-upl')])
+        links = self.env['clouder.container.link'].search(
+            [('container_id.application_id.type_id.name', '=', 'backup'),
+             ('name.code', '=', 'backup-upl')])
         for link in links:
             vals = link.get_vals()
             link.deploy(vals)
@@ -117,22 +135,33 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def purge_expired_saves(self):
-        self.env['clouder.save.repository'].search([('date_expiration','!=',False),('date_expiration','<',self.now_date)]).unlink()
-        self.env['clouder.save.save'].search([('date_expiration','!=',False),('date_expiration','<',self.now_date)]).unlink()
+        self.env['clouder.save.repository'].search(
+            [('date_expiration', '!=', False),
+             ('date_expiration', '<', self.now_date)]).unlink()
+        self.env['clouder.save.save'].search([('date_expiration', '!=', False),
+                                              ('date_expiration', '<',
+                                               self.now_date)]).unlink()
 
     @api.multi
     def purge_expired_logs(self):
-        self.env['clouder.log'].search([('expiration_date','!=',False),('expiration_date','<',self.now_date)]).unlink()
+        self.env['clouder.log'].search([('expiration_date', '!=', False), (
+            'expiration_date', '<', self.now_date)]).unlink()
 
     @api.multi
     def launch_next_saves(self):
         self = self.with_context(save_comment='Auto save')
-        self.env['clouder.container'].search([('date_next_save','!=',False),('date_next_save','<',self.now_date + ' ' + self.now_hour_regular)]).save()
-        self.env['clouder.base'].search([('date_next_save','!=',False),('date_next_save','<',self.now_date + ' ' + self.now_hour_regular)]).save()
+        self.env['clouder.container'].search([
+            ('date_next_save', '!=', False),
+            ('date_next_save', '<',
+             self.now_date + ' ' + self.now_hour_regular)]).save()
+        self.env['clouder.base'].search([('date_next_save', '!=', False), (
+            'date_next_save', '<',
+            self.now_date + ' ' + self.now_hour_regular)]).save()
 
     @api.multi
     def reset_bases(self):
-        bases = self.env['clouder.base'].search([('reset_each_day','=',True)])
+        bases = self.env['clouder.base'].search(
+            [('reset_each_day', '=', True)])
         for base in bases:
             if base.parent_id:
                 base.reset_base()

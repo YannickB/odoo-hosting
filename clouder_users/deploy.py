@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -32,37 +32,48 @@ import openerp.addons.clouder.execute as execute
 import erppeek
 
 import logging
-_logger = logging.getLogger(__name__)
 
+_logger = logging.getLogger(__name__)
 
 
 class clouder_container(osv.osv):
     _inherit = 'clouder.container'
 
-    def deploy_post(self, cr, uid, vals, context):
-        super(clouder_container, self).deploy_post(cr, uid, vals, context)
-        context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        if vals['apptype_name'] == 'openldap':
+    def deploy_post(self):
+        super(clouder_container, self).deploy_post()
+        if self.application_id.type_id.name == 'openldap':
 
             domain_dc = ''
-            for dc in vals['container_options']['domain']['value'].split('.'):
+            for dc in self.options()['domain']['value'].split('.'):
                 if domain_dc:
                     domain_dc += ','
                 domain_dc += 'dc=' + dc
 
-            server_obj = self.pool.get('ldap.server')
-            server_obj.create(cr, uid, {
-                'name': vals['container_fullname'],
-                'host': vals['server_domain'],
-                'port': vals['container_ports']['openldap']['hostport'],
+            hostport = False
+            for port in self.port_ids:
+                if port.name == 'openldap':
+                    hostport = port.hostport
+
+            server_obj = self.env['ldap.server']
+            server_obj.create({
+                'name': self.fullname,
+                'host': self.server_id.name,
+                'port': hostport,
                 'binddn': 'cn=admin,' + domain_dc,
                 'basedn': 'ou=people,' + domain_dc,
-                'password': vals['container_options']['password']['value']
+                'password': self.options()['password']['value']
             })
 
-    def purge(self, cr, uid, vals, context={}):
-        if vals['apptype_name'] == 'openldap':
+    def purge(self):
+        if self.application_id.type_id.name == 'openldap':
+
+            hostport = False
+            for port in self.port_ids:
+                if port.name == 'openldap':
+                    hostport = port.hostport
+
             server_obj = self.pool.get('ldap.server')
-            server_ids = server_obj.search(cr, uid, [('host','=',vals['server_domain']),('port','=',vals['container_ports']['openldap']['hostport'])])
-            server_obj.unlink(cr, uid, server_ids, context=context)
-        return super(clouder_container, self).purge(cr, uid, vals, context)
+            server_ids = server_obj.search([
+                ('host', '=', self.server_id.name), ('port', '=', hostport)])
+            server_ids.unlink()
+        return super(clouder_container, self).purge()

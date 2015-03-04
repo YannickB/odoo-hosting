@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -26,6 +26,7 @@ from openerp.exceptions import except_orm
 from .. import execute
 
 import logging
+
 _logger = logging.getLogger(__name__)
 
 
@@ -54,12 +55,16 @@ class ClouderContainer(models.Model):
     def deploy(self):
         if self.image_id.name == 'img_registry':
             ssh, sftp = self.connect(self.server_id.name)
-            dir = '/tmp/' + self.image_id.name + '_' + self.image_version_id.fullname()
+            dir = '/tmp/' + self.image_id.name + '_' + \
+                  self.image_version_id.fullname()
             self.execute(ssh, ['mkdir', '-p', dir])
-
-            self.execute(ssh, ['echo "' + self.image_id.dockerfile.replace('"', '\\"') + '" >> ' + dir + '/Dockerfile'])
-            self.execute(ssh, ['sudo','docker', 'rmi', self.image_version_id.fullname()])
-            self.execute(ssh, ['sudo','docker', 'build', '-t', self.image_version_id.fullname(), dir])
+            self.execute(ssh, [
+                'echo "' + self.image_id.dockerfile.replace('"', '\\"') +
+                '" >> ' + dir + '/Dockerfile'])
+            self.execute(ssh, ['sudo', 'docker', 'rmi',
+                               self.image_version_id.fullname()])
+            self.execute(ssh, ['sudo', 'docker', 'build', '-t',
+                               self.image_version_id.fullname(), dir])
             self.execute(ssh, ['rm', '-rf', dir])
         return super(ClouderContainer, self).deploy()
 

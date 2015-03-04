@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -31,11 +31,17 @@ class ClouderApplicationVersion(models.Model):
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'wordpress':
             ssh, sftp = self.connect(self.archive_id.fullname())
-            self.execute(ssh, ['wget', '-q', 'https://wordpress.org/latest.tar.gz', 'latest.tar.gz'], path=self.full_archivepath())
-            self.execute(ssh, ['tar', '-xzf', 'latest.tar.gz'], path=self.full_archivepath())
-            self.execute(ssh, ['mv', 'wordpress/*', './'], path=self.full_archivepath())
-            self.execute(ssh, ['rm', '-rf', './*.tar.gz'], path=self.full_archivepath())
-            self.execute(ssh, ['rm', '-rf', 'wordpress/'], path=self.full_archivepath())
+            self.execute(ssh,
+                         ['wget', '-q', 'https://wordpress.org/latest.tar.gz',
+                          'latest.tar.gz'], path=self.full_archivepath())
+            self.execute(ssh, ['tar', '-xzf', 'latest.tar.gz'],
+                         path=self.full_archivepath())
+            self.execute(ssh, ['mv', 'wordpress/*', './'],
+                         path=self.full_archivepath())
+            self.execute(ssh, ['rm', '-rf', './*.tar.gz'],
+                         path=self.full_archivepath())
+            self.execute(ssh, ['rm', '-rf', 'wordpress/'],
+                         path=self.full_archivepath())
             ssh.close(), sftp.close()
         return
 
@@ -47,15 +53,24 @@ class ClouderBase(models.Model):
     def deploy_build(self):
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'wordpress':
-
             ssh, sftp = self.connect(self.service_id.container_id.fullname())
             config_file = '/etc/nginx/sites-available/' + self.fullname()
-            self.send(sftp, modules.get_module_path('clouder_wordpress') + '/res/nginx.config', config_file)
-            self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"', config_file])
-            self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + self.domain_id.name + '/g"', config_file])
-            self.execute(ssh, ['sed', '-i', '"s/PATH/' + self.service_id.full_localpath_files().replace('/','\/') + '/g"', config_file])
-            self.execute(ssh, ['ln', '-s',  '/etc/nginx/sites-available/' + self.fullname(),  '/etc/nginx/sites-enabled/' + self.fullname()])
-            self.execute(ssh, ['/etc/init.d/nginx','reload'])
+            self.send(sftp,
+                      modules.get_module_path('clouder_wordpress') +
+                      '/res/nginx.config', config_file)
+            self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"',
+                               config_file])
+            self.execute(ssh, ['sed', '-i',
+                               '"s/DOMAIN/' + self.domain_id.name + '/g"',
+                               config_file])
+            self.execute(ssh, ['sed', '-i',
+                               '"s/PATH/' +
+                               self.service_id.full_localpath_files()
+                               .replace('/', '\/') + '/g"', config_file])
+            self.execute(ssh, ['ln', '-s',
+                               '/etc/nginx/sites-available/' + self.fullname(),
+                               '/etc/nginx/sites-enabled/' + self.fullname()])
+            self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
             ssh.close(), sftp.close()
 
         return res
@@ -64,9 +79,10 @@ class ClouderBase(models.Model):
     def purge_post(self):
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'wordpress':
-
             ssh, sftp = self.connect(self.service_id.container_id.fullname())
-            self.execute(ssh, ['rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname()])
-            self.execute(ssh, ['rm', '-rf', '/etc/nginx/sites-available/' + self.fullname()])
-            self.execute(ssh, ['/etc/init.d/nginx','reload'])
+            self.execute(ssh, ['rm', '-rf',
+                               '/etc/nginx/sites-enabled/' + self.fullname()])
+            self.execute(ssh, [
+                'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname()])
+            self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
             ssh.close(), sftp.close()

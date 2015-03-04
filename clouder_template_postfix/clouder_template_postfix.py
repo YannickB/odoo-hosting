@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-##############################################################################
+# #############################################################################
 #
 #    Author: Yannick Buron
 #    Copyright 2013 Yannick Buron
@@ -31,12 +31,26 @@ class ClouderContainer(models.Model):
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'postfix':
             ssh, sftp = self.connect(self.fullname())
-            self.execute(ssh, ['echo "relayhost = [smtp.mandrillapp.com]" >> /etc/postfix/main.cf'])
-            self.execute(ssh, ['echo "smtp_sasl_auth_enable = yes" >> /etc/postfix/main.cf'])
-            self.execute(ssh, ['echo "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd" >> /etc/postfix/main.cf'])
-            self.execute(ssh, ['echo "smtp_sasl_security_options = noanonymous" >> /etc/postfix/main.cf'])
-            self.execute(ssh, ['echo "smtp_use_tls = yes" >> /etc/postfix/main.cf'])
-            self.execute(ssh, ['echo "mynetworks = 127.0.0.0/8 172.17.0.0/16" >> /etc/postfix/main.cf'])
-            self.execute(ssh, ['echo "[smtp.mandrillapp.com]    ' + self.options()['mailchimp_username']['value'] + ':' + self.options()['mailchimp_apikey']['value'] + '" > /etc/postfix/sasl_passwd'])
+            self.execute(ssh, [
+                'echo "relayhost = [smtp.mandrillapp.com]" '
+                '>> /etc/postfix/main.cf'])
+            self.execute(ssh, [
+                'echo "smtp_sasl_auth_enable = yes" >> /etc/postfix/main.cf'])
+            self.execute(ssh, [
+                'echo "smtp_sasl_password_maps = '
+                'hash:/etc/postfix/sasl_passwd" >> /etc/postfix/main.cf'])
+            self.execute(ssh, [
+                'echo "smtp_sasl_security_options = noanonymous" '
+                '>> /etc/postfix/main.cf'])
+            self.execute(ssh,
+                         ['echo "smtp_use_tls = yes" >> /etc/postfix/main.cf'])
+            self.execute(ssh, [
+                'echo "mynetworks = 127.0.0.0/8 172.17.0.0/16" '
+                '>> /etc/postfix/main.cf'])
+            self.execute(ssh, [
+                'echo "[smtp.mandrillapp.com]    ' +
+                self.options()['mailchimp_username']['value'] + ':' +
+                self.options()['mailchimp_apikey']['value'] +
+                '" > /etc/postfix/sasl_passwd'])
             self.execute(ssh, ['postmap /etc/postfix/sasl_passwd'])
             ssh.close(), sftp.close()
