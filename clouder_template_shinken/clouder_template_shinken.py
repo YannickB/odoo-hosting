@@ -23,6 +23,38 @@ from openerp import modules
 from openerp import models, fields, api, _
 
 
+class ClouderServer(models.Model):
+
+    _inherit = 'clouder.server'
+
+    @property
+    def shinken_configfile(self):
+        return '/usr/local/shinken/etc/hosts/' + self.name + '.cfg'
+
+    @api.multi
+    def deploy(self):
+        super(ClouderServer, self).deploy()
+
+        if self.supervision_id:
+            ssh, sftp = self.connect(self.supervision_id.fullname)
+            self.send(sftp, modules.get_module_path('clouder_shinken') +
+                      '/res/server-shinken.config', self.shinken_configfile)
+            self.execute(ssh, ['sed', '-i',
+                               '"s/NAME/' + self.server_id.name + '/g"',
+                               self.shinken_configfile])
+            self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+            ssh.close(), sftp.close()
+
+    @api.multi
+    def purge(self):
+
+        if self.supervision_id:
+            ssh, sftp = self.connect(self.supervision_id.fullname)
+            self.execute(ssh, ['rm', self.shinken_configfile])
+            self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+            ssh.close(), sftp.close()
+
+
 class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
 

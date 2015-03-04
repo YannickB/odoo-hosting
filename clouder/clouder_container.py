@@ -38,21 +38,18 @@ class ClouderServer(models.Model):
     name = fields.Char('Domain name', size=64, required=True)
     ip = fields.Char('IP', size=64, required=True)
     ssh_port = fields.Integer('SSH port', required=True)
-    mysql_passwd = fields.Char('MySQL Passwd', size=64)
+
     private_key = fields.Text('SSH Private Key', required=True)
     public_key = fields.Text('SSH Public Key', required=True)
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one('res.partner', 'Manager')
+    supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
 
     _defaults = {
         'partner_id': lambda self: self.env.user.partner_id
     }
-
-    @property
-    def shinken_configfile(self):
-        return '/usr/local/shinken/etc/hosts/' + self.name + '.cfg'
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
@@ -175,15 +172,6 @@ class ClouderServer(models.Model):
         self.execute_write_file(self.home_directory() + '/.ssh/config',
                                 '\n#END ' + self.name + '\n')
 
-#        _logger.info('test %s', vals['shinken_server_domain'])
-#        if 'shinken_server_domain' in vals:
-#            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-#            self.send(sftp, modules.get_module_path('clouder_shinken') + '/res/server-shinken.config', vals['server_shinken_configfile'])
-#            execute.execute(ssh, ['sed', '-i', '"s/NAME/' + vals['server_domain'] + '/g"', vals['server_shinken_configfile']], context)
-#            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-#            ssh.close()
-#            sftp.close()
-
     @api.multi
     def purge(self):
         self.execute_local([modules.get_module_path('clouder') +
@@ -191,13 +179,6 @@ class ClouderServer(models.Model):
                             self.home_directory() + '/.ssh/config'])
         self.execute_local(['rm', '-rf', self.home_directory() +
                             '/.ssh/keys/' + self.name])
-
-#        if 'shinken_server_domain' in vals:
-#            ssh, sftp = execute.connect(vals['shinken_fullname'], context=context)
-#            execute.execute(ssh, ['rm', vals['server_shinken_configfile']], context)
-#            execute.execute(ssh, ['/etc/init.d/shinken', 'reload'], context)
-#            ssh.close()
-#            sftp.close()
 
 
 class ClouderContainer(models.Model):

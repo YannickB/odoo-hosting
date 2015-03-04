@@ -287,7 +287,7 @@
                         <field name="name"/>
                         <field name="ip"/>
                         <field name="ssh_port"/>
-                        <field name="mysql_passwd"/>
+                        <field name="supervision_id"/>
                         <field name="private_key"/>
                         <field name="public_key"/>
                         <field name="start_port"/>
