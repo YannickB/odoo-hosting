@@ -32,13 +32,13 @@
     """,
     'demo': [],
     'data': [
-        'clouder_view.xml',
-        'data/clouder_data.xml',
-        'security/clouder_security.xml',
-        'security/ir.model.access.csv',
-        'clouder_template_archive/clouder_template_archive_data.xml',
-        'clouder_template_backup/clouder_template_backup_data.xml',
-        'clouder_template_registry/clouder_template_registry_data.xml'
+#        'clouder_view.xml',
+#        'data/clouder_data.xml',
+#        'security/clouder_security.xml',
+#        'security/ir.model.access.csv',
+#        'clouder_template_archive/clouder_template_archive_data.xml',
+#        'clouder_template_backup/clouder_template_backup_data.xml',
+#        'clouder_template_registry/clouder_template_registry_data.xml'
     ],
     'installable': True,
     'application': True,

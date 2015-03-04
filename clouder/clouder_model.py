@@ -72,6 +72,8 @@ class ClouderModel(models.AbstractModel):
 
     _log_expiration_days = 30
 
+    # We create the name field to avoid warning for the constraints
+    name = fields.Char('Name', size=64, required=True)
     log_ids = fields.One2many('clouder.log', 'res_id',
         domain=lambda self: [('model', '=', self._name)],
         auto_join=True,

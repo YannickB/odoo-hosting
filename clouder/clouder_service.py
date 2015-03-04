@@ -96,6 +96,7 @@ class ClouderService(models.Model):
         return self.application_id.type_id.localpath_services + \
                '/' + self.name + '/files'
 
+    @property
     def database(self):
         database = False
         for link in self.link_ids:
@@ -104,14 +105,18 @@ class ClouderService(models.Model):
                     database = link.target
         return database
 
-    database_type = lambda self: self.database().application_id.type_id.name
+    @property
+    def database_type(self):
+        return self.database().application_id.type_id.name
 
+    @property
     def database_server(self):
         if self.database().server_id == self.container_id.server_id:
             return self.database().name
         else:
             return self.database().server_id.name
 
+    @property
     def db_user(self):
         db_user = self.fullname.replace('-', '_')
         if self.database_type() == 'mysql':
@@ -119,6 +124,7 @@ class ClouderService(models.Model):
             db_user = db_user.replace('-', '_')
         return db_user
 
+    @property
     def options(self):
         options = {}
         for option in self.container_id.application_id.type_id.option_ids:
@@ -224,7 +230,7 @@ class ClouderService(models.Model):
 
 
     @api.multi
-    @api.onchange('type_id')
+    @api.onchange('application_id')
     def onchange_application_id(self):
         if self.application_id:
 
@@ -635,7 +641,7 @@ class ClouderServiceOption(models.Model):
     ]
 
     @api.one
-    @api.constrains('application_id')
+    @api.constrains('service_id')
     def _check_required(self):
         if not self.name.required and not self.value:
             raise except_orm(
@@ -656,7 +662,7 @@ class ClouderServiceLink(models.Model):
         'clouder.container', 'Target')
 
     @api.one
-    @api.constrains('application_id')
+    @api.constrains('service_id')
     def _check_required(self):
         if not self.name.required and not self.target:
             raise except_orm(
@@ -683,7 +689,7 @@ class ClouderServiceLink(models.Model):
     #
     #
     #     return vals
-
+    #
     # @api.multi
     # def reload(self):
     #     for link_id in ids:

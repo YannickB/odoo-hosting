@@ -267,13 +267,14 @@ class ClouderContainer(models.Model):
     }
 
     _sql_constraints = [
-        ('name_uniq', 'unique(server_id,name)', 'Name must be unique per server!'),
+        ('name_uniq', 'unique(server_id,name)',
+         'Name must be unique per server!'),
     ]
 
     @api.one
     @api.constrains('name')
-    def _validate_data(self) :
-        if not re.match("^[\w\d_]*$", self.name):
+    def _validate_data(self):
+        if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(
                 _('Data error!'),
                 _("Name can only contains letters, digits and underscore"))
@@ -932,7 +933,7 @@ class ClouderContainerOption(models.Model):
     ]
 
     @api.one
-    @api.constrains('application_id')
+    @api.constrains('container_id')
     def _check_required(self):
         if not self.name.required and not self.value:
             raise except_orm(
@@ -952,7 +953,7 @@ class ClouderContainerLink(models.Model):
     target = fields.Many2one('clouder.container', 'Target')
 
     @api.one
-    @api.constrains('application_id')
+    @api.constrains('container_id')
     def _check_required(self):
         if not self.name.required and not self.target:
             raise except_orm(
@@ -1021,3 +1022,4 @@ class ClouderContainerLink(models.Model):
     @api.multi
     def purge(self):
         self.control() and self.purge_link()
+

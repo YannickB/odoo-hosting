@@ -808,7 +808,7 @@ class ClouderBaseOption(models.Model):
 
 
     @api.one
-    @api.constrains('application_id')
+    @api.constrains('base_id')
     def _check_required(self):
         if not self.name.required and not self.value:
             raise except_orm(
@@ -833,7 +833,7 @@ class ClouderBaseLink(models.Model):
                                self.target.service_ids[0].base_ids[0]
 
     @api.one
-    @api.constrains('application_id')
+    @api.constrains('base_id')
     def _check_required(self):
         if not self.name.required and not self.target:
             raise except_orm(
