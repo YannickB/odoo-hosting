@@ -34,16 +34,15 @@ class ClouderContainerLink(models.Model):
 
     @api.multi
     def deploy_link(self):
-
-        if self.target.application_id.code == 'backup-upl' \
-                and self.application_id.type_id.name == 'backup':
+        if self.name.name.code == 'backup-upl' \
+                and self.container_id.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.container_id.fullname
-            ssh_link, sftp_link = self.connect(self.target.fullname)
+            ssh_link = self.connect(self.target.fullname)
             self.execute(ssh_link, ['mkdir', '-p', directory])
-            ssh_link.close(), sftp_link.close()
+            ssh_link.close()
 
             ssh = self.connect(self.container_id.fullname,
-                                     username='backup')
+                               username='backup')
             self.send(ssh, self.home_directory + '/.ssh/config',
                       '/home/backup/.ssh/config')
             self.send(ssh, self.home_directory + '/.ssh/keys/' +
@@ -63,8 +62,8 @@ class ClouderContainerLink(models.Model):
 
     @api.multi
     def purge_link(self):
-        if self.target.application_id.code == 'backup-upl' \
-                and self.application_id.type_id.name == 'backup':
+        if self.name.name.code == 'backup-upl' \
+                and self.container_id.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.container_id.fullname
             ssh = self.connect(self.target.fullname)
             self.execute(ssh, ['rm', '-rf', directory])

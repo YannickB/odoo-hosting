@@ -2,7 +2,7 @@
     <data>
 
         <record id="image_base" model="clouder.image">
-            <field name="name">yolobase</field>
+            <field name="name">img_base</field>
             <field name="current_version">1.0</field>
             <field name="parent_from">debian:latest</field>
             <field name="dockerfile"><![CDATA[

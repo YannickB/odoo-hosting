@@ -40,7 +40,7 @@ _logger = logging.getLogger(__name__)
 class ClouderLog(models.Model):
     _name = 'clouder.log'
 
-    @api.multi
+    @api.one
     def _get_name(self):
         model_obj = self.env[self.model]
         record = model_obj.browse(self.res_id)
@@ -67,6 +67,7 @@ class ClouderModel(models.AbstractModel):
     _name = 'clouder.model'
 
     _log_expiration_days = 30
+    _autodeploy = True
 
     # We create the name field to avoid warning for the constraints
     name = fields.Char('Name', size=64, required=True)
@@ -186,23 +187,28 @@ class ClouderModel(models.AbstractModel):
                     log.state = 'ko'
 
     @api.multi
+    def deploy(self):
+        return
+
+    @api.multi
+    def purge(self):
+        return
+
+    @api.multi
     def deploy_links(self):
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
-                vals = link.get_vals()
-                link.deploy(vals)
+                link.deploy_()
 
     @api.multi
     def purge_links(self):
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
-                vals = link.get_vals()
-                link.purge(vals)
+                link.purge_()
 
     @api.multi
     def reinstall(self):
         self = self.with_context(self.create_log('reinstall'))
-        vals = self.get_vals()
         self.purge_links()
         self.purge()
         self.deploy()
@@ -226,7 +232,7 @@ class ClouderModel(models.AbstractModel):
         res.end_log()
         return res
 
-    @api.model
+    @api.multi
     def unlink(self):
         try:
             self.purge_links()

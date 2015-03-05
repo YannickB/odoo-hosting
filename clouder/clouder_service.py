@@ -233,6 +233,7 @@ class ClouderService(models.Model):
     def onchange_application_id(self):
         if self.application_id:
 
+            options = []
             for type_option in self.application_id.type_id.option_ids:
                 if type_option.type == 'service' and type_option.auto:
                     test = False
@@ -240,9 +241,11 @@ class ClouderService(models.Model):
                         if option.name == type_option:
                             test = True
                     if not test:
-                        self.link_ids = [(0, 0, {'name': type_option,
-                                                 'value': type_option.default})]
+                        options.append((0, 0, {'name': type_option,
+                                               'value': type_option.default}))
+            self.option_ids = options
 
+            links = []
             for app_link in self.application_id.link_ids:
                 if app_link.service and app_link.auto:
                     test = False
@@ -250,8 +253,9 @@ class ClouderService(models.Model):
                         if link.name == app_link:
                             test = True
                     if not test:
-                        self.link_ids = [(0, 0, {'name': app_link,
-                                                 'target': app_link.next})]
+                        links.append((0, 0, {'name': app_link,
+                                             'target': app_link.next}))
+            self.link_ids = links
 
 
     # @api.multi
@@ -339,36 +343,6 @@ class ClouderService(models.Model):
     #     })
     #
     #     return vals
-
-    @api.multi
-    def create(self, vals):
-        if 'container_id' in vals:
-            container = self.env['clouder.container'] \
-                .browse(vals['container_id'])
-
-            links = {}
-            if 'link_ids' in vals:
-                for link in vals['link_ids']:
-                    link = link[2]
-                    links[link['name']] = link
-                del vals['link_ids']
-            for application_link in container.application_id.link_ids:
-                if application_link.service \
-                        and application_link.id not in links:
-                    links[application_link.id] = {}
-                    links[application_link.id]['name'] = application_link.id
-                    links[application_link.id]['target'] = False
-            vals['link_ids'] = []
-            for application_link_id, link in links.iteritems():
-                if not link['target']:
-                    application_link = self.env['clouder.application.link'] \
-                        .browse(application_link_id)
-                    link['target'] = application_link.auto \
-                                     and application_link.next or False
-                vals['link_ids'].append((0, 0, {'name': link['name'],
-                                                'target': link['target']}))
-
-        return super(ClouderService, self).create(vals)
 
     @api.multi
     def write(self, vals):
@@ -652,6 +626,7 @@ class ClouderServiceOption(models.Model):
 
 class ClouderServiceLink(models.Model):
     _name = 'clouder.service.link'
+    _inherit = ['clouder.model']
 
     service_id = fields.Many2one(
         'clouder.service', 'Service', ondelete="cascade", required=True)
@@ -710,8 +685,8 @@ class ClouderServiceLink(models.Model):
             self.log('The target isnt configured in the link, '
                      'skipping deploy link')
             return False
-        app_links = self.search([
-            ('service_id', '=', self.service_id.id),
+        app_links = self.env['clouder.application.link'].search([
+            ('application_id', '=', self.service_id.application_id.id),
             ('name.code', '=', self.target.application_id.code)])
         if not app_links:
             self.log('The target isnt in the application link for service, '
@@ -723,10 +698,10 @@ class ClouderServiceLink(models.Model):
         return True
 
     @api.multi
-    def deploy(self):
-        self.purge()
+    def deploy_(self):
+        self.purge_()
         self.control() and self.deploy_link()
 
     @api.multi
-    def purge(self):
+    def purge_(self):
         self.control() and self.purge_link()

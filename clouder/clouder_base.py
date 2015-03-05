@@ -265,6 +265,12 @@ class ClouderBase(models.Model):
     def onchange_application_id(self):
         if self.application_id:
 
+            self.admin_name = self.application_id.admin_name
+            self.admin_email = self.application_id.admin_email \
+                and self.application_id.admin_email \
+                or self.email_sysadmin
+
+            options = []
             for type_option in self.application_id.type_id.option_ids:
                 if type_option.type == 'base' and type_option.auto:
                     test = False
@@ -272,10 +278,12 @@ class ClouderBase(models.Model):
                         if option.name == type_option:
                             test = True
                     if not test:
-                        self.link_ids \
-                            = [(0, 0, {'name': type_option,
-                                       'value': type_option.default})]
+                        options.append((0, 0, {
+                            'name': type_option,
+                            'value': type_option.default}))
+            self.option_ids = options
 
+            links = []
             for app_link in self.application_id.link_ids:
                 if app_link.base and app_link.auto:
                     test = False
@@ -283,8 +291,17 @@ class ClouderBase(models.Model):
                         if link.name == app_link:
                             test = True
                     if not test:
-                        self.link_ids = [(0, 0, {'name': app_link,
-                                                 'target': app_link.next})]
+                        links.append((0, 0, {'name': app_link,
+                                             'target': app_link.next}))
+            self.link_ids = links
+
+            self.backup_ids = [(6, 0, [
+                b.id for b in self.application_id.base_backup_ids])]
+            self.time_between_save = self.application_id.base_time_between_save
+            self.saverepo_change = self.application_id.base_saverepo_change
+            self.saverepo_expiration = \
+                    self.application_id.base_saverepo_expiration
+            self.save_expiration = self.application_id.base_save_expiration
 
                     #########TODO La liaison entre base et service est un many2many � cause du loadbalancing. Si le many2many est vide, un service est cr�� automatiquement. Finalement il y aura un many2one pour le principal, et un many2many pour g�rer le loadbalancing
                     #########Contrainte : L'application entre base et service doit �tre la m�me, de plus la bdd/host/db_user/db_password doit �tre la m�me entre tous les services d'une m�me base
@@ -410,7 +427,7 @@ class ClouderBase(models.Model):
     #
     #     return vals
 
-    @api.multi
+    @api.model
     def create(self, vals):
         if (not 'service_id' in vals) or (not vals['service_id']):
             application_obj = self.env['clouder.application']
@@ -453,51 +470,6 @@ class ClouderBase(models.Model):
                 'application_version_id': application.version_ids[0].id,
             }
             vals['service_id'] = service_obj.create(service_vals)
-        if 'application_id' in vals:
-            application = application_obj.browse(vals['application_id'])
-            if 'admin_name' not in vals or not vals['admin_name']:
-                vals['admin_name'] = application.admin_name
-            if 'admin_email' not in vals or not vals['admin_email']:
-                vals['admin_email'] = application.admin_email \
-                                     and application.admin_email \
-                                     or self.email_sysadmin()
-            if 'backup_ids' not in vals \
-                    or not vals['backup_ids'] \
-                    or not vals['backup_ids'][0][2]:
-                vals['backup_ids'] = \
-                    [(6, 0, [b.id for b in application.base_backup_ids])]
-            if 'time_between_save' not in vals \
-                    or not vals['time_between_save']:
-                vals['time_between_save'] = application.base_time_between_save
-            if 'saverepo_change' not in vals or not vals['saverepo_change']:
-                vals['saverepo_change'] = application.base_saverepo_change
-            if 'saverepo_expiration' not in vals \
-                    or not vals['saverepo_expiration']:
-                vals['saverepo_expiration'] = \
-                    application.base_saverepo_expiration
-            if 'save_expiration' not in vals or not vals['save_expiration']:
-                vals['save_expiration'] = application.base_save_expiration
-
-            links = {}
-            if 'link_ids' in vals:
-                for link in vals['link_ids']:
-                    link = link[2]
-                    links[link['name']] = link
-                del vals['link_ids']
-            for application_link in application.link_ids:
-                if application_link.base and application_link.id not in links:
-                    links[application_link.id] = {}
-                    links[application_link.id]['name'] = application_link.id
-                    links[application_link.id]['target'] = False
-            vals['link_ids'] = []
-            for application_link_id, link in links.iteritems():
-                if not link['target']:
-                    application_link = self.env['clouder.application.link']\
-                        .browse(application_link_id)
-                    link['target'] = application_link.auto \
-                        and application_link.next or False
-                vals['link_ids'].append(
-                    (0, 0, {'name': link['name'], 'target': link['target']}))
 
         return super(ClouderBase, self).create(vals)
 
@@ -811,6 +783,7 @@ class ClouderBaseOption(models.Model):
 
 class ClouderBaseLink(models.Model):
     _name = 'clouder.base.link'
+    _inherit = ['clouder.model']
 
     base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade",
                               required=True)
@@ -880,8 +853,8 @@ class ClouderBaseLink(models.Model):
             self.log(
                 'The target isnt configured in the link, skipping deploy link')
             return False
-        app_links = self.search([
-            ('base_id', '=', self.base_id.id),
+        app_links = self.env['clouder.application.link'].search([
+            ('application_id', '=', self.base_id.application_id.id),
             ('name.code', '=', self.target.application_id.code)])
         if app_links:
             self.log(
@@ -893,10 +866,10 @@ class ClouderBaseLink(models.Model):
             return
 
     @api.multi
-    def deploy(self):
-        self.purge()
+    def deploy_(self):
+        self.purge_()
         self.control() and self.deploy_link()
 
     @api.multi
-    def purge(self):
+    def purge_(self):
         self.control() and self.purge_link()

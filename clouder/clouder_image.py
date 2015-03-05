@@ -174,12 +174,14 @@ class ClouderImageVersion(models.Model):
     @property
     def fullpath(self):
         return self.registry_id and self.registry_id.server_id.ip + ':' + \
-                                    self.registry_id.port + '/' + self.fullname
+            self.registry_id.ports['registry']['hostport'] + \
+            '/' + self.fullname
 
     @property
     def fullpath_localhost(self):
         return self.registry_id and 'localhost:' + \
-                                    self.registry_id.port + '/' + self.fullname
+            self.registry_id.ports['registry']['hostport'] +\
+            '/' + self.fullname
 
     _order = 'create_date desc'
 
@@ -259,17 +261,17 @@ class ClouderImageVersion(models.Model):
 
         dockerfile = 'FROM '
         if self.image_id.parent_id and self.parent_id:
-            if self.registry_id.server_id == self.parent_id.registry.server_id:
-                dockerfile += self.fullpath_localhost()
+            if self.registry_id.server_id == self.parent_id.registry_id.server_id:
+                dockerfile += self.parent_id.fullpath_localhost
             else:
-                dockerfile += self.parent_id.fullpath()
+                dockerfile += self.parent_id.fullpath
         elif self.image_id.parent_from:
             dockerfile += self.image_id.parent_from
         else:
-            raise except_orm(_('Date error!'),
+            raise except_orm(_('Data error!'),
                              _("You need to specify the image to inherit!"))
 
-        dockerfile += '\nMAINTAINER ' + self.email_sysadmin() + '\n'
+        dockerfile += '\nMAINTAINER ' + self.email_sysadmin + '\n'
 
         dockerfile += self.image_id.dockerfile
         for volume in self.image_id.volume_ids:
@@ -287,11 +289,11 @@ class ClouderImageVersion(models.Model):
         self.execute(ssh,
                      ['sudo', 'docker', 'build', '-t', self.fullname, dir])
         self.execute(ssh, ['sudo', 'docker', 'tag', self.fullname,
-                           self.fullpath_localhost()])
+                           self.fullpath_localhost])
         self.execute(ssh,
-                     ['sudo', 'docker', 'push', self.fullpath_localhost()])
+                     ['sudo', 'docker', 'push', self.fullpath_localhost])
         self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname])
-        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost()])
+        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost])
         self.execute(ssh, ['rm', '-rf', dir])
         ssh.close()
         return

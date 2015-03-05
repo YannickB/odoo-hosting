@@ -63,7 +63,7 @@
                                 <tree string="Links" editable="bottom">
                                     <field name="name" domain="[('application_id','=',parent.application_id),('base','=',True)]"/>
                                     <field name="target"/>
-                                    <button name="deploy" type="object" string="Reload"/>
+                                    <button name="deploy_" type="object" string="Reload"/>
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
@@ -146,7 +146,7 @@
                         <tree string="Links" editable="bottom">
                             <field name="name" domain="[('application_id','=',parent.application_id),('service','=',True)]"/>
                             <field name="target"/>
-                            <button name="deploy" type="object" string="Reload"/>
+                            <button name="deploy_" type="object" string="Reload"/>
                         </tree>
                     </field>
                     <button name="reinstall" string="Reinstall" type="object"/>
@@ -224,7 +224,7 @@
                                 <tree string="Links" editable="bottom">
                                     <field name="name" domain="[('application_id','=',parent.application_id),('container','=',True)]"/>
                                     <field name="target"/>
-                                    <button name="deploy" type="object" string="Reload"/>
+                                    <button name="deploy_" type="object" string="Reload"/>
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
@@ -263,7 +263,7 @@
                     <field name="application_id"/>
                     <field name="image_id"/>
                     <field name="image_version_id"/>
-                    <field name="ports"/>
+                    <field name="ports_string"/>
                 </tree>
             </field>
         </record>
@@ -603,7 +603,7 @@
                                     <field name="container"/>
                                     <field name="service"/>
                                     <field name="base"/>
-                                    <field name="next"/>
+                                    <field name="next" domain="[('application_id','=',name)]"/>
                                 </tree>
                             </field>
                             <field name="buildfile" colspan="4"/>
