@@ -407,7 +407,7 @@ class ClouderApplicationVersion(models.Model):
 
     @api.multi
     def deploy(self):
-        ssh, sftp = self.connect(self.archive_id.fullname)
+        ssh = self.connect(self.archive_id.fullname)
         self.execute(ssh, ['mkdir', self.application_id.full_archivepath])
         self.execute(ssh, ['rm', '-rf', self.full_archivepath])
         self.execute(ssh, ['mkdir', self.full_archivepath])
@@ -417,14 +417,14 @@ class ClouderApplicationVersion(models.Model):
         self.execute(ssh, ['tar', 'czf', self.full_archivepath_targz(), '-C',
                            self.application_id.full_archivepath + '/'
                            + self.name, '.'])
-        ssh.close(), sftp.close()
+        ssh.close()
 
     @api.multi
     def purge(self):
-        ssh, sftp = self.connect(self.archive_id.fullname)
+        ssh = self.connect(self.archive_id.fullname)
         self.execute(ssh, ['rm', '-rf', self.full_archivepath])
         self.execute(ssh, ['rm', self.full_archivepath_targz()])
-        ssh.close(), sftp.close()
+        ssh.close()
 
 
 class ClouderApplicationLink(models.Model):

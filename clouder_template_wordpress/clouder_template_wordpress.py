@@ -30,19 +30,19 @@ class ClouderApplicationVersion(models.Model):
     def build_application(self):
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'wordpress':
-            ssh, sftp = self.connect(self.archive_id.fullname())
+            ssh = self.connect(self.archive_id.fullname)
             self.execute(ssh,
                          ['wget', '-q', 'https://wordpress.org/latest.tar.gz',
-                          'latest.tar.gz'], path=self.full_archivepath())
+                          'latest.tar.gz'], path=self.full_archivepath)
             self.execute(ssh, ['tar', '-xzf', 'latest.tar.gz'],
-                         path=self.full_archivepath())
+                         path=self.full_archivepath)
             self.execute(ssh, ['mv', 'wordpress/*', './'],
-                         path=self.full_archivepath())
+                         path=self.full_archivepath)
             self.execute(ssh, ['rm', '-rf', './*.tar.gz'],
-                         path=self.full_archivepath())
+                         path=self.full_archivepath)
             self.execute(ssh, ['rm', '-rf', 'wordpress/'],
-                         path=self.full_archivepath())
-            ssh.close(), sftp.close()
+                         path=self.full_archivepath)
+            ssh.close()
         return
 
 
@@ -53,9 +53,9 @@ class ClouderBase(models.Model):
     def deploy_build(self):
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'wordpress':
-            ssh, sftp = self.connect(self.service_id.container_id.fullname())
-            config_file = '/etc/nginx/sites-available/' + self.fullname()
-            self.send(sftp,
+            ssh = self.connect(self.service_id.container_id.fullname)
+            config_file = '/etc/nginx/sites-available/' + self.fullname
+            self.send(ssh,
                       modules.get_module_path('clouder_wordpress') +
                       '/res/nginx.config', config_file)
             self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"',
@@ -65,13 +65,13 @@ class ClouderBase(models.Model):
                                config_file])
             self.execute(ssh, ['sed', '-i',
                                '"s/PATH/' +
-                               self.service_id.full_localpath_files()
+                               self.service_id.full_localpath_files
                                .replace('/', '\/') + '/g"', config_file])
             self.execute(ssh, ['ln', '-s',
-                               '/etc/nginx/sites-available/' + self.fullname(),
-                               '/etc/nginx/sites-enabled/' + self.fullname()])
+                               '/etc/nginx/sites-available/' + self.fullname,
+                               '/etc/nginx/sites-enabled/' + self.fullname])
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
         return res
 
@@ -79,10 +79,10 @@ class ClouderBase(models.Model):
     def purge_post(self):
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'wordpress':
-            ssh, sftp = self.connect(self.service_id.container_id.fullname())
+            ssh = self.connect(self.service_id.container_id.fullname)
             self.execute(ssh, ['rm', '-rf',
-                               '/etc/nginx/sites-enabled/' + self.fullname()])
+                               '/etc/nginx/sites-enabled/' + self.fullname])
             self.execute(ssh, [
-                'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname()])
+                'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname])
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()

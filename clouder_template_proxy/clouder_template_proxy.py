@@ -27,7 +27,7 @@ class ClouderBase(models.Model):
     _inherit = 'clouder.base'
 
     nginx_configfile = lambda \
-            self: '/etc/nginx/sites-available/' + self.unique_name()
+            self: '/etc/nginx/sites-available/' + self.fullname
 
 
 class ClouderBaseLink(models.Model):
@@ -42,8 +42,8 @@ class ClouderBaseLink(models.Model):
                 file = 'proxy.config'
             else:
                 file = 'proxy-sslonly.config'
-            ssh, sftp = self.connect(self.target.fullname())
-            self.send(sftp,
+            ssh = self.connect(self.target.fullname)
+            self.send(ssh,
                       modules.get_module_path(
                           'clouder_' +
                           self.base_id.application_id.type_id.name
@@ -91,16 +91,16 @@ class ClouderBaseLink(models.Model):
                     '.' + self.base_id.domain_id.name + '"'])
             self.execute(ssh, [
                 'ln', '-s', self.base_id.nginx_configfile(),
-                '/etc/nginx/sites-enabled/' + self.base_id.unique_name()])
+                '/etc/nginx/sites-enabled/' + self.base_id.unifullname)
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
 
     @api.multi
     def purge_link(self):
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'proxy':
-            ssh, sftp = self.connect(self.target.fullname())
+            ssh = self.connect(self.target.fullname)
             self.execute(ssh, [
                 'rm',
                 '/etc/nginx/sites-enabled/' + self.base_id.unique_name()])
@@ -112,4 +112,4 @@ class ClouderBaseLink(models.Model):
                 'rm', '/etc/ssl/private/' + self.base_id.name +
                 '.' + self.base_id.domain_id.name + '.*'])
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()

@@ -269,8 +269,7 @@ class ClouderModel(models.AbstractModel):
 
         ssh.connect(host, port=int(port), username=username,
                     key_filename=os.path.expanduser(identityfile))
-        sftp = ssh.open_sftp()
-        return ssh, sftp
+        return ssh
 
     @api.multi
     def execute(self, ssh, cmd, stdin_arg=False,path=False):
@@ -291,9 +290,11 @@ class ClouderModel(models.AbstractModel):
         return stdout_read
 
     @api.multi
-    def send(self, sftp, source, destination):
+    def send(self, ssh, source, destination):
+        sftp = ssh.open_sftp()
         self.log('send : ' + source + ' to ' + destination)
         sftp.put(source, destination)
+        sftp.close()
 
 
     @api.multi

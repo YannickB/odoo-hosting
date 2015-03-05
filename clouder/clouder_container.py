@@ -247,8 +247,11 @@ class ClouderContainer(models.Model):
 
     @property
     def ssh_port(self):
-        return (port.hostport for port in self.port_ids
-                if port.name == 'ssh') or 22
+        hostport = 22
+        for port in self.port_ids:
+            if port.name == 'ssh':
+                hostport = port.hostport
+        return hostport
 
     @property
     def root_password(self):
@@ -677,7 +680,7 @@ class ClouderContainer(models.Model):
 
         self.purge()
 
-        ssh, sftp = self.connect(self.server_id.name)
+        ssh = self.connect(self.server_id.name)
 
         cmd = ['sudo','docker', 'run', '-d']
         nextport = self.server_id.start_port
@@ -729,11 +732,11 @@ class ClouderContainer(models.Model):
 
         self.start()
 
-        ssh.close(), sftp.close()
+        ssh.close()
 
         for link in self.link_ids:
             if link.name.code == 'postfix':
-                ssh, sftp = self.connect(self.fullname)
+                ssh = self.connect(self.fullname)
                 self.execute(ssh, ['echo "root=' + self.email_sysadmin() +
                                    '" > /etc/ssmtp/ssmtp.conf'])
                 self.execute(ssh, ['echo "mailhub=postfix:25" '
@@ -744,7 +747,7 @@ class ClouderContainer(models.Model):
                                    '" >> /etc/ssmtp/ssmtp.conf'])
                 self.execute(ssh, ['echo "FromLineOverride=YES" >> '
                                    '/etc/ssmtp/ssmtp.conf'])
-                ssh.close(), sftp.close()
+                ssh.close()
 
         #For shinken
         self.save()
@@ -756,26 +759,26 @@ class ClouderContainer(models.Model):
 
         self.purge_key()
 
-        ssh, sftp = self.connect(self.server_id.name)
+        ssh = self.connect(self.server_id.name)
         self.stop()
         self.execute(ssh, ['sudo','docker', 'rm', self.name])
         self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname])
-        ssh.close(), sftp.close()
+        ssh.close()
 
         return
 
     @api.multi
     def stop(self):
-        ssh, sftp = self.connect(self.server_id.name)
+        ssh = self.connect(self.server_id.name)
         self.execute(ssh, ['docker', 'stop', self.name])
-        ssh.close(), sftp.close()
+        ssh.close()
 
     @api.multi
     def start(self):
         self.stop()
-        ssh, sftp = self.connect(self.server_id.name)
+        ssh = self.connect(self.server_id.name)
         self.execute(ssh, ['docker', 'start', self.name])
-        ssh.close(), sftp.close()
+        ssh.close()
         time.sleep(3)
 
     @api.multi
@@ -804,12 +807,12 @@ class ClouderContainer(models.Model):
                                 '\n  IdentityFile ~/.ssh/keys/' + self.fullname)
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.fullname + '\n')
-        ssh, sftp = self.connect(self.server_id.name)
+        ssh = self.connect(self.server_id.name)
         self.execute(ssh, ['mkdir', '/opt/keys/' + self.fullname])
-        self.send(sftp, self.home_directory + '/.ssh/keys/' +
+        self.send(ssh, self.home_directory + '/.ssh/keys/' +
                   self.fullname + '.pub', '/opt/keys/' +
                   self.fullname + '/authorized_keys')
-        ssh.close(), sftp.close()
+        ssh.close()
 
         # _logger.info('restart required %s', restart_required)
         # if not restart_required:
@@ -828,7 +831,7 @@ class ClouderContainer(models.Model):
                          'skipping deploying backup keys in shinken')
                 return
             for shinken in shinkens:
-                ssh, sftp = self.connect(
+                ssh = self.connect(
                     shinken.fullname, username='shinken')
                 self.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' +
                                    self.fullname + '*'])
@@ -836,7 +839,7 @@ class ClouderContainer(models.Model):
                     sftp, self.home_directory + '/.ssh/keys/' +
                     self.fullname + '.pub', '/home/shinken/.ssh/keys/' +
                     self.fullname + '.pub')
-                self.send(sftp, self.home_directory + '/.ssh/keys/' +
+                self.send(ssh, self.home_directory + '/.ssh/keys/' +
                           self.fullname, '/home/shinken/.ssh/keys/' +
                           self.fullname)
                 self.execute(ssh, ['chmod', '-R', '700', '/home/shinken/.ssh'])
@@ -872,10 +875,10 @@ class ClouderContainer(models.Model):
         self.execute_local([
             'rm', '-rf', self.home_directory +
             '/.ssh/keys/' + self.fullname + '.pub'])
-        ssh, sftp = self.connect(self.server_id.name)
+        ssh = self.connect(self.server_id.name)
         self.execute(ssh, [
             'rm', '-rf', '/opt/keys/' + self.fullname + '/authorized_keys'])
-        ssh.close(), sftp.close()
+        ssh.close()
 
 
 class ClouderContainerPort(models.Model):

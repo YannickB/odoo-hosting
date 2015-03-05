@@ -672,15 +672,15 @@ class ClouderBase(models.Model):
         if not res:
             for key, database in self.databases().iteritems():
                 if self.service_id.database_type() != 'mysql':
-                    ssh, sftp = self.connect(
+                    ssh = self.connect(
                         self.service_id.container_id.fullname,
                         username=self.application_id.type_id.system_user)
                     self.execute(ssh, ['createdb', '-h',
                                        self.service_id.database_server(), '-U',
                                        self.db_user(), database])
-                    ssh.close(), sftp.close()
+                    ssh.close()
                 else:
-                    ssh, sftp = self.connect(
+                    ssh = self.connect(
                         self.service_id.database().fullname)
                     self.execute(ssh, [
                         "mysql -u root -p'"
@@ -693,7 +693,7 @@ class ClouderBase(models.Model):
                         + "' -se \"grant all on " + database
                         + ".* to '" + self.service_id.db_user() + "';\""
                     ])
-                    ssh.close(), sftp.close()
+                    ssh.close()
 
         self.log('Database created')
         if self.build == 'build':
@@ -701,7 +701,7 @@ class ClouderBase(models.Model):
 
         elif self.build == 'restore':
             if self.service_id.database_type() != 'mysql':
-                ssh, sftp = self.connect(
+                ssh = self.connect(
                     self.service_id.container_id.fullname,
                     username=self.application_id.type_id.system_user)
                 self.execute(ssh, [
@@ -711,9 +711,9 @@ class ClouderBase(models.Model):
                     self.service_id.application_version_id.full_localpath
                     + '/' + self.service_id.database_type() + '/build.sql'
                 ])
-                ssh.close(), sftp.close()
+                ssh.close()
             else:
-                ssh, sftp = self.connect(
+                ssh = self.connect(
                     self.service_id.container_id.fullname,
                     username=self.application_id.type_id.system_user)
                 self.execute(ssh, [
@@ -724,7 +724,7 @@ class ClouderBase(models.Model):
                     self.service_id.application_version_id.full_localpath
                     + '/' + self.service_id.database_type + '/build.sql'
                 ])
-                ssh.close(), sftp.close()
+                ssh.close()
 
             self.deploy_post_restore()
 
@@ -749,7 +749,7 @@ class ClouderBase(models.Model):
     def purge_db(self):
         for key, database in self.databases().iteritems():
             if self.service_id.database_type != 'mysql':
-                ssh, sftp = self.connect(self.service_id.database().fullname,
+                ssh = self.connect(self.service_id.database().fullname,
                                          username='postgres')
                 self.execute(ssh, [
                     'psql', '-c',
@@ -760,15 +760,15 @@ class ClouderBase(models.Model):
                     + database + '\';"'
                 ])
                 self.execute(ssh, ['dropdb', database])
-                ssh.close(), sftp.close()
+                ssh.close()
             else:
-                ssh, sftp = self.connect(self.service_id.database().fullname)
+                ssh = self.connect(self.service_id.database().fullname)
                 self.execute(ssh, [
                     "mysql -u root -p'"
                     + self.service_id.database().root_password
                     + "' -se \"drop database " + database + ";\""
                 ])
-                ssh.close(), sftp.close()
+                ssh.close()
         return
 
     @api.multi

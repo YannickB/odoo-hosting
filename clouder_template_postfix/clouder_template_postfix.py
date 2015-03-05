@@ -30,7 +30,7 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'postfix':
-            ssh, sftp = self.connect(self.fullname())
+            ssh = self.connect(self.fullname)
             self.execute(ssh, [
                 'echo "relayhost = [smtp.mandrillapp.com]" '
                 '>> /etc/postfix/main.cf'])
@@ -53,4 +53,4 @@ class ClouderContainer(models.Model):
                 self.options()['mailchimp_apikey']['value'] +
                 '" > /etc/postfix/sasl_passwd'])
             self.execute(ssh, ['postmap /etc/postfix/sasl_passwd'])
-            ssh.close(), sftp.close()
+            ssh.close()

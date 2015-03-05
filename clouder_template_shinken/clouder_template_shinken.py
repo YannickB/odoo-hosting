@@ -36,23 +36,23 @@ class ClouderServer(models.Model):
         super(ClouderServer, self).deploy()
 
         if self.supervision_id:
-            ssh, sftp = self.connect(self.supervision_id.fullname)
-            self.send(sftp, modules.get_module_path('clouder_shinken') +
+            ssh = self.connect(self.supervision_id.fullname)
+            self.send(ssh, modules.get_module_path('clouder_shinken') +
                       '/res/server-shinken.config', self.shinken_configfile)
             self.execute(ssh, ['sed', '-i',
                                '"s/NAME/' + self.server_id.name + '/g"',
                                self.shinken_configfile])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
     @api.multi
     def purge(self):
 
         if self.supervision_id:
-            ssh, sftp = self.connect(self.supervision_id.fullname)
+            ssh = self.connect(self.supervision_id.fullname)
             self.execute(ssh, ['rm', self.shinken_configfile])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
 
 class ClouderContainer(models.Model):
@@ -60,7 +60,7 @@ class ClouderContainer(models.Model):
 
     @property
     def shinken_configfile(self):
-        return '/usr/local/shinken/etc/services/' + self.fullname() + '.cfg'
+        return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
 
 
 class ClouderBase(models.Model):
@@ -68,7 +68,7 @@ class ClouderBase(models.Model):
 
     @property
     def shinken_configfile(self):
-        return '/usr/local/shinken/etc/services/' + self.unique_name() + '.cfg'
+        return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
 
 
 class ClouderContainerLink(models.Model):
@@ -78,11 +78,11 @@ class ClouderContainerLink(models.Model):
     def deploy_link(self):
         super(ClouderContainerLink, self).deploy_link()
         if self.name.name.code == 'shinken':
-            ssh, sftp = self.connect(self.target.fullname())
+            ssh = self.connect(self.target.fullname)
             file = 'container-shinken'
             if self.container_id.nosave:
                 file = 'container-shinken-nosave'
-            self.send(sftp,
+            self.send(ssh,
                       modules.get_module_path('clouder_shinken') + '/res/' +
                       file + '.config',
                       self.container_id.shinken_configfile())
@@ -96,11 +96,11 @@ class ClouderContainerLink(models.Model):
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/CONTAINER/' + self.container_id.backup_ids[0]
-                         .fullname() + '/g"',
+                         .fullname + '/g"',
                 self.container_id.shinken_configfile()])
             self.execute(ssh, [
                 'sed', '-i',
-                '"s/UNIQUE_NAME/' + self.container_id.fullname() + '/g"',
+                '"s/UNIQUE_NAME/' + self.container_id.fullname + '/g"',
                 self.container_id.shinken_configfile()])
             self.execute(ssh, [
                 'sed', '-i',
@@ -108,20 +108,20 @@ class ClouderContainerLink(models.Model):
                 self.container_id.shinken_configfile()])
             self.execute(ssh, [
                 'sed', '-i',
-                '"s/PORT/' + str(self.container_id.ssh_port()) + '/g"',
+                '"s/PORT/' + str(self.container_id.ssh_port) + '/g"',
                 self.container_id.shinken_configfile()])
 
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
     @api.multi
     def purge_link(self):
         super(ClouderContainerLink, self).purge_link()
         if self.name.name.code == 'shinken':
-            ssh, sftp = self.connect(self.target.fullname())
+            ssh = self.connect(self.target.fullname)
             self.execute(ssh, ['rm', self.container_id.shinken_configfile()])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
 
 class ClouderBaseLink(models.Model):
@@ -131,11 +131,11 @@ class ClouderBaseLink(models.Model):
     def deploy_link(self):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'shinken':
-            ssh, sftp = self.connect(self.target.fullname())
+            ssh = self.connect(self.target.fullname)
             file = 'base-shinken'
             if self.base_id.nosave:
                 file = 'base-shinken-nosave'
-            self.send(sftp,
+            self.send(ssh,
                       modules.get_module_path('clouder_shinken') +
                       '/res/' + file + '.config',
                       self.base_id.shinken_configfile())
@@ -164,16 +164,16 @@ class ClouderBaseLink(models.Model):
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/CONTAINER/' + self.base_id
-                         .backup_ids[0].fullname() + '/g"',
+                         .backup_ids[0].fullname + '/g"',
                 self.base_id.shinken_configfile()])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
     @api.multi
     def purge_link(self):
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'shinken':
-            ssh, sftp = self.connect(self.target.fullname())
+            ssh = self.connect(self.target.fullname)
             self.execute(ssh, ['rm', self.base_id.shinken_configfile()])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()

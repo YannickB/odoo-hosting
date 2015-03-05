@@ -76,9 +76,9 @@ class ClouderContainer(models.Model):
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'docker':
             if 'public_key' in self.options():
-                ssh, sftp = self.connect(self.fullname())
+                ssh = self.connect(self.fullname)
                 self.execute(ssh, [
                     'echo "' + self.options()['public_key']['value'] +
                     '" > /root/.ssh/authorized_keys2'])
-                ssh.close(), sftp.close()
+                ssh.close()
 

@@ -31,8 +31,8 @@ class ClouderDomain(models.Model):
 
     @api.multi
     def deploy(self):
-        ssh, sftp = self.connect(self.dns_id.fullname())
-        self.send(sftp, modules.get_module_path('clouder_template_bind') +
+        ssh = self.connect(self.dns_id.fullname)
+        self.send(ssh, modules.get_module_path('clouder_template_bind') +
                   '/res/bind.config', self.configfile())
         self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + self.name + '/g"',
                            self.configfile()])
@@ -51,18 +51,18 @@ class ClouderDomain(models.Model):
         self.execute(ssh, [
             'echo "//END ' + self.name + '" >> /etc/bind/named.conf'])
         self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
-        ssh.close(), sftp.close()
+        ssh.close()
 
     @api.multi
     def purge(self):
-        ssh, sftp = self.connect(self.dns_id.fullname())
+        ssh = self.connect(self.dns_id.fullname)
         self.execute(ssh, [
             'sed', '-i',
             "'/zone\s\"" + self.name + "\"/,/END\s" + self.name + "/d'",
             '/etc/bind/named.conf'])
         self.execute(ssh, ['rm', self.configfile()])
         self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
-        ssh.close(), sftp.close()
+        ssh.close()
 
 
 class ClouderBaseLink(models.Model):
@@ -72,7 +72,7 @@ class ClouderBaseLink(models.Model):
     def deploy_link(self):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'bind':
-            ssh, sftp = self.connect(self.target.container.fullname())
+            ssh = self.connect(self.target.container.fullname)
             proxy_link = self.search([('base_id', '=', self.base_id), (
                 'name.application_id.code', '=', 'proxy')])
             self.execute(ssh, [
@@ -91,15 +91,15 @@ class ClouderBaseLink(models.Model):
                     '. ;' + self.base_id.name + ' IN CNAME" >> ' +
                     self.base_id.domain_id.configfile()])
             self.execute(ssh, ['/etc/init.d/bind9', 'restart'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
     @api.multi
     def purge_link(self):
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'bind':
-            ssh, sftp = self.connect(self.target.container.fullname())
+            ssh = self.connect(self.target.container.fullname)
             self.execute(ssh, ['sed', '-i',
                                '"/' + self.base_id.name + '\sIN\sCNAME/d"',
                                self.base_id.domain_id.configfile()])
             self.execute(ssh, ['/etc/init.d/bind9', 'restart'])
-            ssh.close(), sftp.close()
+            ssh.close()

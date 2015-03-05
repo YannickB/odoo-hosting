@@ -108,7 +108,7 @@ class ClouderConfigSettings(models.Model):
             [('application_id.type_id.name', '=', 'backup')])
         for backup in backups:
             vals = backup.get_vals()
-            ssh, sftp = backup.connect(vals['container_fullname'],
+            ssh = backup.connect(vals['container_fullname'],
                                        username='backup')
             backup.execute(ssh,
                            ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
@@ -121,7 +121,7 @@ class ClouderConfigSettings(models.Model):
             backup.execute(ssh,
                            ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
                             '-g'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
         containers = self.env['clouder.container'].search(
             [('nosave', '=', False)])

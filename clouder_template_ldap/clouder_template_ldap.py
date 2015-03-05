@@ -57,7 +57,7 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'openldap':
-            ssh, sftp = self.connect(self.fullname())
+            ssh = self.connect(self.fullname)
 
             self.execute(ssh, [
                 'echo "slapd slapd/internal/generated_adminpw password ' +
@@ -83,7 +83,7 @@ class ClouderContainer(models.Model):
 
             config_file = '/etc/ldap/schema/' + \
                           self.options()['domain']['value'] + '.ldif'
-            self.send(sftp, modules.get_module_path('clouder_ldap') +
+            self.send(ssh, modules.get_module_path('clouder_ldap') +
                       '/res/ldap.ldif', config_file)
             domain_dc = ''
             for dc in self.options()['value'].split('.'):
@@ -103,9 +103,9 @@ class ClouderContainer(models.Model):
             self.execute(ssh, ['sed', '-i',
                                '"s/dc=example,dc=com/' + domain_dc + '/g"',
                                '/etc/phpldapadmin/config.php'])
-            ssh.close(), sftp.close()
+            ssh.close()
             self.start()
-            ssh, sftp = self.connect(self.container.fullname())
+            ssh = self.connect(self.container.fullname)
             self.execute(ssh, ['ldapadd', '-Y', 'EXTERNAL',
                                '-H', 'ldapi:///', '-f', config_file])
-            ssh.close(), sftp.close()
+            ssh.close()

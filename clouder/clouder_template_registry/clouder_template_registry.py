@@ -52,7 +52,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def deploy(self):
         if self.image_id.name == 'img_registry':
-            ssh, sftp = self.connect(self.server_id.name)
+            ssh = self.connect(self.server_id.name)
             dir = '/tmp/' + self.image_id.name + '_' +\
                   self.image_version_id.fullname
             _logger.info('dir %s', dir)

@@ -32,7 +32,7 @@ class ClouderContainer(models.Model):
         super(ClouderContainer, self).deploy_post()
 
         if self.application_id.type_id.name == 'mysql':
-            ssh, sftp = self.connect(self.fullname())
+            ssh = self.connect(self.fullname)
             self.execute(ssh, ['sed', '-i', '"/bind-address/d"',
                                '/etc/mysql/my.cnf'])
             if self.options()['root_password']['value']:

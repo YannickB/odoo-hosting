@@ -31,19 +31,19 @@ class ClouderApplicationVersion(models.Model):
     def build_application(self):
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'piwik':
-            ssh, sftp = self.connect(self.archive_id.fullname())
+            ssh = self.connect(self.archive_id.fullname)
             self.execute(ssh,
                          ['wget', '-q', 'http://builds.piwik.org/piwik.zip',
-                          'piwik.zip'], path=self.full_archivepath())
+                          'piwik.zip'], path=self.full_archivepath)
             self.execute(ssh, ['unzip', '-q', 'piwik.zip'],
-                         path=self.full_archivepath())
+                         path=self.full_archivepath)
             self.execute(ssh, ['mv', 'piwik/*', './'],
-                         path=self.full_archivepath())
+                         path=self.full_archivepath)
             self.execute(ssh, ['rm', '-rf', './*.zip'],
-                         path=self.full_archivepath())
+                         path=self.full_archivepath)
             self.execute(ssh, ['rm', '-rf', 'piwik/'],
-                         path=self.full_archivepath())
-            ssh.close(), sftp.close()
+                         path=self.full_archivepath)
+            ssh.close()
         return
 
 
@@ -54,9 +54,9 @@ class ClouderBase(models.Model):
     def deploy_build(self):
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'piwik':
-            ssh, sftp = self.connect(self.service_id.container_id.fullname())
-            config_file = '/etc/nginx/sites-available/' + self.fullname()
-            self.send(sftp, modules.get_module_path(
+            ssh = self.connect(self.service_id.container_id.fullname)
+            config_file = '/etc/nginx/sites-available/' + self.fullname
+            self.send(ssh, modules.get_module_path(
                 'clouder_piwik') + '/res/nginx.config', config_file)
             self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"',
                                config_file])
@@ -68,10 +68,10 @@ class ClouderBase(models.Model):
                                self.service_id.full_localpath_file()\
                                .replace('/', '\/') + '/g"', config_file])
             self.execute(ssh, ['ln', '-s',
-                               '/etc/nginx/sites-available/' + self.fullname(),
-                               '/etc/nginx/sites-enabled/' + self.fullname()])
+                               '/etc/nginx/sites-available/' + self.fullname,
+                               '/etc/nginx/sites-enabled/' + self.fullname])
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()
         return res
 
 
@@ -79,13 +79,13 @@ class ClouderBase(models.Model):
     def purge_post(self):
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'drupal':
-            ssh, sftp = self.connect(self.service_id.container_id.fullname())
+            ssh = self.connect(self.service_id.container_id.fullname)
             self.execute(ssh, [
-                'rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname()])
+                'rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname])
             self.execute(ssh, [
-                'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname()])
+                'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname])
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
 
 class ClouderBaseLink(models.Model):
@@ -99,9 +99,9 @@ class ClouderBaseLink(models.Model):
     def deploy_link(self):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'piwik':
-            ssh, sftp = self.connect(self.target.fullname())
+            ssh = self.connect(self.target.fullname)
             piwik_id = self.execute(ssh, [
-                'mysql', self.target_base().unique_name_(),
+                'mysql', self.target_base().fullname_,
                 '-h ' + self.target_base().service_id.database_server(),
                 '-u ' + self.target_base().service_id.db_user(),
                 '-p' + self.target_base().service_id.database_password,
@@ -109,7 +109,7 @@ class ClouderBaseLink(models.Model):
                 self.base_id.fulldomain() + '\' LIMIT 1;"'])
             if not piwik_id:
                 self.execute(ssh, [
-                    'mysql', self.target_base().unique_name_(),
+                    'mysql', self.target_base().fullname_,
                     '-h ' + self.target_base().service_id.database_server(),
                     '-u ' + self.target_base().service_id.db_user(),
                     '-p' + self.target_base().service_id.database_password,
@@ -119,16 +119,16 @@ class ClouderBaseLink(models.Model):
                     self.base_id.fulldomain() +
                     '\', NOW(), \'Europe/Paris\', \'EUR\');"'])
                 piwik_id = self.execute(ssh, [
-                    'mysql', self.target_base().unique_name_(),
+                    'mysql', self.target_base().fullname_,
                     '-h ' + self.target_base().service_id.database_server(),
                     '-u ' + self.target_base().service_id.db_user(),
                     '-p' + self.target_base().service_id.database_password,
                     '-se', '"select idsite from piwik_site WHERE name = \'' +
                     self.base_id.fulldomain() + '\' LIMIT 1;"'])
-            #            self.execute(ssh, ['mysql', self.target_base().unique_name_(), '-h ' + self.target_base().service_id.database_server(), '-u ' + self.target_base().service_id.db_user(), '-p' + vals['link_target_service_db_password'], '-se',
+            #            self.execute(ssh, ['mysql', self.target_base().fullname_, '-h ' + self.target_base().service_id.database_server(), '-u ' + self.target_base().service_id.db_user(), '-p' + vals['link_target_service_db_password'], '-se',
             #                '"INSERT INTO piwik_access (login, idsite, access) VALUES (\'anonymous\', ' + piwik_id + ', \'view\');"'])
 
-            ssh.close(), sftp.close()
+            ssh.close()
 
             self.deploy_piwik(piwik_id)
 
@@ -136,16 +136,16 @@ class ClouderBaseLink(models.Model):
     def purge_link(self):
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'piwik':
-            ssh, sftp = self.connect(self.target.fullname())
+            ssh = self.connect(self.target.fullname)
             piwik_id = self.execute(ssh, [
-                'mysql', self.target_base().unique_name_(),
+                'mysql', self.target_base().fullname_,
                 '-h ' + self.target_base().service_id.database_server(),
                 '-u ' + self.target_base().service_id.db_user(),
                 '-p' + self.target_base().service_id.database_password,
                 '-se', '"select idsite from piwik_site WHERE name = \'' +
                 self.base_id.fulldomain() + '\' LIMIT 1;"'])
             # if piwik_id:
-            #     execute.execute(ssh, ['mysql', self.target_base().unique_name_(), '-h ' + self.target_base().service_id.database_server(), '-u ' + self.target_base().service_id.db_user(), '-p' + self.target_base().service_id.database_password, '-se',
+            #     execute.execute(ssh, ['mysql', self.target_base().fullname_, '-h ' + self.target_base().service_id.database_server(), '-u ' + self.target_base().service_id.db_user(), '-p' + self.target_base().service_id.database_password, '-se',
             #         '"DELETE FROM piwik_access WHERE idsite = ' + piwik_id + ';"'])
 
-            ssh.close(), sftp.close()
+            ssh.close()

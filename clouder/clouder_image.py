@@ -253,7 +253,7 @@ class ClouderImageVersion(models.Model):
 
     @api.multi
     def deploy(self):
-        ssh, sftp = self.connect(self.registry_id.server_id.name)
+        ssh = self.connect(self.registry_id.server_id.name)
         dir = '/tmp/' + self.image_id.name + '_' + self.fullname
         self.execute(ssh, ['mkdir', '-p', dir])
 
@@ -293,7 +293,7 @@ class ClouderImageVersion(models.Model):
         self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname])
         self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost()])
         self.execute(ssh, ['rm', '-rf', dir])
-        ssh.close(), sftp.close()
+        ssh.close()
         return
 
     #In case of problems with ssh authentification

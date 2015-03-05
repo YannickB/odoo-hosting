@@ -31,7 +31,7 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'postgres':
-            ssh, sftp = self.connect(self.fullname())
+            ssh = self.connect(self.fullname)
             self.execute(ssh, [
                 'echo "host all  all    ' +
                 self.options()['network']['value'] +
@@ -41,4 +41,4 @@ class ClouderContainer(models.Model):
                 'echo "listen_addresses=\'' +
                 self.options()['listen']['value'] + '\'" >> /etc/postgresql/' +
                 self.application_id.current_version + '/main/postgresql.conf'])
-            ssh.close(), sftp.close()
+            ssh.close()

@@ -30,7 +30,7 @@ class ClouderApplicationVersion(models.Model):
     def build_application(self):
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'seafile':
-            ssh, sftp = self.connect(self.archive_id.fullname())
+            ssh = self.connect(self.archive_id.fullname)
             self.execute(ssh, [
                 'wget', '-q',
                 'https://bitbucket.org/haiwen/seafile/downloads'
@@ -48,7 +48,7 @@ class ClouderApplicationVersion(models.Model):
                 'rm', '-rf',
                 'seafile-server_' + self.application_id.current_version],
                 path=self.full_archivepath)
-            ssh.close(), sftp.close()
+            ssh.close()
 
         return
 
@@ -60,8 +60,8 @@ class ClouderBase(models.Model):
     def deploy_build(self):
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'seafile':
-            ssh, sftp = self.connect(
-                self.service_id.container_id.fullname(),
+            ssh = self.connect(
+                self.service_id.container_id.fullname,
                 username=self.application_id.type_id.system_user)
             install_args = [
                 '\n', self.title + '\n', self.fulldomain() + '\n', '\n', '\n',
@@ -78,14 +78,14 @@ class ClouderBase(models.Model):
                 #Be cautious, the install may crash because of the server name (title). Use only alphanumeric, less than 15 letter without space
                 self.execute(ssh, ['./setup-seafile-mysql.sh'],
                              stdin_arg=install_args,
-                             path=self.service_id.full_localpath_files())
+                             path=self.service_id.full_localpath_files)
 
                 self.execute(ssh, [
-                    self.service_id.full_localpath_files() + '/seafile.sh',
+                    self.service_id.full_localpath_files + '/seafile.sh',
                     'start'])
 
                 self.execute(ssh, [
-                    self.service_id.full_localpath_files() + '/seahub.sh',
+                    self.service_id.full_localpath_files + '/seahub.sh',
                     'start'], stdin_arg=seahub_args)
             else:
                 for arg in install_args:
@@ -100,43 +100,43 @@ class ClouderBase(models.Model):
     def deploy_post(self):
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'seafile':
-            ssh, sftp = self.connect(
-                self.service_id.container_id.fullname(),
+            ssh = self.connect(
+                self.service_id.container_id.fullname,
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, [
-                'echo "[program:' + self.unique_name() +
+                'echo "[program:' + self.fullname +
                 '-seafile]" >> /opt/seafile/supervisor.conf'])
             self.execute(ssh, [
                 'echo "command=su seafile -c \'' +
-                self.service_id.full_localpath_files() +
+                self.service_id.full_localpath_files +
                 '/seafile.sh start\'" >> /opt/seafile/supervisor.conf'])
             self.execute(ssh, [
-                'echo "[program:' + self.unique_name() +
+                'echo "[program:' + self.unifullname+
                 '-seahub]" >> /opt/seafile/supervisor.conf'])
             self.execute(ssh, [
                 'echo "command=su seafile -c \'rm ' +
-                self.service_id.full_localpath_files() +
+                self.service_id.full_localpath_files +
                 '/runtime/seahub.pid; ' +
-                self.service_id.full_localpath_files() +
+                self.service_id.full_localpath_files +
                 '/seahub.sh start\'" >> /opt/seafile/supervisor.conf'])
 
-            ssh.close(), sftp.close()
+            ssh.close()
         return res
 
     @api.multi
     def purge_post(self):
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'seafile':
-            ssh, sftp = self.connect(
-                self.service_id.container_id.fullname(),
+            ssh = self.connect(
+                self.service_id.container_id.fullname,
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, [
                 'sed', '-i',
-                '"/program:' + self.unique_name() + '-seafile/d"',
+                '"/program:' + self.uniquefullname-seafile/d"',
                 '/opt/seafile/supervisor.conf'])
             self.execute(ssh, [
                 'sed', '-i',
-                '"/' + self.service_id.full_localpath_files()\
+                '"/' + self.service_id.full_localpath_files\
                          .replace('/', '\/') + '\/seafile.sh/d"',
                 '/opt/seafile/supervisor.conf'])
             self.execute(ssh, [
@@ -145,10 +145,10 @@ class ClouderBase(models.Model):
                 '/opt/seafile/supervisor.conf'])
             self.execute(ssh, [
                 'sed', '-i',
-                '"/' + self.service_id.full_localpath_files()\
+                '"/' + self.service_id.full_localpath_files\
                          .replace('/', '\/') + '\/seahub.sh/d"',
                 '/opt/seafile/supervisor.conf'])
-            ssh.close(), sftp.close()
+            ssh.close()
 
         # class CloudeSaveSave(models.Model):
         #     _inherit = 'clouder.save.save'
@@ -158,7 +158,7 @@ class ClouderBase(models.Model):
         #     res = super(clouder_save_save, self).deploy_base(cr, uid, vals, context)
         #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         #     if vals['apptype_name'] == 'drupal':
-        #         ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+        #         ssh = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
         #         execute.execute(ssh, ['cp', '-R', vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain'], '/base-backup/' + vals['saverepo_name'] + '/site'], context)
         #         ssh.close()
         #         sftp.close()
@@ -169,7 +169,7 @@ class ClouderBase(models.Model):
         #     res = super(clouder_save_save, self).restore_base(cr, uid, vals, context)
         #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         #     if vals['apptype_name'] == 'drupal':
-        #         ssh, sftp = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
+        #         ssh = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
         #         execute.execute(ssh, ['rm', '-rf', vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain']], context)
         #         execute.execute(ssh, ['cp', '-R', '/base-backup/' + vals['saverepo_name'] + '/site', vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain']], context)
         #         ssh.close()
