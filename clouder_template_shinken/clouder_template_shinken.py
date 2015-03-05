@@ -89,7 +89,7 @@ class ClouderContainerLink(models.Model):
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/METHOD/' + self.container_id.backup_ids[0]
-                         .options()['restore_method']['value'] + '/g"',
+                         .options['restore_method']['value'] + '/g"',
                 self.container_id.shinken_configfile()])
             self.execute(ssh, ['sed', '-i', '"s/TYPE/container/g"',
                                self.container_id.shinken_configfile()])
@@ -159,7 +159,7 @@ class ClouderBaseLink(models.Model):
             self.execute(ssh, [
                 'sed', '-i', '"s/METHOD/' +
                 self.base_id.backup_ids[0]
-                         .options()['restore_method']['value'] + '/g"',
+                         .options['restore_method']['value'] + '/g"',
                 self.base_id.shinken_configfile()])
             self.execute(ssh, [
                 'sed', '-i',

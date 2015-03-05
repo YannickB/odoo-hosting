@@ -35,8 +35,8 @@ class ClouderContainer(models.Model):
             ssh = self.connect(self.fullname)
             self.execute(ssh, ['sed', '-i', '"/bind-address/d"',
                                '/etc/mysql/my.cnf'])
-            if self.options()['root_password']['value']:
-                password = self.options()['root_password']['value']
+            if self.options['root_password']['value']:
+                password = self.options['root_password']['value']
             else:
                 password = clouder_model.generate_random_password(20)
                 option_obj = self.env['clouder.container.option']

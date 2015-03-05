@@ -157,7 +157,7 @@ class ClouderApplication(models.Model):
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
-        default=lambda self: self.env['clouder.model'].partner_user)
+        default=lambda self: self.env['clouder.model'].user_partner)
 
     @property
     def full_archivepath(self):

@@ -228,8 +228,8 @@
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
+                            <button name="start" string="Restart" type="object"/>
                             <button name="stop" string="Stop" type="object"/>
-                            <button name="start" string="Start" type="object"/>
                             <button name="deploy_key" string="Reset Key" type="object"/>
                             <field name="log_ids" colspan="4"/>
                         </page>

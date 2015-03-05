@@ -44,7 +44,7 @@ class clouder_container(osv.osv):
         if self.application_id.type_id.name == 'openldap':
 
             domain_dc = ''
-            for dc in self.options()['domain']['value'].split('.'):
+            for dc in self.options['domain']['value'].split('.'):
                 if domain_dc:
                     domain_dc += ','
                 domain_dc += 'dc=' + dc
@@ -61,7 +61,7 @@ class clouder_container(osv.osv):
                 'port': hostport,
                 'binddn': 'cn=admin,' + domain_dc,
                 'basedn': 'ou=people,' + domain_dc,
-                'password': self.options()['password']['value']
+                'password': self.options['password']['value']
             })
 
     def purge(self):

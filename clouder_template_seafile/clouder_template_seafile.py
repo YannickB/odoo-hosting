@@ -74,7 +74,7 @@ class ClouderBase(models.Model):
             seahub_args = [self.admin_email + '\n',
                            self.admin_passwd + '\n',
                            self.admin_passwd + '\n']
-            if not self.options()['manual_install']['value']:
+            if not self.options['manual_install']['value']:
                 #Be cautious, the install may crash because of the server name (title). Use only alphanumeric, less than 15 letter without space
                 self.execute(ssh, ['./setup-seafile-mysql.sh'],
                              stdin_arg=install_args,

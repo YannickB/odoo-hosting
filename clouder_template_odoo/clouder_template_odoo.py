@@ -108,7 +108,7 @@ class ClouderService(models.Model):
                                self.service_id.database_password + '/g',
                                config_file])
             self.execute(ssh, ['sed', '-i', 's/PORT/' +
-                               self.service_id.options()['port']['localport'] +
+                               self.service_id.options['port']['localport'] +
                                '/g', config_file])
             self.execute(ssh, ['mkdir', '-p',
                                '/opt/odoo/' + self.name + '/filestore'])
@@ -168,10 +168,10 @@ class ClouderBase(models.Model):
 
                 self.log("client = erppeek.Client('http://" +
                          self.service_id.container_id.server_id.name + ":" +
-                         self.service_id.options()['port']['hostport'] + "')")
+                         self.service_id.options['port']['hostport'] + "')")
                 client = erppeek.Client(
                     'http://' + self.service_id.container_id.server_id.name +
-                    ':' + self.service_id.options()['port']['hostport'])
+                    ':' + self.service_id.options['port']['hostport'])
                 self.log(
                     "client.create_database('" +
                     self.service_id.database_password + "','" +
@@ -182,7 +182,7 @@ class ClouderBase(models.Model):
                                        self.fullname_, demo=self.test,
                                        lang=self.lang,
                                        user_password=self.admin_passwd)
-                #                cmd = ['/usr/local/bin/erppeek', '--server', 'http://' + self.service_id.container_id.server_id.name + ':' + self.service_id.options()['port']['hostport']]
+                #                cmd = ['/usr/local/bin/erppeek', '--server', 'http://' + self.service_id.container_id.server_id.name + ':' + self.service_id.options['port']['hostport']]
                 #                stdin = ["client.create_database('" + self.service_id.database_password + "', '" + self.fullname_ + "', demo=" + str(self.test) + ", lang='fr_FR', user_password='" + self.admin_passwd + "')"]
                 #                self.execute_local(cmd, stdin_arg=stdin)
                 return True
@@ -195,12 +195,12 @@ class ClouderBase(models.Model):
             self.log(
                 "client = erppeek.Client('http://" +
                 self.service_id.container_id.server_id.name + ":" +
-                self.service_id.options()['port']['hostport'] + "," +
+                self.service_id.options['port']['hostport'] + "," +
                 "db=" + self.fullname_ + "," +
                 "user='admin', password=" + self.admin_passwd + ")")
             client = erppeek.Client(
                 'http://' + self.service_id.container_id.server_id.name + ':' +
-                self.service_id.options()['port']['hostport'],
+                self.service_id.options['port']['hostport'],
                 db=self.fullname_, user='admin',
                 password=self.admin_passwd)
 
@@ -223,10 +223,10 @@ class ClouderBase(models.Model):
             client.model('res.groups').write([extended_group_id],
                                              {'users': [(4, 1)]})
 
-            if self.application_id.options()['default_account_chart']['value']\
-                    or self.options()['account_chart']['value']:
-                account_chart = self.options()['account_chart']['value']\
-                    or self.application_id.options()[
+            if self.application_id.options['default_account_chart']['value']\
+                    or self.options['account_chart']['value']:
+                account_chart = self.options['account_chart']['value']\
+                    or self.application_id.options[
                         'default_account_chart']['value']
                 self.log("client.install('account_accountant', "
                          "'account_chart_install', '" + account_chart + "')")
@@ -239,8 +239,8 @@ class ClouderBase(models.Model):
                                account_chart,
                                account_chart + '_pcg_chart_template', 1, 1)
 
-            if self.application_id.options()['install_modules']['value']:
-                modules = self.application_id.options()['install_modules'][
+            if self.application_id.options['install_modules']['value']:
+                modules = self.application_id.options['install_modules'][
                     'value'].split(',')
                 for module in modules:
                     self.log("client.install(" + module + ")")
@@ -254,11 +254,11 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'odoo':
             self.log(
                 "client = erppeek.Client('http://" + self.service_id.container_id.server_id.name + ":" +
-                self.service_id.options()['port'][
+                self.service_id.options['port'][
                     'hostport'] + "," + "db=" + self.fullname_ + "," + "user=" + self.admin_name + ", password=" + self.admin_passwd + ")")
             client = erppeek.Client(
                 'http://' + self.service_id.container_id.server_id.name + ':' +
-                self.service_id.options()['port']['hostport'],
+                self.service_id.options['port']['hostport'],
                 db=self.fullname_, user=self.admin_name,
                 password=self.admin_passwd)
 
@@ -316,12 +316,12 @@ class ClouderBase(models.Model):
                 self.log(
                     "client = erppeek.Client('http://" +
                     self.service_id.container_id.server_id.name + ":" +
-                    self.service_id.options()['port']['hostport'] + "," +
+                    self.service_id.options['port']['hostport'] + "," +
                     "db=" + self.fullname_ + "," + "user=" +
                     self.admin_name + ", password=" + self.admin_passwd + ")")
                 client = erppeek.Client(
                     'http://' + self.service_id.container_id.server_id.name +
-                    ':' + self.service_id.options()['port']['hostport'],
+                    ':' + self.service_id.options['port']['hostport'],
                     db=self.fullname_, user=self.admin_name,
                     password=self.admin_passwd)
 
@@ -349,8 +349,8 @@ class ClouderBase(models.Model):
                      'email': self.poweruser_email,
                      'password': self.poweruser_password})
 
-                if self.application_id.options()['poweruser_group']['value']:
-                    group = self.application_id.options()['poweruser_group'][
+                if self.application_id.options['poweruser_group']['value']:
+                    group = self.application_id.options['poweruser_group'][
                         'value'].split('.')
                     self.log("group_id = client.model('ir.model.data')"
                              ".get_object_reference('" + group[0] + "','" +
@@ -370,17 +370,17 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'odoo':
             self.log("client = erppeek.Client('http://" +
                      self.service_id.container_id.server_id.name + ":" +
-                     self.service_id.options()['port']['hostport'] + "," +
+                     self.service_id.options['port']['hostport'] + "," +
                      "db=" + self.fullname_ + "," + "user=" +
                      self.admin_name + ", password=" + self.admin_passwd + ")")
             client = erppeek.Client(
                 'http://' + self.service_id.container_id.server_id.name + ':' +
-                self.service_id.options()['port']['hostport'],
+                self.service_id.options['port']['hostport'],
                 db=self.fullname_, user=self.admin_name,
                 password=self.admin_passwd)
 
-            if self.application_id.options()['test_install_modules']['value']:
-                modules = self.application_id.options()[
+            if self.application_id.options['test_install_modules']['value']:
+                modules = self.application_id.options[
                     'test_install_modules']['value'].split(',')
                 for module in modules:
                     self.log("client.install(" + module + ")")
@@ -397,7 +397,7 @@ class ClouderBase(models.Model):
     #         self.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_apache_configfile']])
     #         self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_apache_configfile']])
     #         self.execute(ssh, ['sed', '-i', '"s/SERVER/' + self.service_id.container_id.server_id.name + '/g"', vals['base_apache_configfile']])
-    #         self.execute(ssh, ['sed', '-i', '"s/PORT/' + self.service_id.options()['port']['hostport'] + '/g"', vals['base_apache_configfile']])
+    #         self.execute(ssh, ['sed', '-i', '"s/PORT/' + self.service_id.options['port']['hostport'] + '/g"', vals['base_apache_configfile']])
     #         ssh.close()
     #         sftp.close()
     #     return
@@ -408,12 +408,12 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'odoo':
             self.log("client = erppeek.Client('http://" +
                      self.service_id.container_id.server_id.name + ":" +
-                     self.service_id.options()['port']['hostport'] + "," +
+                     self.service_id.options['port']['hostport'] + "," +
                      "db=" + self.fullname_ + "," + "user=" +
                      self.admin_name + ", password=" + self.admin_passwd + ")")
             client = erppeek.Client(
                 'http://' + self.service_id.container_id.server_id.name + ':' +
-                self.service_id.options()['port']['hostport'],
+                self.service_id.options['port']['hostport'],
                 db=self.fullname_, user=self.admin_name,
                 password=self.admin_passwd)
             self.log("server_id = client.model('ir.model.data')"
@@ -454,13 +454,13 @@ class ClouderBase(models.Model):
             try:
                 self.log("client = erppeek.Client('http://" +
                          self.service_id.container_id.server_id.name + ":" +
-                         self.service_id.options()['port']['hostport'] + "," +
+                         self.service_id.options['port']['hostport'] + "," +
                          "db=" + self.fullname_ + "," + "user=" +
                          self.admin_name + ", password=" +
                          self.admin_passwd + ")")
                 client = erppeek.Client(
                     'http://' + self.service_id.container_id.server_id.name +
-                    ':' + self.service_id.options()['port']['hostport'],
+                    ':' + self.service_id.options['port']['hostport'],
                     db=self.fullname_, user=self.admin_name,
                     password=self.admin_passwd)
                 # self.log("module_ids = client.model('ir.module.module').search([('state','in',['installed','to upgrade'])])")
@@ -539,14 +539,14 @@ class ClouderBaseLink(models.Model):
                 self.log("client = erppeek.Client('http://" +
                          self.base_id.service_id.container_id.server_id.name +
                          ":" +
-                         self.base_id.service_id.options()['port']['hostport']
+                         self.base_id.service_id.options['port']['hostport']
                          + "," + "db=" + self.base_id.fullname_ + "," +
                          "user=" + self.base_id.admin_name + ", password=" +
                          self.base_id.admin_passwd + ")")
                 client = erppeek.Client(
                     'http://' +
                     self.base_id.service_id.container_id.server_id.name + ':' +
-                    self.base_id.service_id.options()['port']['hostport'],
+                    self.base_id.service_id.options['port']['hostport'],
                     db=self.base_id.fullname_,
                     user=self.base_id.admin_name, password=self.admin_passwd)
                 self.log("server_id = client.model('ir.model.data')"
@@ -579,7 +579,7 @@ class ClouderBaseLink(models.Model):
                 ": \"|openerp_mailgate.py --host=" +
                 self.base_id.service_id.container_id.server_id.name +
                 " --port=" +
-                self.base_id.service_id.options()['port']['hostport'] +
+                self.base_id.service_id.options['port']['hostport'] +
                 " -u 1 -p " + self.admin_passwd + " -d " +
                 self.base_id.fullname_ + "\"' >> /etc/aliases"])
 

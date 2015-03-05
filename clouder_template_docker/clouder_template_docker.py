@@ -23,6 +23,8 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 
+import re
+
 
 class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
@@ -32,42 +34,54 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).write(vals)
         if 'option_ids' in vals:
             if self.application_id.type_id.name == 'docker' \
-                    and 'public_key' in self.options():
+                    and 'public_key' in self.options:
                 self.deploy_post()
         return res
 
     @api.multi
     def create_vals(self, vals):
         super(ClouderContainer, self).create_vals(vals)
-        if self.env.context['apptype_name'] == 'docker':
-            start_port = ''
-            end_port = ''
+
+        application = 'application_id' in vals \
+            and self.env['clouder.application'].browse(vals['application_id'])
+
+        if application and application.type_id.name == 'docker':
+
+            ports = ''
             type_option_obj = self.env['clouder.application.type.option']
             if 'option_ids' in vals:
                 for option in vals['option_ids']:
                     option = option[2]
                     type_option = type_option_obj.browse(option['name'])
-                    if type_option.name == 'start_port':
-                        start_port = option['value']
-                    if type_option.name == 'end_port':
-                        end_port = option['value']
-            if start_port and end_port:
-                start_port = int(start_port)
-                end_port = int(end_port)
-                if start_port < end_port:
+                    if type_option.name == 'ports':
+                        ports = option['value']
+            if ports:
+                if not re.match("^[\d,-]*$", ports):
+                    raise except_orm(
+                        _('Data error!'),
+                        _("Ports can only contains digits, - and ,"))
+
+                for scope in ports.split(','):
+                    if re.match("^[\d]*$", scope):
+                        start_port = scope
+                        end_port = scope
+                    else:
+                        start_port = scope.split('-')[0]
+                        end_port = scope.split('-')[1]
+
+                    start_port = int(start_port)
+                    end_port = int(end_port)
+                    if start_port > end_port:
+                        start_port_temp = start_port
+                        start_port = end_port
+                        end_port = start_port_temp
+
                     i = start_port
                     while i <= end_port:
                         vals['port_ids'].append((0, 0, {
                             'name': str(i), 'localport': str(i),
                             'hostport': str(i), 'expose': 'internet'}))
                         i += 1
-                else:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("Start port need to be inferior to end port"))
-            else:
-                raise except_orm(_('Data error!'),
-                                 _("You need to specify a start and end port"))
 
         return vals
 
@@ -75,10 +89,11 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'docker':
-            if 'public_key' in self.options():
+            if 'public_key' in self.options \
+                    and self.options['public_key']['value']:
                 ssh = self.connect(self.fullname)
                 self.execute(ssh, [
-                    'echo "' + self.options()['public_key']['value'] +
+                    'echo "' + self.options['public_key']['value'] +
                     '" > /root/.ssh/authorized_keys2'])
                 ssh.close()
 

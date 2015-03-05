@@ -61,32 +61,32 @@ class ClouderContainer(models.Model):
 
             self.execute(ssh, [
                 'echo "slapd slapd/internal/generated_adminpw password ' +
-                self.options()['password']['value'] + '"', '|',
+                self.options['password']['value'] + '"', '|',
                 'debconf-set-selections'])
             self.execute(ssh, ['echo "slapd slapd/password2 password ' +
-                               self.options()['password']['value'] + '"', '|',
+                               self.options['password']['value'] + '"', '|',
                                'debconf-set-selections'])
             self.execute(ssh, ['echo "slapd slapd/internal/adminpw password ' +
-                               self.options()['password']['value'] + '"', '|',
+                               self.options['password']['value'] + '"', '|',
                                'debconf-set-selections'])
             self.execute(ssh, ['echo "slapd slapd/password1 password ' +
-                               self.options()['password']['value'] + '"', '|',
+                               self.options['password']['value'] + '"', '|',
                                'debconf-set-selections'])
             self.execute(ssh, ['echo "slapd shared/organization string ' +
-                               self.options()['organization']['value'] + '"',
+                               self.options['organization']['value'] + '"',
                                '|', 'debconf-set-selections'])
             self.execute(ssh, ['echo "slapd slapd/domain string ' +
-                               self.options()['domain']['value'] + '"', '|',
+                               self.options['domain']['value'] + '"', '|',
                                'debconf-set-selections'])
             self.execute(ssh,
                          ['dpkg-reconfigure', '-f', 'noninteractive', 'slapd'])
 
             config_file = '/etc/ldap/schema/' + \
-                          self.options()['domain']['value'] + '.ldif'
+                          self.options['domain']['value'] + '.ldif'
             self.send(ssh, modules.get_module_path('clouder_ldap') +
                       '/res/ldap.ldif', config_file)
             domain_dc = ''
-            for dc in self.options()['value'].split('.'):
+            for dc in self.options['value'].split('.'):
                 if domain_dc:
                     domain_dc += ','
                 domain_dc += 'dc=' + dc
@@ -95,10 +95,10 @@ class ClouderContainer(models.Model):
                                config_file])
             self.execute(ssh, ['sed', '-i',
                                '"s/\$PASSWORD/' +
-                               self.options()['password']['value'] + '/g"',
+                               self.options['password']['value'] + '/g"',
                                config_file])
             self.execute(ssh, ['sed', '-i', '"s/\$ORGANIZATION/' +
-                               self.options()['organization']['value'] + '/g"',
+                               self.options['organization']['value'] + '/g"',
                                config_file])
             self.execute(ssh, ['sed', '-i',
                                '"s/dc=example,dc=com/' + domain_dc + '/g"',

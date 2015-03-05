@@ -116,15 +116,15 @@ class ClouderBase(models.Model):
                                'minimal'],
                          path=self.service_id.full_localpath_files)
 
-            if self.application_id.options()['install_modules']['value']:
-                modules = self.application_id.options()['install_modules'][
+            if self.application_id.options['install_modules']['value']:
+                modules = self.application_id.options['install_modules'][
                     'value'].split(',')
                 for module in modules:
                     self.execute(ssh, ['drush', '-y', 'en', module],
                                  path=self.service_id.full_localpath_files +
                                       '/sites/' + self.fulldomain())
-            if self.application_id.options()['theme']['value']:
-                theme = self.application_id.options()['theme']['value']
+            if self.application_id.options['theme']['value']:
+                theme = self.application_id.options['theme']['value']
                 self.execute(ssh, ['drush', '-y', 'pm-enable', theme],
                              path=self.service_id.full_localpath_files +
                              '/sites/' + self.fulldomain())
@@ -183,9 +183,9 @@ class ClouderBase(models.Model):
                                '--mail=' + self.poweruser_email],
                          path=self.service_id.full_localpath_files +
                          '/sites/' + self.fulldomain())
-            if self.application_id.options()['poweruser_group']['value']:
+            if self.application_id.options['poweruser_group']['value']:
                 self.execute(ssh, ['drush', 'user-add-role',
-                                   self.application_id.options()[
+                                   self.application_id.options[
                                        'poweruser_group']['value'],
                                    self.poweruser_name],
                              path=self.service_id.full_localpath_files +
@@ -201,9 +201,9 @@ class ClouderBase(models.Model):
             ssh = self.connect(
                 self.service_id.container_id.fullname,
                 username=self.application_id.type_id.system_user)
-            if self.application_id.options()['test_install_modules']['value']:
+            if self.application_id.options['test_install_modules']['value']:
                 modules = \
-                    self.application_id.options()['test_install_modules'][
+                    self.application_id.options['test_install_modules'][
                         'value'].split(',')
                 for module in modules:
                     self.execute(ssh, ['drush', '-y', 'en', module],

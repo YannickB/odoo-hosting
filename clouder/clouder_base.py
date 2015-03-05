@@ -772,7 +772,7 @@ class ClouderBaseOption(models.Model):
     @api.one
     @api.constrains('base_id')
     def _check_required(self):
-        if not self.name.required and not self.value:
+        if self.name.required and not self.value:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify a value for the option "
@@ -798,7 +798,7 @@ class ClouderBaseLink(models.Model):
     @api.one
     @api.constrains('base_id')
     def _check_required(self):
-        if not self.name.required and not self.target:
+        if self.name.required and not self.target:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify a link to "

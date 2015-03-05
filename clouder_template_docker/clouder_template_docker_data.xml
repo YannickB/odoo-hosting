@@ -11,25 +11,23 @@
         </record>
         <record id="apptype_docker_option1" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_docker"/>
-            <field name="name">start_port</field>
+            <field name="name">ports</field>
             <field name="type">container</field>
-        </record>
-        <record id="apptype_docker_option2" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_docker"/>
-            <field name="name">end_port</field>
-            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+            <field name="required" eval="True"/>
         </record>
         <record id="apptype_docker_option3" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_docker"/>
             <field name="name">public_key</field>
             <field name="type">container</field>
+            <field name="auto" eval="True"/>
         </record>
 
         <record id="image_docker" model="clouder.image">
             <field name="name">img_docker</field>
             <field name="current_version">1</field>
             <field name="privileged">True</field>
-            <field name="parent_id" ref="image_base"/>
+            <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
 RUN apt-get update -qq && apt-get install -qqy \
 apt-transport-https \
@@ -42,6 +40,11 @@ RUN echo deb https://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/
 && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9 \
 && apt-get update -qq \
 && apt-get install -qqy lxc-docker
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:docker]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/etc/init.d/docker start" >> /etc/supervisor/conf.d/supervisord.conf
+
 
 ]]></field>
 </record>

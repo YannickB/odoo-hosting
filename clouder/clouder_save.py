@@ -139,7 +139,7 @@ class ClouderSaveSave(models.Model):
 
     @property
     def backup_method(self):
-        return self.backup_id.options()['backup_method']['value']
+        return self.backup_id.options['backup_method']['value']
 
     @property
     def base_dumpfile(self):
@@ -244,7 +244,7 @@ class ClouderSaveSave(models.Model):
                 'container_img_version': container.image_version_id.name,
                 'container_ports': str(container_ports),
                 'container_volumes': str(container_volumes),
-                'container_options': str(container.options()),
+                'container_options': str(container.options),
                 'container_links': str(container_links),
             })
 
@@ -262,7 +262,7 @@ class ClouderSaveSave(models.Model):
             vals.update({
                 'service_name': service.name,
                 'service_app_version': service.application_version_id.name,
-                'service_options': str(service.options()),
+                'service_options': str(service.options),
                 'service_links': str(service_links),
             })
 
@@ -290,7 +290,7 @@ class ClouderSaveSave(models.Model):
                 'base_test': base.test,
                 'base_lang': base.lang,
                 'base_nosave': base.nosave,
-                'base_options': str(base.options()),
+                'base_options': str(base.options),
                 'base_links': str(base_links),
             })
 

@@ -34,11 +34,11 @@ class ClouderContainer(models.Model):
             ssh = self.connect(self.fullname)
             self.execute(ssh, [
                 'echo "host all  all    ' +
-                self.options()['network']['value'] +
+                self.options['network']['value'] +
                 ' md5" >> /etc/postgresql/' +
                 self.application_id.current_version + '/main/pg_hba.conf'])
             self.execute(ssh, [
                 'echo "listen_addresses=\'' +
-                self.options()['listen']['value'] + '\'" >> /etc/postgresql/' +
+                self.options['listen']['value'] + '\'" >> /etc/postgresql/' +
                 self.application_id.current_version + '/main/postgresql.conf'])
             ssh.close()
