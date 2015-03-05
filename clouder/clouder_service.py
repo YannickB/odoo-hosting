@@ -65,7 +65,8 @@ class ClouderService(models.Model):
         domain="[('application_id.container_ids','in',container_id)]",
         required=True)
     database_password = fields.Char(
-        'Database password', size=64, required=True)
+        'Database password', size=64, required=True,
+        default=clouder_model.generate_random_password(20))
     container_id = fields.Many2one(
         'clouder.container', 'Container', required=True)
     skip_analytics = fields.Boolean('Skip Analytics?')
@@ -78,7 +79,9 @@ class ClouderService(models.Model):
     sub_service_name = fields.Char('Subservice Name', size=64)
     custom_version = fields.Boolean('Custom Version?')
     public = fields.Boolean('Public?')
-    partner_id = fields.Many2one('res.partner', 'Manager')
+    partner_id = fields.Many2one(
+        'res.partner', 'Manager',
+        default=lambda self: self.env.user.partner_id)
     partner_ids = fields.Many2many(
         'res.partner', 'clouder_service_partner_rel',
         'service_id', 'partner_id', 'Users')
@@ -145,11 +148,6 @@ class ClouderService(models.Model):
                     options['port']['hostport'] = port.hostport
         return options
 
-    _defaults = {
-        'partner_id': lambda self: self.env.user.partner_id,
-        'database_password': clouder_model.generate_random_password(20),
-    }
-
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)',
          'Name must be unique per container!'),
@@ -162,7 +160,8 @@ class ClouderService(models.Model):
             raise except_orm(
                 _('Data error!'),
                 _("Name can only contains letters, digits and underscore "))
-        if not re.match("^[\w\d_]*$", self.sub_service_name):
+        if self.sub_service_name \
+                and not re.match("^[\w\d_]*$", self.sub_service_name):
             raise except_orm(
                 _('Data error!'),
                 _("Sub service name can only contains letters, "

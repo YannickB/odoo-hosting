@@ -54,7 +54,7 @@ class ClouderApplicationType(models.Model):
     @api.constrains('name', 'system_user')
     def _validate_data(self):
         if not re.match("^[\w\d_]*$", self.name) \
-                or not re.match("^[\w\d_]*$", self.systemuser):
+                or not re.match("^[\w\d_]*$", self.system_user):
             raise except_orm(_('Data error!'), _(
                 "Name and system_user can only contains letters, "
                 "digits and underscore")
@@ -155,7 +155,9 @@ class ClouderApplication(models.Model):
     base_save_expiration = fields.Integer('Days before base save expiration',
                                           required=True)
     public = fields.Boolean('Public?')
-    partner_id = fields.Many2one('res.partner', 'Manager')
+    partner_id = fields.Many2one(
+        'res.partner', 'Manager',
+        default=lambda self: self.env.user.partner_id)
 
     @property
     def full_archivepath(self):
@@ -190,10 +192,6 @@ class ClouderApplication(models.Model):
                                          'value': option.value}
         return options
 
-    _defaults = {
-        'partner_id': lambda self: self.env.user.partner_id
-    }
-
     _sql_constraints = [
         ('code_uniq', 'unique(code)', 'Code must be unique!'),
     ]
@@ -201,14 +199,15 @@ class ClouderApplication(models.Model):
     @api.one
     @api.constrains('code', 'admin_name', 'admin_email')
     def _validate_data(self):
-        if not re.match("^[\w\d_]*$", self.code) or self.code.lengh() > 10:
+        if not re.match("^[\w\d-]*$", self.code) or len(self.code) > 10:
             raise except_orm(_('Data error!'), _(
                 "Code can only contains letters, digits and "
-                "underscore and shall be less than 10 characters"))
-        if not re.match("^[\w\d_]*$", self.admin_name):
+                "- and shall be less than 10 characters"))
+        if self.admin_name and not re.match("^[\w\d_]*$", self.admin_name):
             raise except_orm(_('Data error!'), _(
                 "Admin name can only contains letters, digits and underscore"))
-        if not re.match("^[\w\d_-.@]*$", self.admin_email):
+        if self.admin_email \
+                and not re.match("^[\w\d_@.-]*$", self.admin_email):
             raise except_orm(_('Data error!'), _(
                 "Admin email can only contains letters, "
                 "digits, underscore, - and @"))
@@ -273,7 +272,7 @@ class ClouderApplication(models.Model):
 
     @api.multi
     def write(self, vals):
-        if 'code' in vals:
+        if 'code' in vals and vals['code'] != self.code:
             raise except_orm(_('Data error!'), _(
                 "It's too dangerous to modify the application code!"))
         return super(ClouderApplication, self).write(vals)

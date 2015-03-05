@@ -42,6 +42,7 @@ class ClouderConfigSettings(models.Model):
     _name = 'clouder.config.settings'
     _description = 'Clouder configuration'
 
+    name = fields.Char('Name', size=64)
     email_sysadmin = fields.Char('Email SysAdmin', size=128)
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')
@@ -82,7 +83,8 @@ class ClouderConfigSettings(models.Model):
     @api.one
     @api.constrains('email_sysadmin')
     def _validate_data(self):
-        if not re.match("^[\w\d_.@-]*$", self.email_sysadmin):
+        if self.email_sysadmin \
+                and not re.match("^[\w\d_.@-]*$", self.email_sysadmin):
             raise except_orm(_('Data error!'), _(
                 "Sysadmin email can only contains letters, "
                 "digits, underscore, - and @"))
@@ -90,11 +92,13 @@ class ClouderConfigSettings(models.Model):
     @api.multi
     def reset_keys(self):
 
-        self.env['clouder.container'].search([]).reset_key()
+        containers = self.env['clouder.container'].search([])
+        if containers:
+            containers.deploy_key()
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.env.ref('clouder.clouder_settings').end_reset_keys = now
-        self.cr.commit()
+        self.env.cr.commit()
 
     @api.multi
     def save_all(self):
@@ -119,19 +123,24 @@ class ClouderConfigSettings(models.Model):
                             '-g'])
             ssh.close(), sftp.close()
 
-        self.env['clouder.container'].search([('nosave', '=', False)]).save()
-        self.env['clouder.base'].search([('nosave', '=', False)]).save()
+        containers = self.env['clouder.container'].search(
+            [('nosave', '=', False)])
+        if containers:
+            containers.save()
+
+        bases = self.env['clouder.base'].search([('nosave', '=', False)])
+        if bases:
+            bases.save()
 
         links = self.env['clouder.container.link'].search(
             [('container_id.application_id.type_id.name', '=', 'backup'),
-             ('name.code', '=', 'backup-upl')])
+             ('name.application_id.code', '=', 'backup-upl')])
         for link in links:
-            vals = link.get_vals()
-            link.deploy(vals)
+            link.deploy()
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.env.ref('clouder.clouder_settings').end_save_all = now
-        self.cr.commit()
+        self.env.cr.commit()
 
     @api.multi
     def purge_expired_saves(self):
@@ -150,13 +159,17 @@ class ClouderConfigSettings(models.Model):
     @api.multi
     def launch_next_saves(self):
         self = self.with_context(save_comment='Auto save')
-        self.env['clouder.container'].search([
+        containers = self.env['clouder.container'].search([
             ('date_next_save', '!=', False),
             ('date_next_save', '<',
-             self.now_date + ' ' + self.now_hour_regular)]).save()
-        self.env['clouder.base'].search([('date_next_save', '!=', False), (
+             self.now_date + ' ' + self.now_hour_regular)])
+        if containers:
+            containers.save()
+        bases = self.env['clouder.base'].search([('date_next_save', '!=', False), (
             'date_next_save', '<',
-            self.now_date + ' ' + self.now_hour_regular)]).save()
+            self.now_date + ' ' + self.now_hour_regular)])
+        if bases:
+            bases.save()
 
     @api.multi
     def reset_bases(self):
@@ -170,7 +183,7 @@ class ClouderConfigSettings(models.Model):
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.env.ref('clouder.clouder_settings').end_reset_bases = now
-        self.cr.commit()
+        self.env.cr.commit()
 
     @api.multi
     def cron_daily(self):

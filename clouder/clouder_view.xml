@@ -380,7 +380,7 @@
                     <group col="4">
                       <field name="name"/>
                       <field name="type" invisible="1"/>
-                      <field name="backup_server_id"/>
+                      <field name="backup_id"/>
                       <field name="repo_id"/>
                       <field name='comment'/>
                       <field name="now_bup"/>
@@ -423,7 +423,6 @@
                             <group col="4">
                                 <field name="base_id"/>
                                 <field name="base_title"/>
-                                <field name="base_app_version"/>
                                 <field name="base_admin_passwd"/>
                                 <field name="base_poweruser_name"/>
                                 <field name="base_poweruser_password"/>
@@ -847,7 +846,9 @@
             </field>
         </record>
 
-        <record id="clouder_settings" model='clouder.config.settings'/>
+        <record id="clouder_settings" model='clouder.config.settings'>
+            <field name="name">Clouder Settings"</field>
+        </record>
 
         <record id="action_clouder_configuration" model="ir.actions.act_window">
             <field name="name">Configure Clouder</field>

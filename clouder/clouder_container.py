@@ -35,59 +35,6 @@ class ClouderServer(models.Model):
     _name = 'clouder.server'
     _inherit = ['clouder.model']
 
-    name = fields.Char('Domain name', size=64, required=True)
-    ip = fields.Char('IP', size=64, required=True)
-    ssh_port = fields.Integer('SSH port', required=True)
-
-    private_key = fields.Text('SSH Private Key', required=True)
-    public_key = fields.Text('SSH Public Key', required=True)
-    start_port = fields.Integer('Start Port', required=True)
-    end_port = fields.Integer('End Port', required=True)
-    public = fields.Boolean('Public?')
-    partner_id = fields.Many2one('res.partner', 'Manager')
-    supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
-
-    _defaults = {
-        'partner_id': lambda self: self.env.user.partner_id
-    }
-
-    _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Name must be unique!'),
-    ]
-
-    @api.one
-    @api.constrains('name', 'ip')
-    def _validate_data(self) :
-        if not re.match("^[\w\d.-]*$", self.name):
-            raise except_orm(
-                _('Data error!'),
-                _("Name can only contains letters, digits, - and ."))
-        if not re.match("^[\d:.]*$", self.ip):
-            raise except_orm(
-                _('Data error!'),
-                _("Admin name can only contains digits, dots and :"))
-
-    # @api.multi
-    # def get_vals(self):
-    #
-    #     vals ={}
-    #
-    #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-    #
-    #     vals.update({
-    #         'server_id': self.id,
-    #         'server_domain': self.name,
-    #         'server_ip': self.ip,
-    #         'server_ssh_port': int(self.ssh_port),
-    #         'server_mysql_passwd': self.mysql_passwd,
-    #         'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + self.name + '.cfg',
-    #         'server_private_key': self.private_key,
-    #         'server_public_key': self.public_key,
-    #         'server_start_port': self.start_port,
-    #         'server_end_port': self.end_port,
-    #     })
-    #     return vals
-
     @api.multi
     def _create_key(self):
         self.execute_local(['mkdir', '/tmp/key_' + self.env.uid])
@@ -134,11 +81,60 @@ class ClouderServer(models.Model):
             self._destroy_key()
         return key
 
+    name = fields.Char('Domain name', size=64, required=True)
+    ip = fields.Char('IP', size=64, required=True)
+    ssh_port = fields.Integer('SSH port', required=True)
 
-    _defaults = {
-      'private_key': _default_private_key,
-      'public_key': _default_public_key,
-    }
+    private_key = fields.Text(
+        'SSH Private Key', required=True,
+        default=_default_private_key)
+    public_key = fields.Text(
+        'SSH Public Key', required=True,
+        default=_default_public_key)
+    start_port = fields.Integer('Start Port', required=True)
+    end_port = fields.Integer('End Port', required=True)
+    public = fields.Boolean('Public?')
+    partner_id = fields.Many2one(
+        'res.partner', 'Manager',
+        default=lambda self: self.env.user.partner_id)
+    supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(name)', 'Name must be unique!'),
+    ]
+
+    @api.one
+    @api.constrains('name', 'ip')
+    def _validate_data(self) :
+        if not re.match("^[\w\d.-]*$", self.name):
+            raise except_orm(
+                _('Data error!'),
+                _("Name can only contains letters, digits, - and ."))
+        if not re.match("^[\d:.]*$", self.ip):
+            raise except_orm(
+                _('Data error!'),
+                _("Admin name can only contains digits, dots and :"))
+
+    # @api.multi
+    # def get_vals(self):
+    #
+    #     vals ={}
+    #
+    #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
+    #
+    #     vals.update({
+    #         'server_id': self.id,
+    #         'server_domain': self.name,
+    #         'server_ip': self.ip,
+    #         'server_ssh_port': int(self.ssh_port),
+    #         'server_mysql_passwd': self.mysql_passwd,
+    #         'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + self.name + '.cfg',
+    #         'server_private_key': self.private_key,
+    #         'server_public_key': self.public_key,
+    #         'server_start_port': self.start_port,
+    #         'server_end_port': self.end_port,
+    #     })
+    #     return vals
 
     @api.multi
     def start_containers(self):
@@ -228,7 +224,9 @@ class ClouderContainer(models.Model):
         'clouder.container', 'clouder_container_backup_rel',
         'container_id', 'backup_id', 'Backup containers')
     public = fields.Boolean('Public?')
-    partner_id = fields.Many2one('res.partner', 'Manager')
+    partner_id = fields.Many2one(
+        'res.partner', 'Manager',
+        default=lambda self: self.env.user.partner_id)
     partner_ids = fields.Many2many(
         'res.partner', 'clouder_container_partner_rel',
         'container_id', 'partner_id', 'Users')
@@ -261,10 +259,6 @@ class ClouderContainer(models.Model):
         for option in self.option_ids:
             options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
         return options
-
-    _defaults = {
-        'partner_id': lambda self: self.env.user.partner_id
-    }
 
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,name)',
@@ -888,12 +882,9 @@ class ClouderContainerPort(models.Model):
     localport = fields.Char('Local port', size=12, required=True)
     hostport = fields.Char('Host port', size=12)
     expose = fields.Selection(
-        [('internet','Internet'),('local','Local')],'Expose?', required=True)
+        [('internet','Internet'),('local','Local')],'Expose?',
+        required=True, default='local')
     udp = fields.Boolean('UDP?')
-
-    _defaults = {
-        'expose': 'local'
-    }
 
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)',

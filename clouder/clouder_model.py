@@ -55,14 +55,10 @@ class ClouderLog(models.Model):
     description = fields.Text('Description')
     state = fields.Selection(
         [('unfinished','Not finished'),('ok','Ok'),('ko','Ko')],
-        'State', required=True)
+        'State', required=True, default='unfinished')
     create_date = fields.Datetime('Launch Date')
     finish_date = fields.Datetime('Finish Date')
     expiration_date = fields.Datetime('Expiration Date')
-
-    _defaults = {
-        'state': 'unfinished'
-    }
 
     _order = 'create_date desc'
 

@@ -51,11 +51,9 @@ class ClouderImage(models.Model):
     version_ids = fields.One2many(
         'clouder.image.version', 'image_id', 'Versions')
     public = fields.Boolean('Public?')
-    partner_id = fields.Many2one('res.partner', 'Manager')
-
-    _defaults = {
-        'partner_id': lambda self: self.env.user.partner_id
-    }
+    partner_id = fields.Many2one(
+        'res.partner', 'Manager',
+        default=lambda self: self.env.user.partner_id)
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Image name must be unique!')
@@ -148,12 +146,8 @@ class ClouderImagePort(models.Model):
     localport = fields.Char('Local port', size=12, required=True)
     expose = fields.Selection(
         [('internet', 'Internet'), ('local', 'Local'), ('none', 'None')],
-        'Expose?', required=True)
+        'Expose?', required=True, default='local')
     udp = fields.Boolean('UDP?')
-
-    _defaults = {
-        'expose': 'none'
-    }
 
     _sql_constraints = [
         ('name_uniq', 'unique(image_id,name)',

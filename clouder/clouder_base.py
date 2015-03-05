@@ -41,11 +41,9 @@ class ClouderDomain(models.Model):
     cert_key = fields.Text('Wildcard Cert Key')
     cert_cert = fields.Text('Wildcart Cert')
     public = fields.Boolean('Public?')
-    partner_id = fields.Many2one('res.partner', 'Manager')
-
-    _defaults = {
-        'partner_id': lambda self: self.env.user.partner_id
-    }
+    partner_id = fields.Many2one(
+        'res.partner', 'Manager',
+        default=lambda self: self.env.user.partner_id)
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
@@ -102,25 +100,27 @@ class ClouderBase(models.Model):
                                    'clouder_base_service_rel', 'base_id',
                                    'service_id', 'Alternative Services')
     admin_name = fields.Char('Admin name', size=64, required=True)
-    admin_passwd = fields.Char('Admin password', size=64, required=True)
+    admin_passwd = fields.Char(
+        'Admin password', size=64, required=True,
+        default=clouder_model.generate_random_password(20))
     admin_email = fields.Char('Admin email', size=64, required=True)
     poweruser_name = fields.Char('PowerUser name', size=64)
-    poweruser_passwd = fields.Char('PowerUser password', size=64)
+    poweruser_passwd = fields.Char(
+        'PowerUser password', size=64,
+        default=clouder_model.generate_random_password(12))
     poweruser_email = fields.Char('PowerUser email', size=64)
-    build = fields.Selection([
-                                 ('none', 'No action'),
-                                 ('build', 'Build'),
-                                 ('restore', 'Restore')], 'Build?')
+    build = fields.Selection(
+        [('none', 'No action'), ('build', 'Build'), ('restore', 'Restore')],
+        'Build?', default='build')
     ssl_only = fields.Boolean('SSL Only?')
     test = fields.Boolean('Test?')
-    lang = fields.Selection([('en_US', 'en_US'), ('fr_FR', 'fr_FR')],
-                            'Language', required=True)
-    state = fields.Selection([
-                                 ('installing', 'Installing'),
-                                 ('enabled', 'Enabled'),
-                                 ('blocked', 'Blocked'),
-                                 ('removing', 'Removing')
-                             ], 'State', readonly=True)
+    lang = fields.Selection(
+        [('en_US', 'en_US'), ('fr_FR', 'fr_FR')],
+        'Language', required=True, default='en_US')
+    state = fields.Selection(
+        [('installing', 'Installing'), ('enabled', 'Enabled'),
+        ('blocked', 'Blocked'), ('removing', 'Removing')],
+        'State', readonly=True)
     option_ids = fields.One2many('clouder.base.option', 'base_id', 'Options')
     link_ids = fields.One2many('clouder.base.link', 'base_id', 'Links')
     save_repository_id = fields.Many2one('clouder.save.repository',
@@ -136,12 +136,13 @@ class ClouderBase(models.Model):
     cert_key = fields.Text('Cert Key')
     cert_cert = fields.Text('Cert')
     parent_id = fields.Many2one('clouder.base', 'Parent Base')
-    backup_ids = fields.Many2many('clouder.container',
-                                  'clouder_base_backup_rel', 'base_id',
-                                  'backup_id', 'Backup containers',
-                                  required=True)
+    backup_ids = fields.Many2many(
+        'clouder.container', 'clouder_base_backup_rel',
+        'base_id', 'backup_id', 'Backup containers', required=True)
     public = fields.Boolean('Public?')
-    partner_id = fields.Many2one('res.partner', 'Manager')
+    partner_id = fields.Many2one(
+        'res.partner', 'Manager',
+        default=lambda self: self.env.user.partner_id)
     partner_ids = fields.Many2many('res.partner', 'clouder_base_partner_rel',
                                    'base_id', 'partner_id', 'Users')
 
@@ -190,14 +191,6 @@ class ClouderBase(models.Model):
                                          'value': option.value}
         return options
 
-    _defaults = {
-        'partner_id': lambda self: self.env.user.partner_id,
-        'build': 'restore',
-        'admin_passwd': clouder_model.generate_random_password(20),
-        'poweruser_passwd': clouder_model.generate_random_password(12),
-        'lang': 'en_US'
-    }
-
     _sql_constraints = [
         ('name_uniq', 'unique (name,domain_id)',
          'Name must be unique per domain !')
@@ -209,14 +202,16 @@ class ClouderBase(models.Model):
         if not re.match("^[\w\d_]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits and underscore"))
-        if not re.match("^[\w\d_]*$", self.admin_name):
+        if self.admin_name and not re.match("^[\w\d_]*$", self.admin_name):
             raise except_orm(_('Data error!'), _(
                 "Admin name can only contains letters, digits and underscore"))
-        if not re.match("^[\w\d_.@-]*$", self.admin_email):
+        if self.admin_email\
+                and not re.match("^[\w\d_.@-]*$", self.admin_email):
             raise except_orm(_('Data error!'), _(
                 "Admin email can only contains letters, "
                 "digits, underscore, - and @"))
-        if not re.match("^[\w\d_.@-]*$", self.poweruser_email):
+        if self.poweruser_email \
+                and not re.match("^[\w\d_.@-]*$", self.poweruser_email):
             raise except_orm(_('Data error!'), _(
                 "Poweruser email can only contains letters, "
                 "digits, underscore, - and @"))
@@ -226,9 +221,8 @@ class ClouderBase(models.Model):
     def _check_application(self):
         if self.application_id.id != self.service_id.application_id.id:
             raise except_orm(_('Data error!'),
-                             _(
-                                 "The application of base must be the same "
-                                 "than the application of service."))
+                             _("The application of base must be the same "
+                               "than the application of service."))
         for s in self.service_ids:
             if self.application_id.id != s.application_id.id:
                 raise except_orm(_('Data error!'),

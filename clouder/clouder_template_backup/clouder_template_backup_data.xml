@@ -104,7 +104,7 @@ RUN echo "command=cron -f" >> /etc/supervisor/conf.d/supervisord.conf
 
         <record id="app_backup_simple" model="clouder.application">
             <field name="name">Backup Simple</field>
-            <field name="code">backup-simple</field>
+            <field name="code">backup-sim</field>
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_backup"/>
             <field name="default_image_id" ref="image_backup_simple"/>
