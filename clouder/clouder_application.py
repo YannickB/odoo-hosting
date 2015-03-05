@@ -157,11 +157,11 @@ class ClouderApplication(models.Model):
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
-        default=lambda self: self.env.user.partner_id)
+        default=lambda self: self.env['clouder.model'].partner_user)
 
     @property
     def full_archivepath(self):
-        return self.archive_path() + '/' \
+        return self.archive_path + '/' \
                + self.type_id.name + '-' + self.code
 
     @property
@@ -332,11 +332,11 @@ class ClouderApplicationVersion(models.Model):
 
     @property
     def full_archivepath(self):
-            return self.application_id.full_archivepath() + '/' + self.name
+            return self.application_id.full_archivepath + '/' + self.name
 
     @property
     def full_archivepath_targz(self):
-        return self.application_id.full_archivepath() \
+        return self.application_id.full_archivepath \
                + '/' + self.name + '.tar.gz'
 
     @property
@@ -345,7 +345,7 @@ class ClouderApplicationVersion(models.Model):
 
     @property
     def full_localpath(self):
-        return self.application_id.full_localpath() + '/' + self.name
+        return self.application_id.full_localpath + '/' + self.name
 
     _sql_constraints = [
         ('name_app_uniq', 'unique (name,application_id)',
@@ -407,22 +407,22 @@ class ClouderApplicationVersion(models.Model):
 
     @api.multi
     def deploy(self):
-        ssh, sftp = self.connect(self.archive_id.fullname())
-        self.execute(ssh, ['mkdir', self.application_id.full_archivepath()])
-        self.execute(ssh, ['rm', '-rf', self.full_archivepath()])
-        self.execute(ssh, ['mkdir', self.full_archivepath()])
+        ssh, sftp = self.connect(self.archive_id.fullname)
+        self.execute(ssh, ['mkdir', self.application_id.full_archivepath])
+        self.execute(ssh, ['rm', '-rf', self.full_archivepath])
+        self.execute(ssh, ['mkdir', self.full_archivepath])
         self.build_application()
         self.execute(ssh, ['echo "' + self.name + '" >> '
-                           + self.full_archivepath() + '/VERSION.txt'])
+                           + self.full_archivepath + '/VERSION.txt'])
         self.execute(ssh, ['tar', 'czf', self.full_archivepath_targz(), '-C',
-                           self.application_id.full_archivepath() + '/'
+                           self.application_id.full_archivepath + '/'
                            + self.name, '.'])
         ssh.close(), sftp.close()
 
     @api.multi
     def purge(self):
-        ssh, sftp = self.connect(self.archive_id.fullname())
-        self.execute(ssh, ['rm', '-rf', self.full_archivepath()])
+        ssh, sftp = self.connect(self.archive_id.fullname)
+        self.execute(ssh, ['rm', '-rf', self.full_archivepath])
         self.execute(ssh, ['rm', self.full_archivepath_targz()])
         ssh.close(), sftp.close()
 

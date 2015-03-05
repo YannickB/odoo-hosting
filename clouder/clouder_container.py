@@ -39,7 +39,7 @@ class ClouderServer(models.Model):
     def _create_key(self):
         self.execute_local(['mkdir', '/tmp/key_' + self.env.uid])
         self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
-                            self.email_sysadmin(), '-f',
+                            self.email_sysadmin, '-f',
                             '/tmp/key_' + self.env.uid + '/key', '-N', ''])
         return True
 
@@ -96,7 +96,7 @@ class ClouderServer(models.Model):
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
-        default=lambda self: self.env.user.partner_id)
+        default=lambda self: self.user_partner)
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
 
     _sql_constraints = [
@@ -226,7 +226,7 @@ class ClouderContainer(models.Model):
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
-        default=lambda self: self.env.user.partner_id)
+        default=lambda self: self.user_partner)
     partner_ids = fields.Many2many(
         'res.partner', 'clouder_container_partner_rel',
         'container_id', 'partner_id', 'Users')
@@ -445,11 +445,11 @@ class ClouderContainer(models.Model):
     #         if option['name'] == 'root_password':
     #             root_password = option['value']
     #
-    #     unique_name = self.name + '_' + vals['server_domain']
+    #     fullname = self.name + '_' + vals['server_domain']
     #     vals.update({
     #         'container_id': self.id,
     #         'container_name': self.name,
-    #         'container_fullname': unique_name,
+    #         'container_fullname': fullname,
     #         'container_ports': ports,
     #         'container_volumes': volumes,
     #         'container_volumes_save': volumes_save,
@@ -459,7 +459,7 @@ class ClouderContainer(models.Model):
     #         'container_backup_servers': backup_servers,
     #         'container_no_save': self.nosave,
     #         'container_privileged': self.privileged,
-    #         'container_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
+    #         'container_shinken_configfile': '/usr/local/shinken/etc/services/' + fullname + '.cfg',
     #         'container_root_password': root_password
     #     })
     #
@@ -636,7 +636,7 @@ class ClouderContainer(models.Model):
 
         for backup_server in self.backup_server_ids:
             save_vals = {
-                'name': self.now_bup() + '_' + self.container_fullname(),
+                'name': self.now_bup() + '_' + self.container_fullname,
                 'backup_server_id': backup_server.id,
                 'repo_id': self.saverepo_id.id,
                 'date_expiration': (now + timedelta(
@@ -702,11 +702,11 @@ class ClouderContainer(models.Model):
                 cmd.extend(['--link', link.target.name + ':' + link.name.code])
         if self.privileged:
             cmd.extend(['--privileged'])
-        cmd.extend(['-v', '/opt/keys/' + self.fullname() +
+        cmd.extend(['-v', '/opt/keys/' + self.fullname +
                     ':/opt/keys', '--name', self.name])
 
         if self.image_id.name == 'img_registry':
-            cmd.extend([self.image_version_id.fullname()])
+            cmd.extend([self.image_version_id.fullname])
         elif self.server_id == self.image_version_id.registry_id.server_id:
             cmd.extend([self.image_version_id.fullpath_localhost()])
         else:
@@ -728,14 +728,14 @@ class ClouderContainer(models.Model):
 
         for link in self.link_ids:
             if link.name.code == 'postfix':
-                ssh, sftp = self.connect(self.fullname())
+                ssh, sftp = self.connect(self.fullname)
                 self.execute(ssh, ['echo "root=' + self.email_sysadmin() +
                                    '" > /etc/ssmtp/ssmtp.conf'])
                 self.execute(ssh, ['echo "mailhub=postfix:25" '
                                    '>> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "rewriteDomain=' + self.fullname() +
+                self.execute(ssh, ['echo "rewriteDomain=' + self.fullname +
                                    '" >> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "hostname=' + self.fullname() +
+                self.execute(ssh, ['echo "hostname=' + self.fullname +
                                    '" >> /etc/ssmtp/ssmtp.conf'])
                 self.execute(ssh, ['echo "FromLineOverride=YES" >> '
                                    '/etc/ssmtp/ssmtp.conf'])
@@ -754,7 +754,7 @@ class ClouderContainer(models.Model):
         ssh, sftp = self.connect(self.server_id.name)
         self.stop()
         self.execute(ssh, ['sudo','docker', 'rm', self.name])
-        self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname()])
+        self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname])
         ssh.close(), sftp.close()
 
         return
@@ -786,9 +786,9 @@ class ClouderContainer(models.Model):
         self.purge_key()
         self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
                             self.email_sysadmin, '-f', self.home_directory() +
-                            '/.ssh/keys/' + self.fullname(), '-N', ''])
+                            '/.ssh/keys/' + self.fullname, '-N', ''])
         self.execute_write_file(self.home_directory() + '/.ssh/config',
-                                'Host ' + self.fullname())
+                                'Host ' + self.fullname)
         self.execute_write_file(self.home_directory() + '/.ssh/config',
                                 '\n  HostName ' + self.server_id.name)
         self.execute_write_file(self.home_directory() + '/.ssh/config',
@@ -796,14 +796,14 @@ class ClouderContainer(models.Model):
         self.execute_write_file(self.home_directory() + '/.ssh/config',
                                 '\n  User root')
         self.execute_write_file(self.home_directory() + '/.ssh/config',
-                                '\n  IdentityFile ~/.ssh/keys/' + self.fullname())
+                                '\n  IdentityFile ~/.ssh/keys/' + self.fullname)
         self.execute_write_file(self.home_directory() + '/.ssh/config',
-                                '\n#END ' + self.fullname() + '\n')
+                                '\n#END ' + self.fullname + '\n')
         ssh, sftp = self.connect(self.server_id.name)
-        self.execute(ssh, ['mkdir', '/opt/keys/' + self.fullname()])
+        self.execute(ssh, ['mkdir', '/opt/keys/' + self.fullname])
         self.send(sftp, self.home_directory() + '/.ssh/keys/' +
-                  self.fullname() + '.pub', '/opt/keys/' +
-                  self.fullname() + '/authorized_keys')
+                  self.fullname + '.pub', '/opt/keys/' +
+                  self.fullname + '/authorized_keys')
         ssh.close(), sftp.close()
 
         # _logger.info('restart required %s', restart_required)
@@ -824,23 +824,23 @@ class ClouderContainer(models.Model):
                 return
             for shinken in shinkens:
                 ssh, sftp = self.connect(
-                    shinken.fullname(), username='shinken')
+                    shinken.fullname, username='shinken')
                 self.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' +
-                                   self.fullname() + '*'])
+                                   self.fullname + '*'])
                 self.send(
                     sftp, self.home_directory() + '/.ssh/keys/' +
-                    self.fullname() + '.pub', '/home/shinken/.ssh/keys/' +
-                    self.fullname() + '.pub')
+                    self.fullname + '.pub', '/home/shinken/.ssh/keys/' +
+                    self.fullname + '.pub')
                 self.send(sftp, self.home_directory() + '/.ssh/keys/' +
-                          self.fullname(), '/home/shinken/.ssh/keys/' +
-                          self.fullname())
+                          self.fullname, '/home/shinken/.ssh/keys/' +
+                          self.fullname)
                 self.execute(ssh, ['chmod', '-R', '700', '/home/shinken/.ssh'])
                 self.execute(ssh, [
-                    'sed', '-i', "'/Host " + self.fullname() +
-                    "/,/END " + self.fullname() + "/d'",
+                    'sed', '-i', "'/Host " + self.fullname +
+                    "/,/END " + self.fullname + "/d'",
                     '/home/shinken/.ssh/config'])
                 self.execute(ssh, [
-                    'echo "Host ' + self.fullname() +
+                    'echo "Host ' + self.fullname +
                     '" >> /home/shinken/.ssh/config'])
                 self.execute(ssh, [
                     'echo "    Hostname ' +
@@ -852,24 +852,24 @@ class ClouderContainer(models.Model):
                     'echo "    User backup" >> /home/shinken/.ssh/config'])
                 self.execute(ssh, [
                     'echo "    IdentityFile  ~/.ssh/keys/' +
-                    self.fullname() + '" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, ['echo "#END ' + self.fullname() +
+                    self.fullname + '" >> /home/shinken/.ssh/config'])
+                self.execute(ssh, ['echo "#END ' + self.fullname +
                                    '" >> ~/.ssh/config'])
 
     @api.multi
     def purge_key(self):
         self.execute_local([
             modules.get_module_path('clouder') + '/res/sed.sh',
-            self.fullname(), self.home_directory() + '/.ssh/config'])
+            self.fullname, self.home_directory() + '/.ssh/config'])
         self.execute_local([
             'rm', '-rf', self.home_directory() +
-            '/.ssh/keys/' + self.fullname()])
+            '/.ssh/keys/' + self.fullname])
         self.execute_local([
             'rm', '-rf', self.home_directory() +
-            '/.ssh/keys/' + self.fullname() + '.pub'])
+            '/.ssh/keys/' + self.fullname + '.pub'])
         ssh, sftp = self.connect(self.server_id.name)
         self.execute(ssh, [
-            'rm', '-rf', '/opt/keys/' + self.fullname() + '/authorized_keys'])
+            'rm', '-rf', '/opt/keys/' + self.fullname + '/authorized_keys'])
         ssh.close(), sftp.close()
 
 

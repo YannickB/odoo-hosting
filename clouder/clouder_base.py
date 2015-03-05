@@ -142,7 +142,7 @@ class ClouderBase(models.Model):
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
-        default=lambda self: self.env.user.partner_id)
+        default=lambda self: self.user_partner)
     partner_ids = fields.Many2many('res.partner', 'clouder_base_partner_rel',
                                    'base_id', 'partner_id', 'Users')
 
@@ -152,12 +152,8 @@ class ClouderBase(models.Model):
                 + self.domain_id.name).replace('.', '-')
 
     @property
-    def unique_name_(self):
-        return self.fullname
-
-    @property
-    def unique_name_(self):
-        return self.unique_name.replace('-', '_')
+    def fullname_(self):
+        return self.fullname.replace('-', '_')
 
     @property
     def fulldomain(self):
@@ -165,12 +161,12 @@ class ClouderBase(models.Model):
 
     @property
     def databases(self):
-        databases = {'single': self.unique_name_}
+        databases = {'single': self.fullname_}
         if self.application_id.type_id.multiple_databases:
             databases = {}
             for database in self.application_id.type_id.multiple_databases.split(
                     ','):
-                databases[database] = self.unique_name_ + '_' + database
+                databases[database] = self.fullname_ + '_' + database
         return databases
 
     @property
@@ -321,8 +317,8 @@ class ClouderBase(models.Model):
     #     vals.update(self.service_id.get_vals())
     #     vals.update(self.save_repository_id.get_vals())
     #
-    #     unique_name = vals['app_code'] + '-' + self.name + '-' + self.domain_id.name
-    #     unique_name = unique_name.replace('.','-')
+    #     fullname = vals['app_code'] + '-' + self.name + '-' + self.domain_id.name
+    #     fullname = fullname.replace('.','-')
     #
     #     options = {}
     #     for option in self.service_id.container_id.application_id.type_id.option_ids:
@@ -369,8 +365,8 @@ class ClouderBase(models.Model):
     #             'backup_method': backup_vals['app_options']['backup_method']['value']
     #         })
     #
-    #     unique_name_ = unique_name.replace('-','_')
-    #     databases = {'single': unique_name_}
+    #     fullname_ = fullname.replace('-','_')
+    #     databases = {'single': fullname_}
     #     databases_comma = ''
     #     if vals['apptype_multiple_databases']:
     #         databases = {}
@@ -378,16 +374,16 @@ class ClouderBase(models.Model):
     #         for database in vals['apptype_multiple_databases'].split(','):
     #             if not first:
     #                 databases_comma += ','
-    #             databases[database] = unique_name_ + '_' + database
+    #             databases[database] = fullname_ + '_' + database
     #             databases_comma += databases[database]
     #             first = False
     #     vals.update({
     #         'base_id': self.id,
     #         'base_name': self.name,
-    #         'base_fullname': unique_name,
+    #         'base_fullname': fullname,
     #         'base_fulldomain': self.name + '.' + self.domain_id.name,
-    #         'base_unique_name': unique_name,
-    #         'base_unique_name_': unique_name_,
+    #         'base_fullname': fullname,
+    #         'base_fullname_': fullname_,
     #         'base_title': self.title,
     #         'base_domain': self.domain_id.name,
     #         'base_admin_name': self.admin_name,
@@ -405,8 +401,8 @@ class ClouderBase(models.Model):
     #         'base_nosave': self.nosave,
     #         'base_options': options,
     #         'base_links': links,
-    #         'base_nginx_configfile': '/etc/nginx/sites-available/' + unique_name,
-    #         'base_shinken_configfile': '/usr/local/shinken/etc/services/' + unique_name + '.cfg',
+    #         'base_nginx_configfile': '/etc/nginx/sites-available/' + fullname,
+    #         'base_shinken_configfile': '/usr/local/shinken/etc/services/' + fullname + '.cfg',
     #         'base_databases': databases,
     #         'base_databases_comma': databases_comma,
     #         'base_backup_servers': backup_servers
@@ -578,7 +574,7 @@ class ClouderBase(models.Model):
             self.log('The backup isnt configured in conf, skipping save base')
         for backup_server in self.backup_server_ids:
             save_vals = {
-                'name': self.now_bup + '_' + self.unique_name,
+                'name': self.now_bup + '_' + self.fullname,
                 'backup_server_id': backup_server.id,
                 'repo_id': self.saverepo_id,
                 'date_expiration': (now + timedelta(
@@ -630,7 +626,7 @@ class ClouderBase(models.Model):
         save.write(vals)
         base = save.restore()
         base.write({'parent_id': base_parent_id})
-        base.with_context(base_parent_unique_name_=base_parent_id.unique_name_)
+        base.with_context(base_parent_fullname_=base_parent_id.fullname_)
         base.with_context(service_parent_name=base_parent_id.service_id.name)
         base.update_base()
         base.post_reset()
@@ -677,7 +673,7 @@ class ClouderBase(models.Model):
             for key, database in self.databases().iteritems():
                 if self.service_id.database_type() != 'mysql':
                     ssh, sftp = self.connect(
-                        self.service_id.container_id.fullname(),
+                        self.service_id.container_id.fullname,
                         username=self.application_id.type_id.system_user)
                     self.execute(ssh, ['createdb', '-h',
                                        self.service_id.database_server(), '-U',
@@ -685,7 +681,7 @@ class ClouderBase(models.Model):
                     ssh.close(), sftp.close()
                 else:
                     ssh, sftp = self.connect(
-                        self.service_id.database().fullname())
+                        self.service_id.database().fullname)
                     self.execute(ssh, [
                         "mysql -u root -p'"
                         + self.service_id.database().root_password
@@ -706,25 +702,25 @@ class ClouderBase(models.Model):
         elif self.build == 'restore':
             if self.service_id.database_type() != 'mysql':
                 ssh, sftp = self.connect(
-                    self.service_id.container_id.fullname(),
+                    self.service_id.container_id.fullname,
                     username=self.application_id.type_id.system_user)
                 self.execute(ssh, [
                     'pg_restore', '-h', self.service_id.database_server(),
                     '-U', self.service_id.db_user(), '--no-owner',
-                    '-Fc', '-d', self.unique_name_,
+                    '-Fc', '-d', self.fullname_,
                     self.service_id.application_version_id.full_localpath
                     + '/' + self.service_id.database_type() + '/build.sql'
                 ])
                 ssh.close(), sftp.close()
             else:
                 ssh, sftp = self.connect(
-                    self.service_id.container_id.fullname(),
+                    self.service_id.container_id.fullname,
                     username=self.application_id.type_id.system_user)
                 self.execute(ssh, [
                     'mysql', '-h', self.service_id.database_server(),
                     '-u', self.service_id.db_user(),
                     '-p' + self.service_id.database().root_password,
-                    self.unique_name_, '<',
+                    self.fullname_, '<',
                     self.service_id.application_version_id.full_localpath
                     + '/' + self.service_id.database_type + '/build.sql'
                 ])
@@ -753,7 +749,7 @@ class ClouderBase(models.Model):
     def purge_db(self):
         for key, database in self.databases().iteritems():
             if self.service_id.database_type != 'mysql':
-                ssh, sftp = self.connect(self.service_id.database().fullname(),
+                ssh, sftp = self.connect(self.service_id.database().fullname,
                                          username='postgres')
                 self.execute(ssh, [
                     'psql', '-c',
@@ -766,7 +762,7 @@ class ClouderBase(models.Model):
                 self.execute(ssh, ['dropdb', database])
                 ssh.close(), sftp.close()
             else:
-                ssh, sftp = self.connect(self.service_id.database().fullname())
+                ssh, sftp = self.connect(self.service_id.database().fullname)
                 self.execute(ssh, [
                     "mysql -u root -p'"
                     + self.service_id.database().root_password
@@ -860,7 +856,7 @@ class ClouderBaseLink(models.Model):
     #                 'link_target_service_db_user': base_vals['service_db_user'],
     #                 'link_target_service_db_password': base_vals['service_db_password'],
     #                 'link_target_database_server': base_vals['database_server'],
-    #                 'link_target_base_unique_name_': base_vals['base_unique_name_'],
+    #                 'link_target_base_fullname_': base_vals['base_fullname_'],
     #                 'link_target_base_fulldomain': base_vals['base_fulldomain'],
     #             })
     #

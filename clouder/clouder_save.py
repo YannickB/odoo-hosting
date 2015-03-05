@@ -298,7 +298,7 @@ class ClouderSaveSave(models.Model):
 
     @api.multi
     def purge(self):
-        ssh, sftp = self.connect(self.backup_id.fullname())
+        ssh, sftp = self.connect(self.backup_id.fullname)
         self.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' +
                            self.repo_id.name + '/' + self.name])
         if self.search([('repo_id', '=', self.repo_id)]) == [self]:
@@ -434,7 +434,7 @@ class ClouderSaveSave(models.Model):
 
             # vals = self.get_vals(cr, uid, save.id, context=context)
             # vals_container = container_obj.get_vals(cr, uid, container_id, context=con
-            ssh, sftp = self.connect(container.fullname())
+            ssh, sftp = self.connect(container.fullname)
             self.execute(ssh, ['supervisorctl', 'stop', 'all'])
             self.execute(ssh, ['supervisorctl', 'start', 'sshd'])
             self.restore_action(container)
@@ -594,24 +594,24 @@ class ClouderSaveSave(models.Model):
 
             base.purge_db()
             ssh, sftp = self.connect(
-                base.service_id.container_id.fullname(),
+                base.service_id.container_id.fullname,
                 username=base.application_id.type_id.system_user)
             for key, database in base.databases().iteritems():
                 if base.service_id.database_type() != 'mysql':
                     self.execute(ssh, ['createdb', '-h',
                                        base.service_id.database_server(), '-U',
                                        base.service_id.db_user(),
-                                       base.unique_name_])
+                                       base.fullname_])
                     self.execute(ssh, ['cat',
                                        '/base-backup/' + self.repo_id.name
                                        + '/' + self.base_dumpfile,
                                        '|', 'psql', '-q', '-h',
                                        base.service_id.database_server(), '-U',
                                        base.service_id.db_user(),
-                                       base.unique_name_])
+                                       base.fullname_])
                 else:
                     ssh_mysql, sftp_mysql = self.connect(
-                        base.service_id.database().fullname())
+                        base.service_id.database().fullname)
                     self.execute(ssh_mysql, [
                         "mysql -u root -p'" +
                         base.service_id.database().root_password +
@@ -662,16 +662,16 @@ class ClouderSaveSave(models.Model):
             container = object
 
         directory = '/tmp/restore-' + self.repo_id.name
-        ssh, sftp = self.connect(self.backup_id.fullname(), username='backup')
+        ssh, sftp = self.connect(self.backup_id.fullname, username='backup')
         self.send(sftp, self.home_directory + '/.ssh/config',
                   '/home/backup/.ssh/config')
         self.send(sftp,
                   self.home_directory + '/.ssh/keys/' +
-                  container.fullname() + '.pub',
-                  '/home/backup/.ssh/keys/' + container.fullname() + '.pub')
+                  container.fullname + '.pub',
+                  '/home/backup/.ssh/keys/' + container.fullname + '.pub')
         self.send(sftp,
-                  self.home_directory + '/.ssh/keys/' + container.fullname(),
-                  '/home/backup/.ssh/keys/' + container.fullname())
+                  self.home_directory + '/.ssh/keys/' + container.fullname,
+                  '/home/backup/.ssh/keys/' + container.fullname)
         self.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'])
         self.execute(ssh, ['rm', '-rf', directory + '*'])
         self.execute(ssh, ['mkdir', '-p', directory])
@@ -691,12 +691,12 @@ class ClouderSaveSave(models.Model):
             self.execute(ssh, ['rm -rf', directory + '/' + self.now_bup()])
 
         self.execute(ssh, ['rsync', '-ra', directory + '/',
-                           container.fullname() + ':' + directory])
+                           container.fullname + ':' + directory])
         self.execute(ssh, ['rm', '-rf', directory + '*'])
         self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
         ssh.close(), sftp.close()
 
-        ssh, sftp = self.connect(container.fullname())
+        ssh, sftp = self.connect(container.fullname)
 
         if self.repo_id.type == 'container':
             for volume in container.volume_ids:
@@ -728,7 +728,7 @@ class ClouderSaveSave(models.Model):
         if self.repo_id.type == 'base' and self.base_id:
             base = self.base_id
             ssh, sftp = self.connect(
-                base.service_id.container_id.fullname(),
+                base.service_id.container_id.fullname,
                 username=base.application_id.type_id.system_user)
             self.execute(ssh,
                          ['mkdir', '-p', '/base-backup/' + self.repo_id.name])
@@ -760,7 +760,7 @@ class ClouderSaveSave(models.Model):
         # sftp.close()
 
         directory = '/tmp/' + self.repo_id.name
-        ssh, sftp = self.connect(self.container_id.fullname())
+        ssh, sftp = self.connect(self.container_id.fullname)
         self.execute(ssh, ['rm', '-rf', directory + '*'])
         self.execute(ssh, ['mkdir', directory])
         if self.repo_id.type == 'container':
@@ -776,11 +776,11 @@ class ClouderSaveSave(models.Model):
         self.execute(ssh, ['chmod', '-R', '777', directory + '*'])
         ssh.close(), sftp.close()
 
-        ssh, sftp = self.connect(self.backup_id.fullname(), username='backup')
+        ssh, sftp = self.connect(self.backup_id.fullname, username='backup')
         if self.repo_id.type == 'container':
-            name = self.container_id.fullname()
+            name = self.container_id.fullname
         else:
-            name = self.base_id.unique_name_
+            name = self.base_id.fullname_
         self.execute(ssh, ['rm', '-rf', '/opt/backup/list/' + name])
         self.execute(ssh, ['mkdir', '-p', '/opt/backup/list/' + name])
         self.execute(ssh, [
@@ -791,21 +791,21 @@ class ClouderSaveSave(models.Model):
                   '/home/backup/.ssh/config')
         self.send(sftp,
                   self.home_directory + '/.ssh/keys/' +
-                  self.container_id.fullname() + '.pub',
+                  self.container_id.fullname + '.pub',
                   '/home/backup/.ssh/keys/' +
-                  self.container_id.fullname() + '.pub')
+                  self.container_id.fullname + '.pub')
         self.send(sftp,
                   self.home_directory + '/.ssh/keys/' +
-                  self.container_id.fullname(),
+                  self.container_id.fullname,
                   '/home/backup/.ssh/keys/' +
-                  self.container_id.fullname())
+                  self.container_id.fullname)
         self.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'])
 
         self.execute(ssh, ['rm', '-rf', directory])
         self.execute(ssh, ['mkdir', directory])
         self.execute(ssh, [
             'rsync', '-ra',
-            self.container_id.fullname() + ':' + directory + '/', directory])
+            self.container_id.fullname + ':' + directory + '/', directory])
 
         if self.backup_method() == 'simple':
             self.execute(ssh, [
@@ -833,13 +833,13 @@ class ClouderSaveSave(models.Model):
         self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
         ssh.close(), sftp.close()
 
-        ssh, sftp = self.connect(self.container_id.fullname())
+        ssh, sftp = self.connect(self.container_id.fullname)
         self.execute(ssh, ['rm', '-rf', directory + '*'])
         ssh.close(), sftp.close()
 
         if self.repo.type == 'base':
             ssh, sftp = self.connect(
-                self.base_id.service_id.container_id.fullname(),
+                self.base_id.service_id.container_id.fullname,
                 username=self.base_id.application_id.type_id.system_user)
             self.execute(ssh,
                          ['rm', '-rf', '/base-backup/' + self.repo_id.name])

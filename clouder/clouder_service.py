@@ -81,7 +81,7 @@ class ClouderService(models.Model):
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
-        default=lambda self: self.env.user.partner_id)
+        default=lambda self: self.user_partner)
     partner_ids = fields.Many2many(
         'res.partner', 'clouder_service_partner_rel',
         'service_id', 'partner_id', 'Users')
@@ -194,7 +194,7 @@ class ClouderService(models.Model):
                 _('Data error!'),
                 _("You need to specify a database in the links "
                   "of the service " + self.name + " " +
-                  self.container_id.fullname()))
+                  self.container_id.fullname))
 
     @api.one
     @api.constrains('option_ids')
@@ -461,7 +461,7 @@ class ClouderService(models.Model):
         #SI postgres, create user
         if self.database_type() != 'mysql':
             ssh, sftp = self.connect(
-                self.database().fullname(), username='postgres')
+                self.database().fullname, username='postgres')
             self.execute(ssh, [
                 'psql', '-c', '"CREATE USER ' + self.db_user() +
                 ' WITH PASSWORD \'' + self.database_password + '\' CREATEDB;"'
@@ -469,7 +469,7 @@ class ClouderService(models.Model):
             ssh.close(), sftp.close()
 
             ssh, sftp = self.connect(
-                self.container_id.fullname(),
+                self.container_id.fullname,
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, [
                 'sed', '-i', '"/:*:' + self.db_user() + ':/d" ~/.pgpass'])
@@ -481,7 +481,7 @@ class ClouderService(models.Model):
             ssh.close(), sftp.close()
 
         else:
-            ssh, sftp = self.connect(self.database().fullname())
+            ssh, sftp = self.connect(self.database().fullname)
             self.execute(ssh, [
                 "mysql -u root -p'" + self.database().root_password() +
                 "' -se \"create user '" + self.db_user() +
@@ -491,7 +491,7 @@ class ClouderService(models.Model):
         self.log('Database user created')
 
         ssh, sftp = self.connect(
-            self.container_id.fullname(),
+            self.container_id.fullname,
             username=self.application_id.type_id.system_user)
         self.execute(ssh, ['mkdir', '-p', self.full_localpath])
         ssh.close(), sftp.close()
@@ -520,27 +520,27 @@ class ClouderService(models.Model):
         self.purge_pre_service()
 
         ssh, sftp = self.connect(
-            self.container_id.fullname(),
+            self.container_id.fullname,
             username=self.application_id.type_id.system_user)
         self.execute(ssh, ['rm', '-rf', self.full_localpath])
         ssh.close(), sftp.close()
 
         if self.database_type() != 'mysql':
             ssh, sftp = self.connect(
-                self.database().fullname(), username='postgres')
+                self.database().fullname, username='postgres')
             self.execute(ssh, [
                 'psql', '-c', '"DROP USER ' + self.db_user() + ';"'])
             ssh.close(), sftp.close()
 
             ssh, sftp = self.connect(
-                self.container_id.fullname(),
+                self.container_id.fullname,
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, [
                 'sed', '-i', '"/:*:' + self.db_user() + ':/d" ~/.pgpass'])
             ssh.close(), sftp.close()
 
         else:
-            ssh, sftp = self.connect(self.database().fullname())
+            ssh, sftp = self.connect(self.database().fullname)
             self.execute(ssh, [
                 "mysql -u root -p'" + self.database().root_password +
                 "' -se \"drop user " + self.db_user() + ";\""])
@@ -569,8 +569,8 @@ class ClouderService(models.Model):
 
         if not self.exist(sftp, self.application_version_id.full_hostpath):
             ssh_archive, sftp_archive = self.connect(
-                self.application_version_id.archive_id.fullname())
-            tmp = '/tmp/' + self.application_version_id.fullname() + '.tar.gz'
+                self.application_version_id.archive_id.fullname)
+            tmp = '/tmp/' + self.application_version_id.fullname + '.tar.gz'
             self.log(
                 'sftp get ' +
                 self.application_version_id.full_archivepath_targz + ' ' + tmp)
@@ -594,7 +594,7 @@ class ClouderService(models.Model):
         ssh.close(), sftp.close()
 
         ssh, sftp = self.connect(
-            self.container_id.fullname(),
+            self.container_id.fullname,
             username=self.application_id.type_id.system_user)
         if 'files_from_service' in self.env.context:
             self.execute(ssh, [
@@ -618,7 +618,7 @@ class ClouderService(models.Model):
     @api.multi
     def purge_files(self):
         ssh, sftp = self.connect(
-            self.container_id.fullname(),
+            self.container_id.fullname,
             username=self.application_id.type_id.system_user)
         self.execute(ssh, ['rm', '-rf', self.full_localpath_files])
         ssh.close(), sftp.close()

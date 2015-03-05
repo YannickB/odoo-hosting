@@ -80,6 +80,10 @@ class ClouderModel(models.AbstractModel):
         return self.env.ref('clouder.clouder_settings').email_sysadmin
 
     @property
+    def user_partner(self):
+        return self.env['res.partner'].search(
+            [('user_ids','in',int(self.env.uid))])[0]
+    @property
     def archive_path(self):
         return '/opt/archives'
 

@@ -53,7 +53,7 @@ class ClouderImage(models.Model):
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
-        default=lambda self: self.env.user.partner_id)
+        default=lambda self: self.env['clouder.model'].user_partner)
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Image name must be unique!')
@@ -254,7 +254,7 @@ class ClouderImageVersion(models.Model):
     @api.multi
     def deploy(self):
         ssh, sftp = self.connect(self.registry_id.server_id.name)
-        dir = '/tmp/' + self.image_id.name + '_' + self.fullname()
+        dir = '/tmp/' + self.image_id.name + '_' + self.fullname
         self.execute(ssh, ['mkdir', '-p', dir])
 
         dockerfile = 'FROM '
@@ -285,12 +285,12 @@ class ClouderImageVersion(models.Model):
             'echo "' + dockerfile.replace('"', '\\"') +
             '" >> ' + dir + '/Dockerfile'])
         self.execute(ssh,
-                     ['sudo', 'docker', 'build', '-t', self.fullname(), dir])
-        self.execute(ssh, ['sudo', 'docker', 'tag', self.fullname(),
+                     ['sudo', 'docker', 'build', '-t', self.fullname, dir])
+        self.execute(ssh, ['sudo', 'docker', 'tag', self.fullname,
                            self.fullpath_localhost()])
         self.execute(ssh,
                      ['sudo', 'docker', 'push', self.fullpath_localhost()])
-        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname()])
+        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname])
         self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost()])
         self.execute(ssh, ['rm', '-rf', dir])
         ssh.close(), sftp.close()
