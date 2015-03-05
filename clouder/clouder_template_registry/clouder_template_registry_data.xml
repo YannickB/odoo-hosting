@@ -13,6 +13,8 @@
             <field name="current_version">1</field>
             <field name="parent_from">registry</field>
             <field name="dockerfile"><![CDATA[
+FROM registry
+
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get -qy install locales
 ENV LANGUAGE en_US.UTF-8

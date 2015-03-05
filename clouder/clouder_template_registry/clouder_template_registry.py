@@ -53,8 +53,9 @@ class ClouderContainer(models.Model):
     def deploy(self):
         if self.image_id.name == 'img_registry':
             ssh, sftp = self.connect(self.server_id.name)
-            dir = '/tmp/' + self.image_id.name + '_' + \
+            dir = '/tmp/' + self.image_id.name + '_' +\
                   self.image_version_id.fullname
+            _logger.info('dir %s', dir)
             self.execute(ssh, ['mkdir', '-p', dir])
             self.execute(ssh, [
                 'echo "' + self.image_id.dockerfile.replace('"', '\\"') +

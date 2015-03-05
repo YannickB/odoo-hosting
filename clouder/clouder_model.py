@@ -117,7 +117,7 @@ class ClouderModel(models.AbstractModel):
 
     @api.one
     @api.constrains('name')
-    def _check_image(self):
+    def _check_config(self):
         if not self.env.ref('clouder.clouder_settings').email_sysadmin:
             raise except_orm(_('Data error!'),
                 _("You need to specify the sysadmin email in configuration"))
@@ -209,10 +209,9 @@ class ClouderModel(models.AbstractModel):
         self.deploy_links()
         self.end_log()
 
-    @api.multi
+    @api.model
     def create(self, vals):
         res = super(ClouderModel, self).create(vals)
-        # context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
         res = res.with_context(res.create_log('create'))
         try:
             res.deploy()
@@ -225,9 +224,9 @@ class ClouderModel(models.AbstractModel):
             res.unlink()
             raise
         res.end_log()
-        return res 
+        return res
 
-    @api.multi
+    @api.model
     def unlink(self):
         try:
             self.purge_links()
@@ -294,7 +293,7 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def send(self, sftp, source, destination):
         self.log('send : ' + source + ' to ' + destination)
-        self.send(sftp, source, destination)
+        sftp.put(source, destination)
 
 
     @api.multi

@@ -44,13 +44,13 @@ class ClouderContainerLink(models.Model):
 
             ssh, sftp = self.connect(self.container_id.fullname,
                                      username='backup')
-            self.send(sftp, self.home_directory() + '/.ssh/config',
+            self.send(sftp, self.home_directory + '/.ssh/config',
                       '/home/backup/.ssh/config')
-            self.send(sftp, self.home_directory() + '/.ssh/keys/' +
+            self.send(sftp, self.home_directory + '/.ssh/keys/' +
                       self.target.fullname + '.pub',
                       '/home/backup/.ssh/keys/' +
                       self.target.fullname + '.pub')
-            self.send(sftp, self.home_directory() + '/.ssh/keys/' +
+            self.send(sftp, self.home_directory + '/.ssh/keys/' +
                       self.target.fullname,
                       '/home/backup/.ssh/keys/' + self.target.fullname)
             self.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'])

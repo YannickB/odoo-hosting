@@ -461,10 +461,10 @@ class ClouderBase(models.Model):
                 vals['admin_email'] = application.admin_email \
                                      and application.admin_email \
                                      or self.email_sysadmin()
-            if 'backup_server_ids' not in vals \
-                    or not vals['backup_server_ids'] \
-                    or not vals['backup_server_ids'][0][2]:
-                vals['backup_server_ids'] = \
+            if 'backup_ids' not in vals \
+                    or not vals['backup_ids'] \
+                    or not vals['backup_ids'][0][2]:
+                vals['backup_ids'] = \
                     [(6, 0, [b.id for b in application.base_backup_ids])]
             if 'time_between_save' not in vals \
                     or not vals['time_between_save']:
@@ -570,12 +570,12 @@ class ClouderBase(models.Model):
                 'isnt configured in conf, skipping save base')
             return
         self = self.with_context(self.create_log('save'))
-        if not self.backup_server_ids:
+        if not self.backup_ids:
             self.log('The backup isnt configured in conf, skipping save base')
-        for backup_server in self.backup_server_ids:
+        for backup_server in self.backup_ids:
             save_vals = {
                 'name': self.now_bup + '_' + self.fullname,
-                'backup_server_id': backup_server.id,
+                'backup_id': backup_server.id,
                 'repo_id': self.saverepo_id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration

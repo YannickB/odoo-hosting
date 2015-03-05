@@ -37,6 +37,11 @@ class ClouderServer(models.Model):
 
     @api.multi
     def _create_key(self):
+
+        if not self.env.ref('clouder.clouder_settings').email_sysadmin:
+            raise except_orm(_('Data error!'),
+                _("You need to specify the sysadmin email in configuration"))
+
         self.execute_local(['mkdir', '/tmp/key_' + self.env.uid])
         self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
                             self.email_sysadmin, '-f',
@@ -149,31 +154,31 @@ class ClouderServer(models.Model):
     @api.multi
     def deploy(self):
         self.purge()
-        key_file = self.home_directory() + '/.ssh/keys/' + self.name
+        key_file = self.home_directory + '/.ssh/keys/' + self.name
         self.execute_write_file(key_file, self.private_key)
         self.execute_local(['chmod', '700', key_file])
-        self.execute_write_file(self.home_directory() +
+        self.execute_write_file(self.home_directory +
                                 '/.ssh/config', 'Host ' + self.name)
-        self.execute_write_file(self.home_directory() +
+        self.execute_write_file(self.home_directory +
                                 '/.ssh/config', '\n  HostName ' + self.name)
-        self.execute_write_file(self.home_directory() +
+        self.execute_write_file(self.home_directory +
                                 '/.ssh/config', '\n  Port ' +
                                 str(self.ssh_port))
-        self.execute_write_file(self.home_directory() +
+        self.execute_write_file(self.home_directory +
                                 '/.ssh/config', '\n  User root')
-        self.execute_write_file(self.home_directory() +
+        self.execute_write_file(self.home_directory +
                                 '/.ssh/config', '\n  IdentityFile ' +
-                                self.home_directory() + '/.ssh/keys/' +
+                                self.home_directory + '/.ssh/keys/' +
                                 self.name)
-        self.execute_write_file(self.home_directory() + '/.ssh/config',
+        self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.name + '\n')
 
     @api.multi
     def purge(self):
         self.execute_local([modules.get_module_path('clouder') +
                             '/res/sed.sh', self.name,
-                            self.home_directory() + '/.ssh/config'])
-        self.execute_local(['rm', '-rf', self.home_directory() +
+                            self.home_directory + '/.ssh/config'])
+        self.execute_local(['rm', '-rf', self.home_directory +
                             '/.ssh/keys/' + self.name])
 
 
@@ -276,7 +281,7 @@ class ClouderContainer(models.Model):
     @api.one
     @api.constrains('application_id')
     def _check_backup(self):
-        if not self.backup_server_ids and self.application_id.type_id.name \
+        if not self.backup_ids and self.application_id.type_id.name \
                 not in ['backup','backup_upload','archive','registry']:
             raise except_orm(
                 _('Data error!'),
@@ -323,12 +328,12 @@ class ClouderContainer(models.Model):
     @api.onchange('application_id')
     def onchange_application_id(self):
         if self.application_id:
-            self.server_id = self.application.next_server_id
-            self.image_id = self.application.default_image_id
-            self.privileged = self.application.default_image_id.privileged
+            self.server_id = self.application_id.next_server_id
+            self.image_id = self.application_id.default_image_id
+            self.privileged = self.application_id.default_image_id.privileged
             self.image_version_id = \
-                self.application.default_image_id.version_ids \
-                and self.application.default_image_id.version_ids[0]
+                self.application_id.default_image_id.version_ids \
+                and self.application_id.default_image_id.version_ids[0]
 
             for type_option in self.application_id.type_id.option_ids:
                 if type_option.type == 'container' and type_option.auto:
@@ -469,7 +474,7 @@ class ClouderContainer(models.Model):
     def create_vals(self, vals):
         return vals
 
-    @api.multi
+    @api.model
     def create(self, vals):
         if ('port_ids' not in vals or not vals['port_ids']) \
                 and 'image_version_id' in vals:
@@ -494,10 +499,10 @@ class ClouderContainer(models.Model):
                 .browse(vals['application_id'])
             self = self.with_context(apptype_name=application.type_id.name)
 
-            if 'backup_server_ids' not in vals \
-                    or not vals['backup_server_ids'] \
-                    or not vals['backup_server_ids'][0][2]:
-                vals['backup_server_ids'] = \
+            if 'backup_ids' not in vals \
+                    or not vals['backup_ids'] \
+                    or not vals['backup_ids'][0][2]:
+                vals['backup_ids'] = \
                     [(6,0,[b.id for b in application.container_backup_ids])]
             if 'time_between_save' not in vals \
                     or not vals['time_between_save']:
@@ -539,7 +544,7 @@ class ClouderContainer(models.Model):
         vals = self.create_vals(vals)
         return super(ClouderContainer, self).create(vals)
 
-    @api.multi
+    @api.model
     def write(self, vals):
         version_obj = self.env['clouder.image.version']
         flag = False
@@ -564,9 +569,9 @@ class ClouderContainer(models.Model):
             self.deploy_links()
         return res
 
-    @api.multi
+    @api.model
     def unlink(self):
-        self.service_ids.unlink()
+        self.service_ids and self.service_ids.unlink()
         self = self.with_context(save_comment='Before unlink')
         self.save()
         return super(ClouderContainer, self).unlink()
@@ -634,10 +639,10 @@ class ClouderContainer(models.Model):
             return
         self = self.with_context(self.create_log('save'))
 
-        for backup_server in self.backup_server_ids:
+        for backup_server in self.backup_ids:
             save_vals = {
                 'name': self.now_bup() + '_' + self.container_fullname,
-                'backup_server_id': backup_server.id,
+                'backup_id': backup_server.id,
                 'repo_id': self.saverepo_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration
@@ -697,7 +702,7 @@ class ClouderContainer(models.Model):
                 if volume.readonly:
                     arg += ':ro'
                 cmd.extend(['-v', arg])
-        for link in self.links:
+        for link in self.link_ids:
             if link.make_link and link.target.server_id== self.server_id:
                 cmd.extend(['--link', link.target.name + ':' + link.name.code])
         if self.privileged:
@@ -785,23 +790,23 @@ class ClouderContainer(models.Model):
 
         self.purge_key()
         self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
-                            self.email_sysadmin, '-f', self.home_directory() +
+                            self.email_sysadmin, '-f', self.home_directory +
                             '/.ssh/keys/' + self.fullname, '-N', ''])
-        self.execute_write_file(self.home_directory() + '/.ssh/config',
+        self.execute_write_file(self.home_directory + '/.ssh/config',
                                 'Host ' + self.fullname)
-        self.execute_write_file(self.home_directory() + '/.ssh/config',
+        self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n  HostName ' + self.server_id.name)
-        self.execute_write_file(self.home_directory() + '/.ssh/config',
-                                '\n  Port ' + str(self.ssh_port()))
-        self.execute_write_file(self.home_directory() + '/.ssh/config',
+        self.execute_write_file(self.home_directory + '/.ssh/config',
+                                '\n  Port ' + str(self.ssh_port))
+        self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n  User root')
-        self.execute_write_file(self.home_directory() + '/.ssh/config',
+        self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n  IdentityFile ~/.ssh/keys/' + self.fullname)
-        self.execute_write_file(self.home_directory() + '/.ssh/config',
+        self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.fullname + '\n')
         ssh, sftp = self.connect(self.server_id.name)
         self.execute(ssh, ['mkdir', '/opt/keys/' + self.fullname])
-        self.send(sftp, self.home_directory() + '/.ssh/keys/' +
+        self.send(sftp, self.home_directory + '/.ssh/keys/' +
                   self.fullname + '.pub', '/opt/keys/' +
                   self.fullname + '/authorized_keys')
         ssh.close(), sftp.close()
@@ -828,10 +833,10 @@ class ClouderContainer(models.Model):
                 self.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' +
                                    self.fullname + '*'])
                 self.send(
-                    sftp, self.home_directory() + '/.ssh/keys/' +
+                    sftp, self.home_directory + '/.ssh/keys/' +
                     self.fullname + '.pub', '/home/shinken/.ssh/keys/' +
                     self.fullname + '.pub')
-                self.send(sftp, self.home_directory() + '/.ssh/keys/' +
+                self.send(sftp, self.home_directory + '/.ssh/keys/' +
                           self.fullname, '/home/shinken/.ssh/keys/' +
                           self.fullname)
                 self.execute(ssh, ['chmod', '-R', '700', '/home/shinken/.ssh'])
@@ -860,12 +865,12 @@ class ClouderContainer(models.Model):
     def purge_key(self):
         self.execute_local([
             modules.get_module_path('clouder') + '/res/sed.sh',
-            self.fullname, self.home_directory() + '/.ssh/config'])
+            self.fullname, self.home_directory + '/.ssh/config'])
         self.execute_local([
-            'rm', '-rf', self.home_directory() +
+            'rm', '-rf', self.home_directory +
             '/.ssh/keys/' + self.fullname])
         self.execute_local([
-            'rm', '-rf', self.home_directory() +
+            'rm', '-rf', self.home_directory +
             '/.ssh/keys/' + self.fullname + '.pub'])
         ssh, sftp = self.connect(self.server_id.name)
         self.execute(ssh, [

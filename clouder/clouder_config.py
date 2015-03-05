@@ -165,9 +165,10 @@ class ClouderConfigSettings(models.Model):
              self.now_date + ' ' + self.now_hour_regular)])
         if containers:
             containers.save()
-        bases = self.env['clouder.base'].search([('date_next_save', '!=', False), (
-            'date_next_save', '<',
-            self.now_date + ' ' + self.now_hour_regular)])
+        bases = self.env['clouder.base'].search([
+            ('date_next_save', '!=', False),
+            ('date_next_save', '<',
+             self.now_date + ' ' + self.now_hour_regular)])
         if bases:
             bases.save()
 

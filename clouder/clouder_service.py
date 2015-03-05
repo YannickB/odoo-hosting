@@ -381,7 +381,7 @@ class ClouderService(models.Model):
 
     @api.multi
     def unlink(self):
-        self.base_ids.unlink()
+        self.base_ids and self.base_ids.unlink()
         return super(ClouderService, self).unlink()
 
     @api.multi
