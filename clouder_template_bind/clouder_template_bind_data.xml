@@ -14,6 +14,7 @@
         <record id="image_bind" model="clouder.image">
             <field name="name">img_bind</field>
             <field name="current_version">1</field>
+            <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[FROM yolobase:latest
 MAINTAINER yannick.buron@gmail.com
 
@@ -65,7 +66,7 @@ USER root
 
 
         <record id="app_bind" model="clouder.application">
-            <field name="name">bind</field>
+            <field name="name">Bind</field>
             <field name="code">bind</field>
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_bind"/>

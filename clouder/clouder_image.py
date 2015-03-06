@@ -171,10 +171,15 @@ class ClouderImageVersion(models.Model):
     def fullname(self):
         return self.image_id.name + ':' + self.name
 
+
+    @property
+    def registry_address(self):
+        return self.registry_id and self.registry_id.server_id.name + ':' + \
+            self.registry_id.ports['registry-ssl']['hostport']
+
     @property
     def fullpath(self):
-        return self.registry_id and self.registry_id.server_id.ip + ':' + \
-            self.registry_id.ports['registry']['hostport'] + \
+        return self.registry_id and self.registry_address + \
             '/' + self.fullname
 
     @property
@@ -244,7 +249,7 @@ class ClouderImageVersion(models.Model):
     #
     #     return vals
 
-    @api.multi
+    @api.one
     def unlink(self):
         if self.container_ids:
             raise except_orm(

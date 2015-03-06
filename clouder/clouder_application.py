@@ -392,7 +392,7 @@ class ClouderApplicationVersion(models.Model):
     #
     #     return vals
 
-    @api.multi
+    @api.one
     def unlink(self):
         if self.service_ids:
             raise except_orm(_('Inherit error!'), _(

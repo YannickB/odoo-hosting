@@ -65,6 +65,27 @@ class ClouderContainer(models.Model):
             self.execute(ssh, ['sudo', 'docker', 'build', '-t',
                                self.image_version_id.fullname, dir])
             self.execute(ssh, ['rm', '-rf', dir])
+
         return super(ClouderContainer, self).deploy()
 
 
+    def deploy_post(self):
+
+        if self.application_id.type_id.name == 'registry':
+
+            ssh = self.connect(self.fullname)
+
+            certfile = '/etc/ssl/certs/docker-registry.crt'
+            keyfile = '/etc/ssl/private/docker-registry.key'
+
+            self.execute(ssh, ['rm', certfile])
+            self.execute(ssh, ['rm', keyfile])
+
+            self.execute(ssh, [
+                'openssl', 'req', '-x509', '-nodes', '-days', '365',
+                '-newkey', 'rsa:2048', '-out', certfile, ' -keyout',
+                keyfile, '-subj', '"/C=FR/L=Paris/O=Clouder/CN=' +
+                self.server_id.name + '"'])
+            ssh.close()
+
+        return super(ClouderContainer, self).deploy_post()

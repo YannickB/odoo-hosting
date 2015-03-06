@@ -495,7 +495,7 @@ class ClouderBase(models.Model):
 
         return res
 
-    @api.multi
+    @api.one
     def unlink(self):
         self = self.with_context(save_comment='Before unlink')
         self.save()

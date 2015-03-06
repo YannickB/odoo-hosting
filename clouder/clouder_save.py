@@ -685,10 +685,10 @@ class ClouderSaveSave(models.Model):
             self.execute(ssh, [
                 'export BUP_DIR=/opt/backup/bup;',
                 'bup restore -C ' + directory + ' ' + self.repo_id.name +
-                '/' + self.now_bup()])
+                '/' + self.now_bup])
             self.execute(ssh, [
-                'mv', directory + '/' + self.now_bup() + '/*', directory])
-            self.execute(ssh, ['rm -rf', directory + '/' + self.now_bup()])
+                'mv', directory + '/' + self.now_bup + '/*', directory])
+            self.execute(ssh, ['rm -rf', directory + '/' + self.now_bup])
 
         self.execute(ssh, ['rsync', '-ra', directory + '/',
                            container.fullname + ':' + directory])

@@ -353,7 +353,7 @@ class ClouderService(models.Model):
             self.deploy_files()
         return res
 
-    @api.multi
+    @api.one
     def unlink(self):
         self.base_ids and self.base_ids.unlink()
         return super(ClouderService, self).unlink()

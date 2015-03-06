@@ -232,7 +232,7 @@ class ClouderModel(models.AbstractModel):
         res.end_log()
         return res
 
-    @api.multi
+    @api.one
     def unlink(self):
         try:
             self.purge_links()
@@ -294,6 +294,13 @@ class ClouderModel(models.AbstractModel):
         self.log('stdout : ' + stdout_read)
         self.log('stderr : ' + stderr.read())
         return stdout_read
+
+    @api.multi
+    def get(self, ssh, source, destination):
+        sftp = ssh.open_sftp()
+        self.log('get : ' + source + ' to ' + destination)
+        sftp.get(source, destination)
+        sftp.close()
 
     @api.multi
     def send(self, ssh, source, destination):

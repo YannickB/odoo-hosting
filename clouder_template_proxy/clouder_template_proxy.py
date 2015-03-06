@@ -58,10 +58,10 @@ class ClouderBaseLink(models.Model):
                 'sed', '-i', '"s/SERVER/' +
                 self.base_id.service_id.container_id.server_id.name + '/g"',
                 self.base_id.nginx_configfile()])
-            if 'port' in self.base_id.service_id.options:
+            if 'port' in self.base_id.service_id.options():
                 self.execute(ssh, [
                     'sed', '-i', '"s/PORT/' +
-                    self.base_id.service_id.options['port']['hostport'] +
+                    self.base_id.service_id.options()['port']['hostport'] +
                     '/g"', self.base_id.nginx_configfile()])
             # self.deploy_prepare_apache(cr, uid, vals, context)
             cert_file = '/etc/ssl/certs/' + self.base_id.name + '.' + \
@@ -91,7 +91,7 @@ class ClouderBaseLink(models.Model):
                     '.' + self.base_id.domain_id.name + '"'])
             self.execute(ssh, [
                 'ln', '-s', self.base_id.nginx_configfile(),
-                '/etc/nginx/sites-enabled/' + self.base_id.unifullname)
+                '/etc/nginx/sites-enabled/' + self.base_id.fullname])
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
             ssh.close()
 

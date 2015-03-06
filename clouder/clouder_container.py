@@ -557,7 +557,7 @@ class ClouderContainer(models.Model):
             self.deploy_links()
         return res
 
-    @api.multi
+    @api.one
     def unlink(self):
         self.service_ids and self.service_ids.unlink()
         self = self.with_context(save_comment='Before unlink')
@@ -629,7 +629,7 @@ class ClouderContainer(models.Model):
 
         for backup_server in self.backup_ids:
             save_vals = {
-                'name': self.now_bup() + '_' + self.container_fullname,
+                'name': self.now_bup + '_' + self.container_fullname,
                 'backup_id': backup_server.id,
                 'repo_id': self.saverepo_id.id,
                 'date_expiration': (now + timedelta(
@@ -639,7 +639,7 @@ class ClouderContainer(models.Model):
                 'comment': 'save_comment' in self.env.context
                            and self.env.context['save_comment']
                            or self.save_comment or 'Manual',
-                'now_bup': self.now_bup(),
+                'now_bup': self.now_bup,
                 'container_id': self.id,
             }
             save = self.env['clouder.save.save'].create(save_vals)
@@ -703,6 +703,19 @@ class ClouderContainer(models.Model):
         elif self.server_id == self.image_version_id.registry_id.server_id:
             cmd.extend([self.image_version_id.fullpath_localhost])
         else:
+            folder = '/etc/docker/certs.d/' +\
+                     self.image_version_id.registry_address
+            certfile = folder + '/ca.crt'
+            tmp_file = '/tmp/' + self.fullname
+            self.execute(ssh, ['rm', certfile])
+            ssh_registry = self.connect(
+                self.image_version_id.registry_id.fullname)
+            self.get(ssh_registry,
+                     '/etc/ssl/certs/docker-registry.crt', tmp_file)
+            ssh_registry.close()
+            self.execute(ssh, ['mkdir','-p', folder])
+            self.send(ssh, tmp_file, certfile)
+            self.execute_local(['rm', tmp_file])
             cmd.extend([self.image_version_id.fullpath])
 
         #Deploy key now, otherwise the container will be angry to not find the key. We can't before because vals['container_ssh_port'] may not be set
