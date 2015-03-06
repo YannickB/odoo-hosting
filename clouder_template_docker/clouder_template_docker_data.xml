@@ -6,8 +6,6 @@
         <record id="apptype_docker" model="clouder.application.type">
             <field name="name">docker</field>
             <field name="system_user">docker</field>
-            <field name="admin_name">admin</field>
-            <field name="admin_email">admin@localhost</field>
         </record>
         <record id="apptype_docker_option1" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_docker"/>

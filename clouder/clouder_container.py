@@ -629,9 +629,9 @@ class ClouderContainer(models.Model):
 
         for backup_server in self.backup_ids:
             save_vals = {
-                'name': self.now_bup + '_' + self.container_fullname,
+                'name': self.now_bup + '_' + self.fullname,
                 'backup_id': backup_server.id,
-                'repo_id': self.saverepo_id.id,
+                'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration
                          or self.application_id.container_save_expiration
@@ -820,48 +820,6 @@ class ClouderContainer(models.Model):
         #     sftp_container.close()
         # else:
         #     self.start(cr, uid, vals, context=context)
-
-#TODO
-        if self.application_id.type_id.name == 'backup':
-            shinkens = self.search(
-                [('application_id.type_id.name', '=','shinken')])
-            if not shinkens:
-                self.log('The shinken isnt configured in conf, '
-                         'skipping deploying backup keys in shinken')
-                return
-            for shinken in shinkens:
-                ssh = self.connect(
-                    shinken.fullname, username='shinken')
-                self.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' +
-                                   self.fullname + '*'])
-                self.send(
-                    ssh, self.home_directory + '/.ssh/keys/' +
-                    self.fullname + '.pub', '/home/shinken/.ssh/keys/' +
-                    self.fullname + '.pub')
-                self.send(ssh, self.home_directory + '/.ssh/keys/' +
-                          self.fullname, '/home/shinken/.ssh/keys/' +
-                          self.fullname)
-                self.execute(ssh, ['chmod', '-R', '700', '/home/shinken/.ssh'])
-                self.execute(ssh, [
-                    'sed', '-i', "'/Host " + self.fullname +
-                    "/,/END " + self.fullname + "/d'",
-                    '/home/shinken/.ssh/config'])
-                self.execute(ssh, [
-                    'echo "Host ' + self.fullname +
-                    '" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, [
-                    'echo "    Hostname ' +
-                    self.server_id.name + '" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, [
-                    'echo "    Port ' + str(self.ssh_port) +
-                    '" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, [
-                    'echo "    User backup" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, [
-                    'echo "    IdentityFile  ~/.ssh/keys/' +
-                    self.fullname + '" >> /home/shinken/.ssh/config'])
-                self.execute(ssh, ['echo "#END ' + self.fullname +
-                                   '" >> ~/.ssh/config'])
 
     @api.multi
     def purge_key(self):

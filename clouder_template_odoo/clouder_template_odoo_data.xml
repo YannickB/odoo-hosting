@@ -6,9 +6,6 @@
         <record id="apptype_odoo" model="clouder.application.type">
             <field name="name">odoo</field>
             <field name="system_user">odoo</field>
-            <field name="admin_name">heathcliff</field>
-            <field name="admin_email">odoo@localhost</field>
-            <field name="standard_port">8069</field>
             <field name="symlink" eval="True"/>
             <field name="localpath">/opt/versions</field>
             <field name="localpath_services">/opt/odoo</field>
@@ -145,7 +142,6 @@ VOLUME /base-backup
             <field name="code">odoo</field>
             <field name="type_id" ref="apptype_odoo"/>
             <field name="default_image_id" ref="image_odoo"/>
-            <field name="linked_local_containers">postfix,postgres</field>
             <field name="current_version">8.0</field>
             <field name="buildfile"><![CDATA[
 [buildout]

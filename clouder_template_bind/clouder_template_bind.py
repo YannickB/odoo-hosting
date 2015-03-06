@@ -27,42 +27,48 @@ from openerp import modules
 class ClouderDomain(models.Model):
     _inherit = 'clouder.domain'
 
-    configfile = lambda self: '/etc/bind/db.' + self.name
+    @property
+    def configfile(self):
+        return'/etc/bind/db.' + self.name
 
     @api.multi
     def deploy(self):
-        ssh = self.connect(self.dns_id.fullname)
-        self.send(ssh, modules.get_module_path('clouder_template_bind') +
-                  '/res/bind.config', self.configfile())
-        self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + self.name + '/g"',
-                           self.configfile()])
-        self.execute(ssh,
-                     ['sed', '-i', '"s/IP/' + self.dns_id.server_id.ip + '/g"',
-                      self.configfile()])
-        self.execute(ssh, [
-            "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
-        self.execute(ssh, ['echo "type master;" >> /etc/bind/named.conf'])
-        self.execute(ssh, ['echo "allow-transfer {213.186.33.199;};" '
-                           '>> /etc/bind/named.conf'])
-        self.execute(ssh, ["echo 'file \"/etc/bind/db." +
-                           self.name + "\";' >> /etc/bind/named.conf"])
-        self.execute(ssh, ['echo "notify yes;" >> /etc/bind/named.conf'])
-        self.execute(ssh, ['echo "};" >> /etc/bind/named.conf'])
-        self.execute(ssh, [
-            'echo "//END ' + self.name + '" >> /etc/bind/named.conf'])
-        self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
-        ssh.close()
+
+        if self.dns_id:
+            ssh = self.connect(self.dns_id.fullname)
+            self.send(ssh, modules.get_module_path('clouder_template_bind') +
+                      '/res/bind.config', self.configfile)
+            self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + self.name + '/g"',
+                               self.configfile])
+            self.execute(ssh,
+                         ['sed', '-i', '"s/IP/' + self.dns_id.server_id.ip + '/g"',
+                          self.configfile])
+            self.execute(ssh, [
+                "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
+            self.execute(ssh, ['echo "type master;" >> /etc/bind/named.conf'])
+            self.execute(ssh, ['echo "allow-transfer {213.186.33.199;};" '
+                               '>> /etc/bind/named.conf'])
+            self.execute(ssh, ["echo 'file \"/etc/bind/db." +
+                               self.name + "\";' >> /etc/bind/named.conf"])
+            self.execute(ssh, ['echo "notify yes;" >> /etc/bind/named.conf'])
+            self.execute(ssh, ['echo "};" >> /etc/bind/named.conf'])
+            self.execute(ssh, [
+                'echo "//END ' + self.name + '" >> /etc/bind/named.conf'])
+            self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
+            ssh.close()
 
     @api.multi
     def purge(self):
-        ssh = self.connect(self.dns_id.fullname)
-        self.execute(ssh, [
-            'sed', '-i',
-            "'/zone\s\"" + self.name + "\"/,/END\s" + self.name + "/d'",
-            '/etc/bind/named.conf'])
-        self.execute(ssh, ['rm', self.configfile()])
-        self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
-        ssh.close()
+
+        if self.dns_id:
+            ssh = self.connect(self.dns_id.fullname)
+            self.execute(ssh, [
+                'sed', '-i',
+                "'/zone\s\"" + self.name + "\"/,/END\s" + self.name + "/d'",
+                '/etc/bind/named.conf'])
+            self.execute(ssh, ['rm', self.configfile])
+            self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
+            ssh.close()
 
 
 class ClouderBaseLink(models.Model):
@@ -79,7 +85,7 @@ class ClouderBaseLink(models.Model):
                 'echo "' + self.base_id.name + ' IN CNAME ' +
                 (proxy_link and proxy_link[0].target.server_id.name
                  or self.base_id.service_id.container_id.server_id.name) +
-                '." >> ' + self.base_id.domain_id.configfile()])
+                '." >> ' + self.base_id.domain_id.configfile])
 
             postfix_link = self.search([
                 ('base_id', '=', self.base_id),
@@ -89,7 +95,7 @@ class ClouderBaseLink(models.Model):
                     'echo "IN MX 1 ' +
                     postfix_link and postfix_link[0].target.server_id.name +
                     '. ;' + self.base_id.name + ' IN CNAME" >> ' +
-                    self.base_id.domain_id.configfile()])
+                    self.base_id.domain_id.configfile])
             self.execute(ssh, ['/etc/init.d/bind9', 'restart'])
             ssh.close()
 
@@ -100,6 +106,6 @@ class ClouderBaseLink(models.Model):
             ssh = self.connect(self.target.container.fullname)
             self.execute(ssh, ['sed', '-i',
                                '"/' + self.base_id.name + '\sIN\sCNAME/d"',
-                               self.base_id.domain_id.configfile()])
+                               self.base_id.domain_id.configfile])
             self.execute(ssh, ['/etc/init.d/bind9', 'restart'])
             ssh.close()

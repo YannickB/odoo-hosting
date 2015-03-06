@@ -548,7 +548,7 @@ class ClouderBase(models.Model):
             save_vals = {
                 'name': self.now_bup + '_' + self.fullname,
                 'backup_id': backup_server.id,
-                'repo_id': self.saverepo_id,
+                'repo_id': self.save_repository_id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration
                     or self.application_id.base_save_expiration)

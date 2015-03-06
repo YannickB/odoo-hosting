@@ -138,10 +138,6 @@ class ClouderSaveSave(models.Model):
                 datetime(1970, 1, 1)).total_seconds()
 
     @property
-    def backup_method(self):
-        return self.backup_id.options['backup_method']['value']
-
-    @property
     def base_dumpfile(self):
         return \
             self.repo_id.type == 'base' \
@@ -231,9 +227,9 @@ class ClouderSaveSave(models.Model):
 
             container_links = {}
             for link in container.link_ids:
-                container_links[link.name.code] = {
+                container_links[link.name.name.code] = {
                     'name': link.name.id,
-                    'code': link.name.code,
+                    'code': link.name.name.code,
                     'target': link.target and link.target.id
                 }
 
@@ -255,7 +251,7 @@ class ClouderSaveSave(models.Model):
             for link in service.link_ids:
                 service_links[link.name.code] = {
                     'name': link.name.id,
-                    'code': link.name.code,
+                    'code': link.name.name.code,
                     'target': link.target and link.target.id
                 }
 
@@ -271,9 +267,9 @@ class ClouderSaveSave(models.Model):
 
             base_links = {}
             for link in base.link_ids:
-                base_links[link.name.code] = {
+                base_links[link.name.name.code] = {
                     'name': link.name.id,
-                    'code': link.name.code,
+                    'code': link.name.name.code,
                     'target': link.target and link.target.id
                 }
 
@@ -313,6 +309,7 @@ class ClouderSaveSave(models.Model):
     def restore_base(self):
         return
 
+    @api.multi
     def restore(self):
         container_obj = self.env['clouder.container']
         base_obj = self.env['clouder.base']
@@ -676,12 +673,12 @@ class ClouderSaveSave(models.Model):
         self.execute(ssh, ['rm', '-rf', directory + '*'])
         self.execute(ssh, ['mkdir', '-p', directory])
 
-        if self.backup_method() == 'simple':
+        if self.backup_id.backup_method == 'simple':
             self.execute(ssh, [
                 'cp', '-R', '/opt/backup/simple/' + self.repo_id.name +
                 '/' + self.name + '/*', directory])
 
-        if self.backup_method() == 'bup':
+        if self.backup_id.backup_method == 'bup':
             self.execute(ssh, [
                 'export BUP_DIR=/opt/backup/bup;',
                 'bup restore -C ' + directory + ' ' + self.repo_id.name +
@@ -690,17 +687,18 @@ class ClouderSaveSave(models.Model):
                 'mv', directory + '/' + self.now_bup + '/*', directory])
             self.execute(ssh, ['rm -rf', directory + '/' + self.now_bup])
 
-        self.execute(ssh, ['rsync', '-ra', directory + '/',
-                           container.fullname + ':' + directory])
-        self.execute(ssh, ['rm', '-rf', directory + '*'])
+        self.execute(ssh, [
+            'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
+            directory + '/', container.fullname + ':' + directory])
+        # self.execute(ssh, ['rm', '-rf', directory + '*'])
         self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
         ssh.close()
 
         ssh = self.connect(container.fullname)
 
         if self.repo_id.type == 'container':
-            for volume in container.volume_ids:
-                self.execute(ssh, ['rm', '-rf', volume.name + '/*'])
+            for volume in self.container_volumes_comma.split(','):
+                self.execute(ssh, ['rm', '-rf', volume + '/*'])
         else:
             self.execute(ssh,
                          ['rm', '-rf', '/base-backup/' + self.repo_id.name])
@@ -764,7 +762,7 @@ class ClouderSaveSave(models.Model):
         self.execute(ssh, ['rm', '-rf', directory + '*'])
         self.execute(ssh, ['mkdir', directory])
         if self.repo_id.type == 'container':
-            for volume in self.container_volumes.split(','):
+            for volume in self.container_volumes_comma.split(','):
                 self.execute(ssh, ['cp', '-R', '--parents', volume, directory])
         else:
             self.execute(ssh, ['cp', '-R',
@@ -772,7 +770,7 @@ class ClouderSaveSave(models.Model):
                                directory])
 
         self.execute(ssh, [
-            'echo "' + self.now_date() + '" > ' + directory + '/backup-date'])
+            'echo "' + self.now_date + '" > ' + directory + '/backup-date'])
         self.execute(ssh, ['chmod', '-R', '777', directory + '*'])
         ssh.close()
 
@@ -803,11 +801,12 @@ class ClouderSaveSave(models.Model):
 
         self.execute(ssh, ['rm', '-rf', directory])
         self.execute(ssh, ['mkdir', directory])
+
         self.execute(ssh, [
-            'rsync', '-ra',
+            'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
             self.container_id.fullname + ':' + directory + '/', directory])
 
-        if self.backup_method() == 'simple':
+        if self.backup_id.backup_method == 'simple':
             self.execute(ssh, [
                 'mkdir', '-p', '/opt/backup/simple/' +
                 self.repo_id.name + '/' + self.name])
@@ -821,7 +820,7 @@ class ClouderSaveSave(models.Model):
                 '/opt/backup/simple/' + self.repo.name + '/' + self.name,
                 '/opt/backup/simple/' + self.repo_id.name + '/latest'])
 
-        if self.backup_method() == 'bup':
+        if self.backup_id.backup_method == 'bup':
             self.execute(ssh, ['export BUP_DIR=/opt/backup/bup;',
                                'bup index ' + directory])
             self.execute(ssh, [
@@ -829,7 +828,7 @@ class ClouderSaveSave(models.Model):
                 'bup save -n ' + self.repo_id.name + ' -d ' +
                 str(int(self.now_epoch)) + ' --strip ' + directory])
 
-        self.execute(ssh, ['rm', '-rf', directory + '*'])
+        # self.execute(ssh, ['rm', '-rf', directory + '*'])
         self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
         ssh.close()
 
@@ -837,7 +836,7 @@ class ClouderSaveSave(models.Model):
         self.execute(ssh, ['rm', '-rf', directory + '*'])
         ssh.close()
 
-        if self.repo.type == 'base':
+        if self.repo_id.type == 'base':
             ssh = self.connect(
                 self.base_id.service_id.container_id.fullname,
                 username=self.base_id.application_id.type_id.system_user)

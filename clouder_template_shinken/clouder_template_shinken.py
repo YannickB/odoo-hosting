@@ -36,11 +36,13 @@ class ClouderServer(models.Model):
         super(ClouderServer, self).deploy()
 
         if self.supervision_id:
-            ssh = self.connect(self.supervision_id.fullname)
-            self.send(ssh, modules.get_module_path('clouder_shinken') +
+            ssh = self.connect(self.supervision_id.fullname,
+                               username='shinken')
+            self.send(ssh,
+                      modules.get_module_path('clouder_template_shinken') +
                       '/res/server-shinken.config', self.shinken_configfile)
             self.execute(ssh, ['sed', '-i',
-                               '"s/NAME/' + self.server_id.name + '/g"',
+                               '"s/NAME/' + self.name + '/g"',
                                self.shinken_configfile])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
             ssh.close()
@@ -49,7 +51,8 @@ class ClouderServer(models.Model):
     def purge(self):
 
         if self.supervision_id:
-            ssh = self.connect(self.supervision_id.fullname)
+            ssh = self.connect(self.supervision_id.fullname,
+                               username='shinken')
             self.execute(ssh, ['rm', self.shinken_configfile])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
             ssh.close()
@@ -62,6 +65,26 @@ class ClouderContainer(models.Model):
     def shinken_configfile(self):
         return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
 
+    @api.multi
+    def deploy_post(self):
+        if self.application_id.type_id.name == 'shinken':
+            ssh = self.connect(self.fullname,
+                               username='shinken')
+            self.send(ssh,
+                      modules.get_module_path('clouder_template_shinken') +
+                      '/res/general-shinken.config',
+                      '/usr/local/shinken/etc/services/clouder.cfg')
+            self.send(ssh,
+                      modules.get_module_path('clouder_template_shinken') +
+                      '/res/control_backup.sh',
+                      '/home/shinken/control_backup.sh')
+            self.execute(ssh, ['chmod', '+x',
+                               '/home/shinken/control_backup.sh'])
+            self.execute(ssh, ['rm',
+                               '/usr/local/shinken/etc/hosts/localhost.cfg'])
+            ssh.close()
+
+
 
 class ClouderBase(models.Model):
     _inherit = 'clouder.base'
@@ -71,6 +94,40 @@ class ClouderBase(models.Model):
         return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
 
 
+def send_key_to_shinken(ssh, self):
+    for backup in self.backup_ids:
+        self.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' +
+                           backup.fullname + '*'])
+        self.send(
+            ssh, self.home_directory + '/.ssh/keys/' +
+            backup.fullname + '.pub', '/home/shinken/.ssh/keys/' +
+            backup.fullname + '.pub')
+        self.send(ssh, self.home_directory + '/.ssh/keys/' +
+                  backup.fullname, '/home/shinken/.ssh/keys/' +
+                  backup.fullname)
+        self.execute(ssh, ['chmod', '-R', '700', '/home/shinken/.ssh'])
+        self.execute(ssh, [
+            'sed', '-i', "'/Host " + backup.fullname +
+            "/,/END " + backup.fullname + "/d'",
+            '/home/shinken/.ssh/config'])
+        self.execute(ssh, [
+            'echo "Host ' + backup.fullname +
+            '" >> /home/shinken/.ssh/config'])
+        self.execute(ssh, [
+            'echo "    Hostname ' +
+            backup.server_id.name + '" >> /home/shinken/.ssh/config'])
+        self.execute(ssh, [
+            'echo "    Port ' + str(backup.ssh_port) +
+            '" >> /home/shinken/.ssh/config'])
+        self.execute(ssh, [
+            'echo "    User backup" >> /home/shinken/.ssh/config'])
+        self.execute(ssh, [
+            'echo "    IdentityFile  ~/.ssh/keys/' +
+            backup.fullname + '" >> /home/shinken/.ssh/config'])
+        self.execute(ssh, ['echo "#END ' + backup.fullname +
+                           '" >> ~/.ssh/config'])
+
+
 class ClouderContainerLink(models.Model):
     _inherit = 'clouder.container.link'
 
@@ -78,48 +135,52 @@ class ClouderContainerLink(models.Model):
     def deploy_link(self):
         super(ClouderContainerLink, self).deploy_link()
         if self.name.name.code == 'shinken':
-            ssh = self.connect(self.target.fullname)
+            ssh = self.connect(self.target.fullname,
+                               username='shinken')
             file = 'container-shinken'
             if self.container_id.nosave:
                 file = 'container-shinken-nosave'
             self.send(ssh,
-                      modules.get_module_path('clouder_shinken') + '/res/' +
-                      file + '.config',
-                      self.container_id.shinken_configfile())
+                      modules.get_module_path('clouder_template_shinken') +
+                      '/res/' + file + '.config',
+                      self.container_id.shinken_configfile)
             self.execute(ssh, [
-                'sed', '-i',
-                '"s/METHOD/' + self.container_id.backup_ids[0]
-                         .options['restore_method']['value'] + '/g"',
-                self.container_id.shinken_configfile()])
+                'sed', '-i', '"s/METHOD/' +
+                self.container_id.backup_ids[0].backup_method + '/g"',
+                self.container_id.shinken_configfile])
             self.execute(ssh, ['sed', '-i', '"s/TYPE/container/g"',
-                               self.container_id.shinken_configfile()])
+                               self.container_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/CONTAINER/' + self.container_id.backup_ids[0]
                          .fullname + '/g"',
-                self.container_id.shinken_configfile()])
+                self.container_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/UNIQUE_NAME/' + self.container_id.fullname + '/g"',
-                self.container_id.shinken_configfile()])
+                self.container_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/HOST/' + self.container_id.server_id.name + '/g"',
-                self.container_id.shinken_configfile()])
+                self.container_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/PORT/' + str(self.container_id.ssh_port) + '/g"',
-                self.container_id.shinken_configfile()])
+                self.container_id.shinken_configfile])
 
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+
+            send_key_to_shinken(ssh, self.container_id)
+
             ssh.close()
 
     @api.multi
     def purge_link(self):
         super(ClouderContainerLink, self).purge_link()
         if self.name.name.code == 'shinken':
-            ssh = self.connect(self.target.fullname)
-            self.execute(ssh, ['rm', self.container_id.shinken_configfile()])
+            ssh = self.connect(self.target.fullname,
+                               username='shinken')
+            self.execute(ssh, ['rm', self.container_id.shinken_configfile])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
             ssh.close()
 
@@ -131,49 +192,53 @@ class ClouderBaseLink(models.Model):
     def deploy_link(self):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'shinken':
-            ssh = self.connect(self.target.fullname)
+            ssh = self.connect(self.target.fullname,
+                               username='shinken')
             file = 'base-shinken'
             if self.base_id.nosave:
                 file = 'base-shinken-nosave'
             self.send(ssh,
-                      modules.get_module_path('clouder_shinken') +
+                      modules.get_module_path('clouder_template_shinken') +
                       '/res/' + file + '.config',
-                      self.base_id.shinken_configfile())
+                      self.base_id.shinken_configfile)
             self.execute(ssh, ['sed', '-i', '"s/TYPE/base/g"',
-                               self.base_id.shinken_configfile()])
+                               self.base_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/UNIQUE_NAME/' + self.base_id.unique_name_() + '/g"',
-                self.base_id.shinken_configfile()])
+                self.base_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/DATABASES/' + self.base_id.databases_comma() + '/g"',
-                self.base_id.shinken_configfile()])
+                self.base_id.shinken_configfile])
             self.execute(ssh,
                          ['sed', '-i', '"s/BASE/' + self.base_id.name + '/g"',
-                          self.base_id.shinken_configfile()])
+                          self.base_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/DOMAIN/' + self.base_id.domain_id.name + '/g"',
-                self.base_id.shinken_configfile()])
+                self.base_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i', '"s/METHOD/' +
-                self.base_id.backup_ids[0]
-                         .options['restore_method']['value'] + '/g"',
-                self.base_id.shinken_configfile()])
+                self.base_id.backup_ids[0].backup_method + '/g"',
+                self.base_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
                 '"s/CONTAINER/' + self.base_id
                          .backup_ids[0].fullname + '/g"',
-                self.base_id.shinken_configfile()])
+                self.base_id.shinken_configfile])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+
+            send_key_to_shinken(ssh, self.base_id)
+
             ssh.close()
 
     @api.multi
     def purge_link(self):
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'shinken':
-            ssh = self.connect(self.target.fullname)
-            self.execute(ssh, ['rm', self.base_id.shinken_configfile()])
+            ssh = self.connect(self.target.fullname,
+                               username='shinken')
+            self.execute(ssh, ['rm', self.base_id.shinken_configfile])
             self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
             ssh.close()

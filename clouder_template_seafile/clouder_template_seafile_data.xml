@@ -6,9 +6,6 @@
         <record id="apptype_seafile" model="clouder.application.type">
             <field name="name">seafile</field>
             <field name="system_user">seafile</field>
-            <field name="admin_name">heathcliff</field>
-            <field name="admin_email">yannick.buron@gmail.com</field>
-            <field name="standard_port">80</field>
             <field name="localpath">/opt/versions</field>
             <field name="localpath_services">/opt/seafile</field>
             <field name="multiple_databases">ccnet,seafile,seahub</field>
@@ -102,7 +99,6 @@ VOLUME /base-backup
             <field name="type_id" ref="apptype_seafile"/>
             <field name="bdd">mysql</field>
             <field name="default_image_id" ref="image_seafile"/>
-            <field name="linked_local_containers">postfix,mysql</field>
             <field name="current_version">3.1.3</field>
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>

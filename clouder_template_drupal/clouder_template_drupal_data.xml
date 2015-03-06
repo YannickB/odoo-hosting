@@ -6,9 +6,6 @@
         <record id="apptype_drupal" model="clouder.application.type">
             <field name="name">drupal</field>
             <field name="system_user">www-data</field>
-            <field name="admin_name">yodadmin</field>
-            <field name="admin_email">yannick.buron@gmail.com</field>
-            <field name="standard_port">80</field>
             <field name="localpath">/opt/versions</field>
             <field name="localpath_services">/var/www</field>
         </record>

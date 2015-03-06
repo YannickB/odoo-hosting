@@ -21,6 +21,7 @@
 
 
 from openerp import models, fields, api, _
+from openerp import modules
 
 
 class ClouderContainer(models.Model):
@@ -53,4 +54,11 @@ class ClouderContainer(models.Model):
                 self.options['mailchimp_apikey']['value'] +
                 '" > /etc/postfix/sasl_passwd'])
             self.execute(ssh, ['postmap /etc/postfix/sasl_passwd'])
+
+            self.send(ssh,
+                      modules.get_module_path('clouder_template_postfix') +
+                      '/res/openerp_mailgate.py',
+                      '/bin/openerp_mailgate.py')
+
+            self.execute(ssh, ['chmod', '+x', '/bin/openerp_mailgate.py'])
             ssh.close()

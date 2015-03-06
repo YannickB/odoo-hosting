@@ -1,7 +1,7 @@
 #!/bin/bash
 IFS=","
 
-repo=( $(ssh $3 cat /opt/backup/list/$4/repo) )
+repo=( $(ssh -o StrictHostKeyChecking=no $3 cat /opt/backup/list/$4/repo) )
 
 directory=/opt/backup/simple/$repo/latest
 if [[ $1 == 'bup' ]]

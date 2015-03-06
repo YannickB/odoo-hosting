@@ -93,8 +93,8 @@ class ClouderConfigSettings(models.Model):
     def reset_keys(self):
 
         containers = self.env['clouder.container'].search([])
-        if containers:
-            containers.deploy_key()
+        for container in containers:
+            container.deploy_key()
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.env.ref('clouder.clouder_settings').end_reset_keys = now
@@ -107,9 +107,8 @@ class ClouderConfigSettings(models.Model):
         backups = self.env['clouder.container'].search(
             [('application_id.type_id.name', '=', 'backup')])
         for backup in backups:
-            vals = backup.get_vals()
-            ssh = backup.connect(vals['container_fullname'],
-                                       username='backup')
+            ssh = backup.connect(backup.fullname,
+                                 username='backup')
             backup.execute(ssh,
                            ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
                             '-r'])
@@ -125,18 +124,18 @@ class ClouderConfigSettings(models.Model):
 
         containers = self.env['clouder.container'].search(
             [('nosave', '=', False)])
-        if containers:
-            containers.save()
+        for container in containers:
+            container.save()
 
         bases = self.env['clouder.base'].search([('nosave', '=', False)])
-        if bases:
-            bases.save()
+        for base in bases:
+            base.save()
 
         links = self.env['clouder.container.link'].search(
             [('container_id.application_id.type_id.name', '=', 'backup'),
-             ('name.application_id.code', '=', 'backup-upl')])
+             ('name.name.code', '=', 'backup-upl')])
         for link in links:
-            link.deploy()
+            link.deploy_()
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.env.ref('clouder.clouder_settings').end_save_all = now
@@ -163,14 +162,14 @@ class ClouderConfigSettings(models.Model):
             ('date_next_save', '!=', False),
             ('date_next_save', '<',
              self.now_date + ' ' + self.now_hour_regular)])
-        if containers:
-            containers.save()
+        for container in containers:
+            container.save()
         bases = self.env['clouder.base'].search([
             ('date_next_save', '!=', False),
             ('date_next_save', '<',
              self.now_date + ' ' + self.now_hour_regular)])
-        if bases:
-            bases.save()
+        for base in bases:
+            base.save()
 
     @api.multi
     def reset_bases(self):

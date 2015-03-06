@@ -6,9 +6,6 @@
         <record id="apptype_proxy" model="clouder.application.type">
             <field name="name">proxy</field>
             <field name="system_user">www-data</field>
-            <field name="admin_name">admin</field>
-            <field name="admin_email">admin@localhost</field>
-            <field name="standard_port">80</field>
         </record>
 
         <record id="app_proxy" model="clouder.application">

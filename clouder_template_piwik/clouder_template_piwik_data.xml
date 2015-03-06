@@ -6,9 +6,6 @@
         <record id="apptype_piwik" model="clouder.application.type">
             <field name="name">piwik</field>
             <field name="system_user">www-data</field>
-            <field name="admin_name">yodadmin</field>
-            <field name="admin_email">yannick.buron@gmail.com</field>
-            <field name="standard_port">80</field>
             <field name="localpath">/opt/versions</field>
             <field name="localpath_services">/var/www</field>
         </record>
@@ -86,7 +83,6 @@ VOLUME /base-backup
             <field name="code">piwik</field>
             <field name="type_id" ref="apptype_piwik"/>
             <field name="default_image_id" ref="image_piwik"/>
-            <field name="linked_local_containers">postfix,postgres</field>
             <field name="current_version">8.0</field>
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>

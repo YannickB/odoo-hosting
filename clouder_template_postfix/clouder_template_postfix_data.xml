@@ -6,31 +6,26 @@
         <record id="apptype_postfix" model="clouder.application.type">
             <field name="name">postfix</field>
             <field name="system_user">postfix</field>
-            <field name="admin_name">postfix</field>
-            <field name="admin_email">postfix@localhost</field>
-            <field name="standard_port">25</field>
         </record>
         <record id="apptype_postfix_option1" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_postfix"/>
             <field name="name">mailchimp_username</field>
             <field name="type">container</field>
+            <field name="auto" eval="True"/>
         </record>
         <record id="apptype_postfix_option2" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_postfix"/>
             <field name="name">mailchimp_apikey</field>
             <field name="type">container</field>
+            <field name="auto" eval="True"/>
         </record>
 
 
         <record id="image_postfix" model="clouder.image">
             <field name="name">img_postfix</field>
             <field name="current_version">1</field>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
-
-
-
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
 
 # Install Postfix.
 run echo "postfix postfix/main_mailer_type string Internet site" > preseed.txt
@@ -67,10 +62,6 @@ RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:postfix]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/etc/init.d/postfix start" >> /etc/supervisor/conf.d/supervisord.conf
 
-ADD ./clouder/clouder_postfix/res/openerp_mailgate.py /bin/openerp_mailgate.py
-RUN chmod +x /bin/openerp_mailgate.py
-
-
 USER root
 ]]></field>
         </record>
@@ -96,7 +87,7 @@ USER root
         </record>
 
         <record id="app_postfix" model="clouder.application">
-            <field name="name">postfix</field>
+            <field name="name">Postfix</field>
             <field name="code">postfix</field>
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_postfix"/>
@@ -110,5 +101,6 @@ USER root
             <field name="base_saverepo_expiration">90</field>
             <field name="base_save_expiration">5</field>
         </record>
+
     </data>
 </openerp>

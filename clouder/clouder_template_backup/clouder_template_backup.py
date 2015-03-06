@@ -29,6 +29,22 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
+class ClouderContainer(models.Model):
+
+    _inherit = 'clouder.container'
+
+    @property
+    def backup_method(self):
+
+        backup_method = False
+        if self.application_id.code == 'backup-sim':
+            backup_method = 'simple'
+        if self.application_id.code == 'backup-bup':
+            backup_method = 'bup'
+
+        return backup_method
+
+
 class ClouderContainerLink(models.Model):
     _inherit = 'clouder.container.link'
 
@@ -53,8 +69,9 @@ class ClouderContainerLink(models.Model):
                       self.target.fullname,
                       '/home/backup/.ssh/keys/' + self.target.fullname)
             self.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'])
-            self.execute(ssh, ['rsync', '-ra', '/opt/backup/',
-                               self.target.fullname + ':' + directory])
+            self.execute(ssh, [
+                'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
+                '/opt/backup/', self.target.fullname + ':' + directory])
             self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
             ssh.close()
 

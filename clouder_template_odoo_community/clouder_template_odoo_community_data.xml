@@ -9,7 +9,6 @@
             <field name="code">odoo-community</field>
             <field name="type_id" ref="clouder_template_odoo.apptype_odoo"/>
             <field name="default_image_id" ref="clouder_template_odoo.image_odoo"/>
-            <field name="linked_local_containers">postfix,postgres</field>
             <field name="current_version">8.0</field>
             <field name="buildfile"><![CDATA[
 [buildout]

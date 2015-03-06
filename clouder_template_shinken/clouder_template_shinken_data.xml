@@ -6,19 +6,13 @@
         <record id="apptype_shinken" model="clouder.application.type">
             <field name="name">shinken</field>
             <field name="system_user">shinken</field>
-            <field name="admin_name">admin</field>
-            <field name="admin_email">admin@localhost</field>
-            <field name="standard_port">7767</field>
         </record>
 
         <record id="image_shinken" model="clouder.image">
             <field name="name">img_shinken</field>
             <field name="current_version">1</field>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
-
-
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install curl nagios-nrpe-plugin lsb-release
@@ -26,10 +20,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install curl nagios-nrpe-plugin
 # Install Shinken from the installation script
 RUN export TERM=xterm
 RUN curl -L http://install.shinken-monitoring.org | /bin/bash
-
-ADD ./clouder/clouder_shinken/res/general-shinken.config /usr/local/shinken/etc/services/yolo.cfg
-ADD ./clouder/clouder_shinken/res/control_backup.sh /opt/control_backup.sh
-RUN chmod 777 /opt/control_backup.sh
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:shinken]" >> /etc/supervisor/conf.d/supervisord.conf
@@ -66,12 +56,11 @@ USER root
 
 
         <record id="app_shinken" model="clouder.application">
-            <field name="name">shinken</field>
+            <field name="name">Shinken</field>
             <field name="code">shinken</field>
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_shinken"/>
             <field name="default_image_id" ref="image_shinken"/>
-            <field name="linked_local_containers">postfix</field>
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>
             <field name="container_saverepo_expiration">90</field>
@@ -81,12 +70,26 @@ USER root
             <field name="base_saverepo_expiration">90</field>
             <field name="base_save_expiration">5</field>
         </record>
-        <record id="app_odoo_link1" model="clouder.application.link">
+        <record id="app_shinken_link1" model="clouder.application.link">
             <field name="application_id" ref="app_shinken"/>
-            <field name="name" ref="clouder_postfix.app_postfix"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>
+        <record id="app_shinken_link2" model="clouder.application.link">
+            <field name="application_id" ref="app_shinken"/>
+            <field name="name" ref="app_shinken"/>
+            <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
+        </record>
 
+        <record id="app_postfix_link1" model="clouder.application.link">
+            <field name="application_id" ref="clouder_template_postfix.app_postfix"/>
+            <field name="name" ref="app_shinken"/>
+            <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
+        </record>
 
     </data>
 </openerp>
