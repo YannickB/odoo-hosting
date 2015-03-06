@@ -13,6 +13,8 @@
             <field name="current_version">1</field>
             <field name="parent_id" ref="image_base"/>
             <field name="dockerfile"><![CDATA[
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-virtualenv bzr git python-dev
+
 RUN mkdir /opt/archives
 ]]></field>
 </record>

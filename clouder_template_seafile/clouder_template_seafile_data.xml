@@ -25,6 +25,7 @@
         <record id="image_seafile" model="clouder.image">
             <field name="name">img_seafile</field>
             <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[FROM yolobase:latest
 MAINTAINER yannick.buron@gmail.com
 

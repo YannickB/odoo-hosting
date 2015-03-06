@@ -31,38 +31,50 @@ class ClouderApplicationVersion(models.Model):
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'odoo':
             ssh = self.connect(self.archive_id.fullname)
+
             self.execute(ssh,
                          ['mkdir', '-p', self.full_archivepath + '/extra'])
-            self.execute(ssh, [
-                'echo "' + self.application_id.buildfile + '" >> ' +
-                self.full_archivepath + '/buildout.cfg'])
-            self.execute(ssh, ['wget',
-                               'https://raw.github.com/buildout/buildout/'
-                               'master/bootstrap/bootstrap.py'],
-                         path=self.full_archivepath)
-            self.execute(ssh, ['virtualenv', 'sandbox'],
-                         self.full_archivepath)
             self.execute(ssh,
-                         ['yes | sandbox/bin/pip uninstall setuptools pip'],
-                         path=self.full_archivepath, shell=True)
-            self.execute(ssh, ['sandbox/bin/python', 'bootstrap.py'],
-                         self.full_archivepath)
-            self.execute(ssh, ['bin/buildout'], self.full_archivepath)
+                         ['mkdir', '-p', self.full_archivepath + '/parts'])
+            for command in self.application_id.buildfile.split('\n'):
+                if command.startswith('git'):
+                    self.execute(ssh, [command],
+                                 path=self.full_archivepath)
 
-            self.execute(ssh, ['patch', self.full_archivepath +
-                               '/parts/odoo/openerp/http.py', '<',
-                               modules.get_module_path('clouder_odoo') +
-                               '/res/http.patch'])
-            self.execute(ssh, ['sed', '-i',
-                               '"s/' + self.archive_path.replace('/', '\/') +
-                               '/' + self.application_id.type_id.localpath
-                               .replace('/', '\/') + '/g"',
-                               self.full_archivepath + '/bin/start_odoo'])
-            self.execute(ssh, ['sed', '-i',
-                               '"s/' + self.archive_path.replace('/', '\/') +
-                               '/' + self.application_id.type_id.localpath.
-                               replace('/', '\/') + '/g"',
-                               self.full_archivepath + '/bin/buildout'])
+            # Support for anybox recipes. We don't use it anymore because
+            # it's slow without any real added value
+            # self.execute(ssh, [
+            #     'echo "' + self.application_id.buildfile + '" >> ' +
+            #     self.full_archivepath + '/buildout.cfg'])
+            # self.execute(ssh, ['wget',
+            #                    'https://raw.github.com/buildout/buildout/'
+            #                    'master/bootstrap/bootstrap.py'],
+            #              path=self.full_archivepath)
+            # self.execute(ssh, ['virtualenv', 'sandbox'],
+            #              path=self.full_archivepath)
+            # self.execute(ssh,
+            #              ['yes | sandbox/bin/pip uninstall setuptools pip'],
+            #              path=self.full_archivepath)
+            # self.execute(ssh, ['sandbox/bin/python', 'bootstrap.py'],
+            #              path=self.full_archivepath)
+            # self.execute(ssh, ['bin/buildout'], path=self.full_archivepath)
+            # self.execute(ssh, ['sed', '-i',
+            #                    '"s/' + self.archive_path.replace('/', '\/') +
+            #                    '/' + self.application_id.type_id.localpath
+            #                    .replace('/', '\/') + '/g"',
+            #                    self.full_archivepath + '/bin/start_odoo'])
+            # self.execute(ssh, ['sed', '-i',
+            #                    '"s/' + self.archive_path.replace('/', '\/') +
+            #                    '/' + self.application_id.type_id.localpath.
+            #                    replace('/', '\/') + '/g"',
+            #                    self.full_archivepath + '/bin/buildout'])
+
+            self.send(ssh, modules.get_module_path('clouder_template_odoo') +
+                '/res/http.patch', self.full_archivepath + '/parts/http.patch')
+            self.execute(ssh, [
+                'patch', self.full_archivepath + '/parts/odoo/openerp/http.py',
+                '<', self.full_archivepath + '/parts/http.patch'])
+
             ssh.close()
         return
 
@@ -74,42 +86,46 @@ class ClouderService(models.Model):
     @api.multi
     def deploy_post_service(self):
         super(ClouderService, self).deploy_post_service()
-        if self.application_id.type_id.name == 'odoo':
+        if self.container_id.application_id.type_id.name == 'odoo':
             ssh = self.connect(
                 self.container_id.fullname,
-                username=self.application_id.type_id.system_user)
+                username=self.container_id.application_id.type_id.system_user)
             # self.execute(ssh, ['ln', '-s', vals['app_version_full_localpath'], '/opt/odoo/services/' + self.name])
             # self.execute(ssh, ['mkdir', '/opt/odoo/' + self.name + '/extra'])
 
             config_file = '/opt/odoo/' + self.name + '/etc/config'
             self.execute(ssh,
                          ['mkdir', '-p', '/opt/odoo/' + self.name + '/etc'])
-            self.send(ssh, modules.get_module_path('clouder_odoo') +
+            self.send(ssh, modules.get_module_path('clouder_template_odoo') +
                       '/res/openerp.config', config_file)
             addons_path = '/opt/odoo/' +\
                           self.name + '/files/parts/odoo/addons,'
+            sftp = ssh.open_sftp()
             for dir in sftp.listdir('/opt/odoo/' + self.name + '/files/extra'):
                 addons_path += '/opt/odoo/' + self.name +\
                                '/files/extra/' + dir + ','
+            sftp.close()
             self.execute(ssh, ['sed', '-i', '"s/ADDONS_PATH/' +
                                addons_path.replace('/', '\/') + '/g"',
                                config_file])
             self.execute(ssh, ['sed', '-i', '"s/APPLICATION/' +
-                               self.application_id.code + '/g"', config_file])
+                               self.container_id.application_id.code +
+                               '/g"', config_file])
             self.execute(ssh, ['sed', '-i', 's/SERVICE/' + self.name + '/g',
                                config_file])
             self.execute(ssh, ['sed', '-i', 's/DATABASE_SERVER/' +
-                               self.service_id.database_server() + '/g',
+                               self.database_server + '/g',
                                config_file])
             self.execute(ssh, ['sed', '-i',
-                               's/DBUSER/' + self.service_id.db_user() + '/g',
+                               's/DBUSER/' + self.db_user + '/g',
                                config_file])
             self.execute(ssh, ['sed', '-i', 's/DATABASE_PASSWORD/' +
-                               self.service_id.database_password + '/g',
+                               self.database_password + '/g',
                                config_file])
             self.execute(ssh, ['sed', '-i', 's/PORT/' +
-                               self.service_id.options['port']['localport'] +
-                               '/g', config_file])
+                               self.container_id.ports[
+                                   self.options['port']['value']
+                               ]['localport'] + '/g', config_file])
             self.execute(ssh, ['mkdir', '-p',
                                '/opt/odoo/' + self.name + '/filestore'])
 
@@ -127,10 +143,10 @@ class ClouderService(models.Model):
     @api.multi
     def purge_pre_service(self):
         super(ClouderService, self).purge_pre_service()
-        if self.application_id.type_id.name == 'odoo':
+        if self.container_id.application_id.type_id.name == 'odoo':
             ssh = self.connect(
                 self.container_id.fullname,
-                username=self.application_id.type_id.system_user)
+                username=self.container_id.application_id.type_id.system_user)
             self.execute(ssh, ['sed', '-i', '"/program:' + self.name + '/d"',
                                '/opt/odoo/supervisor.conf'])
             self.execute(ssh, [

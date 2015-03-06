@@ -66,7 +66,7 @@ class ClouderBase(models.Model):
             install_args = [
                 '\n', self.title + '\n', self.fulldomain() + '\n', '\n', '\n',
                 '\n', '\n', '2\n', 'mysql\n', '\n',
-                self.service_id.db_user() + '\n',
+                self.service_id.db_user + '\n',
                 self.service_id.database_password + '\n',
                 self.databases()['ccnet'] + '\n',
                 self.databases()['seafile'] + '\n',
@@ -132,7 +132,7 @@ class ClouderBase(models.Model):
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, [
                 'sed', '-i',
-                '"/program:' + self.uniquefullname-seafile/d"',
+                '"/program:' + self.fullname + '-seafile/d"',
                 '/opt/seafile/supervisor.conf'])
             self.execute(ssh, [
                 'sed', '-i',

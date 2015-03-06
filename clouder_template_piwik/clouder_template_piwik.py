@@ -101,31 +101,31 @@ class ClouderBaseLink(models.Model):
         if self.name.name.code == 'piwik':
             ssh = self.connect(self.target.fullname)
             piwik_id = self.execute(ssh, [
-                'mysql', self.target_base().fullname_,
-                '-h ' + self.target_base().service_id.database_server(),
-                '-u ' + self.target_base().service_id.db_user(),
-                '-p' + self.target_base().service_id.database_password,
+                'mysql', self.target_base.fullname_,
+                '-h ' + self.target_base.service_id.database_server,
+                '-u ' + self.target_base.service_id.db_user,
+                '-p' + self.target_base.service_id.database_password,
                 '-se', '"select idsite from piwik_site WHERE name = \'' +
                 self.base_id.fulldomain() + '\' LIMIT 1;"'])
             if not piwik_id:
                 self.execute(ssh, [
-                    'mysql', self.target_base().fullname_,
-                    '-h ' + self.target_base().service_id.database_server(),
-                    '-u ' + self.target_base().service_id.db_user(),
-                    '-p' + self.target_base().service_id.database_password,
+                    'mysql', self.target_base.fullname_,
+                    '-h ' + self.target_base.service_id.database_server,
+                    '-u ' + self.target_base.service_id.db_user,
+                    '-p' + self.target_base.service_id.database_password,
                     '-se', '"INSERT INTO piwik_site (name, main_url, '
                            'ts_created, timezone, currency) VALUES (\'' +
                     self.base_id.fulldomain() + '\', \'http://' +
                     self.base_id.fulldomain() +
                     '\', NOW(), \'Europe/Paris\', \'EUR\');"'])
                 piwik_id = self.execute(ssh, [
-                    'mysql', self.target_base().fullname_,
-                    '-h ' + self.target_base().service_id.database_server(),
-                    '-u ' + self.target_base().service_id.db_user(),
-                    '-p' + self.target_base().service_id.database_password,
+                    'mysql', self.target_base.fullname_,
+                    '-h ' + self.target_base.service_id.database_server,
+                    '-u ' + self.target_base.service_id.db_user,
+                    '-p' + self.target_base.service_id.database_password,
                     '-se', '"select idsite from piwik_site WHERE name = \'' +
                     self.base_id.fulldomain() + '\' LIMIT 1;"'])
-            #            self.execute(ssh, ['mysql', self.target_base().fullname_, '-h ' + self.target_base().service_id.database_server(), '-u ' + self.target_base().service_id.db_user(), '-p' + vals['link_target_service_db_password'], '-se',
+            #            self.execute(ssh, ['mysql', self.target_base.fullname_, '-h ' + self.target_base.service_id.database_server, '-u ' + self.target_base.service_id.db_user, '-p' + vals['link_target_service_db_password'], '-se',
             #                '"INSERT INTO piwik_access (login, idsite, access) VALUES (\'anonymous\', ' + piwik_id + ', \'view\');"'])
 
             ssh.close()
@@ -138,14 +138,14 @@ class ClouderBaseLink(models.Model):
         if self.name.name.code == 'piwik':
             ssh = self.connect(self.target.fullname)
             piwik_id = self.execute(ssh, [
-                'mysql', self.target_base().fullname_,
-                '-h ' + self.target_base().service_id.database_server(),
-                '-u ' + self.target_base().service_id.db_user(),
-                '-p' + self.target_base().service_id.database_password,
+                'mysql', self.target_base.fullname_,
+                '-h ' + self.target_base.service_id.database_server,
+                '-u ' + self.target_base.service_id.db_user,
+                '-p' + self.target_base.service_id.database_password,
                 '-se', '"select idsite from piwik_site WHERE name = \'' +
                 self.base_id.fulldomain() + '\' LIMIT 1;"'])
             # if piwik_id:
-            #     execute.execute(ssh, ['mysql', self.target_base().fullname_, '-h ' + self.target_base().service_id.database_server(), '-u ' + self.target_base().service_id.db_user(), '-p' + self.target_base().service_id.database_password, '-se',
+            #     execute.execute(ssh, ['mysql', self.target_base.fullname_, '-h ' + self.target_base.service_id.database_server, '-u ' + self.target_base.service_id.db_user, '-p' + self.target_base.service_id.database_password, '-se',
             #         '"DELETE FROM piwik_access WHERE idsite = ' + piwik_id + ';"'])
 
             ssh.close()

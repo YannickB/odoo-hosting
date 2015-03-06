@@ -62,7 +62,7 @@
                             <field name="link_ids" colspan="4">
                                 <tree string="Links" editable="bottom">
                                     <field name="name" domain="[('application_id','=',parent.application_id),('base','=',True)]"/>
-                                    <field name="target"/>
+                                    <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
                                     <button name="deploy_" type="object" string="Reload"/>
                                 </tree>
                             </field>
@@ -126,6 +126,7 @@
                         <field name="parent_id"/>
                         <button name="deploy_to_parent" string="Deploy to parent" type="object" attrs="{'invisible': [('parent_id','=', False)]}"/>
                         <field name="public"/>
+                        <newline/>
                         <field name="partner_id"/>
                         <field name="partner_ids"/>
                     </group>
@@ -144,8 +145,8 @@
                     </field>
                     <field name="link_ids" colspan="4">
                         <tree string="Links" editable="bottom">
-                            <field name="name" domain="[('application_id','=',parent.application_id),('service','=',True)]"/>
-                            <field name="target"/>
+                            <field name="name" domain="[('application_id.container_ids','=',parent.container_id),('service','=',True)]"/>
+                            <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
                             <button name="deploy_" type="object" string="Reload"/>
                         </tree>
                     </field>
@@ -223,7 +224,7 @@
                             <field name="link_ids" colspan="4">
                                 <tree string="Links" editable="bottom">
                                     <field name="name" domain="[('application_id','=',parent.application_id),('container','=',True)]"/>
-                                    <field name="target"/>
+                                    <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
                                     <button name="deploy_" type="object" string="Reload"/>
                                 </tree>
                             </field>
@@ -609,7 +610,7 @@
                             <field name="buildfile" colspan="4"/>
                             <newline/>
                             <group>
-                                <field name="archive_id"/>
+                                <field name="archive_id" domain="[('application_id.type_id.name','=','archive')]"/>
                             </group>
                             <button name="build" string="Build" type="object"/>
                             <field name="version_ids" colspan="4"/>

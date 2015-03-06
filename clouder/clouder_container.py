@@ -358,7 +358,7 @@ class ClouderContainer(models.Model):
 
             links = []
             for app_link in self.application_id.link_ids:
-                if app_link.container and app_link.auto:
+                if app_link.container and app_link.auto or app_link.make_link:
                     test = False
                     for link in self.link_ids:
                         if link.name == app_link:
@@ -692,7 +692,8 @@ class ClouderContainer(models.Model):
                 cmd.extend(['-v', arg])
         for link in self.link_ids:
             if link.name.make_link and link.target.server_id== self.server_id:
-                cmd.extend(['--link', link.target.name + ':' + link.name.code])
+                cmd.extend(['--link', link.target.name +
+                            ':' + link.name.name.code])
         if self.privileged:
             cmd.extend(['--privileged'])
         cmd.extend(['-v', '/opt/keys/' + self.fullname +

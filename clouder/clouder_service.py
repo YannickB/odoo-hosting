@@ -37,23 +37,23 @@ class ClouderService(models.Model):
 
     @api.multi
     def name_get(self):
-        return (self.id, self.name + ' [' + self.container_id.name +
-                '_' + self.container_id.server_id.name + ']')
-
-    @api.multi
-    def name_search(self, name='', args=None, operator='ilike', limit=100):
-        if not args:
-            args = []
-        if name:
-            ids = self.search(
-                ['|', ('name', 'like', name),
-                 '|', ('container_id.name', 'like', name),
-                 ('container_id.server_id.name', 'like', name)] + args,
-                limit=limit)
-        else:
-            ids = self.search(args, limit=limit)
-        result = ids.name_get()
-        return result
+        return [(self.id, self.name + ' [' + self.container_id.name +
+                 '_' + self.container_id.server_id.name + ']')]
+    #
+    # @api.multi
+    # def name_search(self, name='', args=None, operator='ilike', limit=100):
+    #     if not args:
+    #         args = []
+    #     if name:
+    #         ids = self.search(
+    #             ['|', ('name', 'like', name),
+    #              '|', ('container_id.name', 'like', name),
+    #              ('container_id.server_id.name', 'like', name)] + args,
+    #             limit=limit)
+    #     else:
+    #         ids = self.search(args, limit=limit)
+    #     result = ids.name_get()
+    #     return result
 
 
     name = fields.Char('Name', size=64, required=True)
@@ -92,37 +92,38 @@ class ClouderService(models.Model):
 
     @property
     def full_localpath(self):
-        return self.application_id.type_id.localpath_services + '/' + self.name
+        return self.container_id.application_id.type_id.localpath_services +\
+               '/' + self.name
 
     @property
     def full_localpath_files(self):
-        return self.application_id.type_id.localpath_services + \
-               '/' + self.name + '/files'
+        return self.full_localpath + '/files'
 
     @property
     def database(self):
         database = False
+        self.log('test')
         for link in self.link_ids:
             if link.target:
-                if link.name.application_id.code in ['postgres', 'mysql']:
+                if link.name.name.code in ['postgres', 'mysql']:
                     database = link.target
         return database
 
     @property
     def database_type(self):
-        return self.database().application_id.type_id.name
+        return self.database.application_id.type_id.name
 
     @property
     def database_server(self):
-        if self.database().server_id == self.container_id.server_id:
-            return self.database().name
+        if self.database.server_id == self.container_id.server_id:
+            return self.database.application_id.code
         else:
-            return self.database().server_id.name
+            return self.database.server_id.name
 
     @property
     def db_user(self):
         db_user = self.fullname.replace('-', '_')
-        if self.database_type() == 'mysql':
+        if self.database_type == 'mysql':
             db_user = self.container_id.name[:10] + '_' + self.name[:4]
             db_user = db_user.replace('-', '_')
         return db_user
@@ -140,12 +141,6 @@ class ClouderService(models.Model):
                 'id': option.id, 'name': option.name.name,
                 'value': option.value}
 
-        if 'port' in options:
-            test = False
-            for port in self.port_ids:
-                if options['port']['value'] == port.localport:
-                    options['port']['localport'] = port.localport
-                    options['port']['hostport'] = port.hostport
         return options
 
     _sql_constraints = [
@@ -168,18 +163,9 @@ class ClouderService(models.Model):
                   "digits and underscore "))
 
     @api.one
-    @api.constrains('container_id')
-    def _check_application(self):
-        if self.application_id.id != self.container_id.application_id.id:
-            raise except_orm(
-                _('Data error!'),
-                _("The application of service must be the same "
-                  "than the application of container."))
-
-    @api.one
     @api.constrains('application_id', 'application_version_id')
     def _check_application_version(self):
-        if self.application_id.id != \
+        if self.application_id and self.application_id.id != \
                 self.application_version_id.application_id.id:
             raise except_orm(
                 _('Data error!'),
@@ -189,7 +175,7 @@ class ClouderService(models.Model):
     @api.one
     @api.constrains('link_ids')
     def _check_database(self):
-        if not self.database():
+        if not self.database:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify a database in the links "
@@ -229,12 +215,13 @@ class ClouderService(models.Model):
 
 
     @api.multi
-    @api.onchange('application_id')
-    def onchange_application_id(self):
-        if self.application_id:
+    @api.onchange('container_id')
+    def onchange_container_id(self):
+        if self.container_id:
 
             options = []
-            for type_option in self.application_id.type_id.option_ids:
+            for type_option\
+                    in self.container_id.application_id.type_id.option_ids:
                 if type_option.type == 'service' and type_option.auto:
                     test = False
                     for option in self.option_ids:
@@ -246,7 +233,7 @@ class ClouderService(models.Model):
             self.option_ids = options
 
             links = []
-            for app_link in self.application_id.link_ids:
+            for app_link in self.container_id.application_id.link_ids:
                 if app_link.service and app_link.auto:
                     test = False
                     for link in self.link_ids:
@@ -426,39 +413,38 @@ class ClouderService(models.Model):
 
     @api.multi
     def deploy(self):
-        container_obj = self.env['clouder.container']
 
         self.purge()
 
         self.log('Creating database user')
 
         #SI postgres, create user
-        if self.database_type() != 'mysql':
+        if self.database_type != 'mysql':
             ssh = self.connect(
-                self.database().fullname, username='postgres')
+                self.database.fullname, username='postgres')
             self.execute(ssh, [
-                'psql', '-c', '"CREATE USER ' + self.db_user() +
+                'psql', '-c', '"CREATE USER ' + self.db_user +
                 ' WITH PASSWORD \'' + self.database_password + '\' CREATEDB;"'
             ])
             ssh.close()
 
             ssh = self.connect(
                 self.container_id.fullname,
-                username=self.application_id.type_id.system_user)
+                username=self.container_id.application_id.type_id.system_user)
             self.execute(ssh, [
-                'sed', '-i', '"/:*:' + self.db_user() + ':/d" ~/.pgpass'])
+                'sed', '-i', '"/:*:' + self.db_user + ':/d" ~/.pgpass'])
             self.execute(ssh, [
-                'echo "' + self.database_server() + ':5432:*:' +
-                self.db_user() + ':' + self.database_password +
+                'echo "' + self.database_server + ':5432:*:' +
+                self.db_user + ':' + self.database_password +
                 '" >> ~/.pgpass'])
             self.execute(ssh, ['chmod', '700', '~/.pgpass'])
             ssh.close()
 
         else:
-            ssh = self.connect(self.database().fullname)
+            ssh = self.connect(self.database.fullname)
             self.execute(ssh, [
-                "mysql -u root -p'" + self.database().root_password() +
-                "' -se \"create user '" + self.db_user() +
+                "mysql -u root -p'" + self.database.root_password() +
+                "' -se \"create user '" + self.db_user +
                 "' identified by '" + self.database_password + "';\""])
             ssh.close()
 
@@ -466,14 +452,14 @@ class ClouderService(models.Model):
 
         ssh = self.connect(
             self.container_id.fullname,
-            username=self.application_id.type_id.system_user)
+            username=self.container_id.application_id.type_id.system_user)
         self.execute(ssh, ['mkdir', '-p', self.full_localpath])
         ssh.close()
 
         self.deploy_files()
         self.deploy_post_service()
 
-        container_obj.start()
+        self.container_id.start()
 
         # ssh = connect(vals['server_domain'], vals['apptype_system_user'], context=context)
         # if sftp.stat(vals['service_fullpath']):
@@ -495,29 +481,29 @@ class ClouderService(models.Model):
 
         ssh = self.connect(
             self.container_id.fullname,
-            username=self.application_id.type_id.system_user)
+            username=self.container_id.application_id.type_id.system_user)
         self.execute(ssh, ['rm', '-rf', self.full_localpath])
         ssh.close()
 
-        if self.database_type() != 'mysql':
+        if self.database_type != 'mysql':
             ssh = self.connect(
-                self.database().fullname, username='postgres')
+                self.database.fullname, username='postgres')
             self.execute(ssh, [
-                'psql', '-c', '"DROP USER ' + self.db_user() + ';"'])
+                'psql', '-c', '"DROP USER ' + self.db_user + ';"'])
             ssh.close()
 
             ssh = self.connect(
                 self.container_id.fullname,
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, [
-                'sed', '-i', '"/:*:' + self.db_user() + ':/d" ~/.pgpass'])
+                'sed', '-i', '"/:*:' + self.db_user + ':/d" ~/.pgpass'])
             ssh.close()
 
         else:
-            ssh = self.connect(self.database().fullname)
+            ssh = self.connect(self.database.fullname)
             self.execute(ssh, [
-                "mysql -u root -p'" + self.database().root_password +
-                "' -se \"drop user " + self.db_user() + ";\""])
+                "mysql -u root -p'" + self.database.root_password +
+                "' -se \"drop user " + self.db_user + ";\""])
             ssh.close()
 
         return
@@ -527,9 +513,11 @@ class ClouderService(models.Model):
         services = self.search([
             ('application_version_id', '=', self.application_version_id.id),
             ('container_id.server_id', '=', self.container_id.server_id.id)])
-        if self in services:
-            services.remove(self)
-        if not services:
+        test = False
+        for service in services:
+            if service.id != self.id:
+                test = True
+        if not test:
             ssh = self.connect(self.container_id.server_id.name)
             self.execute(ssh, [
                 'rm', '-rf', self.application_version_id.full_hostpath])
@@ -537,24 +525,20 @@ class ClouderService(models.Model):
 
     @api.multi
     def deploy_files(self):
-        base_obj = self.env['clouder.base']
         self.purge_files()
         ssh = self.connect(self.container_id.server_id.name)
 
-        if not self.exist(sftp, self.application_version_id.full_hostpath):
-            ssh_archive, sftp_archive = self.connect(
+        if not self.exist(ssh, self.application_version_id.full_hostpath):
+            ssh_archive = self.connect(
                 self.application_version_id.archive_id.fullname)
             tmp = '/tmp/' + self.application_version_id.fullname + '.tar.gz'
-            self.log(
-                'sftp get ' +
-                self.application_version_id.full_archivepath_targz + ' ' + tmp)
-            sftp_archive.get(
+
+            self.get(ssh_archive,
                 self.application_version_id.full_archivepath_targz, tmp)
-            ssh_archive.close(), sftp_archive.close()
+            ssh_archive.close()
             self.execute(ssh, [
                 'mkdir', '-p', self.application_version_id.full_hostpath])
-            self.log('sftp put ' + tmp + ' ' +
-                     self.application_version_id.full_hostpath + '.tar.gz')
+
             self.send(ssh, tmp,
                       self.application_version_id.full_hostpath + '.tar.gz')
             self.execute(ssh, [
@@ -562,20 +546,22 @@ class ClouderService(models.Model):
                 self.application_version_id.full_hostpath + '.tar.gz',
                 '-C', self.application_version_id.full_hostpath])
             self.execute(ssh, [
-                'rm', self.application_id.full_hostpath + '/' +
+                'rm', self.container_id.application_id.full_hostpath + '/' +
                 self.application_version_id.name + '.tar.gz'])
 
         ssh.close()
 
         ssh = self.connect(
             self.container_id.fullname,
-            username=self.application_id.type_id.system_user)
+            username=self.container_id.application_id.type_id.system_user)
         if 'files_from_service' in self.env.context:
             self.execute(ssh, [
-                'cp', '-R', self.application_id.type_id.localpath_services +
+                'cp', '-R',
+                self.container_id.application_id.type_id.localpath_services +
                 '/' + self.env.context['files_from_service'] + '/files',
                 self.full_localpath_files])
-        elif self.custom_version or not self.application_id.type_id.symlink:
+        elif self.custom_version \
+                or not self.container_id.application_id.type_id.symlink:
             self.execute(ssh, [
                 'cp', '-R', self.application_version_id.full_localpath,
                 self.full_localpath_files])

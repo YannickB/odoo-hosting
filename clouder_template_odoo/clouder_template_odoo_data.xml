@@ -14,42 +14,49 @@
             <field name="apptype_id" ref="apptype_odoo"/>
             <field name="name">default_account_chart</field>
             <field name="type">application</field>
+            <field name="auto" eval="True"/>
         </record>
         <record id="apptype_odoo_option2" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_odoo"/>
             <field name="name">account_chart</field>
             <field name="type">base</field>
+            <field name="auto" eval="True"/>
         </record>
         <record id="apptype_odoo_option3" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_odoo"/>
             <field name="name">install_modules</field>
             <field name="type">application</field>
+            <field name="auto" eval="True"/>
         </record>
         <record id="apptype_odoo_option4" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_odoo"/>
             <field name="name">test_install_modules</field>
             <field name="type">application</field>
+            <field name="auto" eval="True"/>
         </record>
         <record id="apptype_odoo_option5" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_odoo"/>
             <field name="name">poweruser_group</field>
             <field name="type">application</field>
+            <field name="auto" eval="True"/>
         </record>
         <record id="apptype_odoo_option6" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_odoo"/>
             <field name="name">port</field>
             <field name="type">service</field>
             <field name="default">odoo1</field>
+            <field name="auto" eval="True"/>
+            <field name="required" eval="True"/>
         </record>
 
         <record id="image_odoo" model="clouder.image">
             <field name="name">img_odoo</field>
             <field name="current_version">8.0</field>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
 RUN echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-passlib python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils python-paramiko postgresql-client
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-pip
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq -t wheezy-backports install wkhtmltopdf
 # Note: The official Debian and Ubuntu images automatically ``apt-get clean``
 # after each ``apt-get``
@@ -144,25 +151,28 @@ VOLUME /base-backup
             <field name="default_image_id" ref="image_odoo"/>
             <field name="current_version">8.0</field>
             <field name="buildfile"><![CDATA[
-[buildout]
-parts = odoo
-extensions = gp.vcsdevelop
-vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/1.8#egg=aro-1.8
-vcs-update = True
-find-links = http://download.gna.org/pychart/
+git clone http://github.com/odoo/odoo.git parts/odoo -b 8.0
+git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
 
-[versions]
+#[buildout]
+#parts = odoo
+#extensions = gp.vcsdevelop
+#vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/1.8#egg=aro-1.8
+#vcs-update = True
+#find-links = http://download.gna.org/pychart/
+
+#[versions]
 # in some cases that's needed
-anybox.recipe.openerp =
+#anybox.recipe.openerp =
 
-[odoo]
-recipe = anybox.recipe.openerp:server
-version = git http://github.com/odoo/odoo.git odoo 8.0
-addons = git git@github.com:YannickB/odoo-hosting.git extra/odoo-hosting master
+#[odoo]
+#recipe = anybox.recipe.openerp:server
+#version = git http://github.com/odoo/odoo.git odoo 8.0
+#addons = git http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting master
 
-[versions]
-reportlab = 2.7
-pypdf = 1.13
+#[versions]
+#reportlab = 2.7
+#pypdf = 1.13
 ]]></field>
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>
@@ -175,14 +185,14 @@ pypdf = 1.13
         </record>
         <record id="app_odoo_link1" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_bind.app_bind"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="app_odoo_link2" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_shinken.app_shinken"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
@@ -190,7 +200,7 @@ pypdf = 1.13
         </record>
         <record id="app_odoo_link3" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_postgres.app_postgres"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
@@ -198,7 +208,7 @@ pypdf = 1.13
         </record>
         <record id="app_odoo_link4" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_postfix.app_postfix"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
@@ -206,14 +216,14 @@ pypdf = 1.13
         </record>
         <record id="app_odoo_link5" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_proxy.app_proxy"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="app_odoo_link6" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_piwik.app_piwik"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
             <field name="base" eval="True"/>
         </record>
 
@@ -225,26 +235,31 @@ pypdf = 1.13
             <field name="default_image_id" ref="image_odoo"/>
             <field name="current_version">8.0</field>
             <field name="buildfile"><![CDATA[
-[buildout]
-parts = odoo
-extensions = gp.vcsdevelop
-vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/1.8#egg=aro-1.8
-vcs-update = True
-find-links = http://download.gna.org/pychart/
 
-[versions]
+git clone http://github.com/odoo/odoo.git parts/odoo -b 8.0
+git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
+git clone http://github.com/odoo-vertical-hosting/odoo-hosting-orchestrator.git extra/orchestrator -b master
+
+#[buildout]
+#parts = odoo
+#extensions = gp.vcsdevelop
+#vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/1.8#egg=aro-1.8
+#vcs-update = True
+#find-links = http://download.gna.org/pychart/
+
+#[versions]
 # in some cases that's needed
-anybox.recipe.openerp =
+#anybox.recipe.openerp =
 
-[odoo]
-recipe = anybox.recipe.openerp:server
-version = git http://github.com/odoo/odoo.git odoo 8.0
-addons = git git@github.com:YannickB/odoo-hosting.git extra/odoo-hosting master
-         git git@github.com:odoo-vertical-hosting/odoo-hosting-orchestrator.git extra/orchestrator master
-
-[versions]
-reportlab = 2.7
-pypdf = 1.13
+#[odoo]
+#recipe = anybox.recipe.openerp:server
+#version = git http://github.com/odoo/odoo.git odoo 8.0
+#addons = git http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting master
+#         git http://github.com/odoo-vertical-hosting/odoo-hosting-orchestrator.git extra/orchestrator master
+#
+#[versions]
+#reportlab = 2.7
+#pypdf = 1.13
 ]]></field>
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>
@@ -257,14 +272,14 @@ pypdf = 1.13
         </record>
         <record id="app_odoo_clouder_link1" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_bind.app_bind"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="app_odoo_clouder_link2" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_shinken.app_shinken"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
@@ -272,7 +287,7 @@ pypdf = 1.13
         </record>
         <record id="app_odoo_clouder_link3" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_postgres.app_postgres"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
@@ -280,7 +295,7 @@ pypdf = 1.13
         </record>
         <record id="app_odoo_clouder_link4" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_postfix.app_postfix"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
@@ -288,14 +303,14 @@ pypdf = 1.13
         </record>
         <record id="app_odoo_clouder_link5" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_proxy.app_proxy"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="app_odoo_clouder_link6" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_piwik.app_piwik"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
             <field name="base" eval="True"/>
         </record>
 

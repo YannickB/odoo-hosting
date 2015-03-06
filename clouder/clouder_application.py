@@ -54,10 +54,10 @@ class ClouderApplicationType(models.Model):
     @api.constrains('name', 'system_user')
     def _validate_data(self):
         if not re.match("^[\w\d_]*$", self.name) \
-                or not re.match("^[\w\d_]*$", self.system_user):
+                or not re.match("^[\w\d-]*$", self.system_user):
             raise except_orm(_('Data error!'), _(
                 "Name and system_user can only contains letters, "
-                "digits and underscore")
+                "digits and -")
             )
 
             # @api.multi
@@ -127,6 +127,8 @@ class ClouderApplication(models.Model):
                                  'application_id', 'Options')
     link_ids = fields.One2many('clouder.application.link', 'application_id',
                                'Links')
+    link_target_ids = fields.One2many('clouder.application.link', 'name',
+                                      'Links Targets')
     version_ids = fields.One2many('clouder.application.version',
                                   'application_id', 'Versions')
     buildfile = fields.Text('Build File')
@@ -161,17 +163,17 @@ class ClouderApplication(models.Model):
 
     @property
     def full_archivepath(self):
-        return self.archive_path + '/' \
-               + self.type_id.name + '-' + self.code
+        return self.env['clouder.model'].archive_path + '/' \
+            + self.type_id.name + '-' + self.code
 
     @property
     def full_hostpath(self):
-        return self.services_hostpath() + '/' \
-               + self.type_id.name + '-' + self.code
+        return self.env['clouder.model'].services_hostpath + '/' \
+            + self.type_id.name + '-' + self.code
 
     @property
     def full_localpath(self):
-        return self.type_id.localpath and self.type_id.localpath() + '/' \
+        return self.type_id.localpath and self.type_id.localpath + '/' \
                 + self.type_id.name + '-' + self.code or ''
 
     @property
@@ -294,7 +296,7 @@ class ClouderApplication(models.Model):
             self.write({'current_version': current_version})
         current_version = current_version or self.current_version
         now = datetime.now()
-        version = current_version + '.' + now.strftime('%Y%m%d.%H%M')
+        version = current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
         self.env['clouder.application.version'].create(
             {'application_id': self.id, 'name': version,
              'archive_id': self.archive_id and self.archive_id.id})
@@ -414,7 +416,7 @@ class ClouderApplicationVersion(models.Model):
         self.build_application()
         self.execute(ssh, ['echo "' + self.name + '" >> '
                            + self.full_archivepath + '/VERSION.txt'])
-        self.execute(ssh, ['tar', 'czf', self.full_archivepath_targz(), '-C',
+        self.execute(ssh, ['tar', 'czf', self.full_archivepath_targz, '-C',
                            self.application_id.full_archivepath + '/'
                            + self.name, '.'])
         ssh.close()
@@ -423,7 +425,7 @@ class ClouderApplicationVersion(models.Model):
     def purge(self):
         ssh = self.connect(self.archive_id.fullname)
         self.execute(ssh, ['rm', '-rf', self.full_archivepath])
-        self.execute(ssh, ['rm', self.full_archivepath_targz()])
+        self.execute(ssh, ['rm', self.full_archivepath_targz])
         ssh.close()
 
 

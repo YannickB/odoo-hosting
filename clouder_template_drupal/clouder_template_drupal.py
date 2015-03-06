@@ -63,10 +63,10 @@ class ClouderService(models.Model):
     @api.multi
     def deploy_post_service(self):
         super(ClouderService, self).deploy_post_service()
-        if self.application_id.type_id.name == 'drupal':
+        if self.container_id.application_id.type_id.name == 'drupal':
             ssh = self.connect(
                 self.container_id.fullname,
-                username=self.application_id.type_id.system_user)
+                username=self.container_id.application_id.type_id.system_user)
             self.execute(ssh, ['cp', '-R',
                                self.full_localpath_files + '/sites-template',
                                self.full_localpath + '/sites'])
@@ -104,10 +104,10 @@ class ClouderBase(models.Model):
             ssh = self.connect(self.service_id.container_id.fullname,
                                      username=self.application_id.type_id.system_user)
             self.execute(ssh, ['drush', '-y', 'si',
-                               '--db-url=' + self.service_id.database_type() +
-                               '://' + self.service_id.db_user() + ':' +
+                               '--db-url=' + self.service_id.database_type +
+                               '://' + self.service_id.db_user + ':' +
                                self.service_id.database_password + '@' +
-                               self.service_id.database_server() + '/' +
+                               self.service_id.database_server + '/' +
                                self.fullname_,
                                '--account-mail=' + self.admin_email,
                                '--account-name=' + self.admin_name,

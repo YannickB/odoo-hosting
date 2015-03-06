@@ -643,27 +643,27 @@ class ClouderBase(models.Model):
         res = self.deploy_create_database()
         if not res:
             for key, database in self.databases().iteritems():
-                if self.service_id.database_type() != 'mysql':
+                if self.service_id.database_type != 'mysql':
                     ssh = self.connect(
                         self.service_id.container_id.fullname,
                         username=self.application_id.type_id.system_user)
                     self.execute(ssh, ['createdb', '-h',
-                                       self.service_id.database_server(), '-U',
-                                       self.db_user(), database])
+                                       self.service_id.database_server, '-U',
+                                       self.db_user, database])
                     ssh.close()
                 else:
                     ssh = self.connect(
-                        self.service_id.database().fullname)
+                        self.service_id.database.fullname)
                     self.execute(ssh, [
                         "mysql -u root -p'"
-                        + self.service_id.database().root_password
+                        + self.service_id.database.root_password
                         + "' -se \"create database " + database + ";\""
                     ])
                     self.execute(ssh, [
                         "mysql -u root -p'"
-                        + self.service_id.database().root_password
+                        + self.service_id.database.root_password
                         + "' -se \"grant all on " + database
-                        + ".* to '" + self.service_id.db_user() + "';\""
+                        + ".* to '" + self.service_id.db_user + "';\""
                     ])
                     ssh.close()
 
@@ -672,16 +672,16 @@ class ClouderBase(models.Model):
             self.deploy_build()
 
         elif self.build == 'restore':
-            if self.service_id.database_type() != 'mysql':
+            if self.service_id.database_type != 'mysql':
                 ssh = self.connect(
                     self.service_id.container_id.fullname,
                     username=self.application_id.type_id.system_user)
                 self.execute(ssh, [
-                    'pg_restore', '-h', self.service_id.database_server(),
-                    '-U', self.service_id.db_user(), '--no-owner',
+                    'pg_restore', '-h', self.service_id.database_server,
+                    '-U', self.service_id.db_user, '--no-owner',
                     '-Fc', '-d', self.fullname_,
                     self.service_id.application_version_id.full_localpath
-                    + '/' + self.service_id.database_type() + '/build.sql'
+                    + '/' + self.service_id.database_type + '/build.sql'
                 ])
                 ssh.close()
             else:
@@ -689,9 +689,9 @@ class ClouderBase(models.Model):
                     self.service_id.container_id.fullname,
                     username=self.application_id.type_id.system_user)
                 self.execute(ssh, [
-                    'mysql', '-h', self.service_id.database_server(),
-                    '-u', self.service_id.db_user(),
-                    '-p' + self.service_id.database().root_password,
+                    'mysql', '-h', self.service_id.database_server,
+                    '-u', self.service_id.db_user,
+                    '-p' + self.service_id.database.root_password,
                     self.fullname_, '<',
                     self.service_id.application_version_id.full_localpath
                     + '/' + self.service_id.database_type + '/build.sql'
@@ -721,7 +721,7 @@ class ClouderBase(models.Model):
     def purge_db(self):
         for key, database in self.databases().iteritems():
             if self.service_id.database_type != 'mysql':
-                ssh = self.connect(self.service_id.database().fullname,
+                ssh = self.connect(self.service_id.database.fullname,
                                          username='postgres')
                 self.execute(ssh, [
                     'psql', '-c',
@@ -734,10 +734,10 @@ class ClouderBase(models.Model):
                 self.execute(ssh, ['dropdb', database])
                 ssh.close()
             else:
-                ssh = self.connect(self.service_id.database().fullname)
+                ssh = self.connect(self.service_id.database.fullname)
                 self.execute(ssh, [
                     "mysql -u root -p'"
-                    + self.service_id.database().root_password
+                    + self.service_id.database.root_password
                     + "' -se \"drop database " + database + ";\""
                 ])
                 ssh.close()

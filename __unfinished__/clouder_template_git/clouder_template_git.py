@@ -116,7 +116,7 @@ class ClouderBase(models.Model):
                 's/gitlabhq_production/' + self.fullname_ + '/g',
                 database_file])
             self.execute(ssh, ['sed', '-i', 's/#\ username:\ git/username:\ ' +
-                               self.service_id.db_user() + '/g',
+                               self.service_id.db_user + '/g',
                                database_file])
             self.execute(ssh, ['sed', '-i', 's/#\ password:/password:\ ' +
                                self.service_id.database_password + '/g',

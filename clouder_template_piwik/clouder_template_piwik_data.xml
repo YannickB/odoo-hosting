@@ -20,9 +20,8 @@
         <record id="image_piwik" model="clouder.image">
             <field name="name">img_piwik</field>
             <field name="current_version">8.0</field>
-            <field name="dockerfile"><![CDATA[FROM img_nginx:latest
-MAINTAINER yannick.buron@gmail.com
-
+            <field name="parent_id" ref="clouder.image_nginx"/>
+            <field name="dockerfile"><![CDATA[
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install php5-mysql php-apc php5-fpm php5-curl php5-gd php5-intl php-pear php5-imap php5-memcache memcached mc mysql-client php5-geoip php5-dev libgeoip-dev
 
 # php-fpm config
@@ -95,14 +94,14 @@ VOLUME /base-backup
         </record>
         <record id="app_piwik_link1" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_bind.app_bind"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="app_piwik_link2" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_shinken.app_shinken"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
@@ -110,7 +109,7 @@ VOLUME /base-backup
         </record>
         <record id="app_piwik_link3" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_mysql.app_mysql"/>
+            <field name="name" ref="clouder_template_mysql.app_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
@@ -118,14 +117,14 @@ VOLUME /base-backup
         </record>
         <record id="app_piwik_link4" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_postfix.app_postfix"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
         <record id="app_piwik_link5" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_proxy.app_proxy"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>

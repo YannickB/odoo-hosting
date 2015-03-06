@@ -594,34 +594,34 @@ class ClouderSaveSave(models.Model):
                 base.service_id.container_id.fullname,
                 username=base.application_id.type_id.system_user)
             for key, database in base.databases().iteritems():
-                if base.service_id.database_type() != 'mysql':
+                if base.service_id.database_type != 'mysql':
                     self.execute(ssh, ['createdb', '-h',
-                                       base.service_id.database_server(), '-U',
-                                       base.service_id.db_user(),
+                                       base.service_id.database_server, '-U',
+                                       base.service_id.db_user,
                                        base.fullname_])
                     self.execute(ssh, ['cat',
                                        '/base-backup/' + self.repo_id.name
                                        + '/' + self.base_dumpfile,
                                        '|', 'psql', '-q', '-h',
-                                       base.service_id.database_server(), '-U',
-                                       base.service_id.db_user(),
+                                       base.service_id.database_server, '-U',
+                                       base.service_id.db_user,
                                        base.fullname_])
                 else:
                     ssh_mysql, sftp_mysql = self.connect(
-                        base.service_id.database().fullname)
+                        base.service_id.database.fullname)
                     self.execute(ssh_mysql, [
                         "mysql -u root -p'" +
-                        base.service_id.database().root_password +
+                        base.service_id.database.root_password +
                         "' -se \"create database " + database + ";\""])
                     self.execute(ssh_mysql, [
                         "mysql -u root -p'" +
-                        base.service_id.database().root_password +
+                        base.service_id.database.root_password +
                         "' -se \"grant all on " + database + ".* to '" +
-                        base.service_id.db_user() + "';\""])
+                        base.service_id.db_user + "';\""])
                     ssh_mysql.close(), sftp_mysql.close()
                     self.execute(ssh, [
-                        'mysql', '-h', base.service_id.database_server(), '-u',
-                        base.service_id.db_user(),
+                        'mysql', '-h', base.service_id.database_server, '-u',
+                        base.service_id.db_user,
                         '-p' + base.service_id.database_password, database,
                         '<', '/base-backup/' + self.repo_id.name + '/' +
                         database + '.dump'])
@@ -731,18 +731,18 @@ class ClouderSaveSave(models.Model):
             self.execute(ssh,
                          ['mkdir', '-p', '/base-backup/' + self.repo_id.name])
             for key, database in base.databases().iteritems():
-                if base.service_id.database_type() != 'mysql':
+                if base.service_id.database_type != 'mysql':
                     self.execute(ssh, [
                         'pg_dump', '-O', ''
-                        '-h', base.service_id.database_server(),
-                        '-U', base.service_id.db_user(), database,
+                        '-h', base.service_id.database_server,
+                        '-U', base.service_id.db_user, database,
                         '>', '/base-backup/' + self.repo_id.name + '/' +
                         database + '.dump'])
                 else:
                     self.execute(ssh, [
                         'mysqldump',
-                        '-h', base.service_id.database_server(),
-                        '-u', base.service_id.db_user(),
+                        '-h', base.service_id.database_server,
+                        '-u', base.service_id.db_user,
                         '-p' + base.service_id.database_password(),
                         database, '>', '/base-backup/' + self.repo_id.name +
                         '/' + database + '.dump'])

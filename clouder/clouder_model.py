@@ -334,14 +334,17 @@ class ClouderModel(models.AbstractModel):
         return out
 
     @api.multi
-    def exist(self, sftp, path):
+    def exist(self, ssh, path):
+        sftp = ssh.open_sftp()
         try:
             sftp.stat(path)
         except IOError, e:
             if e.errno == errno.ENOENT:
+                sftp.close()
                 return False
             raise
         else:
+            sftp.close()
             return True
 
     @api.multi
