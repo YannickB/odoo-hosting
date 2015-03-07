@@ -23,7 +23,7 @@
     'name': 'Clouder Template Drupal Wikicompare',
     'version': '1.0',
     'category': 'Community',
-    'depends': ['clouder_template_postgres', 'clouder_template_piwik'],
+    'depends': ['clouder_template_postgres', 'clouder_template_piwik','clouder_template_drupal'],
     'author': 'Yannick Buron',
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',

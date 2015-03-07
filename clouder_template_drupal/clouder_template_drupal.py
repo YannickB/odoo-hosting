@@ -19,7 +19,6 @@
 #
 ##############################################################################
 
-from openerp import modules
 from openerp import models, fields, api, _
 
 
@@ -78,14 +77,15 @@ class ClouderService(models.Model):
 class ClouderBase(models.Model):
     _inherit = 'clouder.base'
 
+
     @api.multi
     def deploy_build(self):
+        from openerp import modules
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'drupal':
-
             ssh = self.connect(self.service_id.container_id.fullname)
             config_file = '/etc/nginx/sites-available/' + self.fullname
-            self.send(ssh, modules.get_module_path('clouder_drupal') +
+            self.send(ssh, modules.get_module_path('clouder_template_drupal') +
                       '/res/nginx.config', config_file)
             self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"',
                                config_file])
@@ -206,9 +206,6 @@ class ClouderBase(models.Model):
                     self.application_id.options['test_install_modules'][
                         'value'].split(',')
                 for module in modules:
-                    self.execute(ssh, ['drush', '-y', 'en', module],
-                                 path=self.service_id.full_localpath_files +
-                                 '/sites/' + self.fulldomain)
                     self.execute(ssh, ['drush', '-y', 'en', module],
                                  path=self.service_id.full_localpath_files +
                                  '/sites/' + self.fulldomain)

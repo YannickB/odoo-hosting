@@ -62,7 +62,7 @@ class ClouderService(models.Model):
     name = fields.Char('Name', size=64, required=True)
     application_id = fields.Many2one(
         'clouder.application', 'Application',
-        relation='container_id.application_id', readonly=True)
+        related='container_id.application_id', readonly=True)
     application_version_id = fields.Many2one(
         'clouder.application.version', 'Version',
         domain="[('application_id.container_ids','in',container_id)]",
@@ -113,7 +113,10 @@ class ClouderService(models.Model):
 
     @property
     def database_type(self):
-        return self.database.application_id.type_id.name
+        database_type = self.database.application_id.type_id.name
+        if database_type == 'postgres':
+            database_type = 'pgsql'
+        return database_type
 
     @property
     def database_server(self):
@@ -453,7 +456,7 @@ class ClouderService(models.Model):
         else:
             ssh = self.connect(self.database.fullname)
             self.execute(ssh, [
-                "mysql -u root -p'" + self.database.root_password() +
+                "mysql -u root -p'" + self.database.root_password +
                 "' -se \"create user '" + self.db_user +
                 "' identified by '" + self.database_password + "';\""])
             ssh.close()

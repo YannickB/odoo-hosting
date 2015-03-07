@@ -57,7 +57,7 @@ class ClouderBase(models.Model):
             ssh = self.connect(self.service_id.container_id.fullname)
             config_file = '/etc/nginx/sites-available/' + self.fullname
             self.send(ssh, modules.get_module_path(
-                'clouder_piwik') + '/res/nginx.config', config_file)
+                'clouder_template_piwik') + '/res/nginx.config', config_file)
             self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"',
                                config_file])
             self.execute(ssh, ['sed', '-i',
@@ -65,7 +65,7 @@ class ClouderBase(models.Model):
                                config_file])
             self.execute(ssh, ['sed', '-i',
                                '"s/PATH/' +
-                               self.service_id.full_localpath_file()\
+                               self.service_id.full_localpath_files\
                                .replace('/', '\/') + '/g"', config_file])
             self.execute(ssh, ['ln', '-s',
                                '/etc/nginx/sites-available/' + self.fullname,
@@ -78,7 +78,7 @@ class ClouderBase(models.Model):
     @api.multi
     def purge_post(self):
         super(ClouderBase, self).purge_post()
-        if self.application_id.type_id.name == 'drupal':
+        if self.application_id.type_id.name == 'piwik':
             ssh = self.connect(self.service_id.container_id.fullname)
             self.execute(ssh, [
                 'rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname])

@@ -32,10 +32,12 @@ class ClouderApplicationVersion(models.Model):
         if self.application_id.type_id.name == 'drupal'\
                 and self.application_id.code == 'wkc':
             ssh = self.connect(self.archive_id.fullname)
-            self.send(ssh, modules.get_module_path('clouder_drupal') +
+            self.send(ssh, modules.get_module_path(
+                'clouder_template_drupal_wikicompare') +
                       '/res/wikicompare.script',
                       self.full_archivepath + '/wikicompare.script')
-            self.send(ssh, modules.get_module_path('clouder_drupal') +
+            self.send(ssh, modules.get_module_path(
+                'clouder_template_drupal_wikicompare') +
                       '/res/patch/revisioning_postgres.patch',
                       self.full_archivepath + '/revisioning_postgres.patch')
             self.execute(ssh, ['patch', '-p0', '-d', self.full_archivepath +

@@ -12,22 +12,23 @@
             <field name="name">network</field>
             <field name="type">container</field>
             <field name="default">172.17.0.0/16</field>
+            <field name="auto" eval="True"/>
+            <field name="required" eval="True"/>
         </record>
         <record id="apptype_mysql_option2" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_mysql"/>
             <field name="name">root_password</field>
             <field name="type">container</field>
             <field name="default"></field>
+            <field name="auto" eval="True"/>
+            <field name="required" eval="True"/>
         </record>
 
         <record id="image_mysql" model="clouder.image">
             <field name="name">img_mysql</field>
             <field name="current_version">1</field>
             <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
-
+            <field name="dockerfile"><![CDATA[
 
 RUN apt-get update
 
@@ -66,7 +67,7 @@ USER root
         </record>
 
         <record id="app_mysql" model="clouder.application">
-            <field name="name">mysql</field>
+            <field name="name">Mysql</field>
             <field name="code">mysql</field>
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_mysql"/>

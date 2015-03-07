@@ -251,8 +251,11 @@ class ClouderContainer(models.Model):
 
     @property
     def root_password(self):
-        return (option.value for option in self.option_ids
-                if option.name == 'root_password')
+        root_password = ''
+        for option in self.option_ids:
+            if option.name.name == 'root_password':
+                root_password = option.value
+        return root_password
 
     @property
     def ports(self):

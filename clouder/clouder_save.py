@@ -751,7 +751,7 @@ class ClouderSaveSave(models.Model):
                         'mysqldump',
                         '-h', base.service_id.database_server,
                         '-u', base.service_id.db_user,
-                        '-p' + base.service_id.database_password(),
+                        '-p' + base.service_id.database_password,
                         database, '>', '/base-backup/' + self.repo_id.name +
                         '/' + database + '.dump'])
             self.deploy_base()

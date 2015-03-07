@@ -652,7 +652,7 @@ class ClouderBase(models.Model):
                         username=self.application_id.type_id.system_user)
                     self.execute(ssh, ['createdb', '-h',
                                        self.service_id.database_server, '-U',
-                                       self.db_user, database])
+                                       self.service_id.db_user, database])
                     ssh.close()
                 else:
                     ssh = self.connect(
