@@ -238,7 +238,7 @@ git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b mast
 
 git clone http://github.com/odoo/odoo.git parts/odoo -b 8.0
 git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
-git clone http://github.com/odoo-vertical-hosting/odoo-hosting-orchestrator.git extra/orchestrator -b master
+git clone http://github.com/clouder-community/clouder.git extra/clouder -b 8.0
 
 #[buildout]
 #parts = odoo
