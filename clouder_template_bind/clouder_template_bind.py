@@ -78,8 +78,8 @@ class ClouderBaseLink(models.Model):
     def deploy_link(self):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'bind':
-            ssh = self.connect(self.target.container.fullname)
-            proxy_link = self.search([('base_id', '=', self.base_id), (
+            ssh = self.connect(self.target.fullname)
+            proxy_link = self.search([('base_id', '=', self.base_id.id), (
                 'name.application_id.code', '=', 'proxy')])
             self.execute(ssh, [
                 'echo "' + self.base_id.name + ' IN CNAME ' +
@@ -88,7 +88,7 @@ class ClouderBaseLink(models.Model):
                 '." >> ' + self.base_id.domain_id.configfile])
 
             postfix_link = self.search([
-                ('base_id', '=', self.base_id),
+                ('base_id', '=', self.base_id.id),
                 ('name.application_id.code', '=', 'postfix')])
             if postfix_link:
                 self.execute(ssh, [
@@ -103,7 +103,7 @@ class ClouderBaseLink(models.Model):
     def purge_link(self):
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'bind':
-            ssh = self.connect(self.target.container.fullname)
+            ssh = self.connect(self.target.fullname)
             self.execute(ssh, ['sed', '-i',
                                '"/' + self.base_id.name + '\sIN\sCNAME/d"',
                                self.base_id.domain_id.configfile])

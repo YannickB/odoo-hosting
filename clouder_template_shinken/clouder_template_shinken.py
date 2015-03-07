@@ -205,11 +205,11 @@ class ClouderBaseLink(models.Model):
                                self.base_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
-                '"s/UNIQUE_NAME/' + self.base_id.unique_name_() + '/g"',
+                '"s/UNIQUE_NAME/' + self.base_id.fullname_ + '/g"',
                 self.base_id.shinken_configfile])
             self.execute(ssh, [
                 'sed', '-i',
-                '"s/DATABASES/' + self.base_id.databases_comma() + '/g"',
+                '"s/DATABASES/' + self.base_id.databases_comma + '/g"',
                 self.base_id.shinken_configfile])
             self.execute(ssh,
                          ['sed', '-i', '"s/BASE/' + self.base_id.name + '/g"',

@@ -100,12 +100,12 @@ class ClouderBase(models.Model):
                                    'clouder_base_service_rel', 'base_id',
                                    'service_id', 'Alternative Services')
     admin_name = fields.Char('Admin name', size=64, required=True)
-    admin_passwd = fields.Char(
+    admin_password = fields.Char(
         'Admin password', size=64, required=True,
         default=clouder_model.generate_random_password(20))
     admin_email = fields.Char('Admin email', size=64, required=True)
     poweruser_name = fields.Char('PowerUser name', size=64)
-    poweruser_passwd = fields.Char(
+    poweruser_password = fields.Char(
         'PowerUser password', size=64,
         default=clouder_model.generate_random_password(12))
     poweruser_email = fields.Char('PowerUser email', size=64)
@@ -179,11 +179,11 @@ class ClouderBase(models.Model):
         for option in \
                 self.service_id.container_id.application_id.type_id.option_ids:
             if option.type == 'base':
-                options[option.name] = {'id': option.id, 'name': option.name,
+                options[option.name] = {'id': option.id, 'name': option.id,
                                         'value': option.default}
         for option in self.option_ids:
             options[option.name.name] = {'id': option.id,
-                                         'name': option.name.name,
+                                         'name': option.name.id,
                                          'value': option.value}
         return options
 
@@ -195,9 +195,9 @@ class ClouderBase(models.Model):
     @api.one
     @api.constrains('name', 'admin_name', 'admin_email', 'poweruser_email')
     def _validate_data(self):
-        if not re.match("^[\w\d_]*$", self.name):
+        if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(_('Data error!'), _(
-                "Name can only contains letters, digits and underscore"))
+                "Name can only contains letters, digits and -"))
         if self.admin_name and not re.match("^[\w\d_]*$", self.admin_name):
             raise except_orm(_('Data error!'), _(
                 "Admin name can only contains letters, digits and underscore"))
@@ -215,15 +215,18 @@ class ClouderBase(models.Model):
     @api.one
     @api.constrains('service_id', 'service_ids', 'application_id')
     def _check_application(self):
-        if self.application_id.id != self.service_id.application_id.id:
+        if self.application_id.id != \
+                self.service_id.container_id.application_id.id:
             raise except_orm(_('Data error!'),
                              _("The application of base must be the same "
                                "than the application of service."))
         for s in self.service_ids:
-            if self.application_id.id != s.application_id.id:
-                raise except_orm(_('Data error!'),
-                                 _("The application of base must be the same "
-                                   "than the application of service."))
+            if self.application_id.id != s.container_idapplication_id.id:
+                raise except_orm(
+                    _('Data error!'),
+                    _("The application of base must be the "
+                      "same than the application of service.")
+                )
 
 
     @api.one
@@ -404,10 +407,10 @@ class ClouderBase(models.Model):
     #         'base_title': self.title,
     #         'base_domain': self.domain_id.name,
     #         'base_admin_name': self.admin_name,
-    #         'base_admin_passwd': self.admin_passwd,
+    #         'base_admin_password': self.admin_password,
     #         'base_admin_email': self.admin_email,
     #         'base_poweruser_name': self.poweruser_name,
-    #         'base_poweruser_password': self.poweruser_passwd,
+    #         'base_poweruser_password': self.poweruser_password,
     #         'base_poweruser_email': self.poweruser_email,
     #         'base_build': self.build,
     #         'base_sslonly': self.ssl_only,
@@ -503,8 +506,8 @@ class ClouderBase(models.Model):
 
     @api.multi
     def save(self):
-        save_obj = self.pool.get('clouder.save.save')
-        repo_obj = self.pool.get('clouder.save.repository')
+        save_obj = self.env['clouder.save.save']
+        repo_obj = self.env['clouder.save.repository']
 
         save = False
 
@@ -548,7 +551,7 @@ class ClouderBase(models.Model):
             save_vals = {
                 'name': self.now_bup + '_' + self.fullname,
                 'backup_id': backup_server.id,
-                'repo_id': self.save_repository_id,
+                'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration
                     or self.application_id.base_save_expiration)
@@ -594,12 +597,12 @@ class ClouderBase(models.Model):
         if base_name:
             vals = {'base_id': False, 'base_restore_to_name': base_name,
                     'base_restore_to_domain_id': self.domain_id.id,
-                    'service_id': service_id, 'base_nosave': True}
+                    'service_id': service_id.id, 'base_nosave': True}
         save.write(vals)
         base = save.restore()
-        base.write({'parent_id': base_parent_id})
-        base.with_context(base_parent_fullname_=base_parent_id.fullname_)
-        base.with_context(service_parent_name=base_parent_id.service_id.name)
+        base.write({'parent_id': base_parent_id.id})
+        base = base.with_context(base_parent_fullname_=base_parent_id.fullname_)
+        base = base.with_context(service_parent_name=base_parent_id.service_id.name)
         base.update_base()
         base.post_reset()
         base.deploy_post()
@@ -642,7 +645,7 @@ class ClouderBase(models.Model):
 
         res = self.deploy_create_database()
         if not res:
-            for key, database in self.databases().iteritems():
+            for key, database in self.databases.iteritems():
                 if self.service_id.database_type != 'mysql':
                     ssh = self.connect(
                         self.service_id.container_id.fullname,
@@ -719,7 +722,7 @@ class ClouderBase(models.Model):
 
     @api.multi
     def purge_db(self):
-        for key, database in self.databases().iteritems():
+        for key, database in self.databases.iteritems():
             if self.service_id.database_type != 'mysql':
                 ssh = self.connect(self.service_id.database.fullname,
                                          username='postgres')
@@ -842,10 +845,12 @@ class ClouderBaseLink(models.Model):
     #         self.deploy(cr, uid, vals, context=context)
     #     return
 
-    def deploy_link(self, cr, uid, vals, context={}):
+    @api.multi
+    def deploy_link(self):
         return
 
-    def purge_link(self, cr, uid, vals, context={}):
+    @api.multi
+    def purge_link(self):
         return
 
     def control(self):
@@ -853,17 +858,10 @@ class ClouderBaseLink(models.Model):
             self.log(
                 'The target isnt configured in the link, skipping deploy link')
             return False
-        app_links = self.env['clouder.application.link'].search([
-            ('application_id', '=', self.base_id.application_id.id),
-            ('name.code', '=', self.target.application_id.code)])
-        if app_links:
-            self.log(
-                'The target isnt in the application link '
-                'for base, skipping deploy link')
-            return
-        if app_links[0].base:
+        if not self.name.base:
             self.log('This application isnt for base, skipping deploy link')
-            return
+            return False
+        return True
 
     @api.multi
     def deploy_(self):

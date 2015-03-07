@@ -112,7 +112,7 @@ class ClouderBase(models.Model):
                                '--account-mail=' + self.admin_email,
                                '--account-name=' + self.admin_name,
                                '--account-pass=' + self.admin_password,
-                               '--sites-subdir=' + self.fulldomain(),
+                               '--sites-subdir=' + self.fulldomain,
                                'minimal'],
                          path=self.service_id.full_localpath_files)
 
@@ -122,16 +122,16 @@ class ClouderBase(models.Model):
                 for module in modules:
                     self.execute(ssh, ['drush', '-y', 'en', module],
                                  path=self.service_id.full_localpath_files +
-                                      '/sites/' + self.fulldomain())
+                                      '/sites/' + self.fulldomain)
             if self.application_id.options['theme']['value']:
                 theme = self.application_id.options['theme']['value']
                 self.execute(ssh, ['drush', '-y', 'pm-enable', theme],
                              path=self.service_id.full_localpath_files +
-                             '/sites/' + self.fulldomain())
+                             '/sites/' + self.fulldomain)
                 self.execute(ssh, ['drush', 'vset', '--yes', '--exact',
                                    'theme_default', theme],
                              path=self.service_id.full_localpath_files +
-                             '/sites/' + self.fulldomain())
+                             '/sites/' + self.fulldomain)
             ssh.close()
 
             # drush vset --yes --exact bakery_master $bakery_master_site
@@ -166,7 +166,7 @@ class ClouderBase(models.Model):
             self.execute(ssh, ['drush', 'vset', '--yes',
                                '--exact', 'site_name', self.title],
                          path=self.service_id.full_localpath_files +
-                         '/sites/' + self.fulldomain())
+                         '/sites/' + self.fulldomain)
             ssh.close()
         return res
 
@@ -182,14 +182,14 @@ class ClouderBase(models.Model):
                                '--password=' + self.poweruser_password,
                                '--mail=' + self.poweruser_email],
                          path=self.service_id.full_localpath_files +
-                         '/sites/' + self.fulldomain())
+                         '/sites/' + self.fulldomain)
             if self.application_id.options['poweruser_group']['value']:
                 self.execute(ssh, ['drush', 'user-add-role',
                                    self.application_id.options[
                                        'poweruser_group']['value'],
                                    self.poweruser_name],
                              path=self.service_id.full_localpath_files +
-                             '/sites/' + self.fulldomain())
+                             '/sites/' + self.fulldomain)
             ssh.close()
 
         return res
@@ -208,10 +208,10 @@ class ClouderBase(models.Model):
                 for module in modules:
                     self.execute(ssh, ['drush', '-y', 'en', module],
                                  path=self.service_id.full_localpath_files +
-                                 '/sites/' + self.fulldomain())
+                                 '/sites/' + self.fulldomain)
                     self.execute(ssh, ['drush', '-y', 'en', module],
                                  path=self.service_id.full_localpath_files +
-                                 '/sites/' + self.fulldomain())
+                                 '/sites/' + self.fulldomain)
             ssh.close()
         return res
 
@@ -239,9 +239,9 @@ class ClouderBase(models.Model):
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, ['cp', '-R',
                                self.parent_id.service_id.full_localpath +
-                               '/sites/' + self.parent_id.fulldomain(),
+                               '/sites/' + self.parent_id.fulldomain,
                                self.service_id.full_localpath_files +
-                               '/sites/' + self.fulldomain()])
+                               '/sites/' + self.fulldomain])
             ssh.close()
 
         return res
@@ -255,7 +255,7 @@ class ClouderBase(models.Model):
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, ['drush', 'updatedb'],
                          path=self.service_id.full_localpath_files +
-                         '/sites/' + self.fulldomain())
+                         '/sites/' + self.fulldomain)
             ssh.close()
 
         return res
@@ -267,7 +267,7 @@ class ClouderBase(models.Model):
             ssh = self.connect(self.service_id.container_id.fullname)
             self.execute(ssh, ['rm', '-rf',
                                self.service_id.full_localpath +
-                               '/sites/' + self.fulldomain()])
+                               '/sites/' + self.fulldomain])
             self.execute(ssh, ['rm', '-rf',
                                '/etc/nginx/sites-enabled/' + self.fullname])
             self.execute(ssh, ['rm', '-rf',
@@ -291,7 +291,7 @@ class ClouderSaveSave(models.Model):
             #            self.execute(ssh, ['drush', 'archive-dump', self.fullname_, '--destination=/base-backup/' + vals['saverepo_name'] + 'tar.gz'])
             self.execute(ssh, ['cp', '-R',
                                self.service_id.full_localpath_files +
-                               '/sites/' + self.base_id.fulldomain(),
+                               '/sites/' + self.base_id.fulldomain,
                                '/base-backup/' + self.repo_id.name + '/site'])
             ssh.close()
         return
@@ -305,11 +305,11 @@ class ClouderSaveSave(models.Model):
                 username=self.base_id.application_id.type_id.system_user)
             self.execute(ssh, ['rm', '-rf',
                                self.service_id.full_localpath_files +
-                               '/sites/' + self.base_id.fulldomain()])
+                               '/sites/' + self.base_id.fulldomain])
             self.execute(ssh, ['cp', '-R',
                                '/base-backup/' + self.repo_id.name + '/site',
                                self.service_id.full_localpath_files +
-                               '/sites/' + self.base_id.fulldomain()])
+                               '/sites/' + self.base_id.fulldomain])
             ssh.close()
         return
 
@@ -326,18 +326,18 @@ class ClouderBaseLink(models.Model):
             self.execute(ssh,
                          ['drush', 'variable-set', 'piwik_site_id', piwik_id],
                          path=self.base_id.service_id.full_localpath_files +
-                         '/sites/' + self.base_id.fulldomain())
+                         '/sites/' + self.base_id.fulldomain)
             self.execute(ssh, ['drush', 'variable-set', 'piwik_url_http',
-                               'http://' + self.target.fulldomain() + '/'],
+                               'http://' + self.target.fulldomain + '/'],
                          path=self.base_id.service_id.full_localpath_files +
-                         '/sites/' + self.base_id.fulldomain())
+                         '/sites/' + self.base_id.fulldomain)
             self.execute(ssh, ['drush', 'variable-set', 'piwik_url_https',
-                               'https://' + self.target.fulldomain() + '/'],
+                               'https://' + self.target.fulldomain + '/'],
                          path=self.base_id.service_id.full_localpath_files +
-                         '/sites/' + self.base_id.fulldomain())
+                         '/sites/' + self.base_id.fulldomain)
             self.execute(ssh, ['drush', 'variable-set',
                                'piwik_privacy_donottrack', '0'],
                          path=self.base_id.service_id.full_localpath_files +
-                         '/sites/' + self.base_id.fulldomain())
+                         '/sites/' + self.base_id.fulldomain)
             ssh.close()
         return

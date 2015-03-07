@@ -26,8 +26,9 @@ from openerp import models, fields, api, _
 class ClouderBase(models.Model):
     _inherit = 'clouder.base'
 
-    nginx_configfile = lambda \
-            self: '/etc/nginx/sites-available/' + self.fullname
+    @property
+    def nginx_configfile(self):
+        return '/etc/nginx/sites-available/' + self.fullname
 
 
 class ClouderBaseLink(models.Model):
@@ -38,14 +39,14 @@ class ClouderBaseLink(models.Model):
     def deploy_link(self):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'proxy':
-            if not self.base_id.sslonly:
+            if not self.base_id.ssl_only:
                 file = 'proxy.config'
             else:
                 file = 'proxy-sslonly.config'
             ssh = self.connect(self.target.fullname)
             self.send(ssh,
                       modules.get_module_path(
-                          'clouder_' +
+                          'clouder_template_' +
                           self.base_id.application_id.type_id.name
                       ) + '/res/' + file, self.base_id.nginx_configfile)
             self.execute(ssh,
@@ -58,28 +59,28 @@ class ClouderBaseLink(models.Model):
                 'sed', '-i', '"s/SERVER/' +
                 self.base_id.service_id.container_id.server_id.name + '/g"',
                 self.base_id.nginx_configfile])
-            if 'port' in self.base_id.service_id.options():
+            if 'port' in self.base_id.service_id.options:
                 self.execute(ssh, [
                     'sed', '-i', '"s/PORT/' +
-                    self.base_id.service_id.options()['port']['hostport'] +
+                    self.base_id.service_id.port['hostport'] +
                     '/g"', self.base_id.nginx_configfile])
             # self.deploy_prepare_apache(cr, uid, vals, context)
             cert_file = '/etc/ssl/certs/' + self.base_id.name + '.' + \
                         self.base_id.domain_id.name + '.crt'
             key_file = '/etc/ssl/private/' + self.base_id.name + '.' +\
                        self.base_id.domain_id.name + '.key'
-            if self.base_id.certcert and self.base_id.certkey:
+            if self.base_id.cert_cert and self.base_id.cert_key:
                 self.execute(ssh,[
-                    'echo', '"' + self.base_id.certcert + '"', '>', cert_file])
+                    'echo', '"' + self.base_id.cert_cert + '"', '>', cert_file])
                 self.execute(ssh, [
-                    'echo', '"' + self.base_id.certkey + '"', '>', key_file])
-            elif self.base_id.domain_id.certcert\
-                    and self.base_id.domain_id.certkey:
+                    'echo', '"' + self.base_id.cert_key + '"', '>', key_file])
+            elif self.base_id.domain_id.cert_cert\
+                    and self.base_id.domain_id.cert_key:
                 self.execute(ssh, [
-                    'echo', '"' + self.base_id.domain_id.certcert + '"',
+                    'echo', '"' + self.base_id.domain_id.cert_cert + '"',
                     '>', cert_file])
                 self.execute(ssh, [
-                    'echo', '"' + self.base_id.domain_id.domain_certkey + '"',
+                    'echo', '"' + self.base_id.domain_id.domain_cert_key + '"',
                     '>', key_file])
             else:
                 self.execute(ssh, [
@@ -103,7 +104,7 @@ class ClouderBaseLink(models.Model):
             ssh = self.connect(self.target.fullname)
             self.execute(ssh, [
                 'rm',
-                '/etc/nginx/sites-enabled/' + self.base_id.unique_name()])
+                '/etc/nginx/sites-enabled/' + self.base_id.fullname])
             self.execute(ssh, ['rm', self.base_id.nginx_configfile])
             self.execute(ssh, [
                 'rm', '/etc/ssl/certs/' + self.base_id.name +

@@ -37,23 +37,26 @@ class ClouderService(models.Model):
 
     @api.multi
     def name_get(self):
-        return [(self.id, self.name + ' [' + self.container_id.name +
-                 '_' + self.container_id.server_id.name + ']')]
-    #
-    # @api.multi
-    # def name_search(self, name='', args=None, operator='ilike', limit=100):
-    #     if not args:
-    #         args = []
-    #     if name:
-    #         ids = self.search(
-    #             ['|', ('name', 'like', name),
-    #              '|', ('container_id.name', 'like', name),
-    #              ('container_id.server_id.name', 'like', name)] + args,
-    #             limit=limit)
-    #     else:
-    #         ids = self.search(args, limit=limit)
-    #     result = ids.name_get()
-    #     return result
+        if self.id:
+            return [(self.id, self.name + ' [' + self.container_id.name +
+                     '_' + self.container_id.server_id.name + ']')]
+        else:
+            return []
+
+    @api.model
+    def name_search(self, name='', args=None, operator='ilike', limit=100):
+        if not args:
+            args = []
+        if name:
+            ids = self.search(
+                ['|', ('name', 'like', name),
+                 '|', ('container_id.name', 'like', name),
+                 ('container_id.server_id.name', 'like', name)] + args,
+                limit=limit)
+        else:
+            ids = self.search(args, limit=limit)
+        result = ids.name_get()
+        return result
 
 
     name = fields.Char('Name', size=64, required=True)
@@ -102,7 +105,6 @@ class ClouderService(models.Model):
     @property
     def database(self):
         database = False
-        self.log('test')
         for link in self.link_ids:
             if link.target:
                 if link.name.name.code in ['postgres', 'mysql']:
@@ -129,16 +131,24 @@ class ClouderService(models.Model):
         return db_user
 
     @property
+    def port(self):
+        if 'port' in self.options:
+            return self.container_id.ports[
+                self.options['port']['value']
+            ]
+        return False
+
+    @property
     def options(self):
         options = {}
         for option in self.container_id.application_id.type_id.option_ids:
             if option.type == 'service':
                 options[option.name] = {
-                    'id': option.id, 'name': option.name,
+                    'id': option.id, 'name': option.id,
                     'value': option.default}
         for option in self.option_ids:
             options[option.name.name] = {
-                'id': option.id, 'name': option.name.name,
+                'id': option.id, 'name': option.name.id,
                 'value': option.value}
 
         return options
@@ -368,10 +378,10 @@ class ClouderService(models.Model):
              ('name', '=', 'port')])
         if type_ids:
             if self.sub_service_name == 'formation':
-                options = [(0, 0, {'name': type_ids[0],
+                options = [(0, 0, {'name': type_ids[0].id,
                                    'value': 'port-formation'})]
             if self.sub_service_name == 'test':
-                options = [(0, 0, {'name': type_ids[0],
+                options = [(0, 0, {'name': type_ids[0].id,
                                    'value': 'port-test'})]
         links = []
         for link in self.link_ids:
@@ -671,14 +681,7 @@ class ClouderServiceLink(models.Model):
             self.log('The target isnt configured in the link, '
                      'skipping deploy link')
             return False
-        app_links = self.env['clouder.application.link'].search([
-            ('application_id', '=', self.service_id.application_id.id),
-            ('name.code', '=', self.target.application_id.code)])
-        if not app_links:
-            self.log('The target isnt in the application link for service, '
-                     'skipping deploy link')
-            return False
-        if not app_links[0].service:
+        if not self.name.service:
             self.log('This application isnt for service, skipping deploy link')
             return False
         return True

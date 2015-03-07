@@ -268,9 +268,9 @@ class ClouderContainer(models.Model):
         options = {}
         for option in self.application_id.type_id.option_ids:
             if option.type == 'container':
-                options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
+                options[option.name] = {'id': option.id, 'name': option.id, 'value': option.default}
         for option in self.option_ids:
-            options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
+            options[option.name.name] = {'id': option.id, 'name': option.name.id, 'value': option.value}
         return options
 
     _sql_constraints = [
@@ -959,14 +959,7 @@ class ClouderContainerLink(models.Model):
             self.log('The target isnt configured in the link, '
                      'skipping deploy link')
             return False
-        app_links = self.env['clouder.application.link'].search(
-            [('application_id','=',self.container_id.application_id.id),
-             ('name.code','=', self.target.application_id.code)])
-        if not app_links:
-            self.log('The target isnt in the application link for container, '
-                     'skipping deploy link')
-            return False
-        if not app_links[0].container:
+        if not self.name.container:
             self.log('This application isnt for container, '
                      'skipping deploy link')
             return False

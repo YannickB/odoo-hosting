@@ -102,7 +102,9 @@ class ClouderSaveSave(models.Model):
     base_title = fields.Char('Title', size=64)
     base_container_name = fields.Char('Container', size=64)
     base_container_server = fields.Char('Server', size=64)
-    base_admin_passwd = fields.Char('Admin passwd', size=64)
+    base_admin_name = fields.Char('Admin name', size=64)
+    base_admin_password = fields.Char('Admin passwd', size=64)
+    base_admin_email = fields.Char('Admin email', size=64)
     base_poweruser_name = fields.Char('Poweruser name', size=64)
     base_poweruser_password = fields.Char('Poweruser Password', size=64)
     base_poweruser_email = fields.Char('Poweruser email', size=64)
@@ -249,7 +251,7 @@ class ClouderSaveSave(models.Model):
 
             service_links = {}
             for link in service.link_ids:
-                service_links[link.name.code] = {
+                service_links[link.name.name.code] = {
                     'name': link.name.id,
                     'code': link.name.name.code,
                     'target': link.target and link.target.id
@@ -278,7 +280,9 @@ class ClouderSaveSave(models.Model):
                 'base_container_name': base.service_id.container_id.name,
                 'base_container_server':
                 base.service_id.container_id.server_id.name,
-                'base_admin_passwd': base.admin_passwd,
+                'base_admin_name': base.admin_name,
+                'base_admin_password': base.admin_password,
+                'base_admin_email': base.admin_email,
                 'base_poweruser_name': base.poweruser_name,
                 'base_poweruser_password': base.poweruser_password,
                 'base_poweruser_email': base.poweruser_email,
@@ -392,9 +396,10 @@ class ClouderSaveSave(models.Model):
                             ('name.code', '=', link_vals['code']),
                             ('application_id', '=', apps[0])])
                         if link_apps:
-                            link_vals['name'] = link_apps[0]
+                            link_vals['name'] = link_apps[0].id
                         else:
                             continue
+                    del link_vals['code']
                     links.append((0, 0, link_vals))
                 container_vals = {
                     'name': self.computed_container_restore_to_name,
@@ -458,8 +463,8 @@ class ClouderSaveSave(models.Model):
         else:
             # upgrade = False
             app_versions = application_version_obj.search(
-                [('name', '=', self.base_app_version),
-                 ('application_id', '=', apps[0])])
+                [('name', '=', self.service_app_version),
+                 ('application_id', '=', apps[0].id)])
             if not app_versions:
                 self.log(
                     "Warning, couldn't find the application version, "
@@ -476,7 +481,7 @@ class ClouderSaveSave(models.Model):
             if not self.service_id or self.service_id.container_id != container:
                 services = service_obj.search(
                     [('name', '=', self.service_name),
-                     ('container_id.id', '=', container)])
+                     ('container_id', '=', container.id)])
 
                 if not services:
                     self.log("Can't find any corresponding service, "
@@ -497,7 +502,7 @@ class ClouderSaveSave(models.Model):
                                 link_vals['name'] = link_apps[0]
                             else:
                                 continue
-                        del link_vals['name_name']
+                        del link_vals['code']
                         links.append((0, 0, link_vals))
                     service_vals = {
                         'name': self.service_name,
@@ -550,17 +555,19 @@ class ClouderSaveSave(models.Model):
                                 link_vals['name'] = link_apps[0]
                             else:
                                 continue
-                        del link_vals['name_name']
+                        del link_vals['code']
                         links.append((0, 0, link_vals))
                     base_vals = {
                         'name': self.computed_base_restore_to_name,
-                        'service_id': service,
-                        'application_id': apps[0],
-                        'domain_id': domains[0],
+                        'service_id': service.id,
+                        'application_id': apps[0].id,
+                        'domain_id': domains[0].id,
                         'title': self.base_title,
-                        'admin_passwd': self.base_admin_passwd,
+                        'admin_name': self.base_admin_name,
+                        'admin_password': self.base_admin_password,
+                        'admin_email': self.base_admin_email,
                         'poweruser_name': self.base_poweruser_name,
-                        'poweruser_passwd': self.base_poweruser_password,
+                        'poweruser_password': self.base_poweruser_password,
                         'poweruser_email': self.base_poweruser_email,
                         'build': self.base_build,
                         'test': self.base_test,
@@ -568,16 +575,17 @@ class ClouderSaveSave(models.Model):
                         'nosave': self.base_nosave,
                         'option_ids': options,
                         'link_ids': links,
+                        'backup_ids': [(6,0,[self.backup_id.id])]
                     }
                     self = self.with_context(base_restoration=True)
-                    base = base_obj.create(base_vals)
+                    base = self.env['clouder.base'].create(base_vals)
 
                 else:
                     self.log("A corresponding base was found")
                     base = bases[0]
             else:
                 self.log("A base_id was linked in the save")
-                base = self.base_id.id
+                base = self.base_id
 
             if base.service_id.application_version_id != app_versions[0]:
                 # if upgrade:
@@ -593,7 +601,7 @@ class ClouderSaveSave(models.Model):
             ssh = self.connect(
                 base.service_id.container_id.fullname,
                 username=base.application_id.type_id.system_user)
-            for key, database in base.databases().iteritems():
+            for key, database in base.databases.iteritems():
                 if base.service_id.database_type != 'mysql':
                     self.execute(ssh, ['createdb', '-h',
                                        base.service_id.database_server, '-U',
@@ -730,7 +738,7 @@ class ClouderSaveSave(models.Model):
                 username=base.application_id.type_id.system_user)
             self.execute(ssh,
                          ['mkdir', '-p', '/base-backup/' + self.repo_id.name])
-            for key, database in base.databases().iteritems():
+            for key, database in base.databases.iteritems():
                 if base.service_id.database_type != 'mysql':
                     self.execute(ssh, [
                         'pg_dump', '-O', ''
@@ -746,7 +754,7 @@ class ClouderSaveSave(models.Model):
                         '-p' + base.service_id.database_password(),
                         database, '>', '/base-backup/' + self.repo_id.name +
                         '/' + database + '.dump'])
-            base.deploy_base()
+            self.deploy_base()
             self.execute(ssh, ['chmod', '-R', '777',
                                '/base-backup/' + self.repo_id.name])
             ssh.close()

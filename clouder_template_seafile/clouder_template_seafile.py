@@ -64,16 +64,16 @@ class ClouderBase(models.Model):
                 self.service_id.container_id.fullname,
                 username=self.application_id.type_id.system_user)
             install_args = [
-                '\n', self.title + '\n', self.fulldomain() + '\n', '\n', '\n',
+                '\n', self.title + '\n', self.fulldomain + '\n', '\n', '\n',
                 '\n', '\n', '2\n', 'mysql\n', '\n',
                 self.service_id.db_user + '\n',
                 self.service_id.database_password + '\n',
-                self.databases()['ccnet'] + '\n',
-                self.databases()['seafile'] + '\n',
-                self.databases()['seahub'] + '\n', '\n']
+                self.databases['ccnet'] + '\n',
+                self.databases['seafile'] + '\n',
+                self.databases['seahub'] + '\n', '\n']
             seahub_args = [self.admin_email + '\n',
-                           self.admin_passwd + '\n',
-                           self.admin_passwd + '\n']
+                           self.admin_password + '\n',
+                           self.admin_password + '\n']
             if not self.options['manual_install']['value']:
                 #Be cautious, the install may crash because of the server name (title). Use only alphanumeric, less than 15 letter without space
                 self.execute(ssh, ['./setup-seafile-mysql.sh'],

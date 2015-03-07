@@ -74,7 +74,7 @@ class ClouderBase(models.Model):
             self.execute(ssh, ['drush', 'vset', '--yes', '--exact',
                                'wikicompare_test_platform', '1'],
                          path=self.service_id.full_localpath_files +
-                         '/sites/' + self.fulldomain())
+                         '/sites/' + self.fulldomain)
             if self.poweruser_name and self.poweruser_email:
                 self.execute(ssh, ['drush',
                                    self.service_id.full_localpath_files +
@@ -82,7 +82,7 @@ class ClouderBase(models.Model):
                                    '--user=' + self.poweruser_name,
                                    'deploy_demo'],
                              path=self.service_id.full_localpath_files +
-                             '/sites/' + self.fulldomain())
+                             '/sites/' + self.fulldomain)
             ssh.close()
         return res
 

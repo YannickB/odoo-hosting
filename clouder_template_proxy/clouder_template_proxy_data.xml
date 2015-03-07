@@ -9,7 +9,7 @@
         </record>
 
         <record id="app_proxy" model="clouder.application">
-            <field name="name">proxy</field>
+            <field name="name">Proxy</field>
             <field name="code">proxy</field>
             <field name="current_version">2</field>
             <field name="type_id" ref="apptype_proxy"/>
