@@ -50,7 +50,9 @@ class ClouderApplicationVersion(models.Model):
             #
             # if [[ $name == 'dev' ]]
             # then
-            # patch -p0 -d $archive_path/$app/${app}-${name}/archive/sites/all/themes/wikicompare_theme/ < $openerp_path/clouder/clouder/apps/drupal/patch/dev_zen_rebuild_registry.patch
+            # patch -p0 -d $archive_path/$app/${app}-${name}/archive/sites/all/
+            # themes/wikicompare_theme/ < $openerp_path/clouder/clouder/apps/
+            # drupal/patch/dev_zen_rebuild_registry.patch
             # fi
 
         return

@@ -47,27 +47,6 @@ class ClouderSaveRepository(models.Model):
 
     _order = 'create_date desc'
 
-    # @api.multi
-    # def get_vals(self):
-    #
-    #     vals = {}
-    #
-    #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-    #
-    #     vals.update({
-    #         'saverepo_id': self.id,
-    #         'saverepo_name': self.name,
-    #         'saverepo_type': self.type,
-    #         'saverepo_date_change': self.date_change,
-    #         'saverepo_date_expiration': self.date_expiration,
-    #         'saverepo_container_name': self.container_name,
-    #         'saverepo_container_server': self.container_server,
-    #         'saverepo_base_name': self.base_name,
-    #         'saverepo_base_domain': self.base_domain,
-    #     })
-    #
-    #     return vals
-
 
 class ClouderSaveSave(models.Model):
     _name = 'clouder.save.save'
@@ -166,47 +145,6 @@ class ClouderSaveSave(models.Model):
         return self.base_restore_to_domain_id.name or self.repo_id.base_domain
 
     _order = 'create_date desc'
-
-    # @api.multi
-    # def get_vals(self):
-    #     vals = {}
-    #
-    #     if self.base_id:
-    #         vals.update(self.base_id.get_vals())
-    #     elif self.service_id:
-    #         vals.update(self.service_id.get_vals())
-    #     elif self.container_id:
-    #         vals.update(self.container_id.get_vals())
-    #
-    #     vals.update(self.repo_id.get_vals())
-    #
-    #     backup_server_vals = self.backup_id.get_vals()
-    #     vals.update({
-    #         'backup_id': backup_server_vals['container_id'],
-    #         'backup_fullname': backup_server_vals['container_fullname'],
-    #         'backup_id': backup_server_vals['server_id'],
-    #         'backup_server_ssh_port': backup_server_vals['server_ssh_port'],
-    #         'backup_server_domain': backup_server_vals['server_domain'],
-    #         'backup_server_ip': backup_server_vals['server_ip'],
-    #         'backup_method': backup_server_vals['app_options']['backup_method']['value']
-    #     })
-    #
-    #     vals.update({
-    #         'save_id': self.id,
-    #         'save_name': self.name,
-    #         'saverepo_date_expiration': self.date_expiration,
-    #         'save_comment': self.comment,
-    #         'save_now_bup': self.now_bup,
-    #         'save_now_epoch': (datetime.strptime(self.now_bup, "%Y-%m-%d-%H%M%S") - datetime(1970,1,1)).total_seconds(),
-    #         'save_base_id': self.base_id.id,
-    #         'save_container_volumes': self.container_volumes_comma,
-    #         'save_container_restore_to_name': self.container_restore_to_name or self.base_container_name or vals['saverepo_container_name'],
-    #         'save_container_restore_to_server': self.container_restore_to_server_id.name or self.base_container_server or vals['saverepo_container_server'],
-    #         'save_base_restore_to_name': self.base_restore_to_name or vals['saverepo_base_name'],
-    #         'save_base_restore_to_domain': self.base_restore_to_domain_id.name or vals['saverepo_base_domain'],
-    #         'save_base_dumpfile': vals['saverepo_type'] == 'base' and self.container_app + '_' + self.base_name.replace('-','_') + '_' + self.base_domain.replace('-','_').replace('.','_') + '.dump'
-    #     })
-    #     return vals
 
     @api.multi
     def create(self, vals):
@@ -346,7 +284,7 @@ class ClouderSaveSave(models.Model):
         # upgrade = True
         if not img_versions:
             self.log("Warning, couldn't find the image version, using latest")
-            #We do not want to force the upgrade if we had to use latest
+            # We do not want to force the upgrade if we had to use latest
             # upgrade = False
             versions = imgs[0].version_ids
             if not versions:
@@ -422,8 +360,7 @@ class ClouderSaveSave(models.Model):
             container = self.container_id
 
         if self.repo_id.type == 'container':
-            # vals = self.get_vals(cr, uid, save.id, context=context)
-            # vals_container = container_obj.get_vals(cr, uid, container_id, context=context)
+
             if container.image_version_id != img_versions[0]:
                 # if upgrade:
                 container.image_version_id = img_versions[0]
@@ -434,24 +371,17 @@ class ClouderSaveSave(models.Model):
                 save_comment='Before restore ' + self.name)
             container.save()
 
-            # vals = self.get_vals(cr, uid, save.id, context=context)
-            # vals_container = container_obj.get_vals(cr, uid, container_id, context=con
             ssh = self.connect(container.fullname)
             self.execute(ssh, ['supervisorctl', 'stop', 'all'])
             self.execute(ssh, ['supervisorctl', 'start', 'sshd'])
             self.restore_action(container)
-            # ssh = execute.connect(vals['saverepo_container_server'], 22, 'root', context)
-            # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['saverepo_container_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'container', vals['saverepo_name'], vals['save_now_bup'], vals['save_container_volumes']], context)
-            # ssh.close()
-            # sftp.close()
-
 
             for volume in container.volume_ids:
                 if volume.user:
                     self.execute(ssh, ['chown', '-R',
                                        volume.user + ':' + volume.user,
                                        volume.name])
-            # execute.execute(ssh, ['supervisorctl', 'start', 'all'], context)
+
             ssh.close()
             container.start()
 
@@ -469,7 +399,7 @@ class ClouderSaveSave(models.Model):
                 self.log(
                     "Warning, couldn't find the application version, "
                     "using latest")
-                #We do not want to force the upgrade if we had to use latest
+                # We do not want to force the upgrade if we had to use latest
                 # upgrade = False
                 versions = application_obj.browse(apps[0]).version_ids
                 if not versions:
@@ -653,13 +583,6 @@ class ClouderSaveSave(models.Model):
 
     @api.multi
     def restore_action(self, object):
-        #
-        # context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        # ssh = execute.connect(vals['save_computed_container_restore_to_server'], 22, 'root', context)
-        # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_computed_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/restore', 'base', vals['saverepo_name'], vals['save_now_bup']], context)
-        # ssh.close()
-        # sftp.close()
-        #
 
         if object._name == 'clouder.base':
             container = object.service_id.container_id
@@ -698,7 +621,7 @@ class ClouderSaveSave(models.Model):
         self.execute(ssh, [
             'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
             directory + '/', container.fullname + ':' + directory])
-        # self.execute(ssh, ['rm', '-rf', directory + '*'])
+        self.execute(ssh, ['rm', '-rf', directory + '*'])
         self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
         ssh.close()
 
@@ -758,12 +681,6 @@ class ClouderSaveSave(models.Model):
             self.execute(ssh, ['chmod', '-R', '777',
                                '/base-backup/' + self.repo_id.name])
             ssh.close()
-
-        #
-        # ssh = execute.connect(vals['save_computed_container_restore_to_server'], 22, 'root', context)
-        # execute.execute(ssh, ['docker', 'run', '-t', '--rm', '--volumes-from', vals['save_computed_container_restore_to_name'], '-v', '/opt/keys/bup:/root/.ssh', 'img_bup:latest', '/opt/save', vals['saverepo_type'], vals['saverepo_name'], str(int(vals['save_now_epoch'])), vals['save_container_volumes'] or ''], context)
-        # ssh.close()
-        # sftp.close()
 
         directory = '/tmp/' + self.repo_id.name
         ssh = self.connect(self.container_id.fullname)
@@ -836,7 +753,7 @@ class ClouderSaveSave(models.Model):
                 'bup save -n ' + self.repo_id.name + ' -d ' +
                 str(int(self.now_epoch)) + ' --strip ' + directory])
 
-        # self.execute(ssh, ['rm', '-rf', directory + '*'])
+        self.execute(ssh, ['rm', '-rf', directory + '*'])
         self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
         ssh.close()
 

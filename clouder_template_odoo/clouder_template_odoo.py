@@ -89,8 +89,6 @@ class ClouderService(models.Model):
             ssh = self.connect(
                 self.container_id.fullname,
                 username=self.container_id.application_id.type_id.system_user)
-            # self.execute(ssh, ['ln', '-s', vals['app_version_full_localpath'], '/opt/odoo/services/' + self.name])
-            # self.execute(ssh, ['mkdir', '/opt/odoo/' + self.name + '/extra'])
 
             config_file = '/opt/odoo/' + self.name + '/etc/config'
             self.execute(ssh,
@@ -174,12 +172,6 @@ class ClouderBase(models.Model):
             ssh.close()
 
             if self.build == 'build':
-                #I had to go in /usr/local/lib/python2.7/dist-packages/erppeek.py and replace def create_database line 610. More specifically, db.create and db.get_progress used here aren't working anymore, see why in odoo/services/db.py, check dispatch function.
-                #    def create_database(self, passwd, database, demo=False, lang='en_US',
-                #                        user_password='admin'):
-                #        thread_id = self.db.create_database(passwd, database, demo, lang, user_password)
-                #        self.login('admin', user_password,
-                #                       database=database)
 
                 self.log("client = erppeek.Client('http://" +
                          self.service_id.container_id.server_id.name + ":" +
@@ -197,9 +189,7 @@ class ClouderBase(models.Model):
                                        self.fullname_, demo=self.test,
                                        lang=self.lang,
                                        user_password=self.admin_password)
-                #                cmd = ['/usr/local/bin/erppeek', '--server', 'http://' + self.service_id.container_id.server_id.name + ':' + self.service_id.options['port']['hostport']]
-                #                stdin = ["client.create_database('" + self.service_id.database_password + "', '" + self.fullname_ + "', demo=" + str(self.test) + ", lang='fr_FR', user_password='" + self.admin_password + "')"]
-                #                self.execute_local(cmd, stdin_arg=stdin)
+
                 return True
         return res
 
@@ -404,29 +394,16 @@ class ClouderBase(models.Model):
 
         return
 
-    #
-    # def deploy_prepare_apache(self, cr, uid, vals=None):
-    #     res = super(clouder_base, self).deploy_prepare_apache(cr, uid, vals)
-    #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-    #     if vals['apptype_name'] == 'odoo':
-    #         ssh = self.connect(vals['proxy_fullname'])
-    #         self.execute(ssh, ['sed', '-i', '"s/BASE/' + vals['base_name'] + '/g"', vals['base_apache_configfile']])
-    #         self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + vals['domain_name'] + '/g"', vals['base_apache_configfile']])
-    #         self.execute(ssh, ['sed', '-i', '"s/SERVER/' + self.service_id.container_id.server_id.name + '/g"', vals['base_apache_configfile']])
-    #         self.execute(ssh, ['sed', '-i', '"s/PORT/' + self.service_id.options['port']['hostport'] + '/g"', vals['base_apache_configfile']])
-    #         ssh.close()
-    #         sftp.close()
-    #     return
-
     @api.multi
     def post_reset(self):
         res = super(ClouderBase, self).post_reset()
         if self.application_id.type_id.name == 'odoo':
             self.log("client = erppeek.Client('http://" +
                      self.service_id.container_id.server_id.name + ":" +
-                     self.service_id.port['hostport'] + "," +
-                     "db=" + self.fullname_ + "," + "user=" +
-                     self.admin_name + ", password=" + self.admin_password + ")")
+                     self.service_id.port['hostport'] +
+                     ", db=" + self.fullname_ +
+                     ", user=" + self.admin_name +
+                     ", password=" + self.admin_password + ")")
             client = erppeek.Client(
                 'http://' + self.service_id.container_id.server_id.name + ':' +
                 self.service_id.port['hostport'],
@@ -479,8 +456,6 @@ class ClouderBase(models.Model):
                     ':' + self.service_id.port['hostport'],
                     db=self.fullname_, user=self.admin_name,
                     password=self.admin_password)
-                # self.log("module_ids = client.model('ir.module.module').search([('state','in',['installed','to upgrade'])])")
-                # module_ids = client.model('ir.module.module').search([('state','in',['installed','to upgrade'])])
                 self.log("client.upgrade('base')")
                 client.upgrade('base')
             except:
@@ -514,7 +489,6 @@ class ClouderSaveSave(models.Model):
             ssh = self.connect(
                 self.container_id.fullname,
                 username=self.base_id.application_id.type_id.system_user)
-            #            self.execute(ssh, ['mkdir', '-p', '/base-backup/' + vals['saverepo_name'] + '/filestore'])
             self.execute(ssh, [
                 'cp', '-R',
                 '/opt/odoo/' + self.service_id.name + '/filestore/' +

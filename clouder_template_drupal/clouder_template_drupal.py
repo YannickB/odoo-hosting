@@ -134,10 +134,6 @@ class ClouderBase(models.Model):
                              '/sites/' + self.fulldomain)
             ssh.close()
 
-            # drush vset --yes --exact bakery_master $bakery_master_site
-            # drush vset --yes --exact bakery_key '$bakery_private_key'
-            # drush vset --yes --exact bakery_domain $bakery_cookie_domain
-
         return res
 
     # post restore
@@ -212,21 +208,6 @@ class ClouderBase(models.Model):
             ssh.close()
         return res
 
-
-    # def deploy_prepare_apache(self, cr, uid, vals, context=None):
-    #     res = super(clouder_base, self).deploy_prepare_apache(cr, uid, vals)
-    #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-    #     if self.application_id.type_id.name == 'odoo':
-    #         ssh = self.connect(vals['proxy_fullname'])
-    #         self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"', vals['base_apache_configfile']])
-    #         self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + self.domain_id.name + '/g"', vals['base_apache_configfile']])
-    #         self.execute(ssh, ['sed', '-i', '"s/SERVER/' + vals['server_domain'] + '/g"', vals['base_apache_configfile']])
-    #         self.execute(ssh, ['sed', '-i', '"s/PORT/' + vals['service_options']['port']['hostport'] + '/g"', vals['base_apache_configfile']])
-    #         ssh.close()
-    #         sftp.close()
-    #     return
-    #
-
     @api.multi
     def post_reset(self):
         res = super(ClouderBase, self).post_reset()
@@ -285,13 +266,15 @@ class ClouderSaveSave(models.Model):
             ssh = self.connect(
                 self.container_id.fullname,
                 username=self.base_id.application_id.type_id.system_user)
-            #            self.execute(ssh, ['drush', 'archive-dump', self.fullname_, '--destination=/base-backup/' + vals['saverepo_name'] + 'tar.gz'])
+            # self.execute(ssh, ['drush', 'archive-dump', self.fullname_,
+            #  '--destination=/base-backup/' + vals['saverepo_name'] +
+            # 'tar.gz'])
             self.execute(ssh, ['cp', '-R',
                                self.service_id.full_localpath_files +
                                '/sites/' + self.base_id.fulldomain,
                                '/base-backup/' + self.repo_id.name + '/site'])
             ssh.close()
-        return
+        return res
 
     @api.multi
     def restore_base(self):
@@ -308,7 +291,7 @@ class ClouderSaveSave(models.Model):
                                self.service_id.full_localpath_files +
                                '/sites/' + self.base_id.fulldomain])
             ssh.close()
-        return
+        return res
 
 
 class ClouderBaseLink(models.Model):
@@ -316,7 +299,7 @@ class ClouderBaseLink(models.Model):
 
     @api.multi
     def deploy_piwik(self, piwik_id):
-        super(ClouderBaseLink, self).deploy_piwik(piwik_id)
+        res = super(ClouderBaseLink, self).deploy_piwik(piwik_id)
         if self.name.name.code == 'piwik' \
                 and self.base_id.application_id.type_id.name == 'drupal':
             ssh = self.connect(self.container_id.fullname)
@@ -337,4 +320,4 @@ class ClouderBaseLink(models.Model):
                          path=self.base_id.service_id.full_localpath_files +
                          '/sites/' + self.base_id.fulldomain)
             ssh.close()
-        return
+        return res

@@ -56,35 +56,6 @@ class ClouderDomain(models.Model):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits - and dot"))
 
-            # @api.multi
-            # def get_vals(self):
-            #
-            #     vals = {}
-            #
-            #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-            #
-            #     dns_vals = self.dns_server_id.get_vals()
-            #
-            #     vals.update({
-            #         'dns_id': dns_vals['container_id'],
-            #         'dns_name': dns_vals['container_name'],
-            #         'dns_fullname': dns_vals['container_fullname'],
-            #         'dns_ssh_port': dns_vals['container_ssh_port'],
-            #         'dns_server_id': dns_vals['server_id'],
-            #         'dns_server_domain': dns_vals['server_domain'],
-            #         'dns_server_ip': dns_vals['server_ip'],
-            #     })
-            #
-            #     vals.update({
-            #         'domain_name': self.name,
-            #         'domain_organisation': self.organisation,
-            #         'domain_configfile': '/etc/bind/db.' + self.name,
-            #         'domain_certkey': self.cert_key,
-            #         'domain_certcert': self.cert_cert,
-            #     })
-            #
-            #     return vals
-
 
 class ClouderBase(models.Model):
     _name = 'clouder.base'
@@ -215,6 +186,7 @@ class ClouderBase(models.Model):
     @api.one
     @api.constrains('service_id', 'service_ids', 'application_id')
     def _check_application(self):
+
         if self.application_id.id != \
                 self.service_id.container_id.application_id.id:
             raise except_orm(_('Data error!'),
@@ -305,130 +277,6 @@ class ClouderBase(models.Model):
             self.saverepo_expiration = \
                     self.application_id.base_saverepo_expiration
             self.save_expiration = self.application_id.base_save_expiration
-
-                    #########TODO La liaison entre base et service est un many2many � cause du loadbalancing. Si le many2many est vide, un service est cr�� automatiquement. Finalement il y aura un many2one pour le principal, et un many2many pour g�rer le loadbalancing
-                    #########Contrainte : L'application entre base et service doit �tre la m�me, de plus la bdd/host/db_user/db_password doit �tre la m�me entre tous les services d'une m�me base
-
-    # @api.multi
-    # def get_vals(self):
-    #     repo_obj = self.pool.get('clouder.save.repository')
-    #     vals = {}
-    #
-    #     now = datetime.now()
-    #     if not self.save_repository_id:
-    #         repo_ids = repo_obj.search([('base_name','=',self.name),('base_domain','=',self.domain_id.name)])
-    #         if repo_ids:
-    #             self.write({'save_repository_id': repo_ids[0]})
-    #
-    #     if not self.save_repository_id or datetime.strptime(self.save_repository_id.date_change, "%Y-%m-%d") < now or False:
-    #         repo_vals ={
-    #             'name': now.strftime("%Y-%m-%d") + '_' + self.name + '_' + self.domain_id.name,
-    #             'type': 'base',
-    #             'date_change': (now + timedelta(days=self.saverepo_change or self.application_id.base_saverepo_change)).strftime("%Y-%m-%d"),
-    #             'date_expiration': (now + timedelta(days=self.saverepo_expiration or self.application_id.base_saverepo_expiration)).strftime("%Y-%m-%d"),
-    #             'base_name': self.name,
-    #             'base_domain': self.domain_id.name,
-    #         }
-    #         repo_id = repo_obj.create(repo_vals)
-    #         self.write({'save_repository_id': repo_id})
-    #
-    #
-    #     vals.update(self.domain_id.get_vals())
-    #     vals.update(self.service_id.get_vals())
-    #     vals.update(self.save_repository_id.get_vals())
-    #
-    #     fullname = vals['app_code'] + '-' + self.name + '-' + self.domain_id.name
-    #     fullname = fullname.replace('.','-')
-    #
-    #     options = {}
-    #     for option in self.service_id.container_id.application_id.type_id.option_ids:
-    #         if option.type == 'base':
-    #             options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
-    #     for option in self.option_ids:
-    #         options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
-    #
-    #     links = {}
-    #     if 'app_links' in vals:
-    #         for app_code, link in vals['app_links'].iteritems():
-    #             if link['base']:
-    #                 links[app_code] = link
-    #                 links[app_code]['target'] = False
-    #     for link in self.link_ids:
-    #         if link.name.code in links and link.target:
-    #             link_vals = link.target.get_vals()
-    #             links[link.name.code]['target'] = {
-    #                 'link_id': link_vals['container_id'],
-    #                 'link_name': link_vals['container_name'],
-    #                 'link_fullname': link_vals['container_fullname'],
-    #                 'link_ssh_port': link_vals['container_ssh_port'],
-    #                 'link_server_id': link_vals['server_id'],
-    #                 'link_server_domain': link_vals['server_domain'],
-    #                 'link_server_ip': link_vals['server_ip'],
-    #             }
-    #     links_temp = links
-    #     for app_code, link in links.iteritems():
-    #         if link['required'] and not link['target']:
-    #             raise except_orm(_('Data error!'),
-    #                 _("You need to specify a link to " + link['name'] + " for the base " + self.name))
-    #     links = links_temp
-    #
-    #     backup_servers = []
-    #     for backup in self.backup_server_ids:
-    #         backup_vals = backup.get_vals()
-    #         backup_servers.append({
-    #             'container_id': backup_vals['container_id'],
-    #             'container_fullname': backup_vals['container_fullname'],
-    #             'server_id': backup_vals['server_id'],
-    #             'server_ssh_port': backup_vals['server_ssh_port'],
-    #             'server_domain': backup_vals['server_domain'],
-    #             'server_ip': backup_vals['server_ip'],
-    #             'backup_method': backup_vals['app_options']['backup_method']['value']
-    #         })
-    #
-    #     fullname_ = fullname.replace('-','_')
-    #     databases = {'single': fullname_}
-    #     databases_comma = ''
-    #     if vals['apptype_multiple_databases']:
-    #         databases = {}
-    #         first = True
-    #         for database in vals['apptype_multiple_databases'].split(','):
-    #             if not first:
-    #                 databases_comma += ','
-    #             databases[database] = fullname_ + '_' + database
-    #             databases_comma += databases[database]
-    #             first = False
-    #     vals.update({
-    #         'base_id': self.id,
-    #         'base_name': self.name,
-    #         'base_fullname': fullname,
-    #         'base_fulldomain': self.name + '.' + self.domain_id.name,
-    #         'base_fullname': fullname,
-    #         'base_fullname_': fullname_,
-    #         'base_title': self.title,
-    #         'base_domain': self.domain_id.name,
-    #         'base_admin_name': self.admin_name,
-    #         'base_admin_password': self.admin_password,
-    #         'base_admin_email': self.admin_email,
-    #         'base_poweruser_name': self.poweruser_name,
-    #         'base_poweruser_password': self.poweruser_password,
-    #         'base_poweruser_email': self.poweruser_email,
-    #         'base_build': self.build,
-    #         'base_sslonly': self.ssl_only,
-    #         'base_certkey': self.cert_key,
-    #         'base_certcert': self.cert_cert,
-    #         'base_test': self.test,
-    #         'base_lang': self.lang,
-    #         'base_nosave': self.nosave,
-    #         'base_options': options,
-    #         'base_links': links,
-    #         'base_nginx_configfile': '/etc/nginx/sites-available/' + fullname,
-    #         'base_shinken_configfile': '/usr/local/shinken/etc/services/' + fullname + '.cfg',
-    #         'base_databases': databases,
-    #         'base_databases_comma': databases_comma,
-    #         'base_backup_servers': backup_servers
-    #     })
-    #
-    #     return vals
 
     @api.model
     def create(self, vals):
@@ -573,18 +421,12 @@ class ClouderBase(models.Model):
         self.end_log()
         return save
 
-    #
-    # @api.multi
-    # def reset_base(self, cr, uid, ids, context={}):
-    #     self._reset_base(cr, uid,ids, context=context)
-
     def post_reset(self):
         self.deploy_links()
         return
 
     def _reset_base(self, base_name=False, service_id=False):
         base_parent_id = self.parent_id and self.parent_id or self
-        # vals_parent = self.get_vals(cr, uid, base_parent_id, context=context)
         if not 'save_comment' in self.env.context:
             self = self.with_context(save_comment='Reset base')
         self.with_context(forcesave=True)
@@ -629,11 +471,6 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_post(self):
-        return
-
-    #TODO remove
-    @api.multi
-    def deploy_prepare_apache(self):
         return
 
     @api.multi
@@ -808,42 +645,6 @@ class ClouderBaseLink(models.Model):
                   + self.name.application_id.name + " for the base "
                   + self.base_id.name)
             )
-
-    #
-    # @api.multi
-    # def get_vals(self):
-    #     vals = {}
-    #
-    #     vals.update(self.base_id.get_vals())
-    #     if self.target:
-    #         target_vals = self.target_id.get_vals()
-    #         vals.update({
-    #             'link_target_container_id': target_vals['container_id'],
-    #             'link_target_container_name': target_vals['container_name'],
-    #             'link_target_container_fullname': target_vals['container_fullname'],
-    #             'link_target_app_id': target_vals['app_id'],
-    #             'link_target_app_code': target_vals['app_code'],
-    #         })
-    #         service_ids = self.env['clouder.service'].search([('container_id', '=', self.target.id)])
-    #         base_ids = self.env['clouder.base'].search([('service_id', 'in', service_ids)])
-    #         if base_ids:
-    #             base_vals = base_ids[0].get_vals()
-    #             vals.update({
-    #                 'link_target_service_db_user': base_vals['service_db_user'],
-    #                 'link_target_service_db_password': base_vals['service_db_password'],
-    #                 'link_target_database_server': base_vals['database_server'],
-    #                 'link_target_base_fullname_': base_vals['base_fullname_'],
-    #                 'link_target_base_fulldomain': base_vals['base_fulldomain'],
-    #             })
-    #
-    #
-    #     return vals
-
-    # def reload(self, cr, uid, ids, context=None):
-    #     for link_id in ids:
-    #         vals = self.get_vals(cr, uid, link_id, context=context)
-    #         self.deploy(cr, uid, vals, context=context)
-    #     return
 
     @api.multi
     def deploy_link(self):

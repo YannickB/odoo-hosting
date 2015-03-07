@@ -120,27 +120,6 @@ class ClouderServer(models.Model):
                 _('Data error!'),
                 _("Admin name can only contains digits, dots and :"))
 
-    # @api.multi
-    # def get_vals(self):
-    #
-    #     vals ={}
-    #
-    #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-    #
-    #     vals.update({
-    #         'server_id': self.id,
-    #         'server_domain': self.name,
-    #         'server_ip': self.ip,
-    #         'server_ssh_port': int(self.ssh_port),
-    #         'server_mysql_passwd': self.mysql_passwd,
-    #         'server_shinken_configfile': '/usr/local/shinken/etc/hosts/' + self.name + '.cfg',
-    #         'server_private_key': self.private_key,
-    #         'server_public_key': self.public_key,
-    #         'server_start_port': self.start_port,
-    #         'server_end_port': self.end_port,
-    #     })
-    #     return vals
-
     @api.multi
     def start_containers(self):
         self.env['clouder.container'].search(
@@ -332,8 +311,8 @@ class ClouderContainer(models.Model):
                         test = True
                 if not test:
                     raise except_orm(_('Data error!'),
-                        _("You need to specify a link to " +
-                          app_link.name.name + " for the container " + self.name))
+                        _("You need to specify a link to " + app_link.name.name
+                          + " for the container " + self.name))
 
     @api.multi
     @api.onchange('application_id')
@@ -404,137 +383,6 @@ class ClouderContainer(models.Model):
                     'nosave':volume.nosave})))
             self.volume_ids = volumes
 
-    # @api.multi
-    # def get_vals(self):
-    #     repo_obj = self.env['clouder.save.repository']
-    #     vals = {}
-    #
-    #     now = datetime.now()
-    #     if not self.save_repository_id:
-    #         repo_ids = repo_obj.search([('container_name','=',self.name),('container_server','=',self.server_id.name)])
-    #         if repo_ids:
-    #             self.save_repository_id = repo_ids[0]
-    #
-    #     if not self.save_repository_id or datetime.strptime(self.save_repository_id.date_change, "%Y-%m-%d") < now or False:
-    #         repo_vals ={
-    #             'name': now.strftime("%Y-%m-%d") + '_' + self.name + '_' + self.server_id.name,
-    #             'type': 'container',
-    #             'date_change': (now + timedelta(days=self.saverepo_change or self.application_id.container_saverepo_change)).strftime("%Y-%m-%d"),
-    #             'date_expiration': (now + timedelta(days=self.saverepo_expiration or self.application_id.container_saverepo_expiration)).strftime("%Y-%m-%d"),
-    #             'container_name': self.name,
-    #             'container_server': self.server_id.name,
-    #         }
-    #         repo_id = repo_obj.create(repo_vals)
-    #         self.save_repository_id = repo_id
-    #
-    #     vals.update(self.image_version_id.get_vals())
-    #     vals.update(self.application_id.get_vals())
-    #     vals.update(self.save_repository_id.id.get_vals())
-    #     vals.update(self.server_id.get_vals())
-    #
-    #     ports = {}
-    #     ssh_port = 22
-    #     for port in self.port_ids:
-    #         ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport, 'hostport': port.hostport, 'expose': port.expose, 'udp': port.udp}
-    #         if port.name == 'ssh':
-    #             ssh_port = port.hostport
-    #
-    #     volumes = {}
-    #     volumes_save = ''
-    #     first = True
-    #     for volume in self.volume_ids:
-    #         volumes[volume.id] = {'id': volume.id, 'name': volume.name, 'hostpath': volume.hostpath, 'user': volume.user,'readonly': volume.readonly,'nosave': volume.nosave}
-    #         if not volume.nosave:
-    #             volumes_save += (not first and ',' or '') + volume.name
-    #             first = False
-    #
-    #     options = {}
-    #     for option in self.application_id.type_id.option_ids:
-    #         if option.type == 'container':
-    #             options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
-    #     for option in self.option_ids:
-    #         options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
-    #
-    #     links = {}
-    #     if 'app_links' in vals:
-    #         for app_code, link in vals['app_links'].iteritems():
-    #             if link['container'] or link['make_link']:
-    #                 links[app_code] = link
-    #                 links[app_code]['target'] = False
-    #     for link in self.link_ids:
-    #         if link.name.code in links and link.target:
-    #             link_vals = link.get_vals()
-    #             links[link.name.code]['target'] = {
-    #                 'link_id': link_vals['container_id'],
-    #                 'link_name': link_vals['container_name'],
-    #                 'link_fullname': link_vals['container_fullname'],
-    #                 'link_ssh_port': link_vals['container_ssh_port'],
-    #                 'link_server_id': link_vals['server_id'],
-    #                 'link_server_domain': link_vals['server_domain'],
-    #                 'link_server_ip': link_vals['server_ip'],
-    #             }
-    #     for app_code, link in links.iteritems():
-    #         if link['required'] and not link['target']:
-    #             raise except_orm(_('Data error!'),
-    #                 _("You need to specify a link to " + link['name'] + " for the container " + self.name))
-    #         if not link['target']:
-    #             del links[app_code]
-    #
-    #     backup_servers = []
-    #     for backup in self.backup_server_ids:
-    #         backup_vals = backup.get_vals()
-    #         backup_servers.append({
-    #             'container_id': backup_vals['container_id'],
-    #             'container_fullname': backup_vals['container_fullname'],
-    #             'server_id': backup_vals['server_id'],
-    #             'server_ssh_port': backup_vals['server_ssh_port'],
-    #             'server_domain': backup_vals['server_domain'],
-    #             'server_ip': backup_vals['server_ip'],
-    #             'backup_method': backup_vals['app_options']['backup_method']['value']
-    #         })
-    #
-    #
-    #     root_password = False
-    #     for key, option in options.iteritems():
-    #         if option['name'] == 'root_password':
-    #             root_password = option['value']
-    #
-    #     fullname = self.name + '_' + vals['server_domain']
-    #     vals.update({
-    #         'container_id': self.id,
-    #         'container_name': self.name,
-    #         'container_fullname': fullname,
-    #         'container_ports': ports,
-    #         'container_volumes': volumes,
-    #         'container_volumes_save': volumes_save,
-    #         'container_ssh_port': ssh_port,
-    #         'container_options': options,
-    #         'container_links': links,
-    #         'container_backup_servers': backup_servers,
-    #         'container_no_save': self.nosave,
-    #         'container_privileged': self.privileged,
-    #         'container_shinken_configfile': '/usr/local/shinken/etc/services/' + fullname + '.cfg',
-    #         'container_root_password': root_password
-    #     })
-    #
-    #     return vals
-
-    @api.multi
-    def create_vals(self, vals):
-        return vals
-
-    @api.model
-    def create(self, vals):
-
-        #TODO check si on a vraiment besoin du apptype_name
-        if 'application_id' in vals:
-            application = self.env['clouder.application']\
-                .browse(vals['application_id'])
-            self = self.with_context(apptype_name=application.type_id.name)
-
-        vals = self.create_vals(vals)
-        return super(ClouderContainer, self).create(vals)
-
     @api.model
     def write(self, vals):
         version_obj = self.env['clouder.image.version']
@@ -566,16 +414,6 @@ class ClouderContainer(models.Model):
         self = self.with_context(save_comment='Before unlink')
         self.save()
         return super(ClouderContainer, self).unlink()
-
-    # @api.multi
-    # def button_stop(self):
-    #     vals = self.get_vals()
-    #     self.stop(vals)
-    #
-    # @api.multi
-    # def button_start(self):
-    #     vals = self.get_vals()
-    #     self.start(vals)
 
     @api.multi
     def reinstall(self):
@@ -654,11 +492,6 @@ class ClouderContainer(models.Model):
         self.end_log()
         return save
 
-    # @api.multi
-    # def reset_key(self):
-    #     vals = self.get_vals()
-    #     self.deploy_key(vals)
-
     @api.multi
     def deploy_post(self):
         return
@@ -674,7 +507,8 @@ class ClouderContainer(models.Model):
         nextport = self.server_id.start_port
         for port in self.port_ids:
             if not port.hostport:
-                while not port.hostport and nextport != self.server_id.end_port:
+                while not port.hostport \
+                        and nextport != self.server_id.end_port:
                     ports = self.env['clouder.container.port'].search(
                         [('hostport','=',nextport),
                          ('container_id.server_id','=',self.server_id.id)])
@@ -685,7 +519,6 @@ class ClouderContainer(models.Model):
             udp = ''
             if port.udp:
                 udp = '/udp'
-            # cmd.extend(['-p', vals['server_ip'] + ':' + str(port['hostport']) + ':' + port['localport'] + udp])
             cmd.extend(['-p', str(port.hostport) + ':' + port.localport + udp])
         for volume in self.volume_ids:
             if volume.hostpath:
@@ -722,7 +555,9 @@ class ClouderContainer(models.Model):
             self.execute_local(['rm', tmp_file])
             cmd.extend([self.image_version_id.fullpath])
 
-        #Deploy key now, otherwise the container will be angry to not find the key. We can't before because vals['container_ssh_port'] may not be set
+        # Deploy key now, otherwise the container will be angry
+        # to not find the key.
+        # We can't before because self.ssh_port may not be set
         self.deploy_key()
 
         #Run container
@@ -735,22 +570,6 @@ class ClouderContainer(models.Model):
         self.start()
 
         ssh.close()
-
-#TODO
-        for link in self.link_ids:
-            if link.name.name.code == 'postfix':
-                ssh = self.connect(self.fullname)
-                self.execute(ssh, ['echo "root=' + self.email_sysadmin +
-                                   '" > /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "mailhub=postfix:25" '
-                                   '>> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "rewriteDomain=' + self.fullname +
-                                   '" >> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "hostname=' + self.fullname +
-                                   '" >> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "FromLineOverride=YES" >> '
-                                   '/etc/ssmtp/ssmtp.conf'])
-                ssh.close()
 
         #For shinken
         self.save()
@@ -786,13 +605,6 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def deploy_key(self):
-        # restart_required = False
-        # try:
-        #     ssh_container, sftp_container = execute.connect(vals['container_fullname'], context=context)
-        # except:
-        #     restart_required = True
-        #     pass
-
 
         self.purge_key()
         self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
@@ -816,14 +628,6 @@ class ClouderContainer(models.Model):
                   self.fullname + '.pub', '/opt/keys/' +
                   self.fullname + '/authorized_keys')
         ssh.close()
-
-        # _logger.info('restart required %s', restart_required)
-        # if not restart_required:
-        #     execute.execute(ssh_container, ['supervisorctl', 'restart', 'sshd'], context)
-        #     ssh_container.close()
-        #     sftp_container.close()
-        # else:
-        #     self.start(cr, uid, vals, context=context)
 
     @api.multi
     def purge_key(self):
@@ -922,31 +726,6 @@ class ClouderContainerLink(models.Model):
                 _("You need to specify a link to " +
                   self.name.application_id.name + " for the container " +
                   self.container_id.name))
-
-
-    # @api.multi
-    # def get_vals(self):
-    #     vals = {}
-    #
-    #     vals.update(self.container_id.get_vals())
-    #     if self.target:
-    #         target_vals = self.target_id.get_vals()
-    #         vals.update({
-    #             'link_target_container_id': target_vals['container_id'],
-    #             'link_target_container_name': target_vals['container_name'],
-    #             'link_target_container_fullname': target_vals['container_fullname'],
-    #             'link_target_app_id': target_vals['app_id'],
-    #             'link_target_app_code': target_vals['app_code'],
-    #         })
-    #
-    #
-    #     return vals
-
-    # @api.multi
-    # def reload(self):
-    #     vals = self.get_vals()
-    #     self.deploy(vals)
-    #     return
 
     @api.multi
     def deploy_link(self):

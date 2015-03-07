@@ -28,8 +28,8 @@ class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
 
     @api.multi
-    def create_vals(self):
-        vals = super(ClouderContainer, self).create_vals()
+    def create(self, vals):
+
         if 'application_id' in vals and vals['application_id']:
             application = self.env['clouder.application'].browse(
                 vals['application_id'])
@@ -51,7 +51,7 @@ class ClouderContainer(models.Model):
                     vals['option_ids'].append((0, 0, {
                         'name': password_option,
                         'value': clouder_model.generate_random_password(20)}))
-        return vals
+        return super(ClouderContainer, self).create_vals()
 
     @api.multi
     def deploy_post(self):

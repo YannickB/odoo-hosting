@@ -39,8 +39,7 @@ class ClouderContainer(models.Model):
         return res
 
     @api.multi
-    def create_vals(self, vals):
-        super(ClouderContainer, self).create_vals(vals)
+    def create(self, vals):
 
         application = 'application_id' in vals \
             and self.env['clouder.application'].browse(vals['application_id'])
@@ -83,7 +82,7 @@ class ClouderContainer(models.Model):
                             'hostport': str(i), 'expose': 'internet'}))
                         i += 1
 
-        return vals
+        return super(ClouderContainer, self).create(vals)
 
     @api.multi
     def deploy_post(self):

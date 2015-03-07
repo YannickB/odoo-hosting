@@ -136,7 +136,6 @@ class ClouderModel(models.AbstractModel):
         if not self._name in logs:
             logs[self._name] = {}
         now = datetime.now()
-        #_logger.info('start log model %s, res %s', self._name, id)
         if not self.id in logs[self._name]:
             expiration_date = (now + timedelta(days=self._log_expiration_days)
             ).strftime("%Y-%m-%d")
@@ -155,7 +154,6 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def end_log(self):
         log_obj = self.env['clouder.log']
-        #_logger.info('end log model %s, res %s', self._name, id)
         if 'logs' in self.env.context:
             log = log_obj.browse(
                 self.env.context['logs'][self._name][self.id]['log_id'])
@@ -240,7 +238,7 @@ class ClouderModel(models.AbstractModel):
         except:
             pass
         res = super(ClouderModel, self).unlink()
-        #Security to prevent log to write in a removed clouder.log
+        # Security to prevent log to write in a removed clouder.log
         if 'logs' in self.env.context \
                 and self._name in self.env.context['logs'] \
                 and self.id in self.env.context['logs'][self._name]:
@@ -289,7 +287,6 @@ class ClouderModel(models.AbstractModel):
                 self.log('command : ' + arg)
                 stdin.write(arg)
                 stdin.flush()
-    #    _logger.info('stdin : %s', stdin.read())
         stdout_read = stdout.read()
         self.log('stdout : ' + stdout_read)
         self.log('stderr : ' + stderr.read())
@@ -319,17 +316,11 @@ class ClouderModel(models.AbstractModel):
             os.chdir(path)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, shell=shell)
-    #    for line in proc.stdin:
-    #       line = 'stdin : ' + line
-    #       log(line, context=context)
         out = ''
         for line in proc.stdout:
            out += line
            line = 'stdout : ' + line
            self.log(line)
-    #    for line in proc.stderr:
-    #       line = 'stderr : ' + line
-    #       log(line, context)
         os.chdir(cwd)
         return out
 

@@ -56,30 +56,6 @@ class ClouderConfigSettings(models.Model):
     def now_hour_regular(self):
         return self.env['clouder.model'].now_hour_regular
 
-    # @api.multi
-    # def get_vals(self):
-    #     config = self.env.ref('clouder.clouder_settings')
-    #
-    #     vals = {}
-    #
-    #     if not config.email_sysadmin:
-    #         raise except_orm(_('Data error!'),
-    #             _("You need to specify the sysadmin email in configuration"))
-    #
-    #
-    #     now = datetime.now()
-    #     vals.update({
-    #         'config_email_sysadmin': config.email_sysadmin,
-    #         'config_archive_path': '/opt/archives',
-    #         'config_services_hostpath': '/opt/services',
-    #         'config_home_directory': expanduser("~"),
-    #         'now_date': now.strftime("%Y-%m-%d"),
-    #         'now_hour': now.strftime("%H-%M"),
-    #         'now_hour_regular': now.strftime("%H:%M:%S"),
-    #         'now_bup': now.strftime("%Y-%m-%d-%H%M%S"),
-    #     })
-    #     return vals
-
     @api.one
     @api.constrains('email_sysadmin')
     def _validate_data(self):
@@ -112,9 +88,10 @@ class ClouderConfigSettings(models.Model):
             backup.execute(ssh,
                            ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
                             '-r'])
-            #http://stackoverflow.com/questions/1904860/how-to-remove-unreferenced-blobs-from-my-git-repo
-            #https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
-            #https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
+            # http://stackoverflow.com/questions/1904860/
+            #     how-to-remove-unreferenced-blobs-from-my-git-repo
+            # https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
+            # https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
             backup.execute(ssh, ['git', 'gc', '--prune=now'],
                            path='/opt/backup/bup')
             backup.execute(ssh,

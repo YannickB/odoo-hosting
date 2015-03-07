@@ -60,34 +60,6 @@ class ClouderApplicationType(models.Model):
                 "digits and -")
             )
 
-            # @api.multi
-            # def get_vals(self):
-            #
-            #     vals = {}
-            #
-            #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-            #
-            #     options = {
-            #         'application': {},
-            #         'container': {},
-            #         'service': {},
-            #         'base': {}
-            #     }
-            #     for option in self.option_ids:
-            #         options[option.type][option.name] = {'id': option.id, 'name': option.name, 'type': option.type, 'default': option.default}
-            #
-            #     vals.update({
-            #         'apptype_name': self.name,
-            #         'apptype_system_user': self.system_user,
-            #         'apptype_localpath': self.localpath,
-            #         'apptype_localpath_services': self.localpath_services,
-            #         'apptype_options': options,
-            #         'apptype_symlink': self.symlink,
-            #         'apptype_multiple_databases': self.multiple_databases,
-            #     })
-            #
-            #     return vals
-
 
 class ClouderApplicationTypeOption(models.Model):
     _name = 'clouder.application.type.option'
@@ -228,50 +200,6 @@ class ClouderApplication(models.Model):
                         self.link_ids = [(0, 0, {
                             'name': type_option,'value': type_option.default})]
 
-    # @api.multi
-    # def get_vals(self):
-    #
-    #     vals = {}
-    #
-    #     vals.update(self.type_id.get_vals())
-    #
-    #     now = datetime.now()
-    #     computed_version = self.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
-    #
-    #     options = {}
-    #     for option in self.type_id.option_ids:
-    #         if option.type == 'application':
-    #             options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
-    #     for option in self.option_ids:
-    #         options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
-    #
-    #     links = {}
-    #     for link in self.link_ids:
-    #         links[link.name.code] = {
-    #             'id': link.id, 'app_id': link.name.id, 'name': link.name.name, 'code': link.name.code,
-    #             'required': link.required, 'auto': link.auto, 'make_link': link.make_link, 'next': link.next,
-    #             'container': link.container, 'service': link.service, 'base': link.base
-    #         }
-    #
-    #
-    #     vals.update({
-    #         'app_id': self.id,
-    #         'app_name': self.name,
-    #         'app_code': self.code,
-    #         'app_full_archivepath': vals['config_archive_path'] + '/' + self.type_id.name + '-' + self.code,
-    #         'app_full_hostpath': vals['config_services_hostpath'] + self.type_id.name + '-' + self.code,
-    #         'app_full_localpath': vals['apptype_localpath'] and vals['apptype_localpath'] + '/' + self.type_id.name + '-' + self.code or '',
-    #         'app_admin_name': self.admin_name,
-    #         'app_admin_email': self.admin_email,
-    #         'app_current_version': self.current_version,
-    #         'app_computed_version': computed_version,
-    #         'app_buildfile': self.buildfile,
-    #         'app_options': options,
-    #         'app_links': links
-    #     })
-    #
-    #     return vals
-
     @api.multi
     def write(self, vals):
         if 'code' in vals and vals['code'] != self.code:
@@ -363,36 +291,6 @@ class ClouderApplicationVersion(models.Model):
                 "digits and underscore and dot"))
 
     _order = 'create_date desc'
-
-    # @api.multi
-    # def get_vals(self):
-    #
-    #     vals = {}
-    #
-    #     vals.update(self.application_id.get_vals())
-    #
-    #
-    #     archive_vals = self.archive_id.get_vals()
-    #     vals.update({
-    #         'archive_id': archive_vals['container_id'],
-    #         'archive_fullname': archive_vals['container_fullname'],
-    #         'archive_server_id': archive_vals['server_id'],
-    #         'archive_server_ssh_port': archive_vals['server_ssh_port'],
-    #         'archive_server_domain': archive_vals['server_domain'],
-    #         'archive_server_ip': archive_vals['server_ip'],
-    #     })
-    #
-    #     vals.update({
-    #         'app_version_id': self.id,
-    #         'app_version_name': self.name,
-    #         'app_version_fullname': vals['app_code'] + '_' + self.name,
-    #         'app_version_full_archivepath': vals['app_full_archivepath'] + '/' + self.name,
-    #         'app_version_full_archivepath_targz': vals['app_full_archivepath'] + '/' + self.name + '.tar.gz',
-    #         'app_version_full_hostpath': vals['app_full_hostpath'] + '/' + self.name,
-    #         'app_version_full_localpath': vals['app_full_localpath'] + '/' + self.name,
-    #     })
-    #
-    #     return vals
 
     @api.one
     def unlink(self):

@@ -41,13 +41,6 @@ class ClouderImageVersion(models.Model):
 
 class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
-    #
-    # def get_vals(self, cr, uid, ids, context={}):
-    #     res = super(clouder_container, self).get_vals(cr, uid, ids, context)
-    #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-    #     if 'apptype_name' in res and res['apptype_name'] == 'registry':
-    #         res['image_version_fullname'] = 'registry'
-    #     return res
 
     @api.multi
     def deploy(self):

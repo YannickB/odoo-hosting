@@ -257,93 +257,6 @@ class ClouderService(models.Model):
                                              'target': app_link.next}))
             self.link_ids = links
 
-
-    # @api.multi
-    # def get_vals(self):
-    #
-    #     vals = {}
-    #
-    #     vals.update(self.application_version_id.get_vals())
-    #
-    #     vals.update(self.container_id.get_vals())
-    #
-    #     options = {}
-    #     for option in self.container_id.application_id.type_id.option_ids:
-    #         if option.type == 'service':
-    #             options[option.name] = {'id': option.id, 'name': option.name, 'value': option.default}
-    #     for option in self.option_ids:
-    #         options[option.name.name] = {'id': option.id, 'name': option.name.name, 'value': option.value}
-    #
-    #     links = {}
-    #     if 'app_links' in vals:
-    #         for app_code, link in vals['app_links'].iteritems():
-    #             if link['service']:
-    #                 links[app_code] = link
-    #                 links[app_code]['target'] = False
-    #     for link in self.link_ids:
-    #         if link.name.code in links and link.target:
-    #             link_vals = link.target.get_vals()
-    #             links[link.name.code]['target'] = {
-    #                 'link_id': link_vals['container_id'],
-    #                 'link_name': link_vals['container_name'],
-    #                 'link_fullname': link_vals['container_fullname'],
-    #                 'link_ssh_port': link_vals['container_ssh_port'],
-    #                 'link_server_id': link_vals['server_id'],
-    #                 'link_server_domain': link_vals['server_domain'],
-    #                 'link_server_ip': link_vals['server_ip'],
-    #             }
-    #             database = False
-    #             if link.name.code == 'postgres':
-    #                 vals['database_type'] = 'pgsql'
-    #                 database = 'postgres'
-    #             elif link.name.code == 'mysql':
-    #                 vals['database_type'] = 'mysql'
-    #                 database = 'mysql'
-    #             if database:
-    #                 vals.update({
-    #                     'database_id': link_vals['container_id'],
-    #                     'database_fullname': link_vals['container_fullname'],
-    #                     'database_ssh_port': link_vals['container_ssh_port'],
-    #                     'database_server_id': link_vals['server_id'],
-    #                     'database_server_domain': link_vals['server_domain'],
-    #                     'database_root_password': link_vals['container_root_password'],
-    #                 })
-    #                 if links[link.name.code]['make_link'] and vals['database_server_id'] == vals['server_id']:
-    #                     vals['database_server'] = database
-    #                 else:
-    #                     vals['database_server'] = vals['database_server_domain']
-    #     for app_code, link in links.iteritems():
-    #         if link['required'] and not link['target']:
-    #             raise except_orm(_('Data error!'),
-    #                 _("You need to specify a link to " + link['name'] + " for the service " + self.name))
-    #         if not link['target']:
-    #             del links[app_code]
-    #
-    #     service_fullname = vals['container_name'] + '-' + self.name
-    #     db_user = service_fullname.replace('-','_')
-    #     if not 'database_type' in vals:
-    #         raise except_orm(_('Data error!'),
-    #             _("You need to specify a database in the links of the service " + self.name + " " + vals['container_fullname']))
-    #     if vals['database_type'] == 'mysql':
-    #         db_user = vals['container_name'][:10] + '_' + self.name[:4]
-    #         db_user = db_user.replace('-','_')
-    #     vals.update({
-    #         'service_id': self.id,
-    #         'service_name': self.name,
-    #         'service_fullname': service_fullname,
-    #         'service_db_user': db_user,
-    #         'service_db_password': self.database_password,
-    #         'service_skip_analytics': self.skip_analytics,
-    #         'service_full_localpath': vals['apptype_localpath_services'] + '/' + self.name,
-    #         'service_full_localpath_files': vals['apptype_localpath_services'] + '/' + self.name + '/files',
-    #         'service_options': options,
-    #         'service_links': links,
-    #         'service_subservice_name': self.sub_service_name,
-    #         'service_custom_version': self.custom_version
-    #     })
-    #
-    #     return vals
-
     @api.multi
     def write(self, vals):
         res = super(ClouderService, self).write(vals)
@@ -431,7 +344,7 @@ class ClouderService(models.Model):
 
         self.log('Creating database user')
 
-        #SI postgres, create user
+        # SI postgres, create user
         if self.database_type != 'mysql':
             ssh = self.connect(
                 self.database.fullname, username='postgres')
@@ -473,15 +386,6 @@ class ClouderService(models.Model):
         self.deploy_post_service()
 
         self.container_id.start()
-
-        # ssh = connect(vals['server_domain'], vals['apptype_system_user'], context=context)
-        # if sftp.stat(vals['service_fullpath']):
-        # log('Service ok', context=context)
-        # else:
-        # log('There was an error while creating the instance', context=context)
-        # context['log_state'] == 'ko'
-        # ko_log(context=context)
-        # ssh.close()
 
     @api.multi
     def purge_pre_service(self):
@@ -643,32 +547,6 @@ class ClouderServiceLink(models.Model):
                 _("You need to specify a link to " +
                   self.name.application_id.name + " for the service " +
                   self.service_id.name))
-
-    # def get_vals(self, cr, uid, id, context={}):
-    #     vals = {}
-    #
-    #     link = self.browse(cr, uid, id, context=context)
-    #
-    #     vals.update(self.pool.get('clouder.service').get_vals(cr, uid, link.service_id.id, context=context))
-    #     if link.target:
-    #         target_vals = self.pool.get('clouder.container').get_vals(cr, uid, link.target.id, context=context)
-    #         vals.update({
-    #             'link_target_container_id': target_vals['container_id'],
-    #             'link_target_container_name': target_vals['container_name'],
-    #             'link_target_container_fullname': target_vals['container_fullname'],
-    #             'link_target_app_id': target_vals['app_id'],
-    #             'link_target_app_code': target_vals['app_code'],
-    #         })
-    #
-    #
-    #     return vals
-    #
-    # @api.multi
-    # def reload(self):
-    #     for link_id in ids:
-    #         vals = self.get_vals(cr, uid, link_id, context=context)
-    #         self.deploy(cr, uid, vals, context=context)
-    #     return
 
     @api.multi
     def deploy_link(self):

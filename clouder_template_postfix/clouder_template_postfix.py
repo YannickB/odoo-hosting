@@ -30,6 +30,22 @@ class ClouderContainer(models.Model):
     @api.multi
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
+
+        for link in self.link_ids:
+            if link.name.name.code == 'postfix' and link.target:
+                ssh = self.connect(self.fullname)
+                self.execute(ssh, ['echo "root=' + self.email_sysadmin +
+                                   '" > /etc/ssmtp/ssmtp.conf'])
+                self.execute(ssh, ['echo "mailhub=postfix:25" '
+                                   '>> /etc/ssmtp/ssmtp.conf'])
+                self.execute(ssh, ['echo "rewriteDomain=' + self.fullname +
+                                   '" >> /etc/ssmtp/ssmtp.conf'])
+                self.execute(ssh, ['echo "hostname=' + self.fullname +
+                                   '" >> /etc/ssmtp/ssmtp.conf'])
+                self.execute(ssh, ['echo "FromLineOverride=YES" >> '
+                                   '/etc/ssmtp/ssmtp.conf'])
+                ssh.close()
+
         if self.application_id.type_id.name == 'postfix':
             ssh = self.connect(self.fullname)
             self.execute(ssh, [

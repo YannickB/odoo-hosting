@@ -75,7 +75,9 @@ class ClouderBase(models.Model):
                            self.admin_password + '\n',
                            self.admin_password + '\n']
             if not self.options['manual_install']['value']:
-                #Be cautious, the install may crash because of the server name (title). Use only alphanumeric, less than 15 letter without space
+                # Be cautious, the install may crash because of the server
+                # name (title). Use only alphanumeric,
+                # less than 15 letter without space
                 self.execute(ssh, ['./setup-seafile-mysql.sh'],
                              stdin_arg=install_args,
                              path=self.service_id.full_localpath_files)
@@ -149,30 +151,3 @@ class ClouderBase(models.Model):
                          .replace('/', '\/') + '\/seahub.sh/d"',
                 '/opt/seafile/supervisor.conf'])
             ssh.close()
-
-        # class CloudeSaveSave(models.Model):
-        #     _inherit = 'clouder.save.save'
-
-        # @api.multi
-        # def deploy_base(self, cr, uid, vals, context=None):
-        #     res = super(clouder_save_save, self).deploy_base(cr, uid, vals, context)
-        #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        #     if vals['apptype_name'] == 'drupal':
-        #         ssh = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
-        #         execute.execute(ssh, ['cp', '-R', vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain'], '/base-backup/' + vals['saverepo_name'] + '/site'], context)
-        #         ssh.close()
-        #         sftp.close()
-        #     return
-        #
-        # @api.multi
-        # def restore_base(self, cr, uid, vals, context=None):
-        #     res = super(clouder_save_save, self).restore_base(cr, uid, vals, context)
-        #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        #     if vals['apptype_name'] == 'drupal':
-        #         ssh = execute.connect(vals['container_fullname'], username=vals['apptype_system_user'], context=context)
-        #         execute.execute(ssh, ['rm', '-rf', vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain']], context)
-        #         execute.execute(ssh, ['cp', '-R', '/base-backup/' + vals['saverepo_name'] + '/site', vals['service_full_localpath_files'] + '/sites/' + vals['base_fulldomain']], context)
-        #         ssh.close()
-        #         sftp.close()
-        #     return
-

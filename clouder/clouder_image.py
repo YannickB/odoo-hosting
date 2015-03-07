@@ -66,32 +66,6 @@ class ClouderImage(models.Model):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits and underscore"))
 
-    # @api.multi
-    # def get_vals(self):
-    #
-    #     vals = {}
-    #     vals.update(self.env.ref('clouder.clouder_settings').get_vals())
-    #
-    #     ports = {}
-    #     for port in self.port_ids:
-    #         ports[port.name] = {'id': port.id, 'name': port.name, 'localport': port.localport}
-    #
-    #     volumes = {}
-    #     for volume in self.volume_ids:
-    #         volumes[volume.id] = {'id': volume.id, 'name': volume.name}
-    #
-    #     vals.update({
-    #         'image_name': self.name,
-    #         'image_privileged': self.privileged,
-    #         'image_parent_id': self.parent_id and self.parent_id.id,
-    #         'image_parent_from': self.parent_from,
-    #         'image_ports': ports,
-    #         'image_volumes': volumes,
-    #         'image_dockerfile': self.dockerfile
-    #     })
-    #
-    #     return vals
-
     @api.multi
     def build(self):
 
@@ -108,16 +82,6 @@ class ClouderImage(models.Model):
             'image_id': self.id, 'name': version,
             'registry_id': self.registry_id and self.registry_id.id,
             'parent_id': self.parent_version_id and self.parent_version_id.id})
-
-        # def unlink(self, cr, uid, ids, context={}):
-        #     for image in self.browse(cr, uid, ids, context=context):
-        #         vals = self.get_vals(cr, uid, image.id, context=context)
-        #         self.purge(cr, uid, vals, context=context)
-        #     return super(clouder_image, self).unlink(cr, uid, ids, context=context)
-        #
-        # def purge(self, cr, uid, vals, context={}):
-        #     context.update({'clouder-self': self, 'clouder-cr': cr, 'clouder-uid': uid})
-        #     execute.execute_local(['sudo','docker', 'rmi', vals['image_name'] + ':latest'], context)
 
 
 class ClouderImageVolume(models.Model):
@@ -203,52 +167,6 @@ class ClouderImageVersion(models.Model):
                 "Image version can only contains letters, "
                 "digits and underscore and dot"))
 
-
-    # @api.multi
-    # def get_vals(self):
-    #
-    #     vals = {}
-    #
-    #     vals.update(self.image_id.get_vals())
-    #
-    #     if self.parent_id:
-    #         parent_vals = self.parent_id.get_vals()
-    #         vals.update({
-    #             'image_version_parent_id': parent_vals['image_version_id'],
-    #             'image_version_parent_fullpath': parent_vals['image_version_fullpath'],
-    #             'image_version_parent_fullpath_localhost': parent_vals['image_version_fullpath_localhost'],
-    #             'image_version_parent_registry_server_id': parent_vals['registry_server_id'],
-    #         })
-    #
-    #     if self.registry_id:
-    #         registry_vals = self.registry_id.get_vals()
-    #         registry_port = registry_vals['container_ports']['registry']['hostport']
-    #         vals.update({
-    #             'registry_id': registry_vals['container_id'],
-    #             'registry_fullname': registry_vals['container_fullname'],
-    #             'registry_port': registry_port,
-    #             'registry_server_id': registry_vals['server_id'],
-    #             'registry_server_ssh_port': registry_vals['server_ssh_port'],
-    #             'registry_server_domain': registry_vals['server_domain'],
-    #             'registry_server_ip': registry_vals['server_ip'],
-    #         })
-    #
-    #     vals.update({
-    #         'image_version_id': self.id,
-    #         'image_version_name': self.name,
-    #         'image_version_fullname': self.image_id.name + ':' + self.name,
-    #     })
-    #
-    #     if self.registry_id:
-    #         vals.update({
-    #             'image_version_fullpath': vals['registry_server_ip'] + ':' + vals['registry_port'] + '/' + vals['image_version_fullname'],
-    #             'image_version_fullpath_localhost': 'localhost:' + vals['registry_port'] + '/' + vals['image_version_fullname']
-    #         })
-    #     else:
-    #         vals['image_version_fullpath'] = ''
-    #
-    #     return vals
-
     @api.one
     def unlink(self):
         if self.container_ids:
@@ -305,9 +223,11 @@ class ClouderImageVersion(models.Model):
 
     #In case of problems with ssh authentification
     # - Make sure the /opt/keys belong to root:root with 700 rights
-    # - Make sure the user in the container can access the keys, and if possible make the key belong to the user with 700 rights
+    # - Make sure the user in the container can access the keys,
+    #     and if possible make the key belong to the user with 700 rights
 
     @api.multi
     def purge(self):
-        #TODO There is currently no way to delete an image from private registry.
+        #TODO There is currently no way to delete an image
+        #  from private registry.
         return
