@@ -27,7 +27,7 @@ import openerp.addons.clouder.clouder_model as clouder_model
 class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
 
-    @api.multi
+    @api.model
     def create(self, vals):
 
         if 'application_id' in vals and vals['application_id']:

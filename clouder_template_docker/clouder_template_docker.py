@@ -38,7 +38,7 @@ class ClouderContainer(models.Model):
                 self.deploy_post()
         return res
 
-    @api.multi
+    @api.model
     def create(self, vals):
 
         application = 'application_id' in vals \

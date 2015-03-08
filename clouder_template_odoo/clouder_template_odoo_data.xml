@@ -313,6 +313,12 @@ git clone http://github.com/clouder-community/clouder.git extra/clouder -b 8.0
             <field name="name" ref="clouder_template_piwik.app_piwik"/>
             <field name="base" eval="True"/>
         </record>
+        <record id="app_odoo_clouder_option3" model="clouder.application.option">
+            <field name="application_id" ref="app_odoo_clouder"/>
+            <field name="name" ref="apptype_odoo_option3"/>
+            <field name="value">clouder</field>
+        </record>
+
 
     </data>
 </openerp>
