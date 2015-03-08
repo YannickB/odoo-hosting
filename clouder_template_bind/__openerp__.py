@@ -23,7 +23,7 @@
     'name': 'Clouder Template Bind',
     'version': '1.0',
     'category': 'Community',
-    'depends': ['clouder'],
+    'depends': ['clouder','clouder_template_shinken'],
     'author': 'Yannick Buron',
     'license': 'AGPL-3',
     'website': 'https://github.com/YannickB',
