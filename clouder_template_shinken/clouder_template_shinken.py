@@ -67,6 +67,7 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def deploy_post(self):
+        super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'shinken':
             ssh = self.connect(self.fullname,
                                username='shinken')
