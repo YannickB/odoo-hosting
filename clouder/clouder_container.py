@@ -122,13 +122,17 @@ class ClouderServer(models.Model):
 
     @api.multi
     def start_containers(self):
-        self.env['clouder.container'].search(
-            [('server_id', '=', self.id)]).start()
+        containers = self.env['clouder.container'].search(
+            [('server_id', '=', self.id)])
+        for container in containers:
+            container.start()
 
     @api.multi
     def stop_containers(self):
-        self.env['clouder.container'].search(
-            [('server_id', '=', self.id)]).stop()
+        containers = self.env['clouder.container'].search(
+            [('server_id', '=', self.id)])
+        for container in containers:
+            container.stop()
 
     @api.multi
     def deploy(self):
