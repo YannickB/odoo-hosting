@@ -51,22 +51,22 @@ git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting master
             <field name="base_saverepo_expiration">90</field>
             <field name="base_save_expiration">5</field>
         </record>
-        <record id="app_odoo_option1" model="clouder.application.option">
+        <record id="app_odoo_community_option1" model="clouder.application.option">
             <field name="application_id" ref="app_odoo_community"/>
             <field name="name" ref="clouder_template_odoo.apptype_odoo_option1"/>
             <field name="value">l10n_fr</field>
         </record>
-        <record id="app_odoo_option3" model="clouder.application.option">
+        <record id="app_odoo_community_option3" model="clouder.application.option">
             <field name="application_id" ref="app_odoo_community"/>
             <field name="name" ref="clouder_template_odoo.apptype_odoo_option3"/>
             <field name="value">community</field>
         </record>
-        <record id="app_odoo_option4" model="clouder.application.option">
+        <record id="app_odoo_community_option4" model="clouder.application.option">
             <field name="application_id" ref="app_odoo_community"/>
             <field name="name" ref="clouder_template_odoo.apptype_odoo_option4"/>
             <field name="value">community_blog,community_crm,community_event,community_forum,community_marketplace,community_project,project_marketplace,l10n_fr_wallet,website_community_template</field>
         </record>
-        <record id="app_odoo_option5" model="clouder.application.option">
+        <record id="app_odoo_community_option5" model="clouder.application.option">
             <field name="application_id" ref="app_odoo_community"/>
             <field name="name" ref="clouder_template_odoo.apptype_odoo_option5"/>
             <field name="value">community.group_community_administrator</field>
