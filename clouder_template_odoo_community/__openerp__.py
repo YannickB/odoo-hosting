@@ -29,7 +29,8 @@
         'clouder_template_postfix',
         'clouder_template_proxy',
         'clouder_template_postgres',
-        'clouder_template_piwik'
+        'clouder_template_piwik',
+        'clouder_template_odoo',
     ],
     'author': 'Yannick Buron',
     'license': 'AGPL-3',

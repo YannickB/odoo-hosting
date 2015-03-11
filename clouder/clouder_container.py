@@ -531,7 +531,7 @@ class ClouderContainer(models.Model):
                     arg += ':ro'
                 cmd.extend(['-v', arg])
         for link in self.link_ids:
-            if link.name.make_link and link.target.server_id== self.server_id:
+            if link.name.make_link and link.target.server_id == self.server_id:
                 cmd.extend(['--link', link.target.name +
                             ':' + link.name.name.code])
         if self.privileged:

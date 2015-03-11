@@ -85,7 +85,7 @@ class ClouderApplication(models.Model):
     _name = 'clouder.application'
 
     name = fields.Char('Name', size=64, required=True)
-    code = fields.Char('Code', size=10, required=True)
+    code = fields.Char('Code', size=20, required=True)
     type_id = fields.Many2one('clouder.application.type', 'Type',
                               required=True)
     current_version = fields.Char('Current version', size=64, required=True)
@@ -173,10 +173,10 @@ class ClouderApplication(models.Model):
     @api.one
     @api.constrains('code', 'admin_name', 'admin_email')
     def _validate_data(self):
-        if not re.match("^[\w\d-]*$", self.code) or len(self.code) > 10:
+        if not re.match("^[\w\d-]*$", self.code) or len(self.code) > 20:
             raise except_orm(_('Data error!'), _(
                 "Code can only contains letters, digits and "
-                "- and shall be less than 10 characters"))
+                "- and shall be less than 20 characters"))
         if self.admin_name and not re.match("^[\w\d_]*$", self.admin_name):
             raise except_orm(_('Data error!'), _(
                 "Admin name can only contains letters, digits and underscore"))
