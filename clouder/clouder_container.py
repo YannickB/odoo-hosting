@@ -627,7 +627,7 @@ class ClouderContainer(models.Model):
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.fullname + '\n')
         ssh = self.connect(self.server_id.name)
-        self.execute(ssh, ['mkdir', '/opt/keys/' + self.fullname])
+        self.execute(ssh, ['mkdir', '-p', '/opt/keys/' + self.fullname])
         self.send(ssh, self.home_directory + '/.ssh/keys/' +
                   self.fullname + '.pub', '/opt/keys/' +
                   self.fullname + '/authorized_keys')
