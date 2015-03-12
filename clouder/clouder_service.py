@@ -318,7 +318,7 @@ class ClouderService(models.Model):
             subbase_name = self.sub_service_name + '-' + base.name
             self = self.with_context(
                 save_comment='Duplicate base into ' + subbase_name)
-            base._reset_base(subbase_name, service_id=subservice)
+            base.reset_base(subbase_name, service_id=subservice)
         self.sub_service_name = False
 
     @api.multi

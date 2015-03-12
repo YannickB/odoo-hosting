@@ -46,7 +46,7 @@
                         <field name="cert_cert"/>
                         <newline/>
                         <field name="parent_id"/>
-                        <button name="_reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
+                        <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
                         <newline/>
                         <field name="public"/>
                         <newline/>

@@ -154,7 +154,7 @@ class ClouderConfigSettings(models.Model):
             [('reset_each_day', '=', True)])
         for base in bases:
             if base.parent_id:
-                base._reset_base()
+                base.reset_base()
             else:
                 bases.reinstall()
 

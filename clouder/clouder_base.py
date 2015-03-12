@@ -425,7 +425,7 @@ class ClouderBase(models.Model):
         self.deploy_links()
         return
 
-    def _reset_base(self, base_name=False, service_id=False):
+    def reset_base(self, base_name=False, service_id=False):
         base_parent_id = self.parent_id and self.parent_id or self
         if not 'save_comment' in self.env.context:
             self = self.with_context(save_comment='Reset base')
