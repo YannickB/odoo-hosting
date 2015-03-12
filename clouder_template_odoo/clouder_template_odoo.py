@@ -106,8 +106,8 @@ class ClouderService(models.Model):
                                addons_path.replace('/', '\/') + '/g"',
                                config_file])
             self.execute(ssh, ['sed', '-i', '"s/APPLICATION/' +
-                               self.container_id.application_id.code +
-                               '/g"', config_file])
+                               self.container_id.application_id.code
+                               .replace('-', '_') + '/g"', config_file])
             self.execute(ssh, ['sed', '-i', 's/SERVICE/' + self.name + '/g',
                                config_file])
             self.execute(ssh, ['sed', '-i', 's/DATABASE_SERVER/' +

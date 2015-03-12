@@ -12,11 +12,7 @@
             <field name="name">img_bind</field>
             <field name="current_version">1</field>
             <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
-
-
+            <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install bind9

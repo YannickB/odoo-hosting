@@ -11,11 +11,11 @@
             <field name="default_image_id" ref="clouder_template_odoo.image_odoo"/>
             <field name="current_version">8.0</field>
             <field name="buildfile"><![CDATA[
-git clone http://github.com/odoo/odoo.git parts/odoo 8.0
-git clone http://github.com/OCA/vertical-community.git extra/vertical-community 8.0
-git clone http://github.com/OCA/account-financial-tools.git extra/account-financial-tools 8.0
-git clone http://github.com/YannickB/community-web.git extra/community-web master
-git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting master
+git clone http://github.com/odoo/odoo.git parts/odoo -b 8.0
+git clone http://github.com/OCA/vertical-community.git extra/vertical-community -b 8.0
+git clone http://github.com/OCA/account-financial-tools.git extra/account-financial-tools -b 8.0
+git clone http://github.com/YannickB/community-web.git extra/community-web -b master
+git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
 
 
 
