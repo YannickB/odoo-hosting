@@ -122,8 +122,9 @@ class ClouderSaveSave(models.Model):
     def base_dumpfile(self):
         return \
             self.repo_id.type == 'base' \
-            and self.container_app + '_' + self.base_name.replace('-', '_') + \
-                '_' + self.base_domain.replace('-', '_').replace('.', '_') + \
+            and self.container_app.replace('-', '_') + '_' + \
+                self.base_name.replace('-', '_') + '_' + \
+                self.base_domain.replace('-', '_').replace('.', '_') + \
                 '.dump'
 
     @property

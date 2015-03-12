@@ -421,10 +421,12 @@ class ClouderBase(models.Model):
         self.end_log()
         return save
 
+    @api.multi
     def post_reset(self):
         self.deploy_links()
         return
 
+    @api.multi
     def reset_base(self, base_name=False, service_id=False):
         base_parent_id = self.parent_id and self.parent_id or self
         if not 'save_comment' in self.env.context:
@@ -436,7 +438,7 @@ class ClouderBase(models.Model):
         vals = {'base_id': self.id, 'base_restore_to_name': self.name,
                 'base_restore_to_domain_id': self.domain_id.id,
                 'service_id': self.service_id.id, 'base_nosave': True}
-        if base_name:
+        if base_name and service_id:
             vals = {'base_id': False, 'base_restore_to_name': base_name,
                     'base_restore_to_domain_id': self.domain_id.id,
                     'service_id': service_id.id, 'base_nosave': True}
