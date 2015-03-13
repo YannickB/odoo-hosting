@@ -387,7 +387,7 @@ class ClouderContainer(models.Model):
                     'nosave':volume.nosave})))
             self.volume_ids = volumes
 
-    @api.model
+    @api.multi
     def write(self, vals):
         version_obj = self.env['clouder.image.version']
         flag = False

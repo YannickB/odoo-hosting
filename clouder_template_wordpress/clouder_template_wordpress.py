@@ -56,7 +56,7 @@ class ClouderBase(models.Model):
             ssh = self.connect(self.service_id.container_id.fullname)
             config_file = '/etc/nginx/sites-available/' + self.fullname
             self.send(ssh,
-                      modules.get_module_path('clouder_wordpress') +
+                      modules.get_module_path('clouder_template_wordpress') +
                       '/res/nginx.config', config_file)
             self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"',
                                config_file])
