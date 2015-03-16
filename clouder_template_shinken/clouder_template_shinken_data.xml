@@ -40,6 +40,7 @@ USER root
         <record id="image_shinken_volume1" model="clouder.image.volume">
             <field name="image_id" ref="image_shinken"/>
             <field name="name">/usr/local/shinken/etc</field>
+            <field name="user">shinken</field>
         </record>
         <record id="image_shinken_port1" model="clouder.image.port">
             <field name="image_id" ref="image_shinken"/>

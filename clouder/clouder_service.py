@@ -35,13 +35,13 @@ class ClouderService(models.Model):
     _name = 'clouder.service'
     _inherit = ['clouder.model']
 
-    @api.multi
-    def name_get(self):
-        if self.id:
-            return [(self.id, self.name + ' [' + self.container_id.name +
-                     '_' + self.container_id.server_id.name + ']')]
-        else:
-            return []
+    def name_get(self, cr, uid, ids, context=None):
+        res = []
+        for service in self.browse(cr, uid, ids, context=context):
+            res.append((service.id, service.name + ' [' +
+                        service.container_id.name + '_' +
+                        service.container_id.server_id.name + ']'))
+        return res
 
     @api.model
     def name_search(self, name='', args=None, operator='ilike', limit=100):
