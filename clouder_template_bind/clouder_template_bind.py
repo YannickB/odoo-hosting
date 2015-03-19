@@ -89,14 +89,14 @@ class ClouderBaseLink(models.Model):
 
             postfix_link = self.search([
                 ('base_id', '=', self.base_id.id),
-                ('name.application_id.code', '=', 'postfix')])
+                ('name.name.code', '=', 'postfix')])
             if postfix_link:
                 self.execute(ssh, [
                     'echo "IN MX 1 ' +
-                    postfix_link and postfix_link[0].target.server_id.name +
+                    (postfix_link and postfix_link[0].target.server_id.name) +
                     '. ;' + self.base_id.name + ' IN CNAME" >> ' +
                     self.base_id.domain_id.configfile])
-            self.execute(ssh, ['/etc/init.d/bind9', 'restart'])
+            self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
             ssh.close()
 
     @api.multi
@@ -107,5 +107,5 @@ class ClouderBaseLink(models.Model):
             self.execute(ssh, ['sed', '-i',
                                '"/' + self.base_id.name + '\sIN\sCNAME/d"',
                                self.base_id.domain_id.configfile])
-            self.execute(ssh, ['/etc/init.d/bind9', 'restart'])
+            self.execute(ssh, ['/etc/init.d/bind9', 'reload'])
             ssh.close()
