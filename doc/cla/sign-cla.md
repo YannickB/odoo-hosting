@@ -141,3 +141,6 @@ be very careful.
 The ICLA (section 4) is a legal declaration where the contributor states they
 have the right to make the contributions. These contributors should only
 submit contributions they are really entitled to license.
+
+
+This CLA process is largely inspired by the CLA process of Odoo.
