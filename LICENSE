@@ -858,8 +858,9 @@ the peoples or companies specified below are attributed as the original author
 or licensor of this work.
 
 For an Odoo module, this correspond to the peoples or compagnies specified in
-the __openerp_.py in the 'author' notice with the clause 'by AUTHOR', where
-AUTHOR represent the original author or licensor.
+the __openerp_.py in the 'author' notice, in the licence notice with the clause
+'by AUTHOR', where AUTHOR represent the original author or licensor, and in the
+AUTHORS file if any.
 
 For any other work without specific licence, theses works shall be attributed
 to 'Clouder Community'
