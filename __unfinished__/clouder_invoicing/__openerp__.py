@@ -20,4 +20,21 @@
 #
 ##############################################################################
 
-import clouder_template_drupal
+{
+    'name': 'Clouder Invoicing',
+    'version': '1.0',
+    'category': 'Clouder',
+    'depends': ['base'],
+    'author': 'Yannick Buron (Clouder)',
+    'license': 'LGPL-3 by Clouder',
+    'website': 'https://github.com/clouder-community/clouder',
+    'description': """
+    Clouder
+    """,
+    'demo': [],
+    'data': [
+        'clouder_invoicing_view.xml',
+    ],
+    'installable': True,
+    'application': True,
+}

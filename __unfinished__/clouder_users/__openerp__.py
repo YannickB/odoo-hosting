@@ -20,4 +20,19 @@
 #
 ##############################################################################
 
-import clouder_template_drupal
+{
+    'name': 'Clouder Users',
+    'version': '1.0',
+    'category': 'Clouder',
+    'depends': ['clouder', 'clouder_template_ldap','ldap_admin'],
+    'author': 'Yannick Buron (Clouder)',
+    'license': 'LGPL-3 by Clouder',
+    'website': 'https://github.com/clouder-community/clouder',
+    'description': """
+    Clouder Users
+    """,
+    'demo': [],
+    'data': [],
+    'installable': True,
+    'application': True,
+}
