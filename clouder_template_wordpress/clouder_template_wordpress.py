@@ -20,15 +20,21 @@
 #
 ##############################################################################
 
-
-from openerp import models, fields, api, _, modules
+from openerp import models, api, modules
 
 
 class ClouderApplicationVersion(models.Model):
+    """
+    Add methods to manage the wordpress specificities.
+    """
+
     _inherit = 'clouder.application.version'
 
     @api.multi
     def build_application(self):
+        """
+        Get the archive from official website.
+        """
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'wordpress':
             ssh = self.connect(self.archive_id.fullname)
@@ -48,10 +54,17 @@ class ClouderApplicationVersion(models.Model):
 
 
 class ClouderBase(models.Model):
+    """
+    Add methods to manage the shinken specificities.
+    """
+
     _inherit = 'clouder.base'
 
     @api.multi
     def deploy_build(self):
+        """
+        Configure nginx.
+        """
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'wordpress':
             ssh = self.connect(self.service_id.container_id.fullname)
@@ -78,6 +91,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def purge_post(self):
+        """
+        Purge from nginx configuration.
+        """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'wordpress':
             ssh = self.connect(self.service_id.container_id.fullname)

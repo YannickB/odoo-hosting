@@ -20,15 +20,22 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, _, modules
+from openerp import models, api, modules
 import erppeek
 
 
 class ClouderApplicationVersion(models.Model):
+    """
+    Add methods to manage the odoo specificities.
+    """
+
     _inherit = 'clouder.application.version'
 
     @api.multi
     def build_application(self):
+        """
+        Build the archive with git or the anybox recipes.
+        """
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'odoo':
             ssh = self.connect(self.archive_id.fullname)
@@ -81,10 +88,17 @@ class ClouderApplicationVersion(models.Model):
 
 
 class ClouderService(models.Model):
+    """
+    Add methods to manage the odoo service specificities.
+    """
+
     _inherit = 'clouder.service'
 
     @api.multi
     def deploy_post_service(self):
+        """
+        Update the odoo configuration file and supervisor conf.
+        """
         super(ClouderService, self).deploy_post_service()
         if self.container_id.application_id.type_id.name == 'odoo':
             ssh = self.connect(
@@ -138,6 +152,9 @@ class ClouderService(models.Model):
 
     @api.multi
     def purge_pre_service(self):
+        """
+        Purge supervisor conf.
+        """
         super(ClouderService, self).purge_pre_service()
         if self.container_id.application_id.type_id.name == 'odoo':
             ssh = self.connect(
@@ -155,12 +172,17 @@ class ClouderService(models.Model):
 
 
 class ClouderBase(models.Model):
+    """
+    Add methods to manage the odoo base specificities.
+    """
+
     _inherit = 'clouder.base'
-
-
 
     @api.multi
     def deploy_create_database(self):
+        """
+        Create the database with odoo functions.
+        """
         res = super(ClouderBase, self).deploy_create_database()
         if self.application_id.type_id.name == 'odoo':
             ssh = self.connect(
@@ -196,6 +218,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_build(self):
+        """
+        Update admin user, install account chart and modules.
+        """
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'odoo':
             self.log(
@@ -256,13 +281,18 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_post(self):
+        """
+        Update odoo configuration.
+        """
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'odoo':
             self.log(
-                "client = erppeek.Client('http://" + self.service_id.container_id.server_id.name + ":" +
-                self.service_id.port['hostport'] + "," + "db=" + self.fullname_ +
-                "," + "user=" + self.admin_name + ", password=" +
-                self.admin_password + ")")
+                "client = erppeek.Client('http://" +
+                self.service_id.container_id.server_id.name + ":" +
+                self.service_id.port['hostport'] +
+                ", db=" + self.fullname_ +
+                ", user=" + self.admin_name +
+                ", password=" + self.admin_password + ")")
             client = erppeek.Client(
                 'http://' + self.service_id.container_id.server_id.name + ':' +
                 self.service_id.port['hostport'],
@@ -313,9 +343,13 @@ class ClouderBase(models.Model):
                 client.model('ir.config_parameter').create(
                     {'key': 'ir_attachment.location',
                      'value': 'file:///filestore'})
+        return res
 
     @api.multi
     def deploy_create_poweruser(self):
+        """
+        Create poweruser.
+        """
         res = super(ClouderBase, self).deploy_create_poweruser()
         if self.application_id.type_id.name == 'odoo':
             if self.poweruser_name and self.poweruser_email \
@@ -373,6 +407,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_test(self):
+        """
+        Install test modules.
+        """
         res = super(ClouderBase, self).deploy_test()
         if self.application_id.type_id.name == 'odoo':
             self.log("client = erppeek.Client('http://" +
@@ -393,10 +430,13 @@ class ClouderBase(models.Model):
                     self.log("client.install(" + module + ")")
                     client.install(module)
 
-        return
+        return res
 
     @api.multi
     def post_reset(self):
+        """
+        Disactive mail and cron on a duplicate base.
+        """
         res = super(ClouderBase, self).post_reset()
         if self.application_id.type_id.name == 'odoo':
             self.log("client = erppeek.Client('http://" +
@@ -443,6 +483,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def update_base(self):
+        """
+        Update base module to update all others modules.
+        """
         res = super(ClouderBase, self).update_base()
         if self.application_id.type_id.name == 'odoo':
             try:
@@ -467,6 +510,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def purge_post(self):
+        """
+        Remove filestore.
+        """
         res = super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'odoo':
             ssh = self.connect(
@@ -481,10 +527,17 @@ class ClouderBase(models.Model):
 
 
 class ClouderSaveSave(models.Model):
+    """
+    Add methods to manage the odoo save specificities.
+    """
+
     _inherit = 'clouder.save.save'
 
     @api.multi
     def deploy_base(self):
+        """
+        Backup filestore.
+        """
         res = super(ClouderSaveSave, self).deploy_base()
         if self.base_id.application_id.type_id.name == 'odoo':
             ssh = self.connect(
@@ -500,6 +553,9 @@ class ClouderSaveSave(models.Model):
 
     @api.multi
     def restore_base(self):
+        """
+        Restore filestore.
+        """
         res = super(ClouderSaveSave, self).restore_base()
         if self.base_id.application_id.type_id.name == 'odoo':
             ssh = self.connect(
@@ -519,10 +575,17 @@ class ClouderSaveSave(models.Model):
 
 
 class ClouderBaseLink(models.Model):
+    """
+    Add methods to manage the odoo specificities.
+    """
+
     _inherit = 'clouder.base.link'
 
     @api.multi
     def deploy_link(self):
+        """
+        Configure postfix to redirect incoming mail to odoo.
+        """
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
@@ -580,6 +643,9 @@ class ClouderBaseLink(models.Model):
 
     @api.multi
     def purge_link(self):
+        """
+        Purge postfix configuration.
+        """
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':

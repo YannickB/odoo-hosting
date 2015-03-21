@@ -21,16 +21,24 @@
 ##############################################################################
 
 from openerp import modules
-from openerp import models, fields, api, _
+from openerp import models, api
 import openerp.addons.clouder.clouder_model as clouder_model
 
 
 class ClouderContainer(models.Model):
+    """
+    Add methods to manage the ldap container specificities.
+    """
+
     _inherit = 'clouder.container'
 
     @api.model
     def create(self, vals):
+        """
+        Override create to generate a random password for the passord option.
 
+        :param vals: The values used to create the container.
+        """
         if 'application_id' in vals and vals['application_id']:
             application = self.env['clouder.application'].browse(
                 vals['application_id'])
@@ -56,6 +64,9 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def deploy_post(self):
+        """
+        Configure the ldap server.
+        """
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'openldap':
             ssh = self.connect(self.fullname)

@@ -20,15 +20,22 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, _
+from openerp import models, api
 from openerp import modules
 
 
 class ClouderApplicationVersion(models.Model):
+    """
+    Add methods to manage the wikicompare application version specificities.
+    """
+
     _inherit = 'clouder.application.version'
 
     @api.multi
     def build_application(self):
+        """
+        Patch some files in the archive.
+        """
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'drupal'\
                 and self.application_id.code == 'wkc':
@@ -59,17 +66,18 @@ class ClouderApplicationVersion(models.Model):
         return
 
 
-    @api.multi
-    def get_current_version(self):
-        return False
-
-
 class ClouderBase(models.Model):
-    _inherit = 'clouder.base'
+    """
+    Add methods to manage the wikicompare base specificities.
+    """
 
+    _inherit = 'clouder.base'
 
     @api.multi
     def deploy_test(self):
+        """
+        Deploy the wikicompare test data.
+        """
         res = super(ClouderBase, self).deploy_test()
         if self.application_id.type_id.name == 'drupal' \
                 and self.application_id.code == 'wkc':

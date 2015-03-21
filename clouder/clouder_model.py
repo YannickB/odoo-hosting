@@ -39,10 +39,18 @@ _logger = logging.getLogger(__name__)
 
 
 class ClouderLog(models.Model):
+    """
+    Define the log object, where is stored the log of the commands after
+    we execute an action.
+    """
+
     _name = 'clouder.log'
 
     @api.one
     def _get_name(self):
+        """
+        Return the name of the record linked to this log.
+        """
         model_obj = self.env[self.model]
         record = model_obj.browse(self.res_id)
         if record and hasattr(record, 'name'):
@@ -65,6 +73,11 @@ class ClouderLog(models.Model):
 
 
 class ClouderModel(models.AbstractModel):
+    """
+    Define the clouder.model abstract object, which is inherited by most
+    objects in clouder.
+    """
+
     _name = 'clouder.model'
 
     _log_expiration_days = 30
@@ -79,53 +92,90 @@ class ClouderModel(models.AbstractModel):
 
     @property
     def email_sysadmin(self):
+        """
+        Property returning the sysadmin email of the clouder.
+        """
         return self.env.ref('clouder.clouder_settings').email_sysadmin
 
     @property
     def user_partner(self):
+        """
+        Property returning the full name of the server.
+        """
         return self.env['res.partner'].search(
             [('user_ids','in',int(self.env.uid))])[0]
+
     @property
     def archive_path(self):
+        """
+        Property returning the path where are stored the archives
+        in the archive container.
+        """
         return '/opt/archives'
 
     @property
     def services_hostpath(self):
+        """
+        Property returning the path where are stored the archives
+        in the host system.
+        """
         return '/opt/services'
 
     @property
     def home_directory(self):
+        """
+        Property returning the path to the home directory.
+        """
         return expanduser("~")
 
     @property
     def now_date(self):
+        """
+        Property returning the actual date.
+        """
         now = datetime.now()
         return now.strftime("%Y-%m-%d")
 
     @property
     def now_hour(self):
+        """
+        Property returning the actual hour.
+        """
         now = datetime.now()
         return now.strftime("%H-%M")
 
     @property
     def now_hour_regular(self):
+        """
+        Property returning the actual hour.
+        """
         now = datetime.now()
         return now.strftime("%H:%M:%S")
 
     @property
     def now_bup(self):
+        """
+        Property returning the actual date, at the bup format.
+        """
         now = datetime.now()
         return now.strftime("%Y-%m-%d-%H%M%S")
 
     @api.one
     @api.constrains('name')
     def _check_config(self):
+        """
+        Check that we specified the sysadmin email in configuration before
+        making any action.
+        """
         if not self.env.ref('clouder.clouder_settings').email_sysadmin:
             raise except_orm(_('Data error!'),
                 _("You need to specify the sysadmin email in configuration"))
 
     @api.multi
     def create_log(self, action):
+        """
+        Create the log record and add his id in context.
+        """
         if 'log_id' in self.env.context:
             return self.env.context
 
@@ -154,6 +204,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def end_log(self):
+        """
+        Close the log record if the action finished correctly.
+        """
         log_obj = self.env['clouder.log']
         if 'logs' in self.env.context:
             log = log_obj.browse(
@@ -163,6 +216,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def log(self, message):
+        """
+        Add a message in the logs specified in context.
+        """
         message = filter(lambda x: x in string.printable, message)
         _logger.info(message)
         log_obj = self.env['clouder.log']
@@ -176,6 +232,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def ko_log(self):
+        """
+        Ko the log specified in context.
+        """
         log_obj = self.env['clouder.log']
         if 'logs' in self.env.context:
             for model, model_vals in self.env.context['logs'].iteritems():
@@ -187,26 +246,43 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def deploy(self):
+        """
+        Hook which can be used by inheriting objects to execute actions when
+        we create a new record.
+        """
         return
 
     @api.multi
     def purge(self):
+        """
+        Hook which can be used by inheriting objects to execute actions when
+        we delete a record.
+        """
         return
 
     @api.multi
     def deploy_links(self):
+        """
+        Force deployment of all links linked to a record.
+        """
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
                 link.deploy_()
 
     @api.multi
     def purge_links(self):
+        """
+        Force purge of all links linked to a record.
+        """
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
                 link.purge_()
 
     @api.multi
     def reinstall(self):
+        """"
+        Action which purge then redeploy a record.
+        """
         self = self.with_context(self.create_log('reinstall'))
         self.purge_links()
         self.purge()
@@ -216,6 +292,10 @@ class ClouderModel(models.AbstractModel):
 
     @api.model
     def create(self, vals):
+        """
+        Override the default create function to create log, call deploy hook,
+        and call unlink if something went wrong.
+        """
         res = super(ClouderModel, self).create(vals)
         res = res.with_context(res.create_log('create'))
         try:
@@ -233,6 +313,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.one
     def unlink(self):
+        """
+        Override the default unlink function to create log and call purge hook.
+        """
         try:
             self.purge_links()
             self.purge()
@@ -251,6 +334,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def connect(self, host, port=False, username=False):
+        """
+        Method which can be used to get an ssh connection to execute command.
+        """
         self.log('connect: ssh ' + (username and username + '@' or '') +
                  host + (port and ' -p ' + str(port) or ''))
         ssh = paramiko.SSHClient()
@@ -278,6 +364,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def execute(self, ssh, cmd, stdin_arg=False,path=False):
+        """
+        Method which can be used with an ssh connection to execute command.
+        """
         self.log('command : ' + ' '.join(cmd))
         if path:
             self.log('path : ' + path)
@@ -295,6 +384,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def get(self, ssh, source, destination):
+        """
+        Method which can be used with an ssh connection to transfer files.
+        """
         sftp = ssh.open_sftp()
         self.log('get : ' + source + ' to ' + destination)
         sftp.get(source, destination)
@@ -302,6 +394,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def send(self, ssh, source, destination):
+        """
+        Method which can be used with an ssh connection to transfer files.
+        """
         sftp = ssh.open_sftp()
         self.log('send : ' + source + ' to ' + destination)
         sftp.put(source, destination)
@@ -310,6 +405,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def execute_local(self, cmd, path=False, shell=False):
+        """
+        Method which can be used to execute command on the local system.
+        """
         self.log('command : ' + ' '.join(cmd))
         cwd = os.getcwd()
         if path:
@@ -327,6 +425,9 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def exist(self, ssh, path):
+        """
+        Method which use an ssh connection to check is a file exist.
+        """
         sftp = ssh.open_sftp()
         try:
             sftp.stat(path)
@@ -341,20 +442,32 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def local_file_exist(self, file):
+        """
+        Method which check is a file exist on the local system.
+        """
         return os.path.isfile(file)
 
     @api.multi
     def local_dir_exist(self, file):
+        """
+        Method which check is a directory exist on the local system.
+        """
         return os.path.isdir(file)
 
     @api.multi
     def execute_write_file(self, file, string):
+        """
+        Method which write in a file on the local system.
+        """
         f = open(file, 'a')
         f.write(string)
         f.close()
 
 
 def generate_random_password(size):
+    """
+    Method which can be used to generate a random password.
+    """
     return ''.join(
         random.choice(string.ascii_uppercase  + string.ascii_lowercase
                       + string.digits)

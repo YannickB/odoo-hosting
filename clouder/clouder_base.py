@@ -27,12 +27,13 @@ import re
 from datetime import datetime, timedelta
 import clouder_model
 
-import logging
-
-_logger = logging.getLogger(__name__)
-
 
 class ClouderDomain(models.Model):
+    """
+    Define the domain object, which represent all domains which can be linked
+    to the bases hosted in this clouder.
+    """
+
     _name = 'clouder.domain'
     _inherit = ['clouder.model']
 
@@ -53,12 +54,21 @@ class ClouderDomain(models.Model):
     @api.one
     @api.constrains('name')
     def _validate_data(self):
+        """
+        Check that the domain name does not contain any forbidden
+        characters.
+        """
         if not re.match("^[\w\d.-]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits - and dot"))
 
 
 class ClouderBase(models.Model):
+    """
+    Define the base object, which represent all websites hosted in this clouder
+    with a specific url and a specific database.
+    """
+
     _name = 'clouder.base'
     _inherit = ['clouder.model']
 
@@ -120,19 +130,32 @@ class ClouderBase(models.Model):
 
     @property
     def fullname(self):
+        """
+        Property returning the full name of the base.
+        """
         return (self.application_id.code + '-' + self.name + '-'
                 + self.domain_id.name).replace('.', '-')
 
     @property
     def fullname_(self):
+        """
+        Property returning the full name of the base with all - replace by
+        underscore (databases compatible names).
+        """
         return self.fullname.replace('-', '_')
 
     @property
     def fulldomain(self):
+        """
+        Property returning the full url of the base.
+        """
         return self.name + '.' + self.domain_id.name
 
     @property
     def databases(self):
+        """
+        Property returning all databases names used for this base, in a dict.
+        """
         databases = {'single': self.fullname_}
         if self.application_id.type_id.multiple_databases:
             databases = {}
@@ -143,10 +166,18 @@ class ClouderBase(models.Model):
 
     @property
     def databases_comma(self):
+        """
+        Property returning all databases names used for this base,
+        separated by a comma.
+        """
         return ','.join([d for k, d in self.databases.iteritems()])
 
     @property
     def options(self):
+        """
+        Property returning a dictionary containing the value of all options
+        for this base, even is they are not defined here.
+        """
         options = {}
         for option in \
                 self.service_id.container_id.application_id.type_id.option_ids:
@@ -167,6 +198,10 @@ class ClouderBase(models.Model):
     @api.one
     @api.constrains('name', 'admin_name', 'admin_email', 'poweruser_email')
     def _validate_data(self):
+        """
+        Check that the base name and some other fields does not contain any
+        forbidden characters.
+        """
         if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits and -"))
@@ -187,7 +222,10 @@ class ClouderBase(models.Model):
     @api.one
     @api.constrains('service_id', 'service_ids', 'application_id')
     def _check_application(self):
-
+        """
+        Check that the application of the base is the same than application
+        of services.
+        """
         if self.application_id.id != \
                 self.service_id.container_id.application_id.id:
             raise except_orm(_('Data error!'),
@@ -201,10 +239,12 @@ class ClouderBase(models.Model):
                       "same than the application of service.")
                 )
 
-
     @api.one
     @api.constrains('option_ids')
     def _check_option_ids(self):
+        """
+        Check that the required options are filled.
+        """
         for type_option in self.application_id.type_id.option_ids:
             if type_option.type == 'base' and type_option.required:
                 test = False
@@ -222,6 +262,9 @@ class ClouderBase(models.Model):
     @api.one
     @api.constrains('link_ids')
     def _check_link_ids(self):
+        """
+        Check that the required links are specified.
+        """
         for app_link in self.application_id.link_ids:
             if app_link.base and app_link.required:
                 test = False
@@ -239,6 +282,10 @@ class ClouderBase(models.Model):
     @api.multi
     @api.onchange('application_id')
     def onchange_application_id(self):
+        """
+        Update the options, links and some other fields when we change
+        the application_id field.
+        """
         if self.application_id:
 
             self.admin_name = self.application_id.admin_name
@@ -281,6 +328,10 @@ class ClouderBase(models.Model):
 
     @api.model
     def create(self, vals):
+        """
+        Override create method to create a container and a service if none
+        are specified.
+        """
         if (not 'service_id' in vals) or (not vals['service_id']):
             application_obj = self.env['clouder.application']
             domain_obj = self.env['clouder.domain']
@@ -327,6 +378,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def write(self, vals):
+        """
+        Override write method to move base if we change the service.
+        """
         if 'service_id' in vals:
             self = self.with_context(self.create_log('service change'))
             self = self.with_context(save_comment='Before service change')
@@ -349,12 +403,18 @@ class ClouderBase(models.Model):
 
     @api.one
     def unlink(self):
+        """
+        Override unlink method to make a save before we delete a base.
+        """
         self = self.with_context(save_comment='Before unlink')
         self.save()
         return super(ClouderBase, self).unlink()
 
     @api.multi
     def save(self):
+        """
+        Make a new save.
+        """
         save_obj = self.env['clouder.save.save']
         repo_obj = self.env['clouder.save.repository']
 
@@ -424,11 +484,18 @@ class ClouderBase(models.Model):
 
     @api.multi
     def post_reset(self):
+        """
+        Hook which can be called by submodules to execute commands after we
+        reset a base.
+        """
         self.deploy_links()
         return
 
     @api.multi
     def reset_base(self, base_name=False, service_id=False):
+        """
+        Reset the base with the parent base.
+        """
         base_parent_id = self.parent_id and self.parent_id or self
         if not 'save_comment' in self.env.context:
             self = self.with_context(save_comment='Reset base')
@@ -454,30 +521,58 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_create_database(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        want to create the database. If return False, the database will be
+        created by default method.
+        """
         return False
 
     @api.multi
     def deploy_build(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        want to build the database.
+        """
         return
 
     @api.multi
     def deploy_post_restore(self):
+        """
+        Hook which can be called by submodules to execute commands after we
+        restore a database.
+        """
         return
 
     @api.multi
     def deploy_create_poweruser(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        want to create a poweruser.
+        """
         return
 
     @api.multi
     def deploy_test(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        want to deploy test datas.
+        """
         return
 
     @api.multi
     def deploy_post(self):
+        """
+        Hook which can be called by submodules to execute commands after we
+        deploy a base.
+        """
         return
 
     @api.multi
     def deploy(self):
+        """
+        Deploy the base.
+        """
         self.purge()
 
         if 'base_restoration' in self.env.context:
@@ -558,10 +653,17 @@ class ClouderBase(models.Model):
 
     @api.multi
     def purge_post(self):
+        """
+        Hook which can be called by submodules to execute commands after we
+        purge a base.
+        """
         return
 
     @api.multi
     def purge_db(self):
+        """
+        Purge the database.
+        """
         for key, database in self.databases.iteritems():
             if self.service_id.database_type != 'mysql':
                 ssh = self.connect(self.service_id.database.fullname,
@@ -588,16 +690,25 @@ class ClouderBase(models.Model):
 
     @api.multi
     def purge(self):
-
+        """
+        Purge the base.
+        """
         self.purge_db()
-
         self.purge_post()
 
     def update_base(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        want to update a base.
+        """
         return
 
 
 class ClouderBaseOption(models.Model):
+    """
+    Define the base.option object, used to define custom values specific
+    to a base.
+    """
     _name = 'clouder.base.option'
 
     base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade",
@@ -611,10 +722,13 @@ class ClouderBaseOption(models.Model):
          'Option name must be unique per base!'),
     ]
 
-
     @api.one
     @api.constrains('base_id')
     def _check_required(self):
+        """
+        Check that we specify a value for the option
+        if this option is required.
+        """
         if self.name.required and not self.value:
             raise except_orm(
                 _('Data error!'),
@@ -625,6 +739,10 @@ class ClouderBaseOption(models.Model):
 
 
 class ClouderBaseLink(models.Model):
+    """
+    Define the base.link object, used to specify the applications linked
+    to a base.
+    """
     _name = 'clouder.base.link'
     _inherit = ['clouder.model']
 
@@ -641,6 +759,10 @@ class ClouderBaseLink(models.Model):
     @api.one
     @api.constrains('base_id')
     def _check_required(self):
+        """
+        Check that we specify a value for the link
+        if this link is required.
+        """
         if self.name.required and not self.target:
             raise except_orm(
                 _('Data error!'),
@@ -651,13 +773,24 @@ class ClouderBaseLink(models.Model):
 
     @api.multi
     def deploy_link(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        deploy a link.
+        """
         return
 
     @api.multi
     def purge_link(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        purge a link.
+        """
         return
 
     def control(self):
+        """
+        Make the control to know if we can launch the deploy/purge.
+        """
         if not self.target:
             self.log(
                 'The target isnt configured in the link, skipping deploy link')
@@ -669,9 +802,15 @@ class ClouderBaseLink(models.Model):
 
     @api.multi
     def deploy_(self):
+        """
+        Control and call the hook to deploy the link.
+        """
         self.purge_()
         self.control() and self.deploy_link()
 
     @api.multi
     def purge_(self):
+        """
+        Control and call the hook to purge the link.
+        """
         self.control() and self.purge_link()

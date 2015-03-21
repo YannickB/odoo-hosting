@@ -21,15 +21,22 @@
 ##############################################################################
 
 
-from openerp import models, fields, api, _
+from openerp import models, api
 from openerp import modules
 
 
 class ClouderApplicationVersion(models.Model):
+    """
+    Add methods to manage the piwik specificities.
+    """
+
     _inherit = 'clouder.application.version'
 
     @api.multi
     def build_application(self):
+        """
+        Get the archive from official website.
+        """
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'piwik':
             ssh = self.connect(self.archive_id.fullname)
@@ -49,10 +56,17 @@ class ClouderApplicationVersion(models.Model):
 
 
 class ClouderBase(models.Model):
+    """
+    Add methods to manage the piwik specificities.
+    """
+
     _inherit = 'clouder.base'
 
     @api.multi
     def deploy_build(self):
+        """
+        Configure nginx.
+        """
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'piwik':
             ssh = self.connect(self.service_id.container_id.fullname)
@@ -78,6 +92,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def purge_post(self):
+        """
+        Purge nginx configuration.
+        """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'piwik':
             ssh = self.connect(self.service_id.container_id.fullname)
@@ -90,14 +107,27 @@ class ClouderBase(models.Model):
 
 
 class ClouderBaseLink(models.Model):
+    """
+    Add methods to manage the piwik specificities.
+    """
+
     _inherit = 'clouder.base.link'
 
     @api.multi
     def deploy_piwik(self, piwik_id):
+        """
+        Hook which can be called by submodules to execute commands when we
+        deploy a link to piwik.
+
+        :param piwik_id: The id of the website in piwik.
+        """
         return
 
     @api.multi
     def deploy_link(self):
+        """
+        Add the website in piwik.
+        """
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'piwik':
             ssh = self.connect(self.target.fullname)
@@ -140,6 +170,9 @@ class ClouderBaseLink(models.Model):
 
     @api.multi
     def purge_link(self):
+        """
+        Remove the website from piwik.
+        """
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'piwik':
             ssh = self.connect(self.target.fullname)

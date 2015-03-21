@@ -21,14 +21,21 @@
 ##############################################################################
 
 
-from openerp import models, fields, api, _
+from openerp import models, api
 
 
 class ClouderApplicationVersion(models.Model):
+    """
+    Add method to build application version.
+    """
+
     _inherit = 'clouder.application.version'
 
     @api.multi
     def build_application(self):
+        """
+        Get the gitlab archive from official website.
+        """
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.code == 'gitlab':
             ssh = self.connect(self.archive_id.fullname)
@@ -46,10 +53,17 @@ class ClouderApplicationVersion(models.Model):
 
 
 class ClouderService(models.Model):
+    """
+    Add method to manage the gitlab service deployment.
+    """
+
     _inherit = 'clouder.service'
 
     @api.multi
     def deploy_post_service(self):
+        """
+        Deploy the service.
+        """
         super(ClouderService, self).deploy_post_service()
         if self.application_id.code == 'gitlab':
             ssh = self.connect(self.container_id.fullname)
@@ -100,10 +114,17 @@ class ClouderService(models.Model):
 
 
 class ClouderBase(models.Model):
+    """
+    Add method to manage gitlab base.
+    """
+
     _inherit = 'clouder.base'
 
     @api.multi
     def deploy_build(self):
+        """
+        Configure the gitlab.
+        """
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.code == 'gitlab':
             ssh = self.connect(self.service_id.container_id.fullname)

@@ -33,6 +33,11 @@ _logger = logging.getLogger(__name__)
 
 
 class ClouderSaveRepository(models.Model):
+    """
+    Define the save.repository object, which represent the repository where
+    the saves are stored.
+    """
+
     _name = 'clouder.save.repository'
 
     name = fields.Char('Name', size=128, required=True)
@@ -50,6 +55,10 @@ class ClouderSaveRepository(models.Model):
 
 
 class ClouderSaveSave(models.Model):
+    """
+    Define the save.save object, which represent the saves of containers/bases.
+    """
+
     _name = 'clouder.save.save'
     _inherit = ['clouder.model']
 
@@ -116,11 +125,17 @@ class ClouderSaveSave(models.Model):
 
     @property
     def now_epoch(self):
+        """
+        Property returning the actual time, at the epoch format.
+        """
         return (datetime.strptime(self.now_bup, "%Y-%m-%d-%H%M%S") -
                 datetime(1970, 1, 1)).total_seconds()
 
     @property
     def base_dumpfile(self):
+        """
+        Property returning the dumpfile name.
+        """
         return \
             self.repo_id.type == 'base' \
             and self.container_app.replace('-', '_') + '_' + \
@@ -130,26 +145,43 @@ class ClouderSaveSave(models.Model):
 
     @property
     def computed_container_restore_to_name(self):
+        """
+        Property returning the container name which will be restored.
+        """
         return self.container_restore_to_name or self.base_container_name \
                or self.repo_id.container_name
 
     @property
     def computed_container_restore_to_server(self):
+        """
+        Property returning the container server which will be restored.
+        """
         return self.container_restore_to_server_id.name \
                or self.base_container_server or self.repo_id.container_server
 
     @property
     def computed_base_restore_to_name(self):
+        """
+        Property returning the base name which will be restored.
+        """
         return self.base_restore_to_name or self.repo_id.base_name
 
     @property
     def computed_base_restore_to_domain(self):
+        """
+        Property returning the base domain which will be restored.
+        """
         return self.base_restore_to_domain_id.name or self.repo_id.base_domain
 
     _order = 'create_date desc'
 
     @api.multi
     def create(self, vals):
+        """
+        Override create method to add the data in container and base in the
+        save record, so we can restore it if the container/service/base are
+        deleted.
+        """
         if 'container_id' in vals:
             container = self.env['clouder.container'] \
                 .browse(vals['container_id'])
@@ -238,6 +270,9 @@ class ClouderSaveSave(models.Model):
 
     @api.multi
     def purge(self):
+        """
+        Remove the save from the backup container.
+        """
         ssh = self.connect(self.backup_id.fullname)
         self.execute(ssh, ['rm', '-rf', '/opt/backup/simple/' +
                            self.repo_id.name + '/' + self.name])
@@ -251,10 +286,18 @@ class ClouderSaveSave(models.Model):
 
     @api.multi
     def restore_base(self):
+        """
+        Hook which can be called by submodules to execute commands after we
+        restored a base.
+        """
         return
 
     @api.multi
     def restore(self):
+        """
+        Restore a save to a container or a base. If container/service/base
+        aren't specified, they will be created.
+        """
         container_obj = self.env['clouder.container']
         base_obj = self.env['clouder.base']
         server_obj = self.env['clouder.server']
@@ -585,6 +628,10 @@ class ClouderSaveSave(models.Model):
 
     @api.multi
     def restore_action(self, object):
+        """
+        Execute the command on the backup container et destination container
+        to get the save and restore it.
+        """
 
         if object._name == 'clouder.base':
             container = object.service_id.container_id
@@ -649,10 +696,17 @@ class ClouderSaveSave(models.Model):
 
     @api.multi
     def deploy_base(self):
+        """
+        Hook which can be called by submodules to execute commands after we
+        restored a base.
+        """
         return
 
     @api.multi
     def deploy(self):
+        """
+        Build the save and move it into the backup container.
+        """
         self.log('Saving ' + self.name)
         self.log('Comment: ' + self.comment)
 
@@ -771,4 +825,3 @@ class ClouderSaveSave(models.Model):
                          ['rm', '-rf', '/base-backup/' + self.repo_id.name])
             ssh.close()
         return
-

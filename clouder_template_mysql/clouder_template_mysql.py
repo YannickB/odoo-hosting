@@ -21,15 +21,22 @@
 ##############################################################################
 
 
-from openerp import models, fields, api, _
+from openerp import models, api
 import openerp.addons.clouder.clouder_model as clouder_model
 
 
 class ClouderContainer(models.Model):
+    """
+    Add methods to manage the mysql container specificities.
+    """
+
     _inherit = 'clouder.container'
 
     @api.multi
     def deploy_post(self):
+        """
+        Update the root password after deployment.
+        """
         super(ClouderContainer, self).deploy_post()
 
         if self.application_id.type_id.name == 'mysql':

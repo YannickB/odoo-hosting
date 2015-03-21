@@ -20,16 +20,22 @@
 #
 ##############################################################################
 
-
-from openerp import models, fields, api, _
+from openerp import models, api
 
 
 class ClouderContainer(models.Model):
+    """
+    Add methods to manage the postgres specificities.
+    """
+
     _inherit = 'clouder.container'
 
 
     @api.multi
     def deploy_post(self):
+        """
+        Allow ip from options.
+        """
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'postgres':
             ssh = self.connect(self.fullname)

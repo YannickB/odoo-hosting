@@ -21,23 +21,36 @@
 ##############################################################################
 
 from openerp import modules
-from openerp import models, fields, api, _
+from openerp import models, api
 
 
 class ClouderBase(models.Model):
+    """
+    Add methods to manage the proxy specificities.
+    """
+
     _inherit = 'clouder.base'
 
     @property
     def nginx_configfile(self):
+        """
+        Property returning the nginx config file.
+        """
         return '/etc/nginx/sites-available/' + self.fullname
 
 
 class ClouderBaseLink(models.Model):
-    _inherit = 'clouder.base.link'
+    """
+    Add methods to manage the proxy specificities.
+    """
 
+    _inherit = 'clouder.base.link'
 
     @api.multi
     def deploy_link(self):
+        """
+        Configure the proxy to redirect to the application port.
+        """
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'proxy':
             if not self.base_id.ssl_only:
@@ -100,6 +113,9 @@ class ClouderBaseLink(models.Model):
 
     @api.multi
     def purge_link(self):
+        """
+        Remove the redirection.
+        """
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'proxy':
             ssh = self.connect(self.target.fullname)

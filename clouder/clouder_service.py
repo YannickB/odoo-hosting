@@ -27,16 +27,23 @@ import re
 
 import clouder_model
 
-import logging
-
-_logger = logging.getLogger(__name__)
-
 
 class ClouderService(models.Model):
+    """
+    Define the service object, which represent all instances of the application
+    installed inside the same container.
+
+    Services use application versions, stored in an archive container, to
+    easily switch between versions.
+    """
+
     _name = 'clouder.service'
     _inherit = ['clouder.model']
 
     def name_get(self, cr, uid, ids, context=None):
+        """
+        Add the container name to the service name.
+        """
         res = []
         for service in self.browse(cr, uid, ids, context=context):
             res.append((service.id, service.name + ' [' +
@@ -46,6 +53,10 @@ class ClouderService(models.Model):
 
     @api.model
     def name_search(self, name='', args=None, operator='ilike', limit=100):
+        """
+        Modify the search method so we can find a service
+        with the container name.
+        """
         if not args:
             args = []
         if name:
@@ -58,7 +69,6 @@ class ClouderService(models.Model):
             ids = self.search(args, limit=limit)
         result = ids.name_get()
         return result
-
 
     name = fields.Char('Name', size=64, required=True)
     application_id = fields.Many2one(
@@ -92,19 +102,33 @@ class ClouderService(models.Model):
 
     @property
     def fullname(self):
+        """
+        Property returning the full name of the service.
+        """
         return self.container_id.name + '-' + self.name
 
     @property
     def full_localpath(self):
+        """
+        Property returning the full path of the service instance
+        in the destination container.
+        """
         return self.container_id.application_id.type_id.localpath_services +\
                '/' + self.name
 
     @property
     def full_localpath_files(self):
+        """
+        Property returning the full path of the service files
+        in the destination container.
+        """
         return self.full_localpath + '/files'
 
     @property
     def database(self):
+        """
+        Property returning the database container connected to the service.
+        """
         database = False
         for link in self.link_ids:
             if link.target:
@@ -114,6 +138,9 @@ class ClouderService(models.Model):
 
     @property
     def database_type(self):
+        """
+        Property returning the database type connected to the service.
+        """
         database_type = self.database.application_id.type_id.name
         if database_type == 'postgres':
             database_type = 'pgsql'
@@ -121,6 +148,9 @@ class ClouderService(models.Model):
 
     @property
     def database_server(self):
+        """
+        Property returning the database server connected to the service.
+        """
         if self.database.server_id == self.container_id.server_id:
             return self.database.application_id.code
         else:
@@ -128,6 +158,9 @@ class ClouderService(models.Model):
 
     @property
     def db_user(self):
+        """
+        Property returning the database user of the service.
+        """
         db_user = self.fullname.replace('-', '_')
         if self.database_type == 'mysql':
             db_user = self.container_id.name[:10] + '_' + self.name[:4]
@@ -136,6 +169,9 @@ class ClouderService(models.Model):
 
     @property
     def port(self):
+        """
+        Property returning the main port of the service, if existing.
+        """
         if 'port' in self.options:
             return self.container_id.ports[
                 self.options['port']['value']
@@ -144,6 +180,10 @@ class ClouderService(models.Model):
 
     @property
     def options(self):
+        """
+        Property returning a dictionary containing the value of all options
+        for this service, even is they are not defined here.
+        """
         options = {}
         for option in self.container_id.application_id.type_id.option_ids:
             if option.type == 'service':
@@ -165,6 +205,10 @@ class ClouderService(models.Model):
     @api.one
     @api.constrains('name', 'sub_service_name')
     def _validate_data(self):
+        """
+        Check that the service name does not contain any forbidden
+        characters.
+        """
         if not re.match("^[\w\d_]*$", self.name):
             raise except_orm(
                 _('Data error!'),
@@ -179,6 +223,10 @@ class ClouderService(models.Model):
     @api.one
     @api.constrains('application_id', 'application_version_id')
     def _check_application_version(self):
+        """
+        Check that the application of the application version is the same
+        than the application of service.
+        """
         if self.application_id and self.application_id.id != \
                 self.application_version_id.application_id.id:
             raise except_orm(
@@ -189,6 +237,9 @@ class ClouderService(models.Model):
     @api.one
     @api.constrains('link_ids')
     def _check_database(self):
+        """
+        Check that a link to a database container is specified.
+        """
         if not self.database:
             raise except_orm(
                 _('Data error!'),
@@ -199,6 +250,9 @@ class ClouderService(models.Model):
     @api.one
     @api.constrains('option_ids')
     def _check_option_ids(self):
+        """
+        Check that the required options are filled.
+        """
         for type_option in self.application_id.type_id.option_ids:
             if type_option.type == 'service' and type_option.required:
                 test = False
@@ -215,6 +269,9 @@ class ClouderService(models.Model):
     @api.one
     @api.constrains('link_ids')
     def _check_link_ids(self):
+        """
+        Check that the required links are specified.
+        """
         for app_link in self.application_id.link_ids:
             if app_link.service and app_link.required:
                 test = False
@@ -231,6 +288,10 @@ class ClouderService(models.Model):
     @api.multi
     @api.onchange('container_id')
     def onchange_container_id(self):
+        """
+        Update the options, links and some other fields when we change
+        the container_id field.
+        """
         if self.container_id:
 
             options = []
@@ -260,6 +321,10 @@ class ClouderService(models.Model):
 
     @api.multi
     def write(self, vals):
+        """
+        Override write method to redeploy files
+        if some key fields have changed.
+        """
         res = super(ClouderService, self).write(vals)
         if 'application_version_id' in vals:
             self.check_files()
@@ -269,21 +334,34 @@ class ClouderService(models.Model):
 
     @api.one
     def unlink(self):
+        """
+        Override unlink to remove bases when we unlink a service.
+        """
         self.base_ids and self.base_ids.unlink()
         return super(ClouderService, self).unlink()
 
     @api.multi
     def install_formation(self):
+        """
+        Create a subservice named formation.
+        """
         self.sub_service_name = 'formation'
         self.install_subservice()
 
     @api.multi
     def install_test(self):
+        """
+        Create a subservice named test.
+        """
         self.sub_service_name = 'test'
         self.install_subservice()
 
     @api.multi
     def install_subservice(self):
+        """
+        Create a subservice and duplicate the bases
+        linked to the parent service.
+        """
         if not self.sub_service_name or self.sub_service_name == self.name:
             return
         services = self.search([('name', '=', self.sub_service_name),
@@ -324,6 +402,9 @@ class ClouderService(models.Model):
 
     @api.multi
     def deploy_to_parent(self):
+        """
+        Update the parent service with the files of the child service.
+        """
         if not self.parent_id:
             return
         vals = {}
@@ -336,11 +417,17 @@ class ClouderService(models.Model):
 
     @api.multi
     def deploy_post_service(self):
+        """
+        Hook which can be called by submodules to execute commands after we
+        deployed a service.
+        """
         return
 
     @api.multi
     def deploy(self):
-
+        """
+        Deploy the service.
+        """
         self.purge()
 
         self.log('Creating database user')
@@ -390,10 +477,17 @@ class ClouderService(models.Model):
 
     @api.multi
     def purge_pre_service(self):
+        """
+        Hook which can be called by submodules to execute commands before we
+        purge a service.
+        """
         return
 
     @api.multi
     def purge(self):
+        """
+        Purge the service.
+        """
         self.purge_files()
         self.purge_pre_service()
 
@@ -428,6 +522,10 @@ class ClouderService(models.Model):
 
     @api.multi
     def check_files(self):
+        """
+        Check if the files are still used in a container of the specified
+        server. If not, the files are removes from the server.
+        """
         services = self.search([
             ('application_version_id', '=', self.application_version_id.id),
             ('container_id.server_id', '=', self.container_id.server_id.id)])
@@ -443,6 +541,12 @@ class ClouderService(models.Model):
 
     @api.multi
     def deploy_files(self):
+        """
+        If not already on the server, the files of the application version are
+        copied from the archive container to the server.
+        If custom install, the files are copied inside the destination
+        container.
+        """
         self.purge_files()
         ssh = self.connect(self.container_id.server_id.name)
 
@@ -495,6 +599,9 @@ class ClouderService(models.Model):
 
     @api.multi
     def purge_files(self):
+        """
+        Remove files from destination container.
+        """
         ssh = self.connect(
             self.container_id.fullname,
             username=self.application_id.type_id.system_user)
@@ -504,6 +611,11 @@ class ClouderService(models.Model):
 
 
 class ClouderServiceOption(models.Model):
+    """
+    Define the service.option object, used to define custom values specific
+    to a service.
+    """
+
     _name = 'clouder.service.option'
 
     service_id = fields.Many2one(
@@ -520,6 +632,10 @@ class ClouderServiceOption(models.Model):
     @api.one
     @api.constrains('service_id')
     def _check_required(self):
+        """
+        Check that we specify a value for the option
+        if this option is required.
+        """
         if self.name.required and not self.value:
             raise except_orm(
                 _('Data error!'),
@@ -529,6 +645,11 @@ class ClouderServiceOption(models.Model):
 
 
 class ClouderServiceLink(models.Model):
+    """
+    Define the service.link object, used to specify the applications linked
+    to a service.
+    """
+
     _name = 'clouder.service.link'
     _inherit = ['clouder.model']
 
@@ -542,6 +663,10 @@ class ClouderServiceLink(models.Model):
     @api.one
     @api.constrains('service_id')
     def _check_required(self):
+        """
+        Check that we specify a value for the link
+        if this link is required.
+        """
         if self.name.required and not self.target:
             raise except_orm(
                 _('Data error!'),
@@ -551,14 +676,25 @@ class ClouderServiceLink(models.Model):
 
     @api.multi
     def deploy_link(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        deploy a link.
+        """
         return
 
     @api.multi
     def purge_link(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        purge a link.
+        """
         return
 
     @api.multi
     def control(self):
+        """
+        Make the control to know if we can launch the deploy/purge.
+        """
         if not self.target:
             self.log('The target isnt configured in the link, '
                      'skipping deploy link')
@@ -570,9 +706,15 @@ class ClouderServiceLink(models.Model):
 
     @api.multi
     def deploy_(self):
+        """
+        Control and call the hook to deploy the link.
+        """
         self.purge_()
         self.control() and self.deploy_link()
 
     @api.multi
     def purge_(self):
+        """
+        Control and call the hook to purge the link.
+        """
         self.control() and self.purge_link()

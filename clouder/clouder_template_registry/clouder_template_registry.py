@@ -20,20 +20,21 @@
 #
 ##############################################################################
 
-
-from openerp import models, fields, api, _
-from openerp.exceptions import except_orm
-
-import logging
-
-_logger = logging.getLogger(__name__)
+from openerp import models, api
 
 
 class ClouderImageVersion(models.Model):
+    """
+    Avoid build an image if the application type if a registry.
+    """
+
     _inherit = 'clouder.image.version'
 
     @api.multi
     def deploy(self):
+        """
+        Block the default deploy function for the registry.
+        """
         if self.image_id.name != 'img_registry':
             return super(ClouderImageVersion, self).deploy()
         else:
@@ -41,15 +42,21 @@ class ClouderImageVersion(models.Model):
 
 
 class ClouderContainer(models.Model):
+    """
+    Add some methods to manage specificities of the registry building.
+    """
+
     _inherit = 'clouder.container'
 
     @api.multi
     def deploy(self):
+        """
+        Build the registry image directly when we deploy the container.
+        """
         if self.image_id.name == 'img_registry':
             ssh = self.connect(self.server_id.name)
             dir = '/tmp/' + self.image_id.name + '_' +\
                   self.image_version_id.fullname
-            _logger.info('dir %s', dir)
             self.execute(ssh, ['mkdir', '-p', dir])
             self.execute(ssh, [
                 'echo "' + self.image_id.dockerfile.replace('"', '\\"') +
@@ -64,7 +71,9 @@ class ClouderContainer(models.Model):
 
 
     def deploy_post(self):
-
+        """
+        Regenerate the ssl certs after the registry deploy.
+        """
         if self.application_id.type_id.name == 'registry':
 
             ssh = self.connect(self.fullname)

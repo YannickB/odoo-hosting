@@ -20,14 +20,21 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, _
+from openerp import models, api
 
 
 class ClouderApplicationVersion(models.Model):
+    """
+    Add methods to manage the seafile specificities.
+    """
+
     _inherit = 'clouder.application.version'
 
     @api.multi
     def build_application(self):
+        """
+        Get archive from official website.
+        """
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'seafile':
             ssh = self.connect(self.archive_id.fullname)
@@ -54,10 +61,17 @@ class ClouderApplicationVersion(models.Model):
 
 
 class ClouderBase(models.Model):
+    """
+    Add methods to manage the seafile specificities.
+    """
+
     _inherit = 'clouder.base'
 
     @api.multi
     def deploy_build(self):
+        """
+        Install seafile with the install wizard.
+        """
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'seafile':
             ssh = self.connect(
@@ -100,6 +114,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_post(self):
+        """
+        Add seafile in supervisor.
+        """
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'seafile':
             ssh = self.connect(
@@ -127,6 +144,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def purge_post(self):
+        """
+        Remove seafile from supervisor.
+        """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'seafile':
             ssh = self.connect(

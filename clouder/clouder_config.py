@@ -27,12 +27,13 @@ import re
 
 from datetime import datetime
 
-import logging
-
-_logger = logging.getLogger(__name__)
-
 
 class ClouderConfigBackupMethod(models.Model):
+    """
+    Define the config.backup.method object, which represent all backup method
+    available for save.
+    """
+
     _name = 'clouder.config.backup.method'
     _description = 'Backup Method'
 
@@ -40,6 +41,11 @@ class ClouderConfigBackupMethod(models.Model):
 
 
 class ClouderConfigSettings(models.Model):
+    """
+    Define the config.settings object, which is used to store
+    the clouder configuration.
+    """
+
     _name = 'clouder.config.settings'
     _description = 'Clouder configuration'
 
@@ -51,15 +57,25 @@ class ClouderConfigSettings(models.Model):
 
     @property
     def now_date(self):
+        """
+        Property returning the now_date property of clouder.model.
+        """
         return self.env['clouder.model'].now_date
 
     @property
     def now_hour_regular(self):
+        """
+        Property returning the now_hour_regular property of clouder.model.
+        """
         return self.env['clouder.model'].now_hour_regular
 
     @api.one
     @api.constrains('email_sysadmin')
     def _validate_data(self):
+        """
+        Check that the sysadmin email does not contain any forbidden
+        characters.
+        """
         if self.email_sysadmin \
                 and not re.match("^[\w\d_.@-]*$", self.email_sysadmin):
             raise except_orm(_('Data error!'), _(
@@ -68,7 +84,9 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def reset_keys(self):
-
+        """
+        Reset all keys for all containers managed by the clouder.
+        """
         containers = self.env['clouder.container'].search([])
         for container in containers:
             container.deploy_key()
@@ -79,6 +97,10 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def save_all(self):
+        """
+        Execute some maintenance on backup containers, and force a save
+        on all containers and bases.
+        """
         self = self.with_context(save_comment='Save before upload_save')
 
         backups = self.env['clouder.container'].search(
@@ -121,6 +143,9 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def purge_expired_saves(self):
+        """
+        Purge all expired saves.
+        """
         self.env['clouder.save.repository'].search(
             [('date_expiration', '!=', False),
              ('date_expiration', '<', self.now_date)]).unlink()
@@ -130,11 +155,17 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def purge_expired_logs(self):
+        """
+        Purge all expired logs.
+        """
         self.env['clouder.log'].search([('expiration_date', '!=', False), (
             'expiration_date', '<', self.now_date)]).unlink()
 
     @api.multi
     def launch_next_saves(self):
+        """
+        Save all containers and bases which passed their next save date.
+        """
         self = self.with_context(save_comment='Auto save')
         containers = self.env['clouder.container'].search([
             ('date_next_save', '!=', False),
@@ -151,6 +182,9 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def reset_bases(self):
+        """
+        Reset all bases marked for reset.
+        """
         bases = self.env['clouder.base'].search(
             [('reset_each_day', '=', True)])
         for base in bases:
@@ -165,6 +199,9 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def cron_daily(self):
+        """
+        Call all actions which shall be executed daily.
+        """
         self.reset_keys()
         self.purge_expired_saves()
         self.purge_expired_logs()

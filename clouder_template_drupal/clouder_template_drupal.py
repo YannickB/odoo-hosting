@@ -20,14 +20,21 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, _
+from openerp import models, api
 
 
 class ClouderApplicationVersion(models.Model):
+    """
+    Add method to build application version.
+    """
+
     _inherit = 'clouder.application.version'
 
     @api.multi
     def build_application(self):
+        """
+        Build the archive with drush.
+        """
         super(ClouderApplicationVersion, self).build_application()
         if self.application_id.type_id.name == 'drupal':
             ssh = self.connect(self.archive_id.fullname)
@@ -51,17 +58,18 @@ class ClouderApplicationVersion(models.Model):
         return
 
 
-    @api.multi
-    def get_current_version(self):
-        return False
-
-
 class ClouderService(models.Model):
-    _inherit = 'clouder.service'
+    """
+    Add methods to manage the drupal service specificities.
+    """
 
+    _inherit = 'clouder.service'
 
     @api.multi
     def deploy_post_service(self):
+        """
+        Active the sites directory on the service instance.
+        """
         super(ClouderService, self).deploy_post_service()
         if self.container_id.application_id.type_id.name == 'drupal':
             ssh = self.connect(
@@ -76,11 +84,19 @@ class ClouderService(models.Model):
 
 
 class ClouderBase(models.Model):
+    """
+    Add methods to manage the drupal base specificities.
+    """
+
     _inherit = 'clouder.base'
 
 
     @api.multi
     def deploy_build(self):
+        """
+        Build the drupal by calling drush site-install, and installing the
+        specified modules and themes.
+        """
         from openerp import modules
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'drupal':
@@ -155,6 +171,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_post(self):
+        """
+        Set the drupal title.
+        """
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'drupal':
             ssh = self.connect(
@@ -169,6 +188,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_create_poweruser(self):
+        """
+        Create the poweruser.
+        """
         res = super(ClouderBase, self).deploy_create_poweruser()
         if self.application_id.type_id.name == 'drupal':
 
@@ -193,6 +215,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_test(self):
+        """
+        Install the test modules.
+        """
         res = super(ClouderBase, self).deploy_test()
         if self.application_id.type_id.name == 'drupal':
             ssh = self.connect(
@@ -211,6 +236,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def post_reset(self):
+        """
+        Get the sites folder from parent base.
+        """
         res = super(ClouderBase, self).post_reset()
         if self.application_id.type_id.name == 'drupal':
             ssh = self.connect(
@@ -227,6 +255,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def update_base(self):
+        """
+        Trigger an updatedb.
+        """
         res = super(ClouderBase, self).update_base()
         if self.application_id.type_id.name == 'drupal':
             ssh = self.connect(
@@ -241,6 +272,9 @@ class ClouderBase(models.Model):
 
     @api.multi
     def purge_post(self):
+        """
+        Purge the sites folder and nginx configuration.
+        """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'drupal':
             ssh = self.connect(self.service_id.container_id.fullname)
@@ -257,11 +291,18 @@ class ClouderBase(models.Model):
 
 
 class ClouderSaveSave(models.Model):
+    """
+    Add methods to manage the drupal save specificities.
+    """
+
     _inherit = 'clouder.save.save'
 
 
     @api.multi
     def deploy_base(self):
+        """
+        Backup the sites folder.
+        """
         res = super(ClouderSaveSave, self).deploy_base()
         if self.base_id.application_id.type_id.name == 'drupal':
             ssh = self.connect(
@@ -279,6 +320,9 @@ class ClouderSaveSave(models.Model):
 
     @api.multi
     def restore_base(self):
+        """
+        Restore the sites folder.
+        """
         res = super(ClouderSaveSave, self).restore_base()
         if self.base_id.application_id.type_id.name == 'drupal':
             ssh = self.connect(
@@ -296,10 +340,17 @@ class ClouderSaveSave(models.Model):
 
 
 class ClouderBaseLink(models.Model):
+    """
+    Add methods to manage the drupal base link specificities.
+    """
+
     _inherit = 'clouder.base.link'
 
     @api.multi
     def deploy_piwik(self, piwik_id):
+        """
+        Add the piwik configuration on drupal.
+        """
         res = super(ClouderBaseLink, self).deploy_piwik(piwik_id)
         if self.name.name.code == 'piwik' \
                 and self.base_id.application_id.type_id.name == 'drupal':

@@ -26,10 +26,18 @@ from openerp import modules
 
 
 class ClouderContainer(models.Model):
+    """
+    Add methods to manage the postfix specificities.
+    """
+
     _inherit = 'clouder.container'
 
     @api.multi
     def deploy_post(self):
+        """
+        Add a ssmtp file if the container is linked to a postfix, and the
+        configure the postfix.
+        """
         super(ClouderContainer, self).deploy_post()
 
         for link in self.link_ids:

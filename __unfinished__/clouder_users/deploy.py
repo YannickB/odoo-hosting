@@ -20,28 +20,22 @@
 #
 ##############################################################################
 
-
-from openerp import netsvc
-from openerp import pooler
-from openerp.osv import fields, osv, orm
-from openerp.tools.translate import _
-
-import time
-from datetime import datetime, timedelta
-import subprocess
-import openerp.addons.clouder.execute as execute
-import erppeek
-
-import logging
-
-_logger = logging.getLogger(__name__)
+from openerp import models, api
 
 
-class clouder_container(osv.osv):
+class ClouderContainer(models.Model):
+    """
+    Manage link between ldap.server object and ldap container.
+    """
+
     _inherit = 'clouder.container'
 
+    @api.multi
     def deploy_post(self):
-        super(clouder_container, self).deploy_post()
+        """
+        Add a ldap.server in clouder when we create a new ldap container.
+        """
+        super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'openldap':
 
             domain_dc = ''
@@ -66,6 +60,9 @@ class clouder_container(osv.osv):
             })
 
     def purge(self):
+        """
+        Remove the ldap.server in clouder when we unlink an ldap container.
+        """
         if self.application_id.type_id.name == 'openldap':
 
             hostport = False
@@ -77,4 +74,4 @@ class clouder_container(osv.osv):
             server_ids = server_obj.search([
                 ('host', '=', self.server_id.name), ('port', '=', hostport)])
             server_ids.unlink()
-        return super(clouder_container, self).purge()
+        return super(ClouderContainer, self).purge()

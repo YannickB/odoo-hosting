@@ -20,22 +20,21 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, _
-from openerp.exceptions import except_orm
-
-
-import logging
-
-_logger = logging.getLogger(__name__)
+from openerp import models, api
 
 
 class ClouderContainer(models.Model):
+    """
+    Add a property.
+    """
 
     _inherit = 'clouder.container'
 
     @property
     def backup_method(self):
-
+        """
+        Property returning the backup method of the backup container.
+        """
         backup_method = False
         if self.application_id.code == 'backup-sim':
             backup_method = 'simple'
@@ -46,10 +45,16 @@ class ClouderContainer(models.Model):
 
 
 class ClouderContainerLink(models.Model):
+    """
+    Add the method to manage transfers to the distant containers.
+    """
     _inherit = 'clouder.container.link'
 
     @api.multi
     def deploy_link(self):
+        """
+        Upload the whole backups to a distant container.
+        """
         if self.name.name.code == 'backup-upl' \
                 and self.container_id.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.container_id.fullname
@@ -79,6 +84,9 @@ class ClouderContainerLink(models.Model):
 
     @api.multi
     def purge_link(self):
+        """
+        Remove the backups on the distant container.
+        """
         if self.name.name.code == 'backup-upl' \
                 and self.container_id.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.container_id.fullname

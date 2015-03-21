@@ -20,17 +20,14 @@
 #
 ##############################################################################
 
-
-from openerp import models, fields, api, _
-from openerp.exceptions import except_orm
-from datetime import datetime
-import re
-
-import logging
-_logger = logging.getLogger(__name__)
+from openerp import models, fields
 
 
 class ClouderApplication(models.Model):
+    """
+    Add the default price configuration in application.
+    """
+
     _name = 'clouder.application'
 
     container_price_partner_month = fields.Float('Price partner/month')
@@ -48,6 +45,10 @@ class ClouderApplication(models.Model):
 
 
 class ClouderContainer(models.Model):
+    """
+    Add the price configuration in container.
+    """
+
     _inherit = 'clouder.container'
 
     price_partner_month = fields.Float('Price partner/month')
@@ -57,6 +58,10 @@ class ClouderContainer(models.Model):
 
 
 class ClouderService(models.Model):
+    """
+    Add the price configuration in service.
+    """
+
     _inherit = 'clouder.service'
 
     price_partner_month = fields.Float('Price partner/month')
@@ -66,6 +71,10 @@ class ClouderService(models.Model):
 
 
 class ClouderBase(models.Model):
+    """
+    Add the price configuration in base.
+    """
+
     _inherit = 'clouder.base'
 
     price_partner_month = fields.Float('Price partner/month')

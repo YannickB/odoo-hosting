@@ -21,17 +21,27 @@
 ##############################################################################
 
 
-from openerp import models, fields, api, _
+from openerp import models, api, _
 from openerp.exceptions import except_orm
 
 import re
 
 
 class ClouderContainer(models.Model):
+    """
+    Add methods to manage the docker container specificities.
+    """
+
     _inherit = 'clouder.container'
 
     @api.multi
     def write(self, vals):
+        """
+        Override write method to trigger a deploy_post when we change the
+        public key.
+
+        :param vals: The values to update.
+        """
         res = super(ClouderContainer, self).write(vals)
         if 'option_ids' in vals:
             if self.application_id.type_id.name == 'docker' \
@@ -41,6 +51,11 @@ class ClouderContainer(models.Model):
 
     @api.model
     def create(self, vals):
+        """
+        Ensure the ports are correctly configured.
+
+        :param vals: The values which will be used to create the container.
+        """
 
         application = 'application_id' in vals \
             and self.env['clouder.application'].browse(vals['application_id'])
@@ -87,6 +102,9 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def deploy_post(self):
+        """
+        Add the public key to the allowed keys in the container.
+        """
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'docker':
             if 'public_key' in self.options \

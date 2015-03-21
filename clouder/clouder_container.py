@@ -33,12 +33,19 @@ _logger = logging.getLogger(__name__)
 
 
 class ClouderServer(models.Model):
+    """
+    Define the server object, which represent the servers
+    clouder can connect to.
+    """
+
     _name = 'clouder.server'
     _inherit = ['clouder.model']
 
     @api.multi
     def _create_key(self):
-
+        """
+        Generate a key on the filesystem.
+        """
         if not self.env.ref('clouder.clouder_settings').email_sysadmin:
             raise except_orm(_('Data error!'),
                 _("You need to specify the sysadmin email in configuration"))
@@ -51,11 +58,18 @@ class ClouderServer(models.Model):
 
     @api.multi
     def _destroy_key(self):
+        """
+        Destroy the key after once we don't need it anymore.
+        """
         self.execute_local(['rm', '-rf', '/tmp/key_' + self.env.uid])
         return True
 
     @api.multi
     def _default_private_key(self):
+        """
+        Generate a couple of keys visible use on the server form, which
+        we can easily add to the server to connect it.
+        """
         self = self.env['clouder.server']
         self.env.uid = str(self.env.uid)
 
@@ -72,6 +86,10 @@ class ClouderServer(models.Model):
 
     @api.multi
     def _default_public_key(self):
+        """
+        Generate a couple of keys visible use on the server form, which
+        we can easily add to the server to connect it.
+        """
         self = self.env['clouder.server']
         self.env.uid = str(self.env.uid)
 
@@ -112,6 +130,10 @@ class ClouderServer(models.Model):
     @api.one
     @api.constrains('name', 'ip')
     def _validate_data(self) :
+        """
+        Check that the server domain does not contain any forbidden
+        characters.
+        """
         if not re.match("^[\w\d.-]*$", self.name):
             raise except_orm(
                 _('Data error!'),
@@ -123,6 +145,9 @@ class ClouderServer(models.Model):
 
     @api.multi
     def start_containers(self):
+        """
+        Restart all containers of the server.
+        """
         containers = self.env['clouder.container'].search(
             [('server_id', '=', self.id)])
         for container in containers:
@@ -130,6 +155,9 @@ class ClouderServer(models.Model):
 
     @api.multi
     def stop_containers(self):
+        """
+        Stop all container of the server.
+        """
         containers = self.env['clouder.container'].search(
             [('server_id', '=', self.id)])
         for container in containers:
@@ -137,6 +165,9 @@ class ClouderServer(models.Model):
 
     @api.multi
     def deploy(self):
+        """
+        Add the keys in the filesystem and the ssh config.
+        """
         self.purge()
         key_file = self.home_directory + '/.ssh/keys/' + self.name
         self.execute_write_file(key_file, self.private_key)
@@ -159,6 +190,9 @@ class ClouderServer(models.Model):
 
     @api.multi
     def purge(self):
+        """
+        Remove the keys from the filesystem and the ssh config.
+        """
         self.execute_local([modules.get_module_path('clouder') +
                             '/res/sed.sh', self.name,
                             self.home_directory + '/.ssh/config'])
@@ -167,11 +201,19 @@ class ClouderServer(models.Model):
 
 
 class ClouderContainer(models.Model):
+    """
+    Define the container object, which represent the containers managed by
+    the clouder.
+    """
+
     _name = 'clouder.container'
     _inherit = ['clouder.model']
 
     @api.one
     def _get_ports(self):
+        """
+        Display the ports on the container lists.
+        """
         self.ports_string = ''
         first = True
         for port in self.port_ids:
@@ -222,19 +264,32 @@ class ClouderContainer(models.Model):
 
     @property
     def fullname(self):
+        """
+        Property returning the full name of the server.
+        """
         return self.name + '_' + self.server_id.name
 
     @property
     def volumes_save(self):
+        """
+        Property returning the all volume path, separated by a comma.
+        """
         return ','.join([volume.name for volume in self.volume_ids
                          if not volume.nosave])
 
     @property
     def ssh_port(self):
+        """
+        Property returning the ssh port to the container.
+        """
         return self.ports['ssh']['hostport'] or 22
 
     @property
     def root_password(self):
+        """
+        Property returning the root password of the application
+        hosted in this container.
+        """
         root_password = ''
         for option in self.option_ids:
             if option.name.name == 'root_password':
@@ -243,6 +298,9 @@ class ClouderContainer(models.Model):
 
     @property
     def ports(self):
+        """
+        Property returning the ports linked to this container, in a dict.
+        """
         ports = {}
         for port in self.port_ids:
             ports[port.name] = {
@@ -252,6 +310,10 @@ class ClouderContainer(models.Model):
 
     @property
     def options(self):
+        """
+        Property returning a dictionary containing the value of all options
+        for this container, even is they are not defined here.
+        """
         options = {}
         for option in self.application_id.type_id.option_ids:
             if option.type == 'container':
@@ -268,6 +330,10 @@ class ClouderContainer(models.Model):
     @api.one
     @api.constrains('name')
     def _validate_data(self):
+        """
+        Check that the container name does not contain any forbidden
+        characters.
+        """
         if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(
                 _('Data error!'),
@@ -276,6 +342,9 @@ class ClouderContainer(models.Model):
     @api.one
     @api.constrains('application_id')
     def _check_backup(self):
+        """
+        Check that a backup server is specified.
+        """
         if not self.backup_ids and self.application_id.type_id.name \
                 not in ['backup','backup_upload','archive','registry']:
             raise except_orm(
@@ -285,6 +354,10 @@ class ClouderContainer(models.Model):
     @api.one
     @api.constrains('image_id','image_version_id')
     def _check_config(self):
+        """
+        Check that a the image of the image version is the same than the image
+        of the container.
+        """
         if self.image_id.id != self.image_version_id.image_id.id:
             raise except_orm(_('Data error!'),
                 _("The image of image version must be "
@@ -293,6 +366,9 @@ class ClouderContainer(models.Model):
     @api.one
     @api.constrains('option_ids')
     def _check_option_ids(self):
+        """
+        Check that the required options are filled.
+        """
         for type_option in self.application_id.type_id.option_ids:
             if type_option.type == 'container' and type_option.required:
                 test = False
@@ -308,6 +384,9 @@ class ClouderContainer(models.Model):
     @api.one
     @api.constrains('link_ids')
     def _check_link_ids(self):
+        """
+        Check that the required links are specified.
+        """
         for app_link in self.application_id.link_ids:
             if app_link.container and app_link.required:
                 test = False
@@ -322,6 +401,10 @@ class ClouderContainer(models.Model):
     @api.multi
     @api.onchange('application_id')
     def onchange_application_id(self):
+        """
+        Update the options, links and some other fields when we change
+        the application_id field.
+        """
         if self.application_id:
             self.server_id = self.application_id.next_server_id
             self.image_id = self.application_id.default_image_id
@@ -371,6 +454,9 @@ class ClouderContainer(models.Model):
     @api.multi
     @api.onchange('image_id')
     def onchange_image_id(self):
+        """
+        Update the ports and volumes when we change the image_id field.
+        """
         if self.image_id:
             ports = []
             for port in self.image_id.port_ids:
@@ -390,6 +476,10 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def write(self, vals):
+        """
+        Override write to trigger a reinstall when we change the image version,
+        the ports or the volumes.
+        """
         version_obj = self.env['clouder.image.version']
         flag = False
         if 'image_version_id' in vals or 'port_ids' in vals \
@@ -415,6 +505,10 @@ class ClouderContainer(models.Model):
 
     @api.one
     def unlink(self):
+        """
+        Override unlink method to remove all services
+        and make a save before deleting a container.
+        """
         self.service_ids and self.service_ids.unlink()
         self = self.with_context(save_comment='Before unlink')
         self.save()
@@ -422,6 +516,9 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def reinstall(self):
+        """
+        Make a save before making a reinstall.
+        """
         if not 'save_comment' in self.env.context:
             self = self.with_context(save_comment='Before reinstall')
         self = self.with_context(forcesave=True)
@@ -432,7 +529,9 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def save(self):
-
+        """
+        Create a new container save.
+        """
         save = False
         now = datetime.now()
         repo_obj = self.env['clouder.save.repository']
@@ -499,11 +598,17 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def deploy_post(self):
+        """
+        Hook which can be called by submodules to execute commands after we
+        deployed a container.
+        """
         return
 
     @api.multi
     def deploy(self):
-
+        """
+        Deploy the container in the server.
+        """
         self.purge()
 
         ssh = self.connect(self.server_id.name)
@@ -583,7 +688,9 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def purge(self):
-
+        """
+        Remove the container.
+        """
         self.purge_key()
 
         ssh = self.connect(self.server_id.name)
@@ -596,12 +703,18 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def stop(self):
+        """
+        Stop the container.
+        """
         ssh = self.connect(self.server_id.name)
         self.execute(ssh, ['docker', 'stop', self.name])
         ssh.close()
 
     @api.multi
     def start(self):
+        """
+        Restart the container.
+        """
         self.stop()
         ssh = self.connect(self.server_id.name)
         self.execute(ssh, ['docker', 'start', self.name])
@@ -610,7 +723,10 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def deploy_key(self):
-
+        """
+        Generate a new key and move it to the container so the clouder can
+        access it.
+        """
         self.purge_key()
         self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
                             self.email_sysadmin, '-f', self.home_directory +
@@ -636,6 +752,9 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def purge_key(self):
+        """
+        Remove the key.
+        """
         self.execute_local([
             modules.get_module_path('clouder') + '/res/sed.sh',
             self.fullname, self.home_directory + '/.ssh/config'])
@@ -652,6 +771,11 @@ class ClouderContainer(models.Model):
 
 
 class ClouderContainerPort(models.Model):
+    """
+    Define the container.port object, used to define the ports which
+    will be mapped in the container.
+    """
+
     _name = 'clouder.container.port'
 
     container_id = fields.Many2one(
@@ -671,6 +795,12 @@ class ClouderContainerPort(models.Model):
 
 
 class ClouderContainerVolume(models.Model):
+    """
+    Define the container.volume object, used to define the volume which
+    will be saved in the container or will be linked to a directory
+    in the host server.
+    """
+
     _name = 'clouder.container.volume'
 
     container_id = fields.Many2one(
@@ -687,7 +817,13 @@ class ClouderContainerVolume(models.Model):
          'Volume name must be unique per container!'),
     ]
 
+
 class ClouderContainerOption(models.Model):
+    """
+    Define the container.option object, used to define custom values
+    specific to a container.
+    """
+
     _name = 'clouder.container.option'
 
     container_id = fields.Many2one(
@@ -704,6 +840,10 @@ class ClouderContainerOption(models.Model):
     @api.one
     @api.constrains('container_id')
     def _check_required(self):
+        """
+        Check that we specify a value for the option
+        if this option is required.
+        """
         if self.name.required and not self.value:
             raise except_orm(
                 _('Data error!'),
@@ -713,6 +853,11 @@ class ClouderContainerOption(models.Model):
 
 
 class ClouderContainerLink(models.Model):
+    """
+    Define the container.link object, used to specify the applications linked
+    to a container.
+    """
+
     _name = 'clouder.container.link'
     _inherit = ['clouder.model']
 
@@ -725,6 +870,10 @@ class ClouderContainerLink(models.Model):
     @api.one
     @api.constrains('container_id')
     def _check_required(self):
+        """
+        Check that we specify a value for the link
+        if this link is required.
+        """
         if self.name.required and not self.target:
             raise except_orm(
                 _('Data error!'),
@@ -734,14 +883,25 @@ class ClouderContainerLink(models.Model):
 
     @api.multi
     def deploy_link(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        deploy a link.
+        """
         return
 
     @api.multi
     def purge_link(self):
+        """
+        Hook which can be called by submodules to execute commands when we
+        purge a link.
+        """
         return
 
     @api.multi
     def control(self):
+        """
+        Make the control to know if we can launch the deploy/purge.
+        """
         if not self.target:
             self.log('The target isnt configured in the link, '
                      'skipping deploy link')
@@ -754,10 +914,16 @@ class ClouderContainerLink(models.Model):
 
     @api.multi
     def deploy_(self):
+        """
+        Control and call the hook to deploy the link.
+        """
         self.purge_()
         self.control() and self.deploy_link()
 
     @api.multi
     def purge_(self):
+        """
+        Control and call the hook to purge the link.
+        """
         self.control() and self.purge_link()
 

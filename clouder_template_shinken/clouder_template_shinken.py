@@ -21,19 +21,28 @@
 ##############################################################################
 
 from openerp import modules
-from openerp import models, fields, api, _
+from openerp import models, api
 
 
 class ClouderServer(models.Model):
+    """
+    Add methods to manage the shinken specificities.
+    """
 
     _inherit = 'clouder.server'
 
     @property
     def shinken_configfile(self):
+        """
+        Property returning the shinken config file.
+        """
         return '/usr/local/shinken/etc/hosts/' + self.name + '.cfg'
 
     @api.multi
     def deploy(self):
+        """
+        Deploy the configuration file to watch the server performances.
+        """
         super(ClouderServer, self).deploy()
 
         if self.supervision_id:
@@ -50,7 +59,9 @@ class ClouderServer(models.Model):
 
     @api.multi
     def purge(self):
-
+        """
+        Remove the configuration file.
+        """
         if self.supervision_id:
             ssh = self.connect(self.supervision_id.fullname,
                                username='shinken')
@@ -60,14 +71,24 @@ class ClouderServer(models.Model):
 
 
 class ClouderContainer(models.Model):
+    """
+    Add methods to manage the shinken specificities.
+    """
+
     _inherit = 'clouder.container'
 
     @property
     def shinken_configfile(self):
+        """
+        Property returning the shinken config file.
+        """
         return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
 
     @api.multi
     def deploy_post(self):
+        """
+        Add the general configuration files.
+        """
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'shinken':
             ssh = self.connect(self.fullname,
@@ -89,14 +110,25 @@ class ClouderContainer(models.Model):
 
 
 class ClouderBase(models.Model):
+    """
+    Add methods to manage the shinken specificities.
+    """
+
     _inherit = 'clouder.base'
 
     @property
     def shinken_configfile(self):
+        """
+        Property returning the shinken config file.
+        """
         return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
 
 
 def send_key_to_shinken(ssh, self):
+    """
+    Update the ssh key in the shinken container so it can access the
+    backup container.
+    """
     for backup in self.backup_ids:
         self.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' +
                            backup.fullname + '*'])
@@ -131,10 +163,17 @@ def send_key_to_shinken(ssh, self):
 
 
 class ClouderContainerLink(models.Model):
+    """
+    Add methods to manage the shinken specificities.
+    """
+
     _inherit = 'clouder.container.link'
 
     @api.multi
     def deploy_link(self):
+        """
+        Deploy the configuration file to watch the container.
+        """
         super(ClouderContainerLink, self).deploy_link()
         if self.name.name.code == 'shinken':
             ssh = self.connect(self.target.fullname,
@@ -178,6 +217,9 @@ class ClouderContainerLink(models.Model):
 
     @api.multi
     def purge_link(self):
+        """
+        Remove the configuration file.
+        """
         super(ClouderContainerLink, self).purge_link()
         if self.name.name.code == 'shinken':
             ssh = self.connect(self.target.fullname,
@@ -188,10 +230,17 @@ class ClouderContainerLink(models.Model):
 
 
 class ClouderBaseLink(models.Model):
+    """
+    Add methods to manage the shinken specificities.
+    """
+
     _inherit = 'clouder.base.link'
 
     @api.multi
     def deploy_link(self):
+        """
+        Deploy the configuration file to watch the base.
+        """
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'shinken':
             ssh = self.connect(self.target.fullname,
@@ -237,6 +286,9 @@ class ClouderBaseLink(models.Model):
 
     @api.multi
     def purge_link(self):
+        """
+        Remove the configuration file.
+        """
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'shinken':
             ssh = self.connect(self.target.fullname,

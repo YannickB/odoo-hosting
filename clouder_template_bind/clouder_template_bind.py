@@ -26,15 +26,25 @@ from openerp import modules
 
 
 class ClouderDomain(models.Model):
+    """
+    Add method to manage domain general configuration on the bind container.
+    """
+
     _inherit = 'clouder.domain'
 
     @property
     def configfile(self):
+        """
+        Property returning the path to the domain config file
+        in the bind container.
+        """
         return'/etc/bind/db.' + self.name
 
     @api.multi
     def deploy(self):
-
+        """
+        Configure the domain in the bind container, if configured.
+        """
         if self.dns_id:
             ssh = self.connect(self.dns_id.fullname)
             self.send(ssh, modules.get_module_path('clouder_template_bind') +
@@ -60,7 +70,9 @@ class ClouderDomain(models.Model):
 
     @api.multi
     def purge(self):
-
+        """
+        Remove the domain config in the bind container.
+        """
         if self.dns_id:
             ssh = self.connect(self.dns_id.fullname)
             self.execute(ssh, [
@@ -73,10 +85,18 @@ class ClouderDomain(models.Model):
 
 
 class ClouderBaseLink(models.Model):
+    """
+    Add method to manage links between bases and the bind container.
+    """
+
     _inherit = 'clouder.base.link'
 
     @api.multi
     def deploy_link(self):
+        """
+        Add a new CNAME record when we create a new base, and MX if the
+        base has a postfix link.
+        """
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'bind':
             ssh = self.connect(self.target.fullname)
@@ -102,6 +122,9 @@ class ClouderBaseLink(models.Model):
 
     @api.multi
     def purge_link(self):
+        """
+        Remove base records on the bind container.
+        """
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'bind':
             ssh = self.connect(self.target.fullname)

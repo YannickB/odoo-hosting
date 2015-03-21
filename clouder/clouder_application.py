@@ -26,12 +26,17 @@ from openerp.exceptions import except_orm
 from datetime import datetime
 import re
 
-import logging
-
-_logger = logging.getLogger(__name__)
-
 
 class ClouderApplicationType(models.Model):
+    """
+    Define the application.type object, mainly used to know which python code
+    shall be used for an application.
+
+    For example, when we deploy a base with an Odoo application with 'odoo' as
+    the application type, clouder will check the module clouder_template_odoo
+    to know the specific code to execute.
+    """
+
     _name = 'clouder.application.type'
 
     name = fields.Char('Name', size=64, required=True)
@@ -54,6 +59,10 @@ class ClouderApplicationType(models.Model):
     @api.one
     @api.constrains('name', 'system_user')
     def _validate_data(self):
+        """
+        Check that the application type name does not contain any forbidden
+        characters.
+        """
         if not re.match("^[\w\d_]*$", self.name) \
                 or not re.match("^[\w\d-]*$", self.system_user):
             raise except_orm(_('Data error!'), _(
@@ -63,6 +72,11 @@ class ClouderApplicationType(models.Model):
 
 
 class ClouderApplicationTypeOption(models.Model):
+    """
+    Define the application.type.option object, used to know which option can be
+    assigned to application/container/service/base.
+    """
+
     _name = 'clouder.application.type.option'
 
     apptype_id = fields.Many2one(
@@ -83,6 +97,11 @@ class ClouderApplicationTypeOption(models.Model):
 
 
 class ClouderApplication(models.Model):
+    """
+    Define the application object, which represent the software which will be
+    installed in container.
+    """
+
     _name = 'clouder.application'
 
     name = fields.Char('Name', size=64, required=True)
@@ -136,26 +155,46 @@ class ClouderApplication(models.Model):
 
     @property
     def full_archivepath(self):
+        """
+        Property returning the full path to the archive
+        in the archive container
+        """
         return self.env['clouder.model'].archive_path + '/' \
             + self.type_id.name + '-' + self.code
 
     @property
     def full_hostpath(self):
+        """
+        Property returning the full path to the archive
+        in the hosting system.
+        """
         return self.env['clouder.model'].services_hostpath + '/' \
             + self.type_id.name + '-' + self.code
 
     @property
     def full_localpath(self):
+        """
+        Property returning the full path to the instance
+        in the destination container
+        """
         return self.type_id.localpath and self.type_id.localpath + '/' \
                 + self.type_id.name + '-' + self.code or ''
 
     @property
     def computed_version(self):
-            return self.current_version + '.' \
-                   + datetime.now().strftime('%Y%m%d.%H%M%S')
+        """
+        Property returning the name of the application version
+        with the current date.
+        """
+        return self.current_version + '.' \
+            + datetime.now().strftime('%Y%m%d.%H%M%S')
 
     @property
     def options(self):
+        """
+        Property returning a dictionary containing the value of all options
+        for this application, even is they are not defined here.
+        """
         options = {}
         for option in self.type_id.option_ids:
             if option.type == 'application':
@@ -174,6 +213,11 @@ class ClouderApplication(models.Model):
     @api.one
     @api.constrains('code', 'admin_name', 'admin_email')
     def _validate_data(self):
+        """
+        Check that the application name does not contain any forbidden
+        characters.
+        """
+
         if not re.match("^[\w\d-]*$", self.code) or len(self.code) > 20:
             raise except_orm(_('Data error!'), _(
                 "Code can only contains letters, digits and "
@@ -190,7 +234,11 @@ class ClouderApplication(models.Model):
     @api.multi
     @api.onchange('type_id')
     def onchange_type_id(self):
+        """
+        Update the options when we change the type_id field.
+        """
         if self.type_id:
+            options = []
             for type_option in self.type_id.option_ids:
                 if type_option.type == 'application' and type_option.auto:
                     test = False
@@ -198,11 +246,16 @@ class ClouderApplication(models.Model):
                         if option.name == type_option:
                             test = True
                     if not test:
-                        self.link_ids = [(0, 0, {
-                            'name': type_option,'value': type_option.default})]
+                        options.append((0, 0,
+                                        {'name': type_option,
+                                         'value': type_option.default}))
+            self.option_ids = options
 
     @api.multi
     def write(self, vals):
+        """
+        Override the write method to prevent change of the application code.
+        """
         if 'code' in vals and vals['code'] != self.code:
             raise except_orm(_('Data error!'), _(
                 "It's too dangerous to modify the application code!"))
@@ -210,11 +263,16 @@ class ClouderApplication(models.Model):
 
     @api.multi
     def get_current_version(self):
+        """
+        Hook which can be used to return the version of the application.
+        """
         return False
 
     @api.multi
     def build(self):
-
+        """
+        Method to generate a new application version.
+        """
         if not self.archive_id:
             raise except_orm(_('Data error!'), _(
                 "You need to specify the archive where "
@@ -232,6 +290,11 @@ class ClouderApplication(models.Model):
 
 
 class ClouderApplicationOption(models.Model):
+    """
+    Define the application.option object, used to define custom values specific
+    to an application.
+    """
+
     _name = 'clouder.application.option'
 
     application_id = fields.Many2one('clouder.application', 'Application',
@@ -247,6 +310,11 @@ class ClouderApplicationOption(models.Model):
 
 
 class ClouderApplicationVersion(models.Model):
+    """
+    Define the application.version object, which represent each build of
+    the application.
+    """
+
     _name = 'clouder.application.version'
     _inherit = ['clouder.model']
 
@@ -259,23 +327,42 @@ class ClouderApplicationVersion(models.Model):
 
     @property
     def fullname(self):
+        """
+        Property returning the full name of the application version.
+        """
         return self.application_id.code + '_' + self.name
 
     @property
     def full_archivepath(self):
-            return self.application_id.full_archivepath + '/' + self.name
+        """
+        Property returning the full path to the archive version
+        in the archive container.
+        """
+        return self.application_id.full_archivepath + '/' + self.name
 
     @property
     def full_archivepath_targz(self):
+        """
+        Property returning the full path to the tar.gz of the archive version
+        in the archive container.
+        """
         return self.application_id.full_archivepath \
                + '/' + self.name + '.tar.gz'
 
     @property
     def full_hostpath(self):
+        """
+        Property returning the full path to the archive version
+        in the hosting system.
+        """
         return self.application_id.full_hostpath + '/' + self.name
 
     @property
     def full_localpath(self):
+        """
+        Property returning the full path to the archive version
+        in the destination container.
+        """
         return self.application_id.full_localpath + '/' + self.name
 
     _sql_constraints = [
@@ -286,6 +373,10 @@ class ClouderApplicationVersion(models.Model):
     @api.one
     @api.constrains('name')
     def _validate_data(self):
+        """
+        Check that the application version name does not contain any forbidden
+        characters.
+        """
         if not re.match("^[\w\d_.]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Application version can only contains letters, "
@@ -295,6 +386,10 @@ class ClouderApplicationVersion(models.Model):
 
     @api.one
     def unlink(self):
+        """
+        Override unlink method to prevent application version unlink if
+        some services are linked to it.
+        """
         if self.service_ids:
             raise except_orm(_('Inherit error!'), _(
                 "A service is linked to this application version, "
@@ -304,10 +399,17 @@ class ClouderApplicationVersion(models.Model):
 
     @api.multi
     def build_application(self):
+        """
+        Hook which can be used to call command specific to an application
+        to build an application.
+        """
         return
 
     @api.multi
     def deploy(self):
+        """
+        Build the application archive and store it in the archive container.
+        """
         ssh = self.connect(self.archive_id.fullname)
         self.execute(ssh, ['mkdir', self.application_id.full_archivepath])
         self.execute(ssh, ['rm', '-rf', self.full_archivepath])
@@ -322,6 +424,9 @@ class ClouderApplicationVersion(models.Model):
 
     @api.multi
     def purge(self):
+        """
+        Remove the application archive in the archive container.
+        """
         ssh = self.connect(self.archive_id.fullname)
         self.execute(ssh, ['rm', '-rf', self.full_archivepath])
         self.execute(ssh, ['rm', self.full_archivepath_targz])
@@ -329,6 +434,11 @@ class ClouderApplicationVersion(models.Model):
 
 
 class ClouderApplicationLink(models.Model):
+    """
+    Define the application.link object, used to know which others applications
+    can be link to this application.
+    """
+
     _name = 'clouder.application.link'
 
     application_id = fields.Many2one('clouder.application', 'Application',
@@ -341,16 +451,6 @@ class ClouderApplicationLink(models.Model):
     service = fields.Boolean('Service?')
     base = fields.Boolean('Base?')
     next = fields.Many2one('clouder.container', 'Next')
-
-    def get_dict(self):
-        return {
-            'id': self.id, 'app_id': self.name.id, 'name': self.name.name,
-            'code': self.name.code,
-            'required': self.required, 'auto': self.auto,
-            'make_link': self.make_link, 'next': self.next,
-            'container': self.container, 'service': self.service,
-            'base': self.base
-        }
 
     _sql_constraints = [
         ('name_uniq', 'unique(application_id,name)',

@@ -26,12 +26,13 @@ from openerp.exceptions import except_orm
 import re
 from datetime import datetime
 
-import logging
-
-_logger = logging.getLogger(__name__)
-
 
 class ClouderImage(models.Model):
+    """
+    Define the image object, which represent the container image which
+    can be generated on this clouder.
+    """
+
     _name = 'clouder.image'
 
     name = fields.Char('Image name', size=64, required=True)
@@ -63,13 +64,19 @@ class ClouderImage(models.Model):
     @api.one
     @api.constrains('name')
     def _validate_data(self):
+        """
+        Check that the image name does not contain any forbidden
+        characters.
+        """
         if not re.match("^[\w\d_]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits and underscore"))
 
     @api.multi
     def build(self):
-
+        """
+        Method to generate a new image version.
+        """
         if not self.dockerfile:
             return
         if not self.registry_id and self.name != 'img_registry':
@@ -86,6 +93,12 @@ class ClouderImage(models.Model):
 
 
 class ClouderImageVolume(models.Model):
+    """
+    Define the image.volume object, which represent the volumes which
+    will define the volume in the generated image and which will be
+    inherited in the containers.
+    """
+
     _name = 'clouder.image.volume'
 
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
@@ -103,6 +116,12 @@ class ClouderImageVolume(models.Model):
 
 
 class ClouderImagePort(models.Model):
+    """
+    Define the image.port object, which represent the ports which
+    will define the ports in the generated image and which will be inherited
+    in the containers.
+    """
+
     _name = 'clouder.image.port'
 
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
@@ -121,6 +140,11 @@ class ClouderImagePort(models.Model):
 
 
 class ClouderImageVersion(models.Model):
+    """
+    Define the image.version object, which represent each build of
+    the image.
+    """
+
     _name = 'clouder.image.version'
     _inherit = ['clouder.model']
 
@@ -134,21 +158,35 @@ class ClouderImageVersion(models.Model):
 
     @property
     def fullname(self):
+        """
+        Property returning the full name of the image version.
+        """
         return self.image_id.name + ':' + self.name
 
 
     @property
     def registry_address(self):
+        """
+        Property returning the address of the registry where is hosted
+        the image version.
+        """
         return self.registry_id and self.registry_id.server_id.name + ':' + \
             self.registry_id.ports['registry-ssl']['hostport']
 
     @property
     def fullpath(self):
+        """
+        Property returning the full path to get the image version.
+        """
         return self.registry_id and self.registry_address + \
             '/' + self.fullname
 
     @property
     def fullpath_localhost(self):
+        """
+        Property returning the full path to get the image version if the
+        registry is on the same server.
+        """
         return self.registry_id and 'localhost:' + \
             self.registry_id.ports['registry']['hostport'] +\
             '/' + self.fullname
@@ -163,6 +201,10 @@ class ClouderImageVersion(models.Model):
     @api.one
     @api.constrains('name')
     def _validate_data(self):
+        """
+        Check that the image version name does not contain any forbidden
+        characters.
+        """
         if not re.match("^[\w\d_.]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Image version can only contains letters, "
@@ -170,6 +212,10 @@ class ClouderImageVersion(models.Model):
 
     @api.one
     def unlink(self):
+        """
+        Override unlink method to prevent image version unlink if
+        some containers are linked to it.
+        """
         if self.container_ids:
             raise except_orm(
                 _('Inherit error!'),
@@ -179,6 +225,9 @@ class ClouderImageVersion(models.Model):
 
     @api.multi
     def deploy(self):
+        """
+        Build a new image and store it to the registry.
+        """
         ssh = self.connect(self.registry_id.server_id.name)
         dir = '/tmp/' + self.image_id.name + '_' + self.fullname
         self.execute(ssh, ['mkdir', '-p', dir])
@@ -222,13 +271,15 @@ class ClouderImageVersion(models.Model):
         ssh.close()
         return
 
-    #In case of problems with ssh authentification
+    # In case of problems with ssh authentification
     # - Make sure the /opt/keys belong to root:root with 700 rights
     # - Make sure the user in the container can access the keys,
     #     and if possible make the key belong to the user with 700 rights
 
     @api.multi
     def purge(self):
-        #TODO There is currently no way to delete an image
-        #  from private registry.
+        """
+        TODO There is currently no way to delete an image
+        from private registry.
+        """
         return

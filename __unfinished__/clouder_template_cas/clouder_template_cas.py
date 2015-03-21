@@ -20,6 +20,4 @@
 #
 ##############################################################################
 
-from openerp import modules
-from openerp import models, fields, api, _
-import openerp.addons.clouder.clouder_model as clouder_model
+from openerp import models, fields
