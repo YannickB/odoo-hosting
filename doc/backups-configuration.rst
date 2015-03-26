@@ -1,9 +1,8 @@
-=========================
 Backups and Configuration
 =========================
 
 Backups
-=======
+-------
 
 Clouder take care of the backup management and will periodically launch a backup on containers and bases.
 
@@ -41,7 +40,7 @@ You can check the save and restore commands execution on the log window.
 
 
 Configuration
-=============
+-------------
 
 .. image:: images/gettingstarted-configuration.png
 

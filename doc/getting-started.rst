@@ -1,4 +1,3 @@
-===============
 Getting Started
 ===============
 
@@ -7,7 +6,7 @@ Once installed using Clouder is easy, but set up all the infrastructure may take
 
 
 Odoo installation
-=================
+-----------------
 
 This guide will not cover the Odoo installation in itself, we suggest you read `the installation documentation on the official website <https://www.odoo.com/documentation/8.0/setup/install.html>`_. You can also contact us on `www.goclouder.net
 <https://www.goclouder.net/>`_ to ask for a free instance, it may be easier for you because you obviously can't install your Clouder on a server managed by this same Clouder.
@@ -20,7 +19,7 @@ Once your Odoo installation is ready, download the Clouder modules on `Github
 
 
 Clouder configuration
-=====================
+---------------------
 
 The first thing to do is to set the sysadmin email in the Clouder configuration.
 
@@ -32,7 +31,7 @@ Then you have to configure the server you want to connect. See the `how to conne
 
 
 The registry container
-======================
+----------------------
 
 The next thing to do is to generate the images for each applications we'll need, but for this we need a registry container to store theses images.
 
@@ -54,7 +53,7 @@ The logs are also visible in the default Odoo output.
 
 
 Build the images
-================
+----------------
 
 Now that we have the registry, we can build the images.
 
@@ -83,7 +82,7 @@ See the `Image chapter <images.rst>`_ for more informations about the fields in 
 
 
 Deploy containers
-=================
+-----------------
 
 The first containers we'll need to deploy will be the archive, backup and backup-upload containers because theses are containers used by Clouder (like the registry one).
 
@@ -137,7 +136,7 @@ For more information about the container fields, you can read the `Containers ch
 
 
 Build the application
-=====================
+---------------------
 
 Next, you need to go on the Clouder application in the Applications menu.
 
@@ -149,7 +148,7 @@ For more information about the application fields, you can read the `Application
 
 
 Deploy the service
-==================
+------------------
 
 Now that we have the application, we can deploy it in our Odoo container.
 
@@ -160,7 +159,7 @@ For more information about the service fields, you can read the `Services chapte
 
 
 Configure the domain
-====================
+--------------------
 
 Before we can add our base, we need to add the domain in your Clouder.
 
@@ -172,7 +171,7 @@ For more information about the domain fields, you can read the `Domains and Base
 
 
 Add the base
-============
+------------
 
 Finally, we can configure the base.
 

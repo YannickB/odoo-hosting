@@ -1,4 +1,3 @@
-============
 Applications
 ============
 
@@ -6,7 +5,7 @@ The Application represent the software you can host in your Clouder. In this cha
 
 
 Application Types
-=================
+-----------------
 
 This menu contain the list of application type defined in your Clouder. They are mainly just a tag so the python code can know which code shall be executed, depending of the type of the application.
 
@@ -41,7 +40,7 @@ Each option has :
 
 
 Application
-===========
+-----------
 
 The application represent the software which will be hosted in your Clouder. You can have several applications for each application types.
 

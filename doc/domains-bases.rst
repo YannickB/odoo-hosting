@@ -1,9 +1,8 @@
-=================
 Domains and Bases
 =================
 
 Domains
-=======
+-------
 
 In the Domain menu you can manage the domain managed by your Clouder.
 
@@ -29,7 +28,7 @@ You can use the reinstall button if you think the domain has not be correctly in
 
 
 Bases
-=====
+-----
 
 A base correspond to an url which will be available on the Internet, and often correspond to a database.
 
