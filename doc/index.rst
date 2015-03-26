@@ -11,14 +11,14 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-    getting-started
-    connect-server
-    images
-    applications
-    containers
-    services
-    domains-bases
-    backups-configuration
+   getting-started
+   connect-server
+   images
+   applications
+   containers
+   services
+   domains-bases
+   backups-configuration
 
 
 Indices and tables
