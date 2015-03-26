@@ -26,7 +26,7 @@
     'category': 'Clouder',
     'depends': ['clouder','clouder_template_shinken'],
     'author': 'Yannick Buron (Clouder)',
-    'license': 'LGPL-3 by Clouder',
+    'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
     Clouder Template Bind

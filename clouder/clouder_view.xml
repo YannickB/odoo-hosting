@@ -49,9 +49,7 @@
                         <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
                         <newline/>
                         <field name="public"/>
-                        <newline/>
                         <field name="partner_id"/>
-                        <field name="partner_ids"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -84,6 +82,9 @@
                                 <field name="save_comment"/>
                             </group>
                             <button name="save" string="Save" type="object"/>
+                        </page>
+                        <page string="Invoicing">
+                            <field name="partner_ids" colspan="4"/>
                         </page>
                     </notebook>
                 </form>
@@ -127,10 +128,9 @@
                         <newline/>
                         <field name="parent_id"/>
                         <button name="deploy_to_parent" string="Deploy to parent" type="object" attrs="{'invisible': [('parent_id','=', False)]}"/>
-                        <field name="public"/>
                         <newline/>
+                        <field name="public"/>
                         <field name="partner_id"/>
-                        <field name="partner_ids"/>
                     </group>
                     <group col="4" attrs="{'invisible': [('parent_id','!=', False)]}">
                         <button name="install_formation" string="Install Formation" type="object"/>
@@ -139,21 +139,28 @@
                         <field name="sub_service_name"/>
                         <button name="install_subservice" string="Install Subservice" type="object"/>
                     </group>
-                    <field name="option_ids" colspan="4">
-                        <tree string="Options" editable="bottom">
-                            <field name="name" domain="[('apptype_id.application_ids.container_ids','in',parent.container_id),('type','=','service')]"/>
-                            <field name="value"/>
-                        </tree>
-                    </field>
-                    <field name="link_ids" colspan="4">
-                        <tree string="Links" editable="bottom">
-                            <field name="name" domain="[('application_id.container_ids','=',parent.container_id),('service','=',True)]"/>
-                            <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
-                            <button name="deploy_" type="object" string="Reload"/>
-                        </tree>
-                    </field>
-                    <button name="reinstall" string="Reinstall" type="object"/>
-                    <field name="log_ids" colspan="4"/>
+                    <notebook>
+                        <page string="General">
+                            <field name="option_ids" colspan="4">
+                                <tree string="Options" editable="bottom">
+                                    <field name="name" domain="[('apptype_id.application_ids.container_ids','in',parent.container_id),('type','=','service')]"/>
+                                    <field name="value"/>
+                                </tree>
+                            </field>
+                            <field name="link_ids" colspan="4">
+                                <tree string="Links" editable="bottom">
+                                    <field name="name" domain="[('application_id.container_ids','=',parent.container_id),('service','=',True)]"/>
+                                    <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <button name="deploy_" type="object" string="Reload"/>
+                                </tree>
+                            </field>
+                            <button name="reinstall" string="Reinstall" type="object"/>
+                            <field name="log_ids" colspan="4"/>
+                        </page>
+                        <page string="Invoicing">
+                            <field name="partner_ids" colspan="4"/>
+                        </page>
+                    </notebook>
                 </form>
             </field>
         </record>
@@ -193,9 +200,9 @@
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
                         <field name="nosave"/>
                         <field name="privileged"/>
+                        <newline/>
                         <field name="public"/>
                         <field name="partner_id"/>
-                        <field name="partner_ids"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -249,6 +256,9 @@
                                 <field name="save_comment"/>
                             </group>
                             <button name="save" string="Save" type="object"/>
+                        </page>
+                        <page string="Invoicing">
+                            <field name="partner_ids" colspan="4"/>
                         </page>
                     </notebook>
 

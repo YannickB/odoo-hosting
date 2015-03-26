@@ -26,7 +26,7 @@
     'category': 'Clouder',
     'depends': ['clouder_template_postgres', 'clouder_template_piwik'],
     'author': 'Yannick Buron (Clouder)',
-    'license': 'LGPL-3 by Clouder',
+    'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': ['clouder_template_drupal_data.xml'],

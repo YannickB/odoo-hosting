@@ -107,6 +107,33 @@ class ClouderContainer(models.Model):
                                '/usr/local/shinken/etc/hosts/localhost.cfg'])
             ssh.close()
 
+    @api.multi
+    def deploy_key(self):
+        """
+        Reset the backup ssh key in shinken containers after we change the
+        key of a backup container
+        """
+        super(ClouderContainer, self).deploy_key()
+        if self.application_id.type_id.name == 'backup':
+            shinkens = {}
+            containers = self.search([('backup_ids', 'in', self.id)])
+            for container in containers:
+                shinken_links = self.env['clouder.container.link'].search([
+                    ('container_id','=',container.id),
+                    ('name.name.code','=','shinken'),
+                    ('target','!=',False)
+                ])
+                for shinken_link in shinken_links:
+                    shinkens[shinken_link.target.id] = {
+                        'shinken':shinken_link.target,
+                        'container': container
+                    }
+
+            for key, shinken in shinkens.iteritems():
+                ssh = self.connect(shinken['shinken'].fullname,
+                                   username='shinken')
+                send_key_to_shinken(ssh, shinken['container'])
+                ssh.close()
 
 
 class ClouderBase(models.Model):
