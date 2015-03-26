@@ -14,5 +14,3 @@ Contents:
    services
    domains-bases
    backups-configuration
-
-
