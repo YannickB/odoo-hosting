@@ -16,20 +16,3 @@ You can find more informations, support forum and mailing-list on https://www.go
 
 Developpement (including documentation) is done here on github, contributions are welcome; please read the CLA guidelines https://github.com/clouder-community/clouder/blob/8.0/doc/cla/sign-cla.md if you want to make a pull request.
 
-
-Getting started
----------------
-
-(To refactor and move on functional documentation)
-
-Installation :
-
--Install an OpenERP 7 on one physical server, and install the clouder modules on it. I'll call orchestrator the system user running the OpenERP server.
-
--Install on the physical machine which will run the container the package docker.io (I use the deb http://get.docker.io/ubuntu docker main repo)
-
--Add the ssh key of orchestrator system user to the authorized_keys of the root user of the machine for containers
-
--On the OpenERP, add the server, generate images and start create the subcomponent container for shinken/bind/backup/proxy.
-
--Then, start creating your own applications and deploy them through the base menu
