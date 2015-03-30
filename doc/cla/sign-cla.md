@@ -90,7 +90,7 @@ signature is merged.
 The goal of having a Contributor License Agreement for Clouder is to:
 
 * clearly define the terms under which intellectual property (patches, pull
-  requests, etc.) have been contributed to the Odoo project
+  requests, etc.) have been contributed to the Clouder project
 
 * protect the Clouder project and its users in case of legal dispute about the
   origin or ownership of any part of the code
