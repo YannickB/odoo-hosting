@@ -204,7 +204,7 @@ class ClouderSaveSave(models.Model):
                 container_links[link.name.name.code] = {
                     'name': link.name.id,
                     'code': link.name.name.code,
-                    'target': link.target and link.target.id
+                    'target': link.target and link.target.id or False
                 }
 
             vals.update({
@@ -226,7 +226,7 @@ class ClouderSaveSave(models.Model):
                 service_links[link.name.name.code] = {
                     'name': link.name.id,
                     'code': link.name.name.code,
-                    'target': link.target and link.target.id
+                    'target': link.target and link.target.id or False
                 }
 
             vals.update({
@@ -244,7 +244,7 @@ class ClouderSaveSave(models.Model):
                 base_links[link.name.name.code] = {
                     'name': link.name.id,
                     'code': link.name.name.code,
-                    'target': link.target and link.target.id
+                    'target': link.target and link.target.id or False
                 }
 
             vals.update({
