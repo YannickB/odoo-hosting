@@ -39,10 +39,6 @@
             <field name="implied_ids" eval="[(4, ref('group_clouder_user'))]"/>
         </record>
 
-        <record id="base.group_public" model="res.groups">
-            <field name="implied_ids" eval="[(4, ref('group_clouder_user'))]"/>
-        </record>
-
         <record id="base.group_erp_manager" model="res.groups">
             <field name="implied_ids" eval="[(4, ref('group_clouder_administrator'))]"/>
         </record>
