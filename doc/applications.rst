@@ -16,6 +16,7 @@ Since it’s so deeply connected with the python code, you shall never create an
 .. image:: images/applicationtype-form.png
 
 It contains :
+
 - The name of the type, can only contains lowercase, digit or hyphen.
 
 - The system user which will run the applications.
@@ -31,11 +32,17 @@ It contains :
 In the application type you can also define the options. Options allow to manage configuration settings specifics to an application type, so you can manage some values needed for your python code without having to add new fields in the Clouder interface.
 
 An option can be assigned to applications, containers, services or bases. In the application type you’ll define the possible options for each objects, and the values will be defined in the objects.
+
 Each option has :
+
 - The name of the option, can only contains lowercase, digit or underscore.
+
 - The type of object where the value of the option will be defined.
+
 - If the option shall be suggested when you create a new record in the designed object.
+
 - If this option is required, if set to True you’ll not be able to create a new record if the option is not set.
+
 - Finally, the default value for this option if needed.
 
 
@@ -47,14 +54,15 @@ The application represent the software which will be hosted in your Clouder. You
 .. image:: images/application-list.png
 
 For example, for the application type odoo, you can have three applications:
+
 - An Odoo application, which will just install a regular Odoo with only the base module.
 
 - A Odoo verticalisation for Hotels, which will add the hotel modules from OCA (`https://github.com/OCA/vertical-hotel <https://github.com/OCA/vertical-hotel/>`_) in the application archive and if you set the hotel module in the install_modules option will automatically install the hotel module when you create a new base.
 
 - A Clouder application, to host Clouder for other peoples (Yeah!). Very similar to a verticalisation, it will add the clouder modules in the application archive and auto install the clouder module thanks to the install_modules option.
 
-Since the modules can be installed automatically when the base is deployed, this mean you can easily create your own verticalisation with modules your developped or you like, and add a form on your website so your visitors will be able to automatically get their own instances of your verticalisation.
-We took the example of Odoo, but it works with any software which have a module system, like Drupal, Wordpress etc… If you know a lot of very good modules and want to share this knowledge you can easily use Clouder to build a package which your visitors can install in just a few click.
+| Since the modules can be installed automatically when the base is deployed, this mean you can easily create your own verticalisation with modules your developped or you like, and add a form on your website so your visitors will be able to automatically get their own instances of your verticalisation.
+| We took the example of Odoo, but it works with any software which have a module system, like Drupal, Wordpress etc… If you know a lot of very good modules and want to share this knowledge you can easily use Clouder to build a package which your visitors can install in just a few click.
 
 Let’s get back to the application form. For each application you can define :
 
@@ -78,20 +86,26 @@ Let’s get back to the application form. For each application you can define :
 
 Next you have the options configuration, where you can define the values for the options specifics to this application type.
 
-Following, you have the links configuration. Theses are an extremely important concept, you can link an application to the others in order to build a coherent infrastructure.
-For example, an Odoo container by himself can’t work, you need at least to link it to a Postgres container so it can have their databases. Same, you can link the Odoo container to a Postfix container for sending and receiving emails, a Proxy container for redirecting the defaults ports to Odoo and adding the https, a Shinken container to make sure it’s always up and get stats, a Bind container to assign a domain name to the Odoo base, a Piwik to get analytic stats etc…
-When a link is deployed, some specific python code will be called and will make sure the other container know the existence of this container and adapt his configuration.
+| Following, you have the links configuration. Theses are an extremely important concept, you can link an application to the others in order to build a coherent infrastructure.
+| For example, an Odoo container by himself can’t work, you need at least to link it to a Postgres container so it can have their databases. Same, you can link the Odoo container to a Postfix container for sending and receiving emails, a Proxy container for redirecting the defaults ports to Odoo and adding the https, a Shinken container to make sure it’s always up and get stats, a Bind container to assign a domain name to the Odoo base, a Piwik to get analytic stats etc…
+| When a link is deployed, some specific python code will be called and will make sure the other container know the existence of this container and adapt his configuration.
 
 Very similar to the options interface, links are configured in the application form and are defined in the containers/services/bases. So for each link you can define :
+
 - The application to link.
+
 - If the link shall be suggested when you create a new record in the designed object.
+
 - If this link is required, if set to True you’ll not be able to create a new record if the link is not set.
+
 - If a direct docker link shall be made between the two containers. This improve security for the communications between the containers but require the containers to be in the same server.
+
 - The type of object where this link shall be available (container/service/base)
+
 - The next container which shall be used for this link. If filled, the link will be autocompleted in the container/service/base.
 
-After the links, you have a text zone which shall contain the informations needed to build the application archive. An archive is a compressed directory containing the application files which will be stored in an archive container and will be moved in the servers if a service on them need it.
-Very similar with managing the images, each archive correspond to an application version which is created when you click on the build button and is named with his build date.
+| After the links, you have a text zone which shall contain the informations needed to build the application archive. An archive is a compressed directory containing the application files which will be stored in an archive container and will be moved in the servers if a service on them need it.
+| Very similar with managing the images, each archive correspond to an application version which is created when you click on the build button and is named with his build date.
 
 What you shall place in the text field depend of each application type. For example for Odoo, you can either indicate the git branch to download (including the community modules you want to use) or a recipe. For Drupal, you have to indicate here the build file for drush.
 
@@ -104,9 +118,13 @@ If you want to check the commands results, you can open the log in the version w
 .. image:: images/application-form-version-log.png
 
 Finally, on the save tab you can manage the save options for this application. You can specify :
+
 - The backup container for containers and bases.
+
 - The time between each automatic save. Since some backup methods use global deduplication, you can make frequent saves without having to worry too much about disk space in the backup container.
+
 - The time between each save repository change the time before a repository is deleted. Check the Save chapter for more informations about repositories and their utilities.
+
 - The time before a backup expiration.
 
 All theses settings are inherited but can be changed in containers and bases forms.

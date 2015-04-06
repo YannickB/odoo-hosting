@@ -1,19 +1,18 @@
 Getting Started
 ===============
 
-In this chapter, we'll see a step by step guide to install a ready-to-use infrastructure. For the example, the base we will create will be another Clouder.
-Once installed using Clouder is easy, but set up all the infrastructure may take some time. Execute all this tutorial can take around two hours.
+| In this chapter, we'll see a step by step guide to install a ready-to-use infrastructure. For the example, the base we will create will be another Clouder.
+| Once installed using Clouder is easy, but set up all the infrastructure may take some time. Execute all this tutorial can take around two hours.
 
 
 Odoo installation
 -----------------
 
-This guide will not cover the Odoo installation in itself, we suggest you read `the installation documentation on the official website <https://www.odoo.com/documentation/8.0/setup/install.html>`_. You can also contact us on `www.goclouder.net
-<https://www.goclouder.net/>`_ to ask for a free instance, it may be easier for you because you obviously can't install your Clouder on a server managed by this same Clouder.
-Due to the extensive use of ssh, Clouder is only compatible with Linux and has only be tested on a Debian distribution.
+| This guide will not cover the Odoo installation in itself, we suggest you read `the installation documentation on the official website <https://www.odoo.com/documentation/8.0/setup/install.html>`_.
+| You can also contact us on `www.goclouder.net <https://www.goclouder.net/>`_ to ask for a free instance, it may be easier for you because you obviously can't install your Clouder on a server managed by this same Clouder.
+| Due to the extensive use of ssh, Clouder is only compatible with Linux and has only be tested on a Debian distribution.
 
-Once your Odoo installation is ready, download the Clouder modules on `Github
-<https://github.com/clouder-community/clouder/>`_ and add them in your addons directory, then install the clouder module and clouder_template_odoo (this module will install a lot of template dependencies, like postgres, postfix etc...)
+Once your Odoo installation is ready, download the Clouder modules on `Github <https://github.com/clouder-community/clouder/>`_ and add them in your addons directory, then install the clouder module and clouder_template_odoo (this module will install a lot of template dependencies, like postgres, postfix etc...).
 
 .. image:: images/gettingstarted-moduleslist.png
 
@@ -64,15 +63,24 @@ First we need to build the base image, which will be used by all the others. Thi
 Select the registry container, and click on the Build button to generate it.
 
 Then you can generate the others images. For this tutorial, we'll need theses ones :
-img_archive
-img_backup_bup
-img_backup_upload
-img_nginx
-img_bind
-img_postfix
-img_shinken
-img_postgres
-img_odoo
+
+- img_archive
+
+- img_backup_bup
+
+- img_backup_upload
+
+- img_nginx
+
+- img_bind
+
+- img_postfix
+
+- img_shinken
+
+- img_postgres
+
+- img_odoo
 
 .. image:: images/gettingstarted-odoo-image.png
 
@@ -97,8 +105,8 @@ Then, create the backup container. This one require a link to the backup-upload 
 
 Now that the system containers are created, we can generate the containers for the subcomponents needed for hosting Odoo. For each, think about adding the backup container in the save tab.
 
-Postfix for sending and receiving emails. You shall use an smtp provider to make sure your emails are send (mandrill is already configured, just indicate your email and api in the container options).
-You have to map the port 25 of your server to the port 25 of your postfix container to receive emails.
+| Postfix for sending and receiving emails. You shall use an smtp provider to make sure your emails are send (mandrill is already configured, just indicate your email and api in the container options).
+| You have to map the port 25 of your server to the port 25 of your postfix container to receive emails.
 
 .. image:: images/gettingstarted-postfix-container.png
 
@@ -107,18 +115,23 @@ Bind for resolving domain names. You have to map the port 53 of your server to t
 .. image:: images/gettingstarted-bind-container.png
 
 Shinken for monitoring. If something goes wrong on your infrastructure an email will be send to the sysadmin email.
+
 Are monitored :
+
 -The server cpu/RAM/disk space.
+
 -If all the containers are accessible through ssh.
+
 -If all bases are accessible at their url.
+
 -If all containers and bases were backuped today.
 
 You have to specify the postfix container which will send the emails.
 
 .. image:: images/gettingstarted-shinken-container.png
 
-Proxy for redirecting each url to the correct container.
-You have to map the ports 80 and 443 of your server to the port 80 and 443 of your proxy container.
+| Proxy for redirecting each url to the correct container.
+| You have to map the ports 80 and 443 of your server to the port 80 and 443 of your proxy container.
 
 .. image:: images/gettingstarted-proxy-container.png
 
@@ -154,8 +167,8 @@ Now that we have the application, we can deploy it in our Odoo container.
 
 .. image:: images/gettingstarted-service.png
 
-Don’t forget to indicate the postgres container in the link.
-For more information about the service fields, you can read the `Services chapter <services.rst>`_.
+| Don’t forget to indicate the postgres container in the link.
+| For more information about the service fields, you can read the `Services chapter <services.rst>`_.
 
 
 Configure the domain
@@ -189,8 +202,5 @@ Go to your shinken instance to see the health of your infrastructure in real tim
 
 Congratulations! You can now easily create another base or deploy any other application you can find in the clouder_template_* modules, or even create your own images and applications.
 
-If you need any assistance you can contact us for professional services or ask on the forum/mailing-list in `www.goclouder.net
-<https://www.goclouder.net/>`_.
-If you want to report a bug or contribute, go to the github repository
-`https://github.com/clouder-community/clouder
-<https://github.com/clouder-community/clouder/>`_.
+| If you need any assistance you can contact us for professional services or ask on the forum/mailing-list in `www.goclouder.net <https://www.goclouder.net/>`_.
+| If you want to report a bug or contribute, go to the github repository `https://github.com/clouder-community/clouder <https://github.com/clouder-community/clouder/>`_.

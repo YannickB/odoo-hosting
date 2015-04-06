@@ -10,6 +10,7 @@ In the Domain menu you can manage the domain managed by your Clouder.
 .. image:: images/gettingstarted-domain.png
 
 In the domain form, you have to specify :
+
 - The domain, only lowercase, digit, hyphen and dot. are accepted.
 
 - The organization managing the domain.
@@ -35,6 +36,7 @@ A base correspond to an url which will be available on the Internet, and often c
 .. image:: images/base-list.png
 
 The important fields are :
+
 - The base name. You can only use here lowercase, digit and hyphen.
 
 - The base title. The application will be configured with this title.
@@ -74,10 +76,15 @@ The important fields are :
 See the `Applications <applications.rst>`_ chapter for more informations about options and links.
 
 When you save the new base :
+
 - The new database will be created.
+
 - The commands post creation will configure the base.
+
 - The admin and poweruser will be created.
+
 - If test is checked, the demo data will be installed.
+
 - The links will be deployed.
 
 You can check all the executed commands in the log.
@@ -86,8 +93,8 @@ You can check all the executed commands in the log.
 
 If something went wrong, you can use the reinstall button to purge and reinstall the base.
 
-Finally, you have to configure in the save tab the backup container where the backup will be stored. The repository will be automatically created if needed, see the `Applications <applications.rst>`_ chapter for more information about the others fields.
-You can use the Save button to force a manual backup, use the comment field if you want to easily find this backup later. Note that all saves update the next save date field.
+| Finally, you have to configure in the save tab the backup container where the backup will be stored. The repository will be automatically created if needed, see the `Applications <applications.rst>`_ chapter for more information about the others fields.
+| You can use the Save button to force a manual backup, use the comment field if you want to easily find this backup later. Note that all saves update the next save date field.
 
 .. image:: images/base-save.png
 
