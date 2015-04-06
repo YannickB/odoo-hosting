@@ -63,7 +63,7 @@ class ClouderLog(models.Model):
     action = fields.Char('Action', size=64)
     description = fields.Text('Description')
     state = fields.Selection(
-        [('unfinished','Not finished'),('ok','Ok'),('ko','Ko')],
+        [('unfinished', 'Not finished'), ('ok', 'Ok'), ('ko', 'Ko')],
         'State', required=True, default='unfinished')
     create_date = fields.Datetime('Launch Date')
     finish_date = fields.Datetime('Finish Date')
@@ -85,10 +85,10 @@ class ClouderModel(models.AbstractModel):
 
     # We create the name field to avoid warning for the constraints
     name = fields.Char('Name', size=64, required=True)
-    log_ids = fields.One2many('clouder.log', 'res_id',
+    log_ids = fields.One2many(
+        'clouder.log', 'res_id',
         domain=lambda self: [('model', '=', self._name)],
-        auto_join=True,
-        string='Logs')
+        auto_join=True, string='Logs')
 
     @property
     def email_sysadmin(self):
@@ -103,7 +103,7 @@ class ClouderModel(models.AbstractModel):
         Property returning the full name of the server.
         """
         return self.env['res.partner'].search(
-            [('user_ids','in',int(self.env.uid))])[0]
+            [('user_ids', 'in', int(self.env.uid))])[0]
 
     @property
     def archive_path(self):
@@ -168,13 +168,16 @@ class ClouderModel(models.AbstractModel):
         making any action.
         """
         if not self.env.ref('clouder.clouder_settings').email_sysadmin:
-            raise except_orm(_('Data error!'),
+            raise except_orm(
+                _('Data error!'),
                 _("You need to specify the sysadmin email in configuration"))
 
     @api.multi
     def create_log(self, action):
         """
         Create the log record and add his id in context.
+
+        :param action: The action which trigger the log.
         """
         if 'log_id' in self.env.context:
             return self.env.context
@@ -188,11 +191,12 @@ class ClouderModel(models.AbstractModel):
             logs[self._name] = {}
         now = datetime.now()
         if not self.id in logs[self._name]:
-            expiration_date = (now + timedelta(days=self._log_expiration_days)
+            expiration_date = (
+                now + timedelta(days=self._log_expiration_days)
             ).strftime("%Y-%m-%d")
             log_id = self.env['clouder.log'].create({
                 'model': self._name, 'res_id': self.id,
-                'action': action,'expiration_date':expiration_date})
+                'action': action, 'expiration_date': expiration_date})
             logs[self._name][self.id] = {}
             logs[self._name][self.id]['log_model'] = self._name
             logs[self._name][self.id]['log_res_id'] = self.id
@@ -218,6 +222,8 @@ class ClouderModel(models.AbstractModel):
     def log(self, message):
         """
         Add a message in the logs specified in context.
+
+        :param message: The message which will be logged.
         """
         message = filter(lambda x: x in string.printable, message)
         _logger.info(message)
@@ -295,6 +301,8 @@ class ClouderModel(models.AbstractModel):
         """
         Override the default create function to create log, call deploy hook,
         and call unlink if something went wrong.
+
+        :param vals: The values needed to create the record.
         """
         res = super(ClouderModel, self).create(vals)
         res = res.with_context(res.create_log('create'))
@@ -328,7 +336,7 @@ class ClouderModel(models.AbstractModel):
                 and self.id in self.env.context['logs'][self._name]:
             del self.env.context['logs'][self._name][self.id]
         log_ids = self.env['clouder.log'].search(
-            [('model','=',self._name),('res_id','=',self.id)])
+            [('model', '=', self._name), ('res_id', '=', self.id)])
         log_ids.unlink()
         return res
 
@@ -336,6 +344,10 @@ class ClouderModel(models.AbstractModel):
     def connect(self, host, port=False, username=False):
         """
         Method which can be used to get an ssh connection to execute command.
+
+        :param host: The host we need to connect.
+        :param port: The port we need to connect.
+        :param username: The username we need to connect.
         """
         self.log('connect: ssh ' + (username and username + '@' or '') +
                  host + (port and ' -p ' + str(port) or ''))
@@ -363,9 +375,14 @@ class ClouderModel(models.AbstractModel):
         return ssh
 
     @api.multi
-    def execute(self, ssh, cmd, stdin_arg=False,path=False):
+    def execute(self, ssh, cmd, stdin_arg=False, path=False):
         """
         Method which can be used with an ssh connection to execute command.
+
+        :param ssh: The connection we need to use.
+        :param cmd: The command we need to execute.
+        :param stdin_arg: The command we need to execute in stdin.
+        :param path: The path where the command need to be executed.
         """
         self.log('command : ' + ' '.join(cmd))
         if path:
@@ -386,6 +403,10 @@ class ClouderModel(models.AbstractModel):
     def get(self, ssh, source, destination):
         """
         Method which can be used with an ssh connection to transfer files.
+
+        :param ssh: The connection we need to use.
+        :param source: The path we need to get the file.
+        :param destination: The path we need to send the file.
         """
         sftp = ssh.open_sftp()
         self.log('get : ' + source + ' to ' + destination)
@@ -396,17 +417,24 @@ class ClouderModel(models.AbstractModel):
     def send(self, ssh, source, destination):
         """
         Method which can be used with an ssh connection to transfer files.
+
+        :param ssh: The connection we need to use.
+        :param source: The path we need to get the file.
+        :param destination: The path we need to send the file.
         """
         sftp = ssh.open_sftp()
         self.log('send : ' + source + ' to ' + destination)
         sftp.put(source, destination)
         sftp.close()
 
-
     @api.multi
     def execute_local(self, cmd, path=False, shell=False):
         """
         Method which can be used to execute command on the local system.
+
+        :param cmd: The command we need to execute.
+        :param path: The path where the command shall be executed.
+        :param shell: Specify if the command shall be executed in shell mode.
         """
         self.log('command : ' + ' '.join(cmd))
         cwd = os.getcwd()
@@ -417,9 +445,9 @@ class ClouderModel(models.AbstractModel):
                                 stderr=subprocess.STDOUT, shell=shell)
         out = ''
         for line in proc.stdout:
-           out += line
-           line = 'stdout : ' + line
-           self.log(line)
+            out += line
+            line = 'stdout : ' + line
+            self.log(line)
         os.chdir(cwd)
         return out
 
@@ -427,6 +455,9 @@ class ClouderModel(models.AbstractModel):
     def exist(self, ssh, path):
         """
         Method which use an ssh connection to check is a file exist.
+
+        :param ssh: The connection we need to use.
+        :param path: The path we need to check.
         """
         sftp = ssh.open_sftp()
         try:
@@ -441,35 +472,44 @@ class ClouderModel(models.AbstractModel):
             return True
 
     @api.multi
-    def local_file_exist(self, file):
+    def local_file_exist(self, localfile):
         """
         Method which check is a file exist on the local system.
+
+        :param localfile: The path to the file we need to check.
         """
-        return os.path.isfile(file)
+        return os.path.isfile(localfile)
 
     @api.multi
-    def local_dir_exist(self, file):
+    def local_dir_exist(self, localdir):
         """
         Method which check is a directory exist on the local system.
+
+        :param localdir: The path to the dir we need to check.
         """
-        return os.path.isdir(file)
+        return os.path.isdir(localdir)
 
     @api.multi
-    def execute_write_file(self, file, string):
+    def execute_write_file(self, localfile, value):
         """
         Method which write in a file on the local system.
+
+        :param localfile: The path to the file we need to write.
+        :param value: The value we need to write in the file.
         """
-        f = open(file, 'a')
-        f.write(string)
+        f = open(localfile, 'a')
+        f.write(value)
         f.close()
 
 
 def generate_random_password(size):
     """
     Method which can be used to generate a random password.
+
+    :param size: The size of the random string we need to generate.
     """
     return ''.join(
-        random.choice(string.ascii_uppercase  + string.ascii_lowercase
+        random.choice(string.ascii_uppercase + string.ascii_lowercase
                       + string.digits)
         for _ in range(size))
 

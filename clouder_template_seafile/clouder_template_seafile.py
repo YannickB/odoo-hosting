@@ -111,7 +111,6 @@ class ClouderBase(models.Model):
 
         return res
 
-
     @api.multi
     def deploy_post(self):
         """
@@ -130,7 +129,7 @@ class ClouderBase(models.Model):
                 self.service_id.full_localpath_files +
                 '/seafile.sh start\'" >> /opt/seafile/supervisor.conf'])
             self.execute(ssh, [
-                'echo "[program:' + self.unifullname+
+                'echo "[program:' + self.unifullname +
                 '-seahub]" >> /opt/seafile/supervisor.conf'])
             self.execute(ssh, [
                 'echo "command=su seafile -c \'rm ' +
@@ -158,7 +157,7 @@ class ClouderBase(models.Model):
                 '/opt/seafile/supervisor.conf'])
             self.execute(ssh, [
                 'sed', '-i',
-                '"/' + self.service_id.full_localpath_files\
+                '"/' + self.service_id.full_localpath_files
                          .replace('/', '\/') + '\/seafile.sh/d"',
                 '/opt/seafile/supervisor.conf'])
             self.execute(ssh, [
@@ -167,7 +166,7 @@ class ClouderBase(models.Model):
                 '/opt/seafile/supervisor.conf'])
             self.execute(ssh, [
                 'sed', '-i',
-                '"/' + self.service_id.full_localpath_files\
+                '"/' + self.service_id.full_localpath_files
                          .replace('/', '\/') + '\/seahub.sh/d"',
                 '/opt/seafile/supervisor.conf'])
             ssh.close()

@@ -19,7 +19,6 @@
             <field name="apptype_id" ref="apptype_mysql"/>
             <field name="name">root_password</field>
             <field name="type">container</field>
-            <field name="default"></field>
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>

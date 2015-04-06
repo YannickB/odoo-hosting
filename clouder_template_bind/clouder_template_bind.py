@@ -21,7 +21,7 @@
 ##############################################################################
 
 
-from openerp import models, fields, api, _
+from openerp import models, api
 from openerp import modules
 
 
@@ -52,7 +52,8 @@ class ClouderDomain(models.Model):
             self.execute(ssh, ['sed', '-i', '"s/DOMAIN/' + self.name + '/g"',
                                self.configfile])
             self.execute(ssh,
-                         ['sed', '-i', '"s/IP/' + self.dns_id.server_id.ip + '/g"',
+                         ['sed', '-i', 
+                          '"s/IP/' + self.dns_id.server_id.ip + '/g"',
                           self.configfile])
             self.execute(ssh, [
                 "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])

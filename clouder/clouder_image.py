@@ -81,9 +81,9 @@ class ClouderImage(models.Model):
             return
         if not self.registry_id and self.name != 'img_registry':
             raise except_orm(
-                _('Date error!'), _(
-                "You need to specify the registry "
-                "where the version must be stored."))
+                _('Date error!'),
+                _("You need to specify the registry "
+                  "where the version must be stored."))
         now = datetime.now()
         version = self.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
         self.env['clouder.image.version'].create({
@@ -163,7 +163,6 @@ class ClouderImageVersion(models.Model):
         """
         return self.image_id.name + ':' + self.name
 
-
     @property
     def registry_address(self):
         """
@@ -229,12 +228,13 @@ class ClouderImageVersion(models.Model):
         Build a new image and store it to the registry.
         """
         ssh = self.connect(self.registry_id.server_id.name)
-        dir = '/tmp/' + self.image_id.name + '_' + self.fullname
-        self.execute(ssh, ['mkdir', '-p', dir])
+        tmp_dir = '/tmp/' + self.image_id.name + '_' + self.fullname
+        self.execute(ssh, ['mkdir', '-p', tmp_dir])
 
         dockerfile = 'FROM '
         if self.image_id.parent_id and self.parent_id:
-            if self.registry_id.server_id == self.parent_id.registry_id.server_id:
+            if self.registry_id.server_id == \
+                    self.parent_id.registry_id.server_id:
                 dockerfile += self.parent_id.fullpath_localhost
             else:
                 dockerfile += self.parent_id.fullpath
@@ -258,16 +258,16 @@ class ClouderImageVersion(models.Model):
 
         self.execute(ssh, [
             'echo "' + dockerfile.replace('"', '\\"') +
-            '" >> ' + dir + '/Dockerfile'])
+            '" >> ' + tmp_dir + '/Dockerfile'])
         self.execute(ssh,
-                     ['sudo', 'docker', 'build', '-t', self.fullname, dir])
+                     ['sudo', 'docker', 'build', '-t', self.fullname, tmp_dir])
         self.execute(ssh, ['sudo', 'docker', 'tag', self.fullname,
                            self.fullpath_localhost])
         self.execute(ssh,
                      ['sudo', 'docker', 'push', self.fullpath_localhost])
         self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname])
         self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost])
-        self.execute(ssh, ['rm', '-rf', dir])
+        self.execute(ssh, ['rm', '-rf', tmp_dir])
         ssh.close()
         return
 

@@ -90,7 +90,6 @@ class ClouderBase(models.Model):
 
     _inherit = 'clouder.base'
 
-
     @api.multi
     def deploy_build(self):
         """
@@ -118,8 +117,9 @@ class ClouderBase(models.Model):
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
             ssh.close()
             #
-            ssh = self.connect(self.service_id.container_id.fullname,
-                                     username=self.application_id.type_id.system_user)
+            ssh = self.connect(
+                self.service_id.container_id.fullname,
+                username=self.application_id.type_id.system_user)
             self.execute(ssh, ['drush', '-y', 'si',
                                '--db-url=' + self.service_id.database_type +
                                '://' + self.service_id.db_user + ':' +
@@ -139,7 +139,7 @@ class ClouderBase(models.Model):
                 for module in modules:
                     self.execute(ssh, ['drush', '-y', 'en', module],
                                  path=self.service_id.full_localpath_files +
-                                      '/sites/' + self.fulldomain)
+                                 '/sites/' + self.fulldomain)
             if self.application_id.options['theme']['value']:
                 theme = self.application_id.options['theme']['value']
                 self.execute(ssh, ['drush', '-y', 'pm-enable', theme],
@@ -156,12 +156,20 @@ class ClouderBase(models.Model):
     # post restore
     #     ssh $system_user@$server << EOF
     #       mkdir $instances_path/$instance/sites/$clouder.$domain
-    #       cp -r $instances_path/$instance/$db_type/sites/* $instances_path/$instance/sites/$clouder.$domain/
+    #       cp -r $instances_path/$instance/$db_type/sites/*
+    # $instances_path/$instance/sites/$clouder.$domain/
     #       cd $instances_path/$instance/sites/$clouder.$domain
-    #       sed -i "s/'database' => '[#a-z0-9_!]*'/'database' => '$fullname_underscore'/g" $instances_path/$instance/sites/$clouder.$domain/settings.php
-    #       sed -i "s/'username' => '[#a-z0-9_!]*'/'username' => '$db_user'/g" $instances_path/$instance/sites/$clouder.$domain/settings.php
-    #       sed -i "s/'password' => '[#a-z0-9_!]*'/'password' => '$database_passwpord'/g" $instances_path/$instance/sites/$clouder.$domain/settings.php
-    #       sed -i "s/'host' => '[0-9.]*'/'host' => '$database_server'/g" $instances_path/$instance/sites/$clouder.$domain/settings.php
+    #       sed -i "s/'database' => '[#a-z0-9_!]*'/'database' =>
+    # '$fullname_underscore'/g" $instances_path/$instance/sites/
+    # $clouder.$domain/settings.php
+    #       sed -i "s/'username' => '[#a-z0-9_!]*'/'username' => '
+    # $db_user'/g" $instances_path/$instance/sites/
+    # $clouder.$domain/settings.php
+    #       sed -i "s/'password' => '[#a-z0-9_!]*'/'password' =>
+    # '$database_passwpord'/g" $instances_path/$instance/
+    # sites/$clouder.$domain/settings.php
+    #       sed -i "s/'host' => '[0-9.]*'/'host' => '$database_server'/g"
+    # $instances_path/$instance/sites/$clouder.$domain/settings.php
     #       pwd
     #       echo Title $title
     #       drush vset --yes --exact site_name $title
@@ -297,7 +305,6 @@ class ClouderSaveSave(models.Model):
 
     _inherit = 'clouder.save.save'
 
-
     @api.multi
     def deploy_base(self):
         """
@@ -350,6 +357,8 @@ class ClouderBaseLink(models.Model):
     def deploy_piwik(self, piwik_id):
         """
         Add the piwik configuration on drupal.
+
+        :param piwik_id: The is of the website in piwik.
         """
         res = super(ClouderBaseLink, self).deploy_piwik(piwik_id)
         if self.name.name.code == 'piwik' \

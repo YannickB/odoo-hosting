@@ -43,6 +43,11 @@ class ClouderService(models.Model):
     def name_get(self, cr, uid, ids, context=None):
         """
         Add the container name to the service name.
+
+        :param cr:
+        :param uid:
+        :param ids:
+        :param context:
         """
         res = []
         for service in self.browse(cr, uid, ids, context=context):
@@ -56,6 +61,11 @@ class ClouderService(models.Model):
         """
         Modify the search method so we can find a service
         with the container name.
+
+        :param name:
+        :param args:
+        :param operator:
+        :param limit:
         """
         if not args:
             args = []
@@ -113,8 +123,8 @@ class ClouderService(models.Model):
         Property returning the full path of the service instance
         in the destination container.
         """
-        return self.container_id.application_id.type_id.localpath_services +\
-               '/' + self.name
+        return self.container_id.application_id.type_id.localpath_services + \
+            '/' + self.name
 
     @property
     def full_localpath_files(self):
@@ -284,7 +294,6 @@ class ClouderService(models.Model):
                         _("You need to specify a link to " +
                           app_link.name + " for the service " + self.name))
 
-
     @api.multi
     @api.onchange('container_id')
     def onchange_container_id(self):
@@ -324,6 +333,8 @@ class ClouderService(models.Model):
         """
         Override write method to redeploy files
         if some key fields have changed.
+
+        :param vals: The values we need to update.
         """
         res = super(ClouderService, self).write(vals)
         if 'application_version_id' in vals:
@@ -556,7 +567,7 @@ class ClouderService(models.Model):
             tmp = '/tmp/' + self.application_version_id.fullname + '.tar.gz'
 
             self.get(ssh_archive,
-                self.application_version_id.full_archivepath_targz, tmp)
+                     self.application_version_id.full_archivepath_targz, tmp)
             ssh_archive.close()
             self.execute(ssh, [
                 'mkdir', '-p', self.application_version_id.full_hostpath])

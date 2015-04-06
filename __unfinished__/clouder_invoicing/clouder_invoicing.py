@@ -33,15 +33,15 @@ class ClouderApplication(models.Model):
     container_price_partner_month = fields.Float('Price partner/month')
     container_price_user_month = fields.Float('Price partner/month')
     container_price_user_payer = fields.Selection(
-        [('partner','Partner'),('user','User')], 'Payer for users')
+        [('partner', 'Partner'), ('user', 'User')], 'Payer for users')
     service_price_partner_month = fields.Float('Price partner/month')
     service_price_user_month = fields.Float('Price partner/month')
     service_price_user_payer = fields.Selection(
-        [('partner','Partner'),('user','User')], 'Payer for users')
+        [('partner', 'Partner'), ('user', 'User')], 'Payer for users')
     base_price_partner_month = fields.Float('Price partner/month')
     base_price_user_month = fields.Float('Price partner/month')
     base_price_user_payer = fields.Selection(
-        [('partner','Partner'),('user','User')], 'Payer for users')
+        [('partner', 'Partner'), ('user', 'User')], 'Payer for users')
 
 
 class ClouderContainer(models.Model):
@@ -54,7 +54,7 @@ class ClouderContainer(models.Model):
     price_partner_month = fields.Float('Price partner/month')
     price_user_month = fields.Float('Price partner/month')
     price_user_payer = fields.Selection(
-        [('partner','Partner'),('user','User')], 'Payer for users')
+        [('partner', 'Partner'), ('user', 'User')], 'Payer for users')
 
 
 class ClouderService(models.Model):
@@ -67,7 +67,7 @@ class ClouderService(models.Model):
     price_partner_month = fields.Float('Price partner/month')
     price_user_month = fields.Float('Price partner/month')
     price_user_payer = fields.Selection(
-        [('partner','Partner'),('user','User')], 'Payer for users')
+        [('partner', 'Partner'), ('user', 'User')], 'Payer for users')
 
 
 class ClouderBase(models.Model):

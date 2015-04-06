@@ -30,7 +30,6 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
-
     @api.multi
     def deploy_post(self):
         """

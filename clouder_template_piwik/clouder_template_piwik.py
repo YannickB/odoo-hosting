@@ -80,7 +80,7 @@ class ClouderBase(models.Model):
                                config_file])
             self.execute(ssh, ['sed', '-i',
                                '"s/PATH/' +
-                               self.service_id.full_localpath_files\
+                               self.service_id.full_localpath_files
                                .replace('/', '\/') + '/g"', config_file])
             self.execute(ssh, ['ln', '-s',
                                '/etc/nginx/sites-available/' + self.fullname,
@@ -88,7 +88,6 @@ class ClouderBase(models.Model):
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
             ssh.close()
         return res
-
 
     @api.multi
     def purge_post(self):

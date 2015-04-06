@@ -99,8 +99,8 @@ class ClouderBase(models.Model):
     lang = fields.Selection(
         [('en_US', 'en_US'), ('fr_FR', 'fr_FR')],
         'Language', required=True, default='en_US')
-    state = fields.Selection(
-        [('installing', 'Installing'), ('enabled', 'Enabled'),
+    state = fields.Selection([
+        ('installing', 'Installing'), ('enabled', 'Enabled'),
         ('blocked', 'Blocked'), ('removing', 'Removing')],
         'State', readonly=True)
     option_ids = fields.One2many('clouder.base.option', 'base_id', 'Options')
@@ -159,8 +159,8 @@ class ClouderBase(models.Model):
         databases = {'single': self.fullname_}
         if self.application_id.type_id.multiple_databases:
             databases = {}
-            for database in self.application_id.type_id.multiple_databases.split(
-                    ','):
+            for database in \
+                    self.application_id.type_id.multiple_databases.split(','):
                 databases[database] = self.fullname_ + '_' + database
         return databases
 
@@ -278,7 +278,6 @@ class ClouderBase(models.Model):
                           + " for the container " + self.name)
                     )
 
-
     @api.multi
     @api.onchange('application_id')
     def onchange_application_id(self):
@@ -323,7 +322,7 @@ class ClouderBase(models.Model):
             self.time_between_save = self.application_id.base_time_between_save
             self.saverepo_change = self.application_id.base_saverepo_change
             self.saverepo_expiration = \
-                    self.application_id.base_saverepo_expiration
+                self.application_id.base_saverepo_expiration
             self.save_expiration = self.application_id.base_save_expiration
 
     @api.model
@@ -331,6 +330,8 @@ class ClouderBase(models.Model):
         """
         Override create method to create a container and a service if none
         are specified.
+
+        :param vals: The values needed to create the record.
         """
         if (not 'service_id' in vals) or (not vals['service_id']):
             application_obj = self.env['clouder.application']
@@ -359,7 +360,7 @@ class ClouderBase(models.Model):
             domain = domain_obj.browse(vals['domain_id'])
             container_vals = {
                 'name': vals['name'] + '_' +
-                        domain.name.replace('.', '_').replace('-', '_'),
+                domain.name.replace('.', '_').replace('-', '_'),
                 'server_id': application.next_server_id.id,
                 'application_id': application.id,
                 'image_id': application.default_image_id.id,
@@ -380,7 +381,11 @@ class ClouderBase(models.Model):
     def write(self, vals):
         """
         Override write method to move base if we change the service.
+
+        :param vals: The values to update.
         """
+
+        save = False
         if 'service_id' in vals:
             self = self.with_context(self.create_log('service change'))
             self = self.with_context(save_comment='Before service change')
@@ -390,7 +395,7 @@ class ClouderBase(models.Model):
             self.purge()
 
         res = super(ClouderBase, self).write(vals)
-        if 'service_id' in vals:
+        if save:
             save.service_id = vals['service_id']
             self = self.with_context(base_restoration=True)
             self.deploy()
@@ -422,8 +427,9 @@ class ClouderBase(models.Model):
 
         now = datetime.now()
         if not self.save_repository_id:
-            repo_ids = repo_obj.search([('base_name', '=', self.name), (
-            'base_domain', '=', self.domain_id.name)])
+            repo_ids = repo_obj.search([
+                ('base_name', '=', self.name),
+                ('base_domain', '=', self.domain_id.name)])
             if repo_ids:
                 self.save_repository_id = repo_ids[0]
 
@@ -474,11 +480,11 @@ class ClouderBase(models.Model):
                 'base_id': self.id,
             }
             save = save_obj.create(save_vals)
-        next = (datetime.now() + timedelta(
+        date_next_save = (datetime.now() + timedelta(
             minutes=self.time_between_save
             or self.application_id.base_time_between_save)
         ).strftime("%Y-%m-%d %H:%M:%S")
-        self.write({'save_comment': False, 'date_next_save': next})
+        self.write({'save_comment': False, 'date_next_save': date_next_save})
         self.end_log()
         return save
 
@@ -495,6 +501,12 @@ class ClouderBase(models.Model):
     def reset_base(self, base_name=False, service_id=False):
         """
         Reset the base with the parent base.
+
+        :param base_name: Specify another base name
+        if the reset need to be done in a new base.
+
+        :param service_id: Specify the service_id is the reset
+        need to be done in another service.
         """
         base_parent_id = self.parent_id and self.parent_id or self
         if not 'save_comment' in self.env.context:
@@ -513,8 +525,10 @@ class ClouderBase(models.Model):
         save.write(vals)
         base = save.restore()
         base.write({'parent_id': base_parent_id.id})
-        base = base.with_context(base_parent_fullname_=base_parent_id.fullname_)
-        base = base.with_context(service_parent_name=base_parent_id.service_id.name)
+        base = base.with_context(
+            base_parent_fullname_=base_parent_id.fullname_)
+        base = base.with_context(
+            service_parent_name=base_parent_id.service_id.name)
         base.update_base()
         base.post_reset()
         base.deploy_post()
@@ -650,7 +664,6 @@ class ClouderBase(models.Model):
         #For shinken
         self.save()
 
-
     @api.multi
     def purge_post(self):
         """
@@ -667,7 +680,7 @@ class ClouderBase(models.Model):
         for key, database in self.databases.iteritems():
             if self.service_id.database_type != 'mysql':
                 ssh = self.connect(self.service_id.database.fullname,
-                                         username='postgres')
+                                   username='postgres')
                 self.execute(ssh, [
                     'psql', '-c',
                     '"update pg_database set datallowconn = \'false\' '
@@ -753,8 +766,8 @@ class ClouderBaseLink(models.Model):
     target = fields.Many2one('clouder.container', 'Target')
 
     target_base = lambda self: self.target.service_ids and \
-                               self.target.service_ids[0].base_ids and \
-                               self.target.service_ids[0].base_ids[0]
+        self.target.service_ids[0].base_ids and \
+        self.target.service_ids[0].base_ids[0]
 
     @api.one
     @api.constrains('base_id')

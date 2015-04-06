@@ -77,8 +77,10 @@ class ClouderApplicationVersion(models.Model):
             #                    replace('/', '\/') + '/g"',
             #                    self.full_archivepath + '/bin/buildout'])
 
-            self.send(ssh, modules.get_module_path('clouder_template_odoo') +
-                '/res/http.patch', self.full_archivepath + '/parts/http.patch')
+            self.send(ssh,
+                      modules.get_module_path('clouder_template_odoo') +
+                      '/res/http.patch',
+                      self.full_archivepath + '/parts/http.patch')
             self.execute(ssh, [
                 'patch', self.full_archivepath + '/parts/odoo/openerp/http.py',
                 '<', self.full_archivepath + '/parts/http.patch'])
@@ -113,9 +115,10 @@ class ClouderService(models.Model):
             addons_path = '/opt/odoo/' +\
                           self.name + '/files/parts/odoo/addons,'
             sftp = ssh.open_sftp()
-            for dir in sftp.listdir('/opt/odoo/' + self.name + '/files/extra'):
+            for extra_dir in sftp.listdir(
+                    '/opt/odoo/' + self.name + '/files/extra'):
                 addons_path += '/opt/odoo/' + self.name +\
-                               '/files/extra/' + dir + ','
+                               '/files/extra/' + extra_dir + ','
             sftp.close()
             self.execute(ssh, ['sed', '-i', '"s/ADDONS_PATH/' +
                                addons_path.replace('/', '\/') + '/g"',
@@ -359,7 +362,8 @@ class ClouderBase(models.Model):
                     self.service_id.container_id.server_id.name + ":" +
                     self.service_id.port['hostport'] + "," +
                     "db=" + self.fullname_ + "," + "user=" +
-                    self.admin_name + ", password=" + self.admin_password + ")")
+                    self.admin_name + ", password=" + self.admin_password + ")"
+                )
                 client = erppeek.Client(
                     'http://' + self.service_id.container_id.server_id.name +
                     ':' + self.service_id.port['hostport'],
@@ -412,11 +416,13 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_test()
         if self.application_id.type_id.name == 'odoo':
-            self.log("client = erppeek.Client('http://" +
-                     self.service_id.container_id.server_id.name + ":" +
-                     self.service_id.port['hostport'] + "," +
-                     "db=" + self.fullname_ + "," + "user=" +
-                     self.admin_name + ", password=" + self.admin_password + ")")
+            self.log(
+                "client = erppeek.Client('http://" +
+                self.service_id.container_id.server_id.name + ":" +
+                self.service_id.port['hostport'] + "," +
+                "db=" + self.fullname_ + "," + "user=" +
+                self.admin_name + ", password=" + self.admin_password + ")"
+            )
             client = erppeek.Client(
                 'http://' + self.service_id.container_id.server_id.name + ':' +
                 self.service_id.port['hostport'],
@@ -506,7 +512,6 @@ class ClouderBase(models.Model):
                 pass
 
         return res
-
 
     @api.multi
     def purge_post(self):

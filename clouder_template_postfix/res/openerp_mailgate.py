@@ -36,6 +36,7 @@ from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
 from email import Encoders
 
+
 class DefaultConfig(object):
     """
     Default configuration

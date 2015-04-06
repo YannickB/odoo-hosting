@@ -54,15 +54,15 @@ class ClouderBaseLink(models.Model):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'proxy':
             if not self.base_id.ssl_only:
-                file = 'proxy.config'
+                configfile = 'proxy.config'
             else:
-                file = 'proxy-sslonly.config'
+                configfile = 'proxy-sslonly.config'
             ssh = self.connect(self.target.fullname)
             self.send(ssh,
                       modules.get_module_path(
                           'clouder_template_' +
                           self.base_id.application_id.type_id.name
-                      ) + '/res/' + file, self.base_id.nginx_configfile)
+                      ) + '/res/' + configfile, self.base_id.nginx_configfile)
             self.execute(ssh,
                          ['sed', '-i', '"s/BASE/' + self.base_id.name + '/g"',
                           self.base_id.nginx_configfile])
@@ -84,8 +84,9 @@ class ClouderBaseLink(models.Model):
             key_file = '/etc/ssl/private/' + self.base_id.name + '.' +\
                        self.base_id.domain_id.name + '.key'
             if self.base_id.cert_cert and self.base_id.cert_key:
-                self.execute(ssh,[
-                    'echo', '"' + self.base_id.cert_cert + '"', '>', cert_file])
+                self.execute(ssh, [
+                    'echo', '"' + self.base_id.cert_cert + '"', '>', cert_file
+                ])
                 self.execute(ssh, [
                     'echo', '"' + self.base_id.cert_key + '"', '>', key_file])
             elif self.base_id.domain_id.cert_cert\
@@ -109,7 +110,6 @@ class ClouderBaseLink(models.Model):
                 '/etc/nginx/sites-enabled/' + self.base_id.fullname])
             self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
             ssh.close()
-
 
     @api.multi
     def purge_link(self):

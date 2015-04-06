@@ -55,20 +55,19 @@ class ClouderContainer(models.Model):
         """
         if self.image_id.name == 'img_registry':
             ssh = self.connect(self.server_id.name)
-            dir = '/tmp/' + self.image_id.name + '_' +\
-                  self.image_version_id.fullname
-            self.execute(ssh, ['mkdir', '-p', dir])
+            tmp_dir = '/tmp/' + self.image_id.name + '_' + \
+                self.image_version_id.fullname
+            self.execute(ssh, ['mkdir', '-p', tmp_dir])
             self.execute(ssh, [
                 'echo "' + self.image_id.dockerfile.replace('"', '\\"') +
-                '" >> ' + dir + '/Dockerfile'])
+                '" >> ' + tmp_dir + '/Dockerfile'])
             self.execute(ssh, ['sudo', 'docker', 'rmi',
                                self.image_version_id.fullname])
             self.execute(ssh, ['sudo', 'docker', 'build', '-t',
-                               self.image_version_id.fullname, dir])
-            self.execute(ssh, ['rm', '-rf', dir])
+                               self.image_version_id.fullname, tmp_dir])
+            self.execute(ssh, ['rm', '-rf', tmp_dir])
 
         return super(ClouderContainer, self).deploy()
-
 
     def deploy_post(self):
         """

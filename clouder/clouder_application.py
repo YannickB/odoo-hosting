@@ -178,7 +178,7 @@ class ClouderApplication(models.Model):
         in the destination container
         """
         return self.type_id.localpath and self.type_id.localpath + '/' \
-                + self.type_id.name + '-' + self.code or ''
+            + self.type_id.name + '-' + self.code or ''
 
     @property
     def computed_version(self):
@@ -255,6 +255,8 @@ class ClouderApplication(models.Model):
     def write(self, vals):
         """
         Override the write method to prevent change of the application code.
+
+        :param vals: The values to update
         """
         if 'code' in vals and vals['code'] != self.code:
             raise except_orm(_('Data error!'), _(
@@ -347,7 +349,7 @@ class ClouderApplicationVersion(models.Model):
         in the archive container.
         """
         return self.application_id.full_archivepath \
-               + '/' + self.name + '.tar.gz'
+            + '/' + self.name + '.tar.gz'
 
     @property
     def full_hostpath(self):
@@ -395,7 +397,6 @@ class ClouderApplicationVersion(models.Model):
                 "A service is linked to this application version, "
                 "you can't delete it!"))
         return super(ClouderApplicationVersion, self).unlink()
-
 
     @api.multi
     def build_application(self):

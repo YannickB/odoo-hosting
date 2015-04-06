@@ -37,10 +37,10 @@ sys.path.append(os.path.abspath(os.path.join(DIR, '..')))
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-#    'sphinx.ext.doctest',
-#    'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
 ]
+#   'sphinx.ext.doctest',
+#   'sphinx.ext.coverage',
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -233,8 +233,10 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'Clouder.tex', u'Clouder Documentation',
-   u'Yannick Buron', 'manual'),
+    (
+        master_doc, 'Clouder.tex', u'Clouder Documentation',
+        u'Yannick Buron', 'manual'
+    ),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -276,10 +278,10 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-  (master_doc, 'Clouder', u'Clouder Documentation',
-   author, 'Clouder', 'One line description of project.',
-   'Miscellaneous'),
+texinfo_documents = [(
+    master_doc, 'Clouder', u'Clouder Documentation',
+    author, 'Clouder', 'One line description of project.',
+    'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.

@@ -119,13 +119,13 @@ class ClouderContainer(models.Model):
             containers = self.search([('backup_ids', 'in', self.id)])
             for container in containers:
                 shinken_links = self.env['clouder.container.link'].search([
-                    ('container_id','=',container.id),
-                    ('name.name.code','=','shinken'),
-                    ('target','!=',False)
+                    ('container_id', '=', container.id),
+                    ('name.name.code', '=', 'shinken'),
+                    ('target', '!=', False)
                 ])
                 for shinken_link in shinken_links:
                     shinkens[shinken_link.target.id] = {
-                        'shinken':shinken_link.target,
+                        'shinken': shinken_link.target,
                         'container': container
                     }
 
@@ -155,6 +155,8 @@ def send_key_to_shinken(ssh, self):
     """
     Update the ssh key in the shinken container so it can access the
     backup container.
+
+    :param ssh: The connection to the shinken container.
     """
     for backup in self.backup_ids:
         self.execute(ssh, ['rm', '-rf', '/home/shinken/.ssh/keys/' +
@@ -205,12 +207,12 @@ class ClouderContainerLink(models.Model):
         if self.name.name.code == 'shinken':
             ssh = self.connect(self.target.fullname,
                                username='shinken')
-            file = 'container-shinken'
+            config_file = 'container-shinken'
             if self.container_id.nosave:
-                file = 'container-shinken-nosave'
+                config_file = 'container-shinken-nosave'
             self.send(ssh,
                       modules.get_module_path('clouder_template_shinken') +
-                      '/res/' + file + '.config',
+                      '/res/' + config_file + '.config',
                       self.container_id.shinken_configfile)
             self.execute(ssh, [
                 'sed', '-i', '"s/METHOD/' +
@@ -272,12 +274,12 @@ class ClouderBaseLink(models.Model):
         if self.name.name.code == 'shinken':
             ssh = self.connect(self.target.fullname,
                                username='shinken')
-            file = 'base-shinken'
+            config_file = 'base-shinken'
             if self.base_id.nosave:
-                file = 'base-shinken-nosave'
+                config_file = 'base-shinken-nosave'
             self.send(ssh,
                       modules.get_module_path('clouder_template_shinken') +
-                      '/res/' + file + '.config',
+                      '/res/' + config_file + '.config',
                       self.base_id.shinken_configfile)
             self.execute(ssh, ['sed', '-i', '"s/TYPE/base/g"',
                                self.base_id.shinken_configfile])

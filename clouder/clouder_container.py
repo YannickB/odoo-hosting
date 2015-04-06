@@ -47,7 +47,8 @@ class ClouderServer(models.Model):
         Generate a key on the filesystem.
         """
         if not self.env.ref('clouder.clouder_settings').email_sysadmin:
-            raise except_orm(_('Data error!'),
+            raise except_orm(
+                _('Data error!'),
                 _("You need to specify the sysadmin email in configuration"))
 
         self.execute_local(['mkdir', '/tmp/key_' + self.env.uid])
@@ -129,7 +130,7 @@ class ClouderServer(models.Model):
 
     @api.one
     @api.constrains('name', 'ip')
-    def _validate_data(self) :
+    def _validate_data(self):
         """
         Check that the server domain does not contain any forbidden
         characters.
@@ -317,9 +318,12 @@ class ClouderContainer(models.Model):
         options = {}
         for option in self.application_id.type_id.option_ids:
             if option.type == 'container':
-                options[option.name] = {'id': option.id, 'name': option.id, 'value': option.default}
+                options[option.name] = {
+                    'id': option.id, 'name': option.id,
+                    'value': option.default}
         for option in self.option_ids:
-            options[option.name.name] = {'id': option.id, 'name': option.name.id, 'value': option.value}
+            options[option.name.name] = {
+                'id': option.id, 'name': option.name.id, 'value': option.value}
         return options
 
     _sql_constraints = [
@@ -346,20 +350,21 @@ class ClouderContainer(models.Model):
         Check that a backup server is specified.
         """
         if not self.backup_ids and self.application_id.type_id.name \
-                not in ['backup','backup_upload','archive','registry']:
+                not in ['backup', 'backup_upload', 'archive', 'registry']:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify at least one backup container."))
 
     @api.one
-    @api.constrains('image_id','image_version_id')
+    @api.constrains('image_id', 'image_version_id')
     def _check_config(self):
         """
         Check that a the image of the image version is the same than the image
         of the container.
         """
         if self.image_id.id != self.image_version_id.image_id.id:
-            raise except_orm(_('Data error!'),
+            raise except_orm(
+                _('Data error!'),
                 _("The image of image version must be "
                   "the same than the image of container."))
 
@@ -376,7 +381,8 @@ class ClouderContainer(models.Model):
                     if option.name == type_option and option.value:
                         test = True
                 if not test:
-                    raise except_orm(_('Data error!'),
+                    raise except_orm(
+                        _('Data error!'),
                         _("You need to specify a value for the option " +
                           type_option.name + " for the container " +
                           self.name + "."))
@@ -394,7 +400,8 @@ class ClouderContainer(models.Model):
                     if link.name == app_link and link.target:
                         test = True
                 if not test:
-                    raise except_orm(_('Data error!'),
+                    raise except_orm(
+                        _('Data error!'),
                         _("You need to specify a link to " + app_link.name.name
                           + " for the container " + self.name))
 
@@ -434,12 +441,11 @@ class ClouderContainer(models.Model):
                         if link.name == app_link:
                             test = True
                     if not test:
-                        links.append((0,0,{'name': app_link,
-                                           'target': app_link.next}))
+                        links.append((0, 0, {'name': app_link,
+                                             'target': app_link.next}))
             self.link_ids = links
 
-
-            self.backup_ids = [(6,0,[
+            self.backup_ids = [(6, 0, [
                 b.id for b in self.application_id.container_backup_ids])]
 
             self.time_between_save = \
@@ -461,17 +467,17 @@ class ClouderContainer(models.Model):
             ports = []
             for port in self.image_id.port_ids:
                 if port.expose != 'none':
-                    ports.append(((0,0,{
-                        'name':port.name,'localport':port.localport,
-                        'expose':port.expose,'udp':port.udp})))
+                    ports.append(((0, 0, {
+                        'name': port.name, 'localport': port.localport,
+                        'expose': port.expose, 'udp': port.udp})))
             self.port_ids = ports
 
             volumes = []
             for volume in self.image_id.volume_ids:
-                volumes.append(((0,0,{
-                    'name':volume.name, 'hostpath':volume.hostpath,
-                    'user':volume.user, 'readonly':volume.readonly,
-                    'nosave':volume.nosave})))
+                volumes.append(((0, 0, {
+                    'name': volume.name, 'hostpath': volume.hostpath,
+                    'user': volume.user, 'readonly': volume.readonly,
+                    'nosave': volume.nosave})))
             self.volume_ids = volumes
 
     @api.multi
@@ -479,6 +485,8 @@ class ClouderContainer(models.Model):
         """
         Override write to trigger a reinstall when we change the image version,
         the ports or the volumes.
+
+        :param vals: The values to update
         """
         version_obj = self.env['clouder.image.version']
         flag = False
@@ -538,25 +546,25 @@ class ClouderContainer(models.Model):
 
         if not self.save_repository_id:
             repo_ids = repo_obj.search(
-                [('container_name','=',self.name),
-                 ('container_server','=',self.server_id.name)])
+                [('container_name', '=', self.name),
+                 ('container_server', '=', self.server_id.name)])
             if repo_ids:
                 self.save_repository_id = repo_ids[0]
 
         if not self.save_repository_id \
                 or datetime.strptime(self.save_repository_id.date_change,
                                      "%Y-%m-%d") < now or False:
-            repo_vals ={
+            repo_vals = {
                 'name': now.strftime("%Y-%m-%d") + '_' +
-                        self.name + '_' + self.server_id.name,
+                self.name + '_' + self.server_id.name,
                 'type': 'container',
                 'date_change': (now + timedelta(
                     days=self.saverepo_change
-                         or self.application_id.container_saverepo_change
+                        or self.application_id.container_saverepo_change
                 )).strftime("%Y-%m-%d"),
                 'date_expiration': (now + timedelta(
                     days=self.saverepo_expiration
-                         or self.application_id.container_saverepo_expiration
+                    or self.application_id.container_saverepo_expiration
                 )).strftime("%Y-%m-%d"),
                 'container_name': self.name,
                 'container_server': self.server_id.name,
@@ -579,7 +587,7 @@ class ClouderContainer(models.Model):
                 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration
-                         or self.application_id.container_save_expiration
+                    or self.application_id.container_save_expiration
                 )).strftime("%Y-%m-%d"),
                 'comment': 'save_comment' in self.env.context
                            and self.env.context['save_comment']
@@ -588,11 +596,11 @@ class ClouderContainer(models.Model):
                 'container_id': self.id,
             }
             save = self.env['clouder.save.save'].create(save_vals)
-        next = (datetime.now() + timedelta(
+        date_next_save = (datetime.now() + timedelta(
             minutes=self.time_between_save
-                    or self.application_id.container_time_between_save
+            or self.application_id.container_time_between_save
         )).strftime("%Y-%m-%d %H:%M:%S")
-        self.write({'save_comment': False, 'date_next_save': next})
+        self.write({'save_comment': False, 'date_next_save': date_next_save})
         self.end_log()
         return save
 
@@ -613,17 +621,17 @@ class ClouderContainer(models.Model):
 
         ssh = self.connect(self.server_id.name)
 
-        cmd = ['sudo','docker', 'run', '-d']
+        cmd = ['sudo', 'docker', 'run', '-d']
         nextport = self.server_id.start_port
         for port in self.port_ids:
             if not port.hostport:
                 while not port.hostport \
                         and nextport != self.server_id.end_port:
                     ports = self.env['clouder.container.port'].search(
-                        [('hostport','=',nextport),
-                         ('container_id.server_id','=',self.server_id.id)])
+                        [('hostport', '=', nextport),
+                         ('container_id.server_id', '=', self.server_id.id)])
                     if not ports and not self.execute(ssh, [
-                        'netstat', '-an', '|', 'grep', str(nextport)]):
+                            'netstat', '-an', '|', 'grep', str(nextport)]):
                         port.hostport = nextport
                     nextport += 1
             udp = ''
@@ -660,7 +668,7 @@ class ClouderContainer(models.Model):
             self.get(ssh_registry,
                      '/etc/ssl/certs/docker-registry.crt', tmp_file)
             ssh_registry.close()
-            self.execute(ssh, ['mkdir','-p', folder])
+            self.execute(ssh, ['mkdir', '-p', folder])
             self.send(ssh, tmp_file, certfile)
             self.execute_local(['rm', tmp_file])
             cmd.extend([self.image_version_id.fullpath])
@@ -695,7 +703,7 @@ class ClouderContainer(models.Model):
 
         ssh = self.connect(self.server_id.name)
         self.stop()
-        self.execute(ssh, ['sudo','docker', 'rm', self.name])
+        self.execute(ssh, ['sudo', 'docker', 'rm', self.name])
         self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname])
         ssh.close()
 
@@ -739,8 +747,9 @@ class ClouderContainer(models.Model):
                                 '\n  Port ' + str(self.ssh_port))
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n  User root')
-        self.execute_write_file(self.home_directory + '/.ssh/config',
-                                '\n  IdentityFile ~/.ssh/keys/' + self.fullname)
+        self.execute_write_file(
+            self.home_directory + '/.ssh/config',
+            '\n  IdentityFile ~/.ssh/keys/' + self.fullname)
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.fullname + '\n')
         ssh = self.connect(self.server_id.name)
@@ -784,7 +793,7 @@ class ClouderContainerPort(models.Model):
     localport = fields.Char('Local port', size=12, required=True)
     hostport = fields.Char('Host port', size=12)
     expose = fields.Selection(
-        [('internet','Internet'),('local','Local')],'Expose?',
+        [('internet', 'Internet'), ('local', 'Local')], 'Expose?',
         required=True, default='local')
     udp = fields.Boolean('UDP?')
 
@@ -810,7 +819,6 @@ class ClouderContainerVolume(models.Model):
     user = fields.Char('System User', size=64)
     readonly = fields.Boolean('Readonly?')
     nosave = fields.Boolean('No save?')
-
 
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)',
