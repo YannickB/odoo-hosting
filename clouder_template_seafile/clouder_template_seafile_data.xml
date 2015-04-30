@@ -112,14 +112,14 @@ VOLUME /base-backup
         </record>
         <record id="app_seafile_link1" model="clouder.application.link">
             <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_bind.app_bind"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="app_seafile_link2" model="clouder.application.link">
             <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_shinken.app_shinken"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
@@ -127,7 +127,7 @@ VOLUME /base-backup
         </record>
         <record id="app_seafile_link3" model="clouder.application.link">
             <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_mysql.app_mysql"/>
+            <field name="name" ref="clouder_template_mysql.app_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
@@ -135,14 +135,14 @@ VOLUME /base-backup
         </record>
         <record id="app_seafile_link4" model="clouder.application.link">
             <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_postfix.app_postfix"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
         <record id="app_seafile_link5" model="clouder.application.link">
             <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_proxy.app_proxy"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
