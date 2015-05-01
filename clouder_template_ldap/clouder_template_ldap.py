@@ -47,7 +47,7 @@ class ClouderContainer(models.Model):
                     vals['options_ids'] = []
 
                 password_option = self.env.ref(
-                    'clouder_ldap.apptype_openldap_option2').id
+                    'clouder_template_ldap.apptype_openldap_option2').id
                 flag = False
                 for option in vals['option_ids']:
                     if option[2]['name'] == password_option:
@@ -60,7 +60,7 @@ class ClouderContainer(models.Model):
                     vals['option_ids'].append((0, 0, {
                         'name': password_option,
                         'value': clouder_model.generate_random_password(20)}))
-        return super(ClouderContainer, self).create_vals()
+        return super(ClouderContainer, self).create(vals)
 
     @api.multi
     def deploy_post(self):
@@ -95,10 +95,10 @@ class ClouderContainer(models.Model):
 
             config_file = '/etc/ldap/schema/' + \
                           self.options['domain']['value'] + '.ldif'
-            self.send(ssh, modules.get_module_path('clouder_ldap') +
+            self.send(ssh, modules.get_module_path('clouder_template_ldap') +
                       '/res/ldap.ldif', config_file)
             domain_dc = ''
-            for dc in self.options['value'].split('.'):
+            for dc in self.options['domain']['value'].split('.'):
                 if domain_dc:
                     domain_dc += ','
                 domain_dc += 'dc=' + dc
@@ -117,7 +117,7 @@ class ClouderContainer(models.Model):
                                '/etc/phpldapadmin/config.php'])
             ssh.close()
             self.start()
-            ssh = self.connect(self.container.fullname)
+            ssh = self.connect(self.fullname)
             self.execute(ssh, ['ldapadd', '-Y', 'EXTERNAL',
                                '-H', 'ldapi:///', '-f', config_file])
             ssh.close()
