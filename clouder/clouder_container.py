@@ -165,6 +165,14 @@ class ClouderServer(models.Model):
             container.stop()
 
     @api.multi
+    def test_connection(self):
+        """
+        Test connection to the server.
+        """
+        ssh = self.connect(self.name)
+        ssh.close()
+
+    @api.multi
     def deploy(self):
         """
         Add the keys in the filesystem and the ssh config.

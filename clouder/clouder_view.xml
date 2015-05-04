@@ -309,6 +309,7 @@
                         <field name="partner_id"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
+                    <button name="test_connection" string="Test connection" type="object"/>
                     <button name="start_containers" string="Restart Containers" type="object"/>
                     <button name="stop_containers" string="Stop Containers" type="object"/>
                     <field name="log_ids" colspan="4"/>

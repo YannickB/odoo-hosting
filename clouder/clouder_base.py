@@ -765,9 +765,14 @@ class ClouderBaseLink(models.Model):
                            required=True)
     target = fields.Many2one('clouder.container', 'Target')
 
-    target_base = lambda self: self.target.service_ids and \
-        self.target.service_ids[0].base_ids and \
-        self.target.service_ids[0].base_ids[0]
+    @property
+    def target_base(self):
+        """
+        Property returning the first base of the target container.
+        """
+        return self.target.service_ids and \
+            self.target.service_ids[0].base_ids and \
+            self.target.service_ids[0].base_ids[0]
 
     @api.one
     @api.constrains('base_id')

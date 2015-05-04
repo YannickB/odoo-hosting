@@ -16,6 +16,7 @@ git clone http://github.com/OCA/vertical-community.git extra/vertical-community 
 git clone http://github.com/OCA/account-financial-tools.git extra/account-financial-tools -b 8.0
 git clone http://github.com/YannickB/community-web.git extra/community-web -b master
 git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
+git clone http://github.com/OCA/website.git extra/website -b 8.0
 
 
 

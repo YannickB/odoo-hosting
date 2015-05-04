@@ -17,8 +17,8 @@ RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install bind9
 
-mkdir -m 0775 -p /var/run/named
-chown root:bind /var/run/named
+#mkdir -m 0775 -p /var/run/named
+#chown root:bind /var/run/named
 
 #https://github.com/Supervisor/supervisor/issues/147
 #RUN echo 'trap "{ /etc/init.d/bind9 stop; exit 0; }" EXIT' >> /opt/bind_init.sh

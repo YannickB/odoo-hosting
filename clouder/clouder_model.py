@@ -370,8 +370,40 @@ class ClouderModel(models.AbstractModel):
             if not port:
                 port = user_config['port']
 
-        ssh.connect(host, port=int(port), username=username,
+        if identityfile == None:
+            raise except_orm(
+                _('Data error!'),
+                _("It seems Clouder have no record in the ssh config to "
+                  "connect to your server.\nMake sure there is a '" + host + ""
+                  "' record in the ~/.ssh/config of the Clouder system user.\n"
+                  "To easily add this record, depending if Clouder try to "
+                  "connect to a server or a container, you can click on the "
+                  "'reinstall' button of the server record or 'reset key' "
+                  "button of the container record you try to access."))
+
+        if not isinstance(identityfile, basestring):
+            raise except_orm(
+                _('Data error!'),
+                _("For unknown reason, it seems the variable identityfile in "
+                  "the connect ssh function is invalid. Please report "
+                  "this message.\n"
+                  "Identityfile : " + str(identityfile)
+                  + ", type : " + type(identityfile)))
+
+        try:
+            ssh.connect(host, port=int(port), username=username,
                     key_filename=os.path.expanduser(identityfile))
+        except Exception as inst:
+            raise except_orm(
+                _('Connect error!'),
+                _("We were not able to connect to your server. Please make "
+                  "sure you add the public key in the authorized_keys file "
+                  "of your root user on your server.\n"
+                  "If you were trying to connect to a container, a click on "
+                  "the 'reset key' button on the container record may resolve "
+                  "the problem.\n"
+                  "Error : " + str(inst)))
+
         return ssh
 
     @api.multi

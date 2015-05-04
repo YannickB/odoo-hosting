@@ -63,7 +63,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq -t wheezy-backports install wk
 RUN pip install psycogreen
 RUN pip install erppeek
 
-echo "deb http://ftp.us.debian.org/debian wheezy-backports main" >> /etc/apt/sources.list
+#echo "deb http://ftp.us.debian.org/debian wheezy-backports main" >> /etc/apt/sources.list
 
 RUN useradd -m -s /bin/bash odoo
 USER odoo
@@ -153,6 +153,7 @@ VOLUME /base-backup
             <field name="buildfile"><![CDATA[
 git clone http://github.com/odoo/odoo.git parts/odoo -b 8.0
 git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
+git clone http://github.com/OCA/website.git extra/website -b 8.0
 
 #[buildout]
 #parts = odoo
@@ -239,6 +240,7 @@ git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b mast
 git clone http://github.com/odoo/odoo.git parts/odoo -b 8.0
 git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
 git clone http://github.com/clouder-community/clouder.git extra/clouder -b 8.0
+git clone http://github.com/OCA/website.git extra/website -b 8.0
 
 #[buildout]
 #parts = odoo
