@@ -370,7 +370,7 @@ class ClouderModel(models.AbstractModel):
             if not port:
                 port = user_config['port']
 
-        if identityfile == None:
+        if identityfile is None:
             raise except_orm(
                 _('Data error!'),
                 _("It seems Clouder have no record in the ssh config to "
@@ -381,6 +381,12 @@ class ClouderModel(models.AbstractModel):
                   "'reinstall' button of the server record or 'reset key' "
                   "button of the container record you try to access."))
 
+        # Security with latest version of Paramiko
+        # https://github.com/clouder-community/clouder/issues/11
+        if isinstance(identityfile, list):
+            identityfile = identityfile[0]
+
+        # Probably not useful anymore, to remove later
         if not isinstance(identityfile, basestring):
             raise except_orm(
                 _('Data error!'),
@@ -402,6 +408,7 @@ class ClouderModel(models.AbstractModel):
                   "If you were trying to connect to a container, a click on "
                   "the 'reset key' button on the container record may resolve "
                   "the problem.\n"
+                  "Target : " + host + "\n"
                   "Error : " + str(inst)))
 
         return ssh
