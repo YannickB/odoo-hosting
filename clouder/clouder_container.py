@@ -645,6 +645,14 @@ class ClouderContainer(models.Model):
             udp = ''
             if port.udp:
                 udp = '/udp'
+            if not port.hostport:
+                raise except_orm(
+                    _('Data error!'),
+                    _("We were not able to assign an hostport to the "
+                      "localport " + port.localport + ".\n"
+                      "If you don't want to assign one manually, make sure you"
+                      " fill the port range in the server configuration, and "
+                      "that all ports in that range are not already used."))
             cmd.extend(['-p', str(port.hostport) + ':' + port.localport + udp])
         for volume in self.volume_ids:
             if volume.hostpath:
