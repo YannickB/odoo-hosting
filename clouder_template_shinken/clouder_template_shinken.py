@@ -97,6 +97,10 @@ class ClouderContainer(models.Model):
                       modules.get_module_path('clouder_template_shinken') +
                       '/res/general-shinken.config',
                       '/usr/local/shinken/etc/services/clouder.cfg')
+            self.execute(ssh, [
+                'sed', '-i', '"s/SYSADMIN_MAIL/' +
+                self.email_sysadmin + '/g"',
+                '/usr/local/shinken/etc/services/clouder.cfg'])
             self.send(ssh,
                       modules.get_module_path('clouder_template_shinken') +
                       '/res/control_backup.sh',

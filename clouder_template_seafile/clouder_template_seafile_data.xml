@@ -26,9 +26,7 @@
             <field name="name">img_seafile</field>
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[FROM yolobase:latest
-MAINTAINER yannick.buron@gmail.com
-
+            <field name="dockerfile"><![CDATA[
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python2.7 python-setuptools python-simplejson python-imaging python-mysqldb mysql-client
 
 RUN useradd -m -s /bin/bash seafile
