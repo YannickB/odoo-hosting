@@ -178,6 +178,7 @@ class ClouderServer(models.Model):
         Add the keys in the filesystem and the ssh config.
         """
         self.purge()
+        self.execute_local(['mkdir', '-p', self.home_directory + '/.ssh/keys'])
         key_file = self.home_directory + '/.ssh/keys/' + self.name
         self.execute_write_file(key_file, self.private_key)
         self.execute_local(['chmod', '700', key_file])
