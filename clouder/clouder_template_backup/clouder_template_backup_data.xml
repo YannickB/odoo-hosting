@@ -63,7 +63,7 @@ RUN mkdir /opt/upload
             <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp g++
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp
 
 
 RUN mkdir  /home/backup
@@ -138,7 +138,7 @@ RUN echo "command=cron -f" >> /etc/supervisor/conf.d/supervisord.conf
             <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp g++
 
 RUN git clone git://github.com/bup/bup /opt/bup
 RUN make -C /opt/bup
