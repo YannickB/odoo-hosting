@@ -63,7 +63,7 @@ RUN mkdir /opt/upload
             <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp g++
 
 
 RUN mkdir  /home/backup
