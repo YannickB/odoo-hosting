@@ -22,7 +22,7 @@
 
         <record id="image_postgres" model="clouder.image">
             <field name="name">img_postgres</field>
-            <field name="current_version">9.1</field>
+            <field name="current_version">9.4</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
 RUN apt-get update
@@ -31,7 +31,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install postgresql
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:postgres]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=su postgres -c '/usr/lib/postgresql/9.1/bin/postgres -D /var/lib/postgresql/9.1/main -c config_file=/etc/postgresql/9.1/main/postgresql.conf'" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=su postgres -c '/usr/lib/postgresql/9.4/bin/postgres -D /var/lib/postgresql/9.4/main -c config_file=/etc/postgresql/9.4/main/postgresql.conf'" >> /etc/supervisor/conf.d/supervisord.conf
 
 
 USER postgres
@@ -72,7 +72,7 @@ USER root
         <record id="app_postgres" model="clouder.application">
             <field name="name">Postgresql</field>
             <field name="code">postgres</field>
-            <field name="current_version">9.1</field>
+            <field name="current_version">9.4</field>
             <field name="type_id" ref="apptype_postgres"/>
             <field name="default_image_id" ref="image_postgres"/>
             <field name="container_time_between_save">9999</field>
