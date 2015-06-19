@@ -23,7 +23,7 @@ RUN curl -L http://install.shinken-monitoring.org | /bin/bash
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:shinken]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=/etc/init.d/shinken start" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/usr/local/shinken/bin/init.d/shinken start" >> /etc/supervisor/conf.d/supervisord.conf
 
 
 USER shinken
