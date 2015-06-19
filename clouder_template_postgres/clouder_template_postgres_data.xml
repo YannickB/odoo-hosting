@@ -27,7 +27,7 @@
             <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install postgresql
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install postgresql-9.4
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:postgres]" >> /etc/supervisor/conf.d/supervisord.conf
