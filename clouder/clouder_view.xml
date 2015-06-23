@@ -863,7 +863,7 @@
         </record>
 
         <record id="clouder_settings" model='clouder.config.settings'>
-            <field name="name">Clouder Settings"</field>
+            <field name="name">Clouder Settings</field>
         </record>
 
         <record id="action_clouder_configuration" model="ir.actions.act_window">
