@@ -54,7 +54,7 @@ class ClouderServer(models.Model):
             self.execute(ssh, ['sed', '-i',
                                '"s/NAME/' + self.name + '/g"',
                                self.shinken_configfile])
-            self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+            self.execute(ssh, ['/usr/local/shinken/bin/init.d/shinken', 'reload'])
             ssh.close()
 
     @api.multi
@@ -66,7 +66,7 @@ class ClouderServer(models.Model):
             ssh = self.connect(self.supervision_id.fullname,
                                username='shinken')
             self.execute(ssh, ['rm', self.shinken_configfile])
-            self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+            self.execute(ssh, ['/usr/local/shinken/bin/init.d/shinken', 'reload'])
             ssh.close()
 
 
@@ -242,7 +242,7 @@ class ClouderContainerLink(models.Model):
                 '"s/PORT/' + str(self.container_id.ssh_port) + '/g"',
                 self.container_id.shinken_configfile])
 
-            self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+            self.execute(ssh, ['/usr/local/shinken/bin/init.d/shinken', 'reload'])
 
             send_key_to_shinken(ssh, self.container_id)
 
@@ -258,7 +258,7 @@ class ClouderContainerLink(models.Model):
             ssh = self.connect(self.target.fullname,
                                username='shinken')
             self.execute(ssh, ['rm', self.container_id.shinken_configfile])
-            self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+            self.execute(ssh, ['/usr/local/shinken/bin/init.d/shinken', 'reload'])
             ssh.close()
 
 
@@ -311,7 +311,7 @@ class ClouderBaseLink(models.Model):
                 '"s/CONTAINER/' + self.base_id
                          .backup_ids[0].fullname + '/g"',
                 self.base_id.shinken_configfile])
-            self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+            self.execute(ssh, ['/usr/local/shinken/bin/init.d/shinken', 'reload'])
 
             send_key_to_shinken(ssh, self.base_id)
 
@@ -327,5 +327,5 @@ class ClouderBaseLink(models.Model):
             ssh = self.connect(self.target.fullname,
                                username='shinken')
             self.execute(ssh, ['rm', self.base_id.shinken_configfile])
-            self.execute(ssh, ['/etc/init.d/shinken', 'reload'])
+            self.execute(ssh, ['/usr/local/shinken/bin/init.d/shinken', 'reload'])
             ssh.close()
