@@ -685,7 +685,7 @@ class ClouderBase(models.Model):
                     'psql', '-c',
                     '"update pg_database set datallowconn = \'false\' '
                     'where datname = \'' + database + '\'; '
-                    'SELECT pg_terminate_backend(procpid) '
+                    'SELECT pg_terminate_backend(pid) '
                     'FROM pg_stat_activity WHERE datname = \''
                     + database + '\';"'
                 ])
