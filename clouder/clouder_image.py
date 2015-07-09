@@ -281,9 +281,9 @@ class ClouderImageVersion(models.Model):
         """
         Delete an image from the private registry.
         """
-        ssh = self.connect(self.registry_id.server_id.name)
-        img_address = 'http://localhost:' + \
-                      self.registry_id.ports['registry']['hostport'] + \
+        ssh = self.connect(self.registry_id.fullname)
+        img_address = self.registry_id and 'localhost:' + \
+                      self.registry_id.ports['registry']['localport'] +\
                       '/v1/repositories/' + self.image_id.name + '/tags/' + \
                       self.name
         self.execute(ssh, ['curl', '-o curl.txt -X', 'DELETE', img_address])
