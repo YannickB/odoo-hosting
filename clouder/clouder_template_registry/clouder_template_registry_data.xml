@@ -25,7 +25,7 @@ RUN DEBIAN_FRONTEND=noninteractive locale-gen en_US.UTF-8
 RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
 RUN update-locale LANG=en_US.UTF-8
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils curl
 #/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix container.
 #Be cautious to any application which also use it.
 RUN mkdir -p /var/run/sshd

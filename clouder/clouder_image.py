@@ -279,7 +279,13 @@ class ClouderImageVersion(models.Model):
     @api.multi
     def purge(self):
         """
-        TODO There is currently no way to delete an image
-        from private registry.
+        Delete an image from the private registry.
         """
+        ssh = self.connect(self.registry_id.fullname)
+        img_address = self.registry_id and 'localhost:' + \
+                      self.registry_id.ports['registry']['localport'] +\
+                      '/v1/repositories/' + self.image_id.name + '/tags/' + \
+                      self.name
+        self.execute(ssh, ['curl', '-o curl.txt -X', 'DELETE', img_address])
+        ssh.close()
         return
