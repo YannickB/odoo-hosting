@@ -40,42 +40,53 @@ class ClouderApplicationVersion(models.Model):
         if self.application_id.type_id.name == 'odoo':
             ssh = self.connect(self.archive_id.fullname)
 
-            self.execute(ssh,
-                         ['mkdir', '-p', self.full_archivepath + '/extra'])
-            self.execute(ssh,
-                         ['mkdir', '-p', self.full_archivepath + '/parts'])
-            for command in self.application_id.buildfile.split('\n'):
-                if command.startswith('git'):
+            if self.application_id.buildfile.startswith('git'):
+                self.execute(ssh,
+                             ['mkdir', '-p', self.full_archivepath + '/extra'])
+                self.execute(ssh,
+                             ['mkdir', '-p', self.full_archivepath + '/parts'])
+                for command in self.application_id.buildfile.split('\n'):
+                    if command.startswith('git'):
+                        self.execute(ssh, [command],
+                                     path=self.full_archivepath)
+            elif self.application_id.buildfile.startswith('[custom]'):
+                for command in self.application_id.buildfile\
+                        .replace('[custom]', '').split('\n'):
                     self.execute(ssh, [command],
                                  path=self.full_archivepath)
-
-            # Support for anybox recipes. We don't use it anymore because
-            # it's slow without any real added value
-            # self.execute(ssh, [
-            #     'echo "' + self.application_id.buildfile + '" >> ' +
-            #     self.full_archivepath + '/buildout.cfg'])
-            # self.execute(ssh, ['wget',
-            #                    'https://raw.github.com/buildout/buildout/'
-            #                    'master/bootstrap/bootstrap.py'],
-            #              path=self.full_archivepath)
-            # self.execute(ssh, ['virtualenv', 'sandbox'],
-            #              path=self.full_archivepath)
-            # self.execute(ssh,
-            #              ['yes | sandbox/bin/pip uninstall setuptools pip'],
-            #              path=self.full_archivepath)
-            # self.execute(ssh, ['sandbox/bin/python', 'bootstrap.py'],
-            #              path=self.full_archivepath)
-            # self.execute(ssh, ['bin/buildout'], path=self.full_archivepath)
-            # self.execute(ssh, ['sed', '-i',
-            #                    '"s/' + self.archive_path.replace('/', '\/') +
-            #                    '/' + self.application_id.type_id.localpath
-            #                    .replace('/', '\/') + '/g"',
-            #                    self.full_archivepath + '/bin/start_odoo'])
-            # self.execute(ssh, ['sed', '-i',
-            #                    '"s/' + self.archive_path.replace('/', '\/') +
-            #                    '/' + self.application_id.type_id.localpath.
-            #                    replace('/', '\/') + '/g"',
-            #                    self.full_archivepath + '/bin/buildout'])
+            else:
+                self.execute(ssh, [
+                    'echo "' + self.application_id.buildfile
+                             .replace('"', '\\"').replace('$','\\$')
+                             .replace('{','\\{').replace('}','\\}')
+                    + '" >> ' +
+                    self.full_archivepath + '/buildout.cfg'])
+                self.execute(ssh, ['wget',
+                                   'https://raw.github.com/buildout/buildout/'
+                                   'master/bootstrap/bootstrap.py'],
+                             path=self.full_archivepath)
+                self.execute(ssh, ['virtualenv', 'sandbox'],
+                             path=self.full_archivepath)
+                self.execute(ssh,
+                             ['yes | sandbox/bin/pip uninstall setuptools pip'],
+                             path=self.full_archivepath)
+                self.execute(ssh, ['sandbox/bin/python', 'bootstrap.py'],
+                             path=self.full_archivepath)
+                self.execute(ssh, ['bin/buildout'], path=self.full_archivepath)
+                self.execute(ssh, [
+                    'sed', '-i',
+                    '"s/' + self.archive_path.replace('/', '\/') +
+                    '/' + self.application_id.type_id.localpath
+                    .replace('/', '\/') + '/g"',
+                    self.full_archivepath + '/bin/start_odoo'
+                ])
+                self.execute(ssh, [
+                    'sed', '-i',
+                    '"s/' + self.archive_path.replace('/', '\/') +
+                    '/' + self.application_id.type_id.localpath.
+                    replace('/', '\/') + '/g"',
+                    self.full_archivepath + '/bin/buildout'
+                ])
 
             self.send(ssh,
                       modules.get_module_path('clouder_template_odoo') +

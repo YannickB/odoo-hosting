@@ -59,7 +59,7 @@ RUN echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/s
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-passlib python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils python-paramiko postgresql-client libfontenc1 libxfont1 xfonts-75dpi xfonts-base xfonts-encodings xfonts-utils libjpeg8
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-pip
 
-RUN wget http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb -O /tmp/wkhtmltox.deb
+RUN wget http://downloads.sourceforge.net/wkhtmltopdf/wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb -O /tmp/wkhtmltox.deb
 RUN dpkg -i /tmp/wkhtmltox.deb
 
 # Note: The official Debian and Ubuntu images automatically ``apt-get clean``
@@ -325,6 +325,176 @@ git clone http://github.com/OCA/website.git extra/website -b 8.0
             <field name="value">clouder</field>
         </record>
 
+        <record id="app_odoo_connector" model="clouder.application">
+            <field name="name">Odoo + Connector</field>
+            <field name="code">odoo-connector</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="default_image_id" ref="image_odoo"/>
+            <field name="current_version">8.0</field>
+            <field name="buildfile"><![CDATA[
+[buildout]
+parts = openerp
+versions = versions
+find-links = http://download.gna.org/pychart/
+
+# just for issue 9 of sphinx-intl
+extensions = gp.vcsdevelop
+vcs-extend-develop = hg+http://bitbucket.org/ccomb/sphinx-intl#egg=sphinx-intl
+vcs-update = True
+
+[openerp]
+recipe = anybox.recipe.odoo:server
+version = git https://github.com/anybox/odoo.git odoo 8.0
+addons = git https://github.com/anybox/connector.git connector 8.0
+
+eggs = anybox.testing.openerp
+       nose
+       sphinx
+       sphinx_bootstrap_theme
+       sphinx-intl
+
+openerp_scripts = nosetests=nosetests command-line-options=-d
+                  sphinx-build=sphinx-build command-line-options=-d
+                  sphinx-apidoc=sphinx-apidoc command-line-options=-d
+                  sphinx-intl=sphinx-intl command-line-options=-d
+
+
+[static-analysis]
+recipe = zc.recipe.egg
+eggs = flake8
+
+[versions]
+#lxml = 2.3.3
+#pyparsing = 1.5.7
+#Werkzeug = 0.8.3
+]]></field>
+            <field name="container_time_between_save">9999</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="container_save_expiration">5</field>
+            <field name="base_time_between_save">9999</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
+            <field name="base_save_expiration">5</field>
+        </record>
+        <record id="app_odoo_connector_link1" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_link2" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_link3" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="service" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_link4" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_link5" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_link6" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_option3" model="clouder.application.option">
+            <field name="application_id" ref="app_odoo_connector"/>
+            <field name="name" ref="apptype_odoo_option3"/>
+            <field name="value">connector</field>
+        </record>
+
+        <record id="app_odoo_connector_custom" model="clouder.application">
+            <field name="name">Odoo + Connector Custom</field>
+            <field name="code">odoo-connector-custo</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="default_image_id" ref="image_odoo"/>
+            <field name="current_version">8.0</field>
+            <field name="buildfile"><![CDATA[
+[custom]
+git clone https://github.com/guewen/odoo-connector-magento-buildout.git ./
+./bootstrap.sh
+bin/buildout
+]]></field>
+            <field name="container_time_between_save">9999</field>
+            <field name="container_saverepo_change">30</field>
+            <field name="container_saverepo_expiration">90</field>
+            <field name="container_save_expiration">5</field>
+            <field name="base_time_between_save">9999</field>
+            <field name="base_saverepo_change">30</field>
+            <field name="base_saverepo_expiration">90</field>
+            <field name="base_save_expiration">5</field>
+        </record>
+        <record id="app_odoo_connector_custom_link1" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector_custom"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_custom_link2" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector_custom"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_custom_link3" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector_custom"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="service" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_custom_link4" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector_custom"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_custom_link5" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector_custom"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_custom_link6" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_connector_custom"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_connector_custom_option3" model="clouder.application.option">
+            <field name="application_id" ref="app_odoo_connector_custom"/>
+            <field name="name" ref="apptype_odoo_option3"/>
+            <field name="value">connector</field>
+        </record>
 
     </data>
 </openerp>
