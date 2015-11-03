@@ -306,11 +306,12 @@
                         <field name="name"/>
                         <field name="ip"/>
                         <field name="ssh_port"/>
-                        <field name="supervision_id"/>
+                        <field name="runner_id" widget="selection"/>
                         <field name="private_key"/>
                         <field name="public_key"/>
                         <field name="start_port"/>
                         <field name="end_port"/>
+                        <field name="supervision_id"/>
                         <field name="public"/>
                         <field name="partner_id"/>
                     </group>
@@ -328,6 +329,7 @@
             <field name="arch" type="xml">
                 <tree string="Servers">
                     <field name="name"/>
+                    <field name="runner_id"/>
                     <field name="ip"/>
                     <field name="ssh_port"/>
                 </tree>

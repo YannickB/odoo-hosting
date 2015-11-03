@@ -32,6 +32,16 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
+class ClouderRunner(models.Model):
+    """
+    Specify the code to use to connect to server
+    """
+
+    _name = 'clouder.runner'
+
+    name = fields.Char('Name', size=64, required=True)
+
+
 class ClouderServer(models.Model):
     """
     Define the server object, which represent the servers
@@ -108,6 +118,7 @@ class ClouderServer(models.Model):
 
     name = fields.Char('Domain name', size=64, required=True)
     ip = fields.Char('IP', size=64, required=True)
+    runner_id = fields.Many2one('clouder.runner', 'Runner', required=True)
     ssh_port = fields.Integer('SSH port', required=True)
 
     private_key = fields.Text(
@@ -628,87 +639,6 @@ class ClouderContainer(models.Model):
         """
         self.purge()
 
-        ssh = self.connect(self.server_id.name)
-
-        cmd = ['sudo', 'docker', 'run', '-d', '--restart=always']
-        nextport = self.server_id.start_port
-        for port in self.port_ids:
-            if not port.hostport:
-                while not port.hostport \
-                        and nextport != self.server_id.end_port:
-                    ports = self.env['clouder.container.port'].search(
-                        [('hostport', '=', nextport),
-                         ('container_id.server_id', '=', self.server_id.id)])
-                    if not ports and not self.execute(ssh, [
-                            'netstat', '-an', '|', 'grep', str(nextport)]):
-                        port.hostport = nextport
-                    nextport += 1
-            udp = ''
-            if port.udp:
-                udp = '/udp'
-            if not port.hostport:
-                raise except_orm(
-                    _('Data error!'),
-                    _("We were not able to assign an hostport to the "
-                      "localport " + port.localport + ".\n"
-                      "If you don't want to assign one manually, make sure you"
-                      " fill the port range in the server configuration, and "
-                      "that all ports in that range are not already used."))
-            cmd.extend(['-p', str(port.hostport) + ':' + port.localport + udp])
-        for volume in self.volume_ids:
-            if volume.hostpath:
-                arg = volume.hostpath + ':' + volume.name
-                if volume.readonly:
-                    arg += ':ro'
-                cmd.extend(['-v', arg])
-        for link in self.link_ids:
-            if link.name.make_link and link.target.server_id == self.server_id:
-                cmd.extend(['--link', link.target.name +
-                            ':' + link.name.name.code])
-        if self.privileged:
-            cmd.extend(['--privileged'])
-        cmd.extend(['-v', '/opt/keys/' + self.fullname +
-                    ':/opt/keys', '--name', self.name])
-
-        if self.image_id.name == 'img_registry':
-            cmd.extend([self.image_version_id.fullname])
-        elif self.server_id == self.image_version_id.registry_id.server_id:
-            cmd.extend([self.image_version_id.fullpath_localhost])
-        else:
-            folder = '/etc/docker/certs.d/' +\
-                     self.image_version_id.registry_address
-            certfile = folder + '/ca.crt'
-            tmp_file = '/tmp/' + self.fullname
-            self.execute(ssh, ['rm', certfile])
-            ssh_registry = self.connect(
-                self.image_version_id.registry_id.fullname)
-            self.get(ssh_registry,
-                     '/etc/ssl/certs/docker-registry.crt', tmp_file)
-            ssh_registry.close()
-            self.execute(ssh, ['mkdir', '-p', folder])
-            self.send(ssh, tmp_file, certfile)
-            self.execute_local(['rm', tmp_file])
-            cmd.extend([self.image_version_id.fullpath])
-
-        # Deploy key now, otherwise the container will be angry
-        # to not find the key.
-        # We can't before because self.ssh_port may not be set
-        self.deploy_key()
-
-        #Run container
-        self.execute(ssh, cmd)
-
-        time.sleep(3)
-
-        self.deploy_post()
-
-        self.start()
-
-        ssh.close()
-
-        #For shinken
-        self.save()
-
         return
 
     @api.multi
@@ -718,12 +648,6 @@ class ClouderContainer(models.Model):
         """
         self.purge_key()
 
-        ssh = self.connect(self.server_id.name)
-        self.stop()
-        self.execute(ssh, ['sudo', 'docker', 'rm', self.name])
-        self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname])
-        ssh.close()
-
         return
 
     @api.multi
@@ -731,9 +655,9 @@ class ClouderContainer(models.Model):
         """
         Stop the container.
         """
-        ssh = self.connect(self.server_id.name)
-        self.execute(ssh, ['docker', 'stop', self.name])
-        ssh.close()
+
+        return
+
 
     @api.multi
     def start(self):
@@ -741,10 +665,8 @@ class ClouderContainer(models.Model):
         Restart the container.
         """
         self.stop()
-        ssh = self.connect(self.server_id.name)
-        self.execute(ssh, ['docker', 'start', self.name])
-        ssh.close()
-        time.sleep(3)
+        return
+
 
     @api.multi
     def deploy_key(self):

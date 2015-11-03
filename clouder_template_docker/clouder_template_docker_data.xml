@@ -2,6 +2,9 @@
 <openerp>
     <data>
 
+        <record id="runner_docker" model="clouder.runner">
+            <field name="name">docker</field>
+        </record>
 
         <record id="apptype_docker" model="clouder.application.type">
             <field name="name">docker</field>
