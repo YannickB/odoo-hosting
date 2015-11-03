@@ -240,7 +240,6 @@ git clone http://github.com/OCA/website.git extra/website -b 8.0
             <field name="default_image_id" ref="image_odoo"/>
             <field name="current_version">8.0</field>
             <field name="buildfile"><![CDATA[
-
 git clone http://github.com/odoo/odoo.git parts/odoo -b 8.0
 git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
 git clone http://github.com/clouder-community/clouder.git extra/clouder -b 8.0

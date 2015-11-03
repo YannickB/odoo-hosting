@@ -63,7 +63,9 @@
                                 <tree string="Links" editable="bottom">
                                     <field name="name" domain="[('application_id','=',parent.application_id),('base','=',True)]"/>
                                     <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>
+                                    <button name="purge_" type="object" string="Purge"/>
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
@@ -151,7 +153,9 @@
                                 <tree string="Links" editable="bottom">
                                     <field name="name" domain="[('application_id.container_ids','=',parent.container_id),('service','=',True)]"/>
                                     <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>
+                                    <button name="purge_" type="object" string="Purge"/>
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
@@ -234,7 +238,9 @@
                                 <tree string="Links" editable="bottom">
                                     <field name="name" domain="[('application_id','=',parent.application_id),('container','=',True)]"/>
                                     <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>
+                                    <button name="purge_" type="object" string="Purge"/>
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>

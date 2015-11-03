@@ -40,7 +40,7 @@ class ClouderApplicationVersion(models.Model):
         if self.application_id.type_id.name == 'odoo':
             ssh = self.connect(self.archive_id.fullname)
 
-            if self.application_id.buildfile.startswith('git'):
+            if self.application_id.buildfile.strip().startswith('git'):
                 self.execute(ssh,
                              ['mkdir', '-p', self.full_archivepath + '/extra'])
                 self.execute(ssh,
@@ -49,7 +49,7 @@ class ClouderApplicationVersion(models.Model):
                     if command.startswith('git'):
                         self.execute(ssh, [command],
                                      path=self.full_archivepath)
-            elif self.application_id.buildfile.startswith('[custom]'):
+            elif self.application_id.buildfile.strip().startswith('[custom]'):
                 for command in self.application_id.buildfile\
                         .replace('[custom]', '').split('\n'):
                     self.execute(ssh, [command],

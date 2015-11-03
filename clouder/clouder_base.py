@@ -764,6 +764,7 @@ class ClouderBaseLink(models.Model):
     name = fields.Many2one('clouder.application.link', 'Application Link',
                            required=True)
     target = fields.Many2one('clouder.container', 'Target')
+    deployed = fields.Boolean('Deployed?', readonly=True)
 
     @property
     def target_base(self):
@@ -795,6 +796,7 @@ class ClouderBaseLink(models.Model):
         Hook which can be called by submodules to execute commands when we
         deploy a link.
         """
+        self.deployed = True
         return
 
     @api.multi
@@ -803,6 +805,7 @@ class ClouderBaseLink(models.Model):
         Hook which can be called by submodules to execute commands when we
         purge a link.
         """
+        self.deployed = False
         return
 
     def control(self):
