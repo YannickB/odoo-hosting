@@ -54,18 +54,18 @@ class ClouderContainer(models.Model):
         Build the registry image directly when we deploy the container.
         """
         if self.image_id.name == 'img_registry':
-            ssh = self.connect(self.server_id.name)
+            # ssh = self.connect(self.server_id.name)
             tmp_dir = '/tmp/' + self.image_id.name + '_' + \
                 self.image_version_id.fullname
-            self.execute(ssh, ['mkdir', '-p', tmp_dir])
-            self.execute(ssh, [
+            self.execute(['mkdir', '-p', tmp_dir])
+            self.execute([
                 'echo "' + self.image_id.dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
-            self.execute(ssh, ['sudo', 'docker', 'rmi',
+            self.execute(['sudo', 'docker', 'rmi',
                                self.image_version_id.fullname])
-            self.execute(ssh, ['sudo', 'docker', 'build', '-t',
+            self.execute(['sudo', 'docker', 'build', '-t',
                                self.image_version_id.fullname, tmp_dir])
-            self.execute(ssh, ['rm', '-rf', tmp_dir])
+            self.execute(['rm', '-rf', tmp_dir])
 
         return super(ClouderContainer, self).deploy()
 
@@ -75,19 +75,19 @@ class ClouderContainer(models.Model):
         """
         if self.application_id.type_id.name == 'registry':
 
-            ssh = self.connect(self.fullname)
+            # ssh = self.connect(self.fullname)
 
             certfile = '/etc/ssl/certs/docker-registry.crt'
             keyfile = '/etc/ssl/private/docker-registry.key'
 
-            self.execute(ssh, ['rm', certfile])
-            self.execute(ssh, ['rm', keyfile])
+            self.execute(['rm', certfile])
+            self.execute(['rm', keyfile])
 
-            self.execute(ssh, [
+            self.execute([
                 'openssl', 'req', '-x509', '-nodes', '-days', '365',
                 '-newkey', 'rsa:2048', '-out', certfile, ' -keyout',
                 keyfile, '-subj', '"/C=FR/L=Paris/O=Clouder/CN=' +
                 self.server_id.name + '"'])
-            ssh.close()
+            # ssh.close()
 
         return super(ClouderContainer, self).deploy_post()

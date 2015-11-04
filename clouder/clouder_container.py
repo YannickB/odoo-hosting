@@ -32,16 +32,6 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderRunner(models.Model):
-    """
-    Specify the code to use to connect to server
-    """
-
-    _name = 'clouder.runner'
-
-    name = fields.Char('Name', size=64, required=True)
-
-
 class ClouderServer(models.Model):
     """
     Define the server object, which represent the servers
@@ -118,7 +108,7 @@ class ClouderServer(models.Model):
 
     name = fields.Char('Domain name', size=64, required=True)
     ip = fields.Char('IP', size=64, required=True)
-    runner_id = fields.Many2one('clouder.runner', 'Runner', required=True)
+    runner_id = fields.Many2one('clouder.container', 'Runner')
     ssh_port = fields.Integer('SSH port', required=True)
 
     private_key = fields.Text(
@@ -196,7 +186,7 @@ class ClouderServer(models.Model):
         self.execute_write_file(self.home_directory +
                                 '/.ssh/config', 'Host ' + self.name)
         self.execute_write_file(self.home_directory +
-                                '/.ssh/config', '\n  HostName ' + self.name)
+                                '/.ssh/config', '\n  HostName ' + self.ip)
         self.execute_write_file(self.home_directory +
                                 '/.ssh/config', '\n  Port ' +
                                 str(self.ssh_port))
@@ -625,6 +615,14 @@ class ClouderContainer(models.Model):
         return save
 
     @api.multi
+    def hook_deploy(self, ports, volumes):
+        """
+        Hook which can be called by submodules to execute commands to
+        deploy a container.
+        """
+        return
+
+    @api.multi
     def deploy_post(self):
         """
         Hook which can be called by submodules to execute commands after we
@@ -638,6 +636,48 @@ class ClouderContainer(models.Model):
         Deploy the container in the server.
         """
         self.purge()
+
+        ssh = self.connect(self.server_id.name)
+
+        ports = []
+        volumes = []
+        nextport = self.server_id.start_port
+        for port in self.port_ids:
+            if not port.hostport:
+                while not port.hostport \
+                        and nextport != self.server_id.end_port:
+                    port_ids = self.env['clouder.container.port'].search(
+                        [('hostport', '=', nextport),
+                         ('container_id.server_id', '=', self.server_id.id)])
+                    if not port_ids and not self.server_id.execute([
+                            'netstat', '-an', '|', 'grep', str(nextport)]):
+                        port.hostport = nextport
+                    nextport += 1
+            if not port.hostport:
+                raise except_orm(
+                    _('Data error!'),
+                    _("We were not able to assign an hostport to the "
+                      "localport " + port.localport + ".\n"
+                      "If you don't want to assign one manually, make sure you"
+                      " fill the port range in the server configuration, and "
+                      "that all ports in that range are not already used."))
+            ports.append(port)
+        for volume in self.volume_ids:
+            if volume.hostpath:
+                volumes.append(volume)
+
+        ssh.close()
+
+        self.hook_deploy(ports, volumes)
+
+        time.sleep(3)
+
+        self.deploy_post()
+
+        self.start()
+
+        #For shinken
+        self.save()
 
         return
 
@@ -681,7 +721,7 @@ class ClouderContainer(models.Model):
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 'Host ' + self.fullname)
         self.execute_write_file(self.home_directory + '/.ssh/config',
-                                '\n  HostName ' + self.server_id.name)
+                                '\n  HostName ' + self.server_id.ip)
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n  Port ' + str(self.ssh_port))
         self.execute_write_file(self.home_directory + '/.ssh/config',
@@ -691,12 +731,12 @@ class ClouderContainer(models.Model):
             '\n  IdentityFile ~/.ssh/keys/' + self.fullname)
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.fullname + '\n')
-        ssh = self.connect(self.server_id.name)
-        self.execute(ssh, ['mkdir', '-p', '/opt/keys/' + self.fullname])
-        self.send(ssh, self.home_directory + '/.ssh/keys/' +
+        # ssh = self.connect(self.server_id.name)
+        self.server_id.execute(['mkdir', '-p', '/opt/keys/' + self.fullname])
+        self.server_id.send(self.home_directory + '/.ssh/keys/' +
                   self.fullname + '.pub', '/opt/keys/' +
                   self.fullname + '/authorized_keys')
-        ssh.close()
+        # ssh.close()
 
     @api.multi
     def purge_key(self):
@@ -712,10 +752,10 @@ class ClouderContainer(models.Model):
         self.execute_local([
             'rm', '-rf', self.home_directory +
             '/.ssh/keys/' + self.fullname + '.pub'])
-        ssh = self.connect(self.server_id.name)
-        self.execute(ssh, [
+        # ssh = self.connect(self.server_id.name)
+        self.server_id.execute([
             'rm', '-rf', '/opt/keys/' + self.fullname + '/authorized_keys'])
-        ssh.close()
+        # ssh.close()
 
 
 class ClouderContainerPort(models.Model):

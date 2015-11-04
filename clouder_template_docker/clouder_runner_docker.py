@@ -25,6 +25,60 @@ from openerp.exceptions import except_orm
 import time
 
 
+class ClouderImageVersion(models.Model):
+    """
+    Add methods to manage the docker build specificities.
+    """
+
+    _inherit = 'clouder.image.version'
+
+    @api.multi
+    def hook_build(self, dockerfile):
+
+        res = super(ClouderImageVersion, self).hook_build(dockerfile)
+
+        if self.registry_id.application_id.type_id.name == 'registry':
+
+            ssh = self.connect(self.registry_id.server_id.name)
+            tmp_dir = '/tmp/' + self.image_id.name + '_' + self.fullname
+            self.execute(ssh, ['mkdir', '-p', tmp_dir])
+
+            self.execute(ssh, [
+                'echo "' + dockerfile.replace('"', '\\"') +
+                '" >> ' + tmp_dir + '/Dockerfile'])
+            self.execute(ssh,
+                         ['sudo', 'docker', 'build', '-t', self.fullname, tmp_dir])
+            self.execute(ssh, ['sudo', 'docker', 'tag', self.fullname,
+                               self.fullpath_localhost])
+            self.execute(ssh,
+                         ['sudo', 'docker', 'push', self.fullpath_localhost])
+            self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname])
+            self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost])
+            self.execute(ssh, ['rm', '-rf', tmp_dir])
+            ssh.close()
+        return
+
+    @api.multi
+    def purge(self):
+        """
+        Delete an image from the private registry.
+        """
+
+        res = super(ClouderImageVersion, self).purge()
+
+        if self.registry_id.application_id.type_id.name == 'registry':
+
+            ssh = self.connect(self.registry_id.fullname)
+            img_address = self.registry_id and 'localhost:' + \
+                          self.registry_id.ports['registry']['localport'] +\
+                          '/v1/repositories/' + self.image_id.name + '/tags/' + \
+                          self.name
+            self.execute(ssh, ['curl', '-o curl.txt -X', 'DELETE', img_address])
+            ssh.close()
+
+        return res
+
+
 class ClouderContainer(models.Model):
     """
     Add methods to manage the docker container specificities.
@@ -33,48 +87,29 @@ class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
 
     @api.multi
-    def deploy(self):
+    def hook_deploy(self, ports, volumes):
         """
         Deploy the container in the server.
         """
 
-        res = super(ClouderContainer, self).deploy()
+        res = super(ClouderContainer, self).hook_deploy(ports, volumes)
 
-        if self.server_id.runner_id.name == 'docker':
+        if not self.server_id.runner_id or \
+                self.server_id.runner_id.application.type_id.name == 'docker':
 
             ssh = self.connect(self.server_id.name)
 
             cmd = ['sudo', 'docker', 'run', '-d', '--restart=always']
-            nextport = self.server_id.start_port
-            for port in self.port_ids:
-                if not port.hostport:
-                    while not port.hostport \
-                            and nextport != self.server_id.end_port:
-                        ports = self.env['clouder.container.port'].search(
-                            [('hostport', '=', nextport),
-                             ('container_id.server_id', '=', self.server_id.id)])
-                        if not ports and not self.execute(ssh, [
-                                'netstat', '-an', '|', 'grep', str(nextport)]):
-                            port.hostport = nextport
-                        nextport += 1
+            for port in ports:
                 udp = ''
                 if port.udp:
                     udp = '/udp'
-                if not port.hostport:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("We were not able to assign an hostport to the "
-                          "localport " + port.localport + ".\n"
-                          "If you don't want to assign one manually, make sure you"
-                          " fill the port range in the server configuration, and "
-                          "that all ports in that range are not already used."))
                 cmd.extend(['-p', str(port.hostport) + ':' + port.localport + udp])
-            for volume in self.volume_ids:
-                if volume.hostpath:
-                    arg = volume.hostpath + ':' + volume.name
-                    if volume.readonly:
-                        arg += ':ro'
-                    cmd.extend(['-v', arg])
+            for volume in volumes:
+                arg = volume.hostpath + ':' + volume.name
+                if volume.readonly:
+                    arg += ':ro'
+                cmd.extend(['-v', arg])
             for link in self.link_ids:
                 if link.name.make_link and link.target.server_id == self.server_id:
                     cmd.extend(['--link', link.target.name +
@@ -110,18 +145,7 @@ class ClouderContainer(models.Model):
             self.deploy_key()
 
             #Run container
-            self.execute(ssh, cmd)
-
-            time.sleep(3)
-
-            self.deploy_post()
-
-            self.start()
-
-            ssh.close()
-
-            #For shinken
-            self.save()
+            self.server_id.execute(cmd)
 
         return res
 
@@ -132,12 +156,14 @@ class ClouderContainer(models.Model):
         """
         res = super(ClouderContainer, self).purge()
 
-        if self.server_id.runner_id.name == 'docker':
+        self.stop()
+
+        if not self.server_id.runner_id or \
+                self.server_id.runner_id.application.type_id.name == 'docker':
 
             ssh = self.connect(self.server_id.name)
-            self.stop()
-            self.execute(ssh, ['sudo', 'docker', 'rm', self.name])
-            self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname])
+            self.server_id.execute(['sudo', 'docker', 'rm', self.name])
+            self.server_id.execute(['rm', '-rf', '/opt/keys/' + self.fullname])
             ssh.close()
 
         return res
@@ -150,10 +176,11 @@ class ClouderContainer(models.Model):
 
         res = super(ClouderContainer, self).stop()
 
-        if self.server_id.runner_id.name == 'docker':
+        if not self.server_id.runner_id or \
+                self.server_id.runner_id.application.type_id.name == 'docker':
 
             ssh = self.connect(self.server_id.name)
-            self.execute(ssh, ['docker', 'stop', self.name])
+            self.server_id.execute(['docker', 'stop', self.name])
             ssh.close()
 
         return res
@@ -163,14 +190,14 @@ class ClouderContainer(models.Model):
         """
         Restart the container.
         """
-        self.stop()
 
         res = super(ClouderContainer, self).start()
 
-        if self.server_id.runner_id.name == 'docker':
+        if not self.server_id.runner_id or \
+                self.server_id.runner_id.application.type_id.name == 'docker':
 
             ssh = self.connect(self.server_id.name)
-            self.execute(ssh, ['docker', 'start', self.name])
+            self.server_id.execute(['docker', 'start', self.name])
             ssh.close()
             time.sleep(3)
 

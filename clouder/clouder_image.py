@@ -223,13 +223,14 @@ class ClouderImageVersion(models.Model):
         return super(ClouderImageVersion, self).unlink()
 
     @api.multi
+    def hook_build(self, dockerfile):
+        return
+
+    @api.multi
     def deploy(self):
         """
         Build a new image and store it to the registry.
         """
-        ssh = self.connect(self.registry_id.server_id.name)
-        tmp_dir = '/tmp/' + self.image_id.name + '_' + self.fullname
-        self.execute(ssh, ['mkdir', '-p', tmp_dir])
 
         dockerfile = 'FROM '
         if self.image_id.parent_id and self.parent_id:
@@ -256,19 +257,9 @@ class ClouderImageVersion(models.Model):
         if ports:
             dockerfile += '\nEXPOSE ' + ports
 
-        self.execute(ssh, [
-            'echo "' + dockerfile.replace('"', '\\"') +
-            '" >> ' + tmp_dir + '/Dockerfile'])
-        self.execute(ssh,
-                     ['sudo', 'docker', 'build', '-t', self.fullname, tmp_dir])
-        self.execute(ssh, ['sudo', 'docker', 'tag', self.fullname,
-                           self.fullpath_localhost])
-        self.execute(ssh,
-                     ['sudo', 'docker', 'push', self.fullpath_localhost])
-        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname])
-        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost])
-        self.execute(ssh, ['rm', '-rf', tmp_dir])
-        ssh.close()
+        self.hook_build(dockerfile)
+
+
         return
 
     # In case of problems with ssh authentification
@@ -281,11 +272,4 @@ class ClouderImageVersion(models.Model):
         """
         Delete an image from the private registry.
         """
-        ssh = self.connect(self.registry_id.fullname)
-        img_address = self.registry_id and 'localhost:' + \
-                      self.registry_id.ports['registry']['localport'] +\
-                      '/v1/repositories/' + self.image_id.name + '/tags/' + \
-                      self.name
-        self.execute(ssh, ['curl', '-o curl.txt -X', 'DELETE', img_address])
-        ssh.close()
         return

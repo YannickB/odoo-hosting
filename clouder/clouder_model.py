@@ -37,6 +37,7 @@ from os.path import expanduser
 import logging
 _logger = logging.getLogger(__name__)
 
+ssh_connections = {}
 
 class ClouderLog(models.Model):
     """
@@ -349,72 +350,86 @@ class ClouderModel(models.AbstractModel):
         :param port: The port we need to connect.
         :param username: The username we need to connect.
         """
-        self.log('connect: ssh ' + (username and username + '@' or '') +
-                 host + (port and ' -p ' + str(port) or ''))
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        ssh_config = paramiko.SSHConfig()
-        user_config_file = os.path.expanduser("~/.ssh/config")
-        if os.path.exists(user_config_file):
-            with open(user_config_file) as f:
-                ssh_config.parse(f)
-        user_config = ssh_config.lookup(host)
+        # if not 'ssh_connections' in globals():
+        #     ssh_connections = {}
+        #     global ssh_connections
+        global ssh_connections
+        host_fullname = host + \
+                        (port and ('_' + port) or '') + \
+                        (username and ('_' + username) or '')
+        if host_fullname not in ssh_connections\
+                or not ssh_connections[host_fullname]._transport:
 
-        identityfile = None
-        if 'identityfile' in user_config:
-            host = user_config['hostname']
-            identityfile = user_config['identityfile']
-            if not username:
-                username = user_config['user']
-            if not port:
-                port = user_config['port']
+            self.log('connect: ssh ' + (username and username + '@' or '') +
+                     host + (port and ' -p ' + str(port) or ''))
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        if identityfile is None:
-            raise except_orm(
-                _('Data error!'),
-                _("It seems Clouder have no record in the ssh config to "
-                  "connect to your server.\nMake sure there is a '" + host + ""
-                  "' record in the ~/.ssh/config of the Clouder system user.\n"
-                  "To easily add this record, depending if Clouder try to "
-                  "connect to a server or a container, you can click on the "
-                  "'reinstall' button of the server record or 'reset key' "
-                  "button of the container record you try to access."))
+            ssh_config = paramiko.SSHConfig()
+            user_config_file = os.path.expanduser("~/.ssh/config")
+            if os.path.exists(user_config_file):
+                with open(user_config_file) as f:
+                    ssh_config.parse(f)
+            user_config = ssh_config.lookup(host)
 
-        # Security with latest version of Paramiko
-        # https://github.com/clouder-community/clouder/issues/11
-        if isinstance(identityfile, list):
-            identityfile = identityfile[0]
+            identityfile = None
+            if 'identityfile' in user_config:
+                host = user_config['hostname']
+                identityfile = user_config['identityfile']
+                if not username:
+                    username = user_config['user']
+                if not port:
+                    port = user_config['port']
 
-        # Probably not useful anymore, to remove later
-        if not isinstance(identityfile, basestring):
-            raise except_orm(
-                _('Data error!'),
-                _("For unknown reason, it seems the variable identityfile in "
-                  "the connect ssh function is invalid. Please report "
-                  "this message.\n"
-                  "Identityfile : " + str(identityfile)
-                  + ", type : " + type(identityfile)))
+            if identityfile is None:
+                raise except_orm(
+                    _('Data error!'),
+                    _("It seems Clouder have no record in the ssh config to "
+                      "connect to your server.\nMake sure there is a '" + host + ""
+                      "' record in the ~/.ssh/config of the Clouder system user.\n"
+                      "To easily add this record, depending if Clouder try to "
+                      "connect to a server or a container, you can click on the "
+                      "'reinstall' button of the server record or 'reset key' "
+                      "button of the container record you try to access."))
 
-        try:
-            ssh.connect(host, port=int(port), username=username,
-                    key_filename=os.path.expanduser(identityfile))
-        except Exception as inst:
-            raise except_orm(
-                _('Connect error!'),
-                _("We were not able to connect to your server. Please make "
-                  "sure you add the public key in the authorized_keys file "
-                  "of your root user on your server.\n"
-                  "If you were trying to connect to a container, a click on "
-                  "the 'reset key' button on the container record may resolve "
-                  "the problem.\n"
-                  "Target : " + host + "\n"
-                  "Error : " + str(inst)))
+            # Security with latest version of Paramiko
+            # https://github.com/clouder-community/clouder/issues/11
+            if isinstance(identityfile, list):
+                identityfile = identityfile[0]
+
+            # Probably not useful anymore, to remove later
+            if not isinstance(identityfile, basestring):
+                raise except_orm(
+                    _('Data error!'),
+                    _("For unknown reason, it seems the variable identityfile in "
+                      "the connect ssh function is invalid. Please report "
+                      "this message.\n"
+                      "Identityfile : " + str(identityfile)
+                      + ", type : " + type(identityfile)))
+
+            try:
+                ssh.connect(host, port=int(port), username=username,
+                        key_filename=os.path.expanduser(identityfile))
+            except Exception as inst:
+                raise except_orm(
+                    _('Connect error!'),
+                    _("We were not able to connect to your server. Please make "
+                      "sure you add the public key in the authorized_keys file "
+                      "of your root user on your server.\n"
+                      "If you were trying to connect to a container, a click on "
+                      "the 'reset key' button on the container record may resolve "
+                      "the problem.\n"
+                      "Target : " + host + "\n"
+                      "Error : " + str(inst)))
+            ssh_connections[host_fullname] = ssh
+        else:
+            ssh = ssh_connections[host_fullname]
 
         return ssh
 
     @api.multi
-    def execute(self, ssh, cmd, stdin_arg=False, path=False):
+    def execute(self, cmd, stdin_arg=False, path=False, ssh=False):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -423,10 +438,20 @@ class ClouderModel(models.AbstractModel):
         :param stdin_arg: The command we need to execute in stdin.
         :param path: The path where the command need to be executed.
         """
-        self.log('command : ' + ' '.join(cmd))
+
+        host = self.name
         if path:
             self.log('path : ' + path)
             cmd.insert(0, 'cd ' + path + ';')
+        if self._name == 'clouder.container':
+            cmd.insert(0, 'docker exec ' + self.name)
+            host = self.server_id.name
+
+        if not ssh:
+            ssh = self.connect(host)
+
+        self.log('host : ' + host)
+        self.log('command : ' + ' '.join(cmd))
         stdin, stdout, stderr = ssh.exec_command(' '.join(cmd))
         if stdin_arg:
             for arg in stdin_arg:
@@ -439,7 +464,7 @@ class ClouderModel(models.AbstractModel):
         return stdout_read
 
     @api.multi
-    def get(self, ssh, source, destination):
+    def get(self, source, destination, ssh=False):
         """
         Method which can be used with an ssh connection to transfer files.
 
@@ -447,13 +472,23 @@ class ClouderModel(models.AbstractModel):
         :param source: The path we need to get the file.
         :param destination: The path we need to send the file.
         """
+
+        host = self.name
+        if self._name == 'clouder.container':
+            #TODO
+            self.insert(0, 'docker exec ' + self.name)
+            host = self.server_id.name
+
+        if not ssh:
+            ssh = self.connect(host)
+
         sftp = ssh.open_sftp()
         self.log('get : ' + source + ' to ' + destination)
         sftp.get(source, destination)
         sftp.close()
 
     @api.multi
-    def send(self, ssh, source, destination):
+    def send(self, source, destination, ssh=False):
         """
         Method which can be used with an ssh connection to transfer files.
 
@@ -461,6 +496,16 @@ class ClouderModel(models.AbstractModel):
         :param source: The path we need to get the file.
         :param destination: The path we need to send the file.
         """
+
+        host = self.name
+        if self._name == 'clouder.container':
+            #TODO
+            self.insert(0, 'docker exec ' + self.name)
+            host = self.server_id.name
+
+        if not ssh:
+            ssh = self.connect(host)
+
         sftp = ssh.open_sftp()
         self.log('send : ' + source + ' to ' + destination)
         sftp.put(source, destination)

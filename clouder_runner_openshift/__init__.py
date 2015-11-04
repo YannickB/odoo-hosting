@@ -20,5 +20,4 @@
 #
 ##############################################################################
 
-import clouder_runner_docker
-import clouder_template_docker
+# import clouder_runner_openshift

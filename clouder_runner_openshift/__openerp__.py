@@ -20,5 +20,19 @@
 #
 ##############################################################################
 
-import clouder_runner_docker
-import clouder_template_docker
+{
+    'name': 'Clouder Runner OpenShift',
+    'version': '1.0',
+    'category': 'Clouder',
+    'depends': ['clouder'],
+    'author': 'Yannick Buron (Clouder)',
+    'license': 'Other OSI approved licence',
+    'website': 'https://github.com/clouder-community/clouder',
+    'description': """
+    Clouder Runner OpenShift
+    """,
+    'demo': [],
+    'data': ['clouder_template_openshift_data.xml'],
+    'installable': True,
+    'application': True,
+}
