@@ -304,11 +304,12 @@
                 <form string="Server" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <field name="ip"/>
-                        <field name="ssh_port"/>
                         <field name="runner_id" widget="selection"/>
-                        <field name="private_key"/>
-                        <field name="public_key"/>
+                        <field name="ip" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
+                        <field name="ssh_port" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
+                        <newline/>
+                        <field name="private_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
+                        <field name="public_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <field name="start_port"/>
                         <field name="end_port"/>
                         <field name="supervision_id"/>

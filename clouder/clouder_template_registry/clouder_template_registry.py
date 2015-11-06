@@ -49,6 +49,13 @@ class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
 
     @api.multi
+    def hook_deploy_source(self):
+        if self.image_id.name == 'img_registry':
+            return self.image_version_id.fullname
+        else:
+            return super(ClouderContainer, self).hook_deploy_source()
+
+    @api.multi
     def deploy(self):
         """
         Build the registry image directly when we deploy the container.

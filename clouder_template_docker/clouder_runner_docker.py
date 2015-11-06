@@ -39,24 +39,23 @@ class ClouderImageVersion(models.Model):
 
         if self.registry_id.application_id.type_id.name == 'registry':
 
-            ssh = self.connect(self.registry_id.server_id.name)
             tmp_dir = '/tmp/' + self.image_id.name + '_' + self.fullname
-            self.execute(ssh, ['mkdir', '-p', tmp_dir])
+            server = self.registry_id.server_id
+            server.execute(['mkdir', '-p', tmp_dir])
 
-            self.execute(ssh, [
+            server.execute([
                 'echo "' + dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
-            self.execute(ssh,
+            server.execute(
                          ['sudo', 'docker', 'build', '-t', self.fullname, tmp_dir])
-            self.execute(ssh, ['sudo', 'docker', 'tag', self.fullname,
+            server.execute(['sudo', 'docker', 'tag', self.fullname,
                                self.fullpath_localhost])
-            self.execute(ssh,
+            server.execute(
                          ['sudo', 'docker', 'push', self.fullpath_localhost])
-            self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname])
-            self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost])
-            self.execute(ssh, ['rm', '-rf', tmp_dir])
-            ssh.close()
-        return
+            server.execute(['sudo', 'docker', 'rmi', self.fullname])
+            server.execute(['sudo', 'docker', 'rmi', self.fullpath_localhost])
+            server.execute(['rm', '-rf', tmp_dir])
+        return res
 
     @api.multi
     def purge(self):
@@ -68,13 +67,11 @@ class ClouderImageVersion(models.Model):
 
         if self.registry_id.application_id.type_id.name == 'registry':
 
-            ssh = self.connect(self.registry_id.fullname)
             img_address = self.registry_id and 'localhost:' + \
                           self.registry_id.ports['registry']['localport'] +\
                           '/v1/repositories/' + self.image_id.name + '/tags/' + \
                           self.name
-            self.execute(ssh, ['curl', '-o curl.txt -X', 'DELETE', img_address])
-            ssh.close()
+            self.registry_id.execute(ssh, ['curl', '-o curl.txt -X', 'DELETE', img_address])
 
         return res
 
@@ -87,6 +84,28 @@ class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
 
     @api.multi
+    def hook_deploy_source(self):
+
+        res = super(ClouderContainer, self).hook_deploy_source()
+        if res:
+            return res
+        else:
+            if self.server_id == self.image_version_id.registry_id.server_id:
+                return self.image_version_id.fullpath_localhost
+            else:
+                folder = '/etc/docker/certs.d/' +\
+                         self.image_version_id.registry_address
+                certfile = folder + '/ca.crt'
+                tmp_file = '/tmp/' + self.fullname
+                self.server_id.execute(['rm', certfile])
+                self.image_version_id.registry_id.get(
+                         '/etc/ssl/certs/docker-registry.crt', tmp_file)
+                self.server_id.execute(['mkdir', '-p', folder])
+                self.server_id.send(tmp_file, certfile)
+                self.server_id.execute_local(['rm', tmp_file])
+                return self.image_version_id.fullpath
+
+    @api.multi
     def hook_deploy(self, ports, volumes):
         """
         Deploy the container in the server.
@@ -95,9 +114,7 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).hook_deploy(ports, volumes)
 
         if not self.server_id.runner_id or \
-                self.server_id.runner_id.application.type_id.name == 'docker':
-
-            ssh = self.connect(self.server_id.name)
+                self.server_id.runner_id.application_id.type_id.name == 'docker':
 
             cmd = ['sudo', 'docker', 'run', '-d', '--restart=always']
             for port in ports:
@@ -116,33 +133,9 @@ class ClouderContainer(models.Model):
                                 ':' + link.name.name.code])
             if self.privileged:
                 cmd.extend(['--privileged'])
-            cmd.extend(['-v', '/opt/keys/' + self.fullname +
-                        ':/opt/keys', '--name', self.name])
+            cmd.extend(['--name', self.name])
 
-            if self.image_id.name == 'img_registry':
-                cmd.extend([self.image_version_id.fullname])
-            elif self.server_id == self.image_version_id.registry_id.server_id:
-                cmd.extend([self.image_version_id.fullpath_localhost])
-            else:
-                folder = '/etc/docker/certs.d/' +\
-                         self.image_version_id.registry_address
-                certfile = folder + '/ca.crt'
-                tmp_file = '/tmp/' + self.fullname
-                self.execute(ssh, ['rm', certfile])
-                ssh_registry = self.connect(
-                    self.image_version_id.registry_id.fullname)
-                self.get(ssh_registry,
-                         '/etc/ssl/certs/docker-registry.crt', tmp_file)
-                ssh_registry.close()
-                self.execute(ssh, ['mkdir', '-p', folder])
-                self.send(ssh, tmp_file, certfile)
-                self.execute_local(['rm', tmp_file])
-                cmd.extend([self.image_version_id.fullpath])
-
-            # Deploy key now, otherwise the container will be angry
-            # to not find the key.
-            # We can't before because self.ssh_port may not be set
-            self.deploy_key()
+            cmd.extend([self.hook_deploy_source()])
 
             #Run container
             self.server_id.execute(cmd)
@@ -156,15 +149,10 @@ class ClouderContainer(models.Model):
         """
         res = super(ClouderContainer, self).purge()
 
-        self.stop()
-
         if not self.server_id.runner_id or \
-                self.server_id.runner_id.application.type_id.name == 'docker':
+                self.server_id.runner_id.application_id.type_id.name == 'docker':
 
-            ssh = self.connect(self.server_id.name)
             self.server_id.execute(['sudo', 'docker', 'rm', self.name])
-            self.server_id.execute(['rm', '-rf', '/opt/keys/' + self.fullname])
-            ssh.close()
 
         return res
 
@@ -177,7 +165,7 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).stop()
 
         if not self.server_id.runner_id or \
-                self.server_id.runner_id.application.type_id.name == 'docker':
+                self.server_id.runner_id.application_id.type_id.name == 'docker':
 
             ssh = self.connect(self.server_id.name)
             self.server_id.execute(['docker', 'stop', self.name])
@@ -194,7 +182,7 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).start()
 
         if not self.server_id.runner_id or \
-                self.server_id.runner_id.application.type_id.name == 'docker':
+                self.server_id.runner_id.application_id.type_id.name == 'docker':
 
             ssh = self.connect(self.server_id.name)
             self.server_id.execute(['docker', 'start', self.name])

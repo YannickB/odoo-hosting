@@ -107,15 +107,15 @@ class ClouderServer(models.Model):
         return key
 
     name = fields.Char('Domain name', size=64, required=True)
-    ip = fields.Char('IP', size=64, required=True)
     runner_id = fields.Many2one('clouder.container', 'Runner')
-    ssh_port = fields.Integer('SSH port', required=True)
+    ip = fields.Char('IP', size=64)
+    ssh_port = fields.Integer('SSH port')
 
     private_key = fields.Text(
-        'SSH Private Key', required=True,
+        'SSH Private Key',
         default=_default_private_key)
     public_key = fields.Text(
-        'SSH Public Key', required=True,
+        'SSH Public Key',
         default=_default_public_key)
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
@@ -126,7 +126,8 @@ class ClouderServer(models.Model):
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Name must be unique!'),
+        ('name_uniq', 'unique(name, ssh_port)',
+         'Name/SSH must be unique!'),
     ]
 
     @api.one
@@ -143,7 +144,7 @@ class ClouderServer(models.Model):
         if not re.match("^[\d:.]*$", self.ip):
             raise except_orm(
                 _('Data error!'),
-                _("Admin name can only contains digits, dots and :"))
+                _("IP can only contains digits, dots and :"))
 
     @api.multi
     def start_containers(self):
@@ -170,7 +171,7 @@ class ClouderServer(models.Model):
         """
         Test connection to the server.
         """
-        ssh = self.connect(self.name)
+        ssh = self.connect()
         ssh.close()
 
     @api.multi
@@ -289,13 +290,6 @@ class ClouderContainer(models.Model):
                          if not volume.nosave])
 
     @property
-    def ssh_port(self):
-        """
-        Property returning the ssh port to the container.
-        """
-        return self.ports['ssh']['hostport'] or 22
-
-    @property
     def root_password(self):
         """
         Property returning the root password of the application
@@ -360,7 +354,7 @@ class ClouderContainer(models.Model):
         Check that a backup server is specified.
         """
         if not self.backup_ids and self.application_id.type_id.name \
-                not in ['backup', 'backup_upload', 'archive', 'registry']:
+                not in ['backup', 'backup_upload', 'archive', 'registry', 'openshift']:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify at least one backup container."))
@@ -615,6 +609,13 @@ class ClouderContainer(models.Model):
         return save
 
     @api.multi
+    def hook_deploy_source(self):
+        """
+        Hook which can be called by submodules to change the source of the image.
+        """
+        return
+
+    @api.multi
     def hook_deploy(self, ports, volumes):
         """
         Hook which can be called by submodules to execute commands to
@@ -636,8 +637,6 @@ class ClouderContainer(models.Model):
         Deploy the container in the server.
         """
         self.purge()
-
-        ssh = self.connect(self.server_id.name)
 
         ports = []
         volumes = []
@@ -666,8 +665,6 @@ class ClouderContainer(models.Model):
             if volume.hostpath:
                 volumes.append(volume)
 
-        ssh.close()
-
         self.hook_deploy(ports, volumes)
 
         time.sleep(3)
@@ -686,7 +683,8 @@ class ClouderContainer(models.Model):
         """
         Remove the container.
         """
-        self.purge_key()
+
+        self.stop()
 
         return
 
@@ -706,56 +704,6 @@ class ClouderContainer(models.Model):
         """
         self.stop()
         return
-
-
-    @api.multi
-    def deploy_key(self):
-        """
-        Generate a new key and move it to the container so the clouder can
-        access it.
-        """
-        self.purge_key()
-        self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
-                            self.email_sysadmin, '-f', self.home_directory +
-                            '/.ssh/keys/' + self.fullname, '-N', ''])
-        self.execute_write_file(self.home_directory + '/.ssh/config',
-                                'Host ' + self.fullname)
-        self.execute_write_file(self.home_directory + '/.ssh/config',
-                                '\n  HostName ' + self.server_id.ip)
-        self.execute_write_file(self.home_directory + '/.ssh/config',
-                                '\n  Port ' + str(self.ssh_port))
-        self.execute_write_file(self.home_directory + '/.ssh/config',
-                                '\n  User root')
-        self.execute_write_file(
-            self.home_directory + '/.ssh/config',
-            '\n  IdentityFile ~/.ssh/keys/' + self.fullname)
-        self.execute_write_file(self.home_directory + '/.ssh/config',
-                                '\n#END ' + self.fullname + '\n')
-        # ssh = self.connect(self.server_id.name)
-        self.server_id.execute(['mkdir', '-p', '/opt/keys/' + self.fullname])
-        self.server_id.send(self.home_directory + '/.ssh/keys/' +
-                  self.fullname + '.pub', '/opt/keys/' +
-                  self.fullname + '/authorized_keys')
-        # ssh.close()
-
-    @api.multi
-    def purge_key(self):
-        """
-        Remove the key.
-        """
-        self.execute_local([
-            modules.get_module_path('clouder') + '/res/sed.sh',
-            self.fullname, self.home_directory + '/.ssh/config'])
-        self.execute_local([
-            'rm', '-rf', self.home_directory +
-            '/.ssh/keys/' + self.fullname])
-        self.execute_local([
-            'rm', '-rf', self.home_directory +
-            '/.ssh/keys/' + self.fullname + '.pub'])
-        # ssh = self.connect(self.server_id.name)
-        self.server_id.execute([
-            'rm', '-rf', '/opt/keys/' + self.fullname + '/authorized_keys'])
-        # ssh.close()
 
 
 class ClouderContainerPort(models.Model):

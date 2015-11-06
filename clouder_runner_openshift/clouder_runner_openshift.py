@@ -24,6 +24,8 @@ from openerp import models, api, _, modules
 from openerp.exceptions import except_orm
 import time
 
+import logging
+_logger = logging.getLogger(__name__)
 
 class ClouderContainer(models.Model):
     """
@@ -43,17 +45,14 @@ class ClouderContainer(models.Model):
         if self.server_id.runner_id.application_id.type_id.name == 'openshift':
 
 
-            ports_dict = []
+            ports_dict = '['
             for port in ports:
-                ports_dict.append(
-                    {
-                        'name': port.name,
-                        'protocol': port.udp and 'UDP' or 'TCP',
-                        'port': port.localport,
-                        'targetPort': port.hostport,
-                        'nodePort': 0
-                    }
-                )
+                ports_dict += '{"name": "' +  port.name + '", '
+                ports_dict += '"protocol": "' +  (port.udp and 'UDP' or 'TCP') + '",'
+                ports_dict += '"port": ' +  port.localport + ','
+                ports_dict += '"targetPort": ' +  port.hostport + ','
+                ports_dict += '"nodePort": 0}'
+            ports_dict += ']'
                 
             volume_mounts_dict = []
             volumes_dict = []
@@ -75,28 +74,29 @@ class ClouderContainer(models.Model):
                     }
                 )
 
-            ssh = self.connect(self.server_id.runner_id.name)
-            service_file = '/opt/odoo/' + self.name + '/etc/config'
-            self.send(ssh, modules.get_module_path('clouder_runner_openshift') +
+            _logger.info('%s', ports_dict.replace('\"', '\\"'))
+
+            runner = self.server_id.runner_id
+            service_file = '/tmp/config'
+            runner.send(modules.get_module_path('clouder_runner_openshift') +
                       '/res/service.config', service_file)
-            self.execute(ssh, ['sed', '-i', '"s/CONTAINER_NAME/' +
+            runner.execute(['sed', '-i', '"s/CONTAINER_NAME/' +
                                self.name + '/g"',
                                service_file])
-            self.execute(ssh, ['sed', '-i', '"s/IMAGE_NAME/' +
-                               self.image_version_id.localpath + '/g"',
+            runner.execute(['sed', '-i', '"s/IMAGE_NAME/' +
+                               self.image_version_id.fullpath_localhost.replace('/','\/') + '/g"',
                                service_file])
-            self.execute(ssh, ['sed', '-i', '"s/PORTS/' +
-                               str(ports_dict) + '/g"',
+            runner.execute(['sed', '-i', '"s/PORTS/' +
+                               ports_dict.replace('\"', '\\"') + '/g"',
                                service_file])
-            self.execute(ssh, ['sed', '-i', '"s/VOLUME_MOUNTS/' +
+            runner.execute(['sed', '-i', '"s/VOLUME_MOUNTS/' +
                                str(volume_mounts_dict) + '/g"',
                                service_file])
-            self.execute(ssh, ['sed', '-i', '"s/VOLUMES/' +
+            runner.execute(['sed', '-i', '"s/VOLUMES/' +
                                str(volumes_dict) + '/g"',
                                service_file])
-            self.execute(ssh, ['oc', 'create', '-f', service_file])
-            self.execute(ssh, ['rm', service_file])
-            ssh.close()
+            runner.execute(['oc', 'create', '-f', service_file])
+            runner.execute(['rm', service_file])
 
         return res
 
@@ -107,13 +107,12 @@ class ClouderContainer(models.Model):
         """
         res = super(ClouderContainer, self).purge()
 
-        if self.server_id.runner_id.name == 'docker':
+        if self.server_id.runner_id.application_id.type_id.name == 'openshift':
 
-            ssh = self.connect(self.server_id.name)
-            self.stop()
-            self.execute(ssh, ['sudo', 'docker', 'rm', self.name])
-            self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname])
-            ssh.close()
+            runner = self.server_id.runner_id
+            runner.execute(['oc', 'stop', 'dc', self.name])
+            runner.execute(['oc', 'delete', 'route', self.name])
+            runner.execute(['oc', 'stop', 'svc', self.name])
 
         return res
 
@@ -125,11 +124,11 @@ class ClouderContainer(models.Model):
 
         res = super(ClouderContainer, self).stop()
 
-        if self.server_id.runner_id.name == 'docker':
-
-            ssh = self.connect(self.server_id.name)
-            self.execute(ssh, ['docker', 'stop', self.name])
-            ssh.close()
+        # if self.server_id.runner_id.name == 'docker':
+        #
+        #     ssh = self.connect(self.server_id.name)
+        #     self.execute(ssh, ['docker', 'stop', self.name])
+        #     ssh.close()
 
         return res
 
@@ -138,15 +137,14 @@ class ClouderContainer(models.Model):
         """
         Restart the container.
         """
-        self.stop()
 
         res = super(ClouderContainer, self).start()
 
-        if self.server_id.runner_id.name == 'docker':
-
-            ssh = self.connect(self.server_id.name)
-            self.execute(ssh, ['docker', 'start', self.name])
-            ssh.close()
-            time.sleep(3)
+        # if self.server_id.runner_id.name == 'docker':
+        #
+        #     ssh = self.connect(self.server_id.name)
+        #     self.execute(ssh, ['docker', 'start', self.name])
+        #     ssh.close()
+        #     time.sleep(3)
 
         return res

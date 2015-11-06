@@ -20,4 +20,5 @@
 #
 ##############################################################################
 
-# import clouder_runner_openshift
+import clouder_runner_openshift
+import clouder_template_openshift

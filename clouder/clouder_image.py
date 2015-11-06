@@ -77,8 +77,7 @@ class ClouderImage(models.Model):
         """
         Method to generate a new image version.
         """
-        if not self.dockerfile:
-            return
+
         if not self.registry_id and self.name != 'img_registry':
             raise except_orm(
                 _('Date error!'),
@@ -247,7 +246,7 @@ class ClouderImageVersion(models.Model):
 
         dockerfile += '\nMAINTAINER ' + self.email_sysadmin + '\n'
 
-        dockerfile += self.image_id.dockerfile
+        dockerfile += self.image_id.dockerfile or ''
         for volume in self.image_id.volume_ids:
             dockerfile += '\nVOLUME ' + volume.name
 
