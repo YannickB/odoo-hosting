@@ -200,6 +200,7 @@
             <field name="name">Containers</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">clouder.container</field>
+            <field name="domain">[('parent_id', '=', False)]</field>
             <field name="view_type">form</field>
         </record>
 
@@ -230,7 +231,7 @@
                                     <field name="value"/>
                                 </tree>
                             </field>
-                            <field name="port_ids" colspan="4">
+                            <field name="port_ids" colspan="4" attrs="{'invisible': [('child_ids','!=', [])]}">
                                 <tree string="Ports" editable="bottom">
                                     <field name="name"/>
                                     <field name="localport"/>
@@ -239,9 +240,10 @@
                                     <field name="udp"/>
                                 </tree>
                             </field>
-                            <field name="volume_ids" colspan="4">
+                            <field name="volume_ids" colspan="4" attrs="{'invisible': [('child_ids','!=', [])]}">
                                 <tree string="Volumes" editable="bottom">
                                     <field name="name"/>
+                                    <field name="from_id"/>
                                     <field name="hostpath"/>
                                     <field name="user"/>
                                     <field name="readonly"/>
@@ -255,6 +257,15 @@
                                     <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>
                                     <button name="purge_" type="object" string="Purge"/>
+                                </tree>
+                            </field>
+                            <field name="child_ids" colspan="4">
+                                <tree string="Childs" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="server_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
+                                    <field name="child_id"/>
+                                    <button name="deploy" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
+                                    <button name="purge" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
@@ -603,6 +614,7 @@
             <field name="name">Applications</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">clouder.application</field>
+            <field name="domain">[('parent_id', '=', False)]</field>
             <field name="view_type">form</field>
         </record>
 
@@ -624,6 +636,7 @@
                         <field name="admin_email"/>
                         <field name="public"/>
                         <field name="partner_id"/>
+                        <field name="sequence"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -643,6 +656,14 @@
                                     <field name="service"/>
                                     <field name="base"/>
                                     <field name="next" domain="[('application_id','=',name)]"/>
+                                </tree>
+                            </field>
+                            <field name="child_ids" colspan="4">
+                                <tree string="Childs">
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="sequence"/>
+                                    <field name="next_server_id"/>
                                 </tree>
                             </field>
                             <field name="buildfile" colspan="4"/>
@@ -743,6 +764,7 @@
                     <field name="volume_ids" colspan="4">
                         <tree string="Volumes" editable="bottom">
                             <field name="name"/>
+                            <field name="from_code"/>
                             <field name="hostpath"/>
                             <field name="user"/>
                             <field name="readonly"/>

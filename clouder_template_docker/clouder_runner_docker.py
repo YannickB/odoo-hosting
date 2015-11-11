@@ -129,6 +129,8 @@ class ClouderContainer(models.Model):
                 if volume.readonly:
                     arg += ':ro'
                 cmd.extend(['-v', arg])
+                if volume.from_id:
+                    cmd.extend(['--volume-from', volume.from_id.name])
             for link in self.link_ids:
                 if link.name.make_link and link.target.server_id == self.server_id:
                     cmd.extend(['--link', link.target.name +

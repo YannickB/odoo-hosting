@@ -103,6 +103,7 @@ class ClouderImageVolume(models.Model):
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
                                required=True)
     name = fields.Char('Path', size=128, required=True)
+    from_code = fields.Char('From', size=64)
     hostpath = fields.Char('Host path', size=128)
     user = fields.Char('System User', size=64)
     readonly = fields.Boolean('Readonly?')

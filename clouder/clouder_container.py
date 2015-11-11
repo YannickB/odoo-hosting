@@ -263,6 +263,9 @@ class ClouderContainer(models.Model):
                                'container_id', 'Links')
     service_ids = fields.One2many('clouder.service',
                                   'container_id', 'Services')
+    parent_id = fields.Many2one('clouder.container.child', 'Parent')
+    child_ids = fields.One2many('clouder.container.child',
+                                'container_id', 'Childs')
     ports_string = fields.Text('Ports', compute='_get_ports')
     backup_ids = fields.Many2many(
         'clouder.container', 'clouder_container_backup_rel',
@@ -419,11 +422,6 @@ class ClouderContainer(models.Model):
         """
         if self.application_id:
             self.server_id = self.application_id.next_server_id
-            self.image_id = self.application_id.default_image_id
-            self.privileged = self.application_id.default_image_id.privileged
-            self.image_version_id = \
-                self.application_id.default_image_id.version_ids \
-                and self.application_id.default_image_id.version_ids[0]
 
             options = []
             for type_option in self.application_id.type_id.option_ids:
@@ -449,6 +447,17 @@ class ClouderContainer(models.Model):
                         links.append((0, 0, {'name': app_link,
                                              'target': app_link.next}))
             self.link_ids = links
+
+            childs = []
+            for child in self.application_id.child_ids:
+                childs.append((0, 0, {'name': child, 'server_id': child.next_server_id or self.server_id}))
+            self.child_ids = childs
+
+            self.image_id = self.application_id.default_image_id
+            self.privileged = self.application_id.default_image_id.privileged
+            self.image_version_id = \
+                self.application_id.default_image_id.version_ids \
+                and self.application_id.default_image_id.version_ids[0]
 
             self.backup_ids = [(6, 0, [
                 b.id for b in self.application_id.container_backup_ids])]
@@ -479,8 +488,11 @@ class ClouderContainer(models.Model):
 
             volumes = []
             for volume in self.image_id.volume_ids:
+                from_id = False
+                if volume.from_code in self.parent_id.container_id.childs:
+                    from_id = self.parent_id.container_id.childs[volume.from_code]
                 volumes.append(((0, 0, {
-                    'name': volume.name, 'hostpath': volume.hostpath,
+                    'name': volume.name, 'from_id': from_id, 'hostpath': volume.hostpath,
                     'user': volume.user, 'readonly': volume.readonly,
                     'nosave': volume.nosave})))
             self.volume_ids = volumes
@@ -637,45 +649,48 @@ class ClouderContainer(models.Model):
         """
         super(ClouderContainer, self).deploy()
 
-        ports = []
-        volumes = []
-        nextport = self.server_id.start_port
-        for port in self.port_ids:
-            if not port.hostport:
-                while not port.hostport \
-                        and nextport != self.server_id.end_port:
-                    port_ids = self.env['clouder.container.port'].search(
-                        [('hostport', '=', nextport),
-                         ('container_id.server_id', '=', self.server_id.id)])
-                    if not port_ids and not self.server_id.execute([
-                            'netstat', '-an', '|', 'grep', str(nextport)]):
-                        port.hostport = nextport
-                    nextport += 1
-            if not port.hostport:
-                raise except_orm(
-                    _('Data error!'),
-                    _("We were not able to assign an hostport to the "
-                      "localport " + port.localport + ".\n"
-                      "If you don't want to assign one manually, make sure you"
-                      " fill the port range in the server configuration, and "
-                      "that all ports in that range are not already used."))
-            ports.append(port)
-        for volume in self.volume_ids:
-            if volume.hostpath:
-                volumes.append(volume)
+        if self.child_ids:
+            self.child_ids.deploy()
+        else:
+            ports = []
+            volumes = []
+            nextport = self.server_id.start_port
+            for port in self.port_ids:
+                if not port.hostport:
+                    while not port.hostport \
+                            and nextport != self.server_id.end_port:
+                        port_ids = self.env['clouder.container.port'].search(
+                            [('hostport', '=', nextport),
+                             ('container_id.server_id', '=', self.server_id.id)])
+                        if not port_ids and not self.server_id.execute([
+                                'netstat', '-an', '|', 'grep', str(nextport)]):
+                            port.hostport = nextport
+                        nextport += 1
+                if not port.hostport:
+                    raise except_orm(
+                        _('Data error!'),
+                        _("We were not able to assign an hostport to the "
+                          "localport " + port.localport + ".\n"
+                          "If you don't want to assign one manually, make sure you"
+                          " fill the port range in the server configuration, and "
+                          "that all ports in that range are not already used."))
+                ports.append(port)
+            for volume in self.volume_ids:
+                if volume.hostpath:
+                    volumes.append(volume)
 
-        self.hook_deploy(ports, volumes)
+            self.hook_deploy(ports, volumes)
 
-        time.sleep(3)
+            time.sleep(3)
 
-        self.deploy_post()
+            self.deploy_post()
 
-        self.start()
+            self.start()
 
-        #For shinken
-        self.save()
+            #For shinken
+            self.save()
 
-        self.deploy_links()
+            self.deploy_links()
 
         return
 
@@ -686,6 +701,8 @@ class ClouderContainer(models.Model):
         """
 
         self.stop()
+
+        self.env['clouder.container.child'].search([('container_id','=',self.id)], order='sequence DESC').purge()
 
         super(ClouderContainer, self).purge()
 
@@ -744,6 +761,7 @@ class ClouderContainerVolume(models.Model):
 
     container_id = fields.Many2one(
         'clouder.container', 'Container', ondelete="cascade", required=True)
+    from_id = fields.Many2one('clouder.container', 'From')
     name = fields.Char('Path', size=128, required=True)
     hostpath = fields.Char('Host path', size=128)
     user = fields.Char('System User', size=64)
@@ -868,3 +886,45 @@ class ClouderContainerLink(models.Model):
         """
         self.control() and self.purge_link()
 
+
+class ClouderContainerChild(models.Model):
+    """
+    Define the container.link object, used to specify the applications linked
+    to a container.
+    """
+
+    _name = 'clouder.container.child'
+
+    container_id = fields.Many2one(
+        'clouder.container', 'Container', ondelete="cascade", required=True)
+    name = fields.Many2one(
+        'clouder.application', 'Application', required=True)
+    sequence = fields.Integer('Sequence')
+    server_id = fields.Many2one(
+        'clouder.server', 'Server')
+    child_id = fields.Many2one(
+        'clouder.container', 'Container', ondelete="cascade", readonly=True)
+
+    _order = 'sequence'
+
+    @api.one
+    @api.constrains('child_id')
+    def _check_child_id(self):
+        if self.child_id and not self.child_id.parent_id == self:
+            raise except_orm(
+                _('Data error!'),
+                _("The child container is not correctly linked to the parent"))
+
+    @api.multi
+    def deploy(self):
+        self.purge()
+        self.child_id = self.env['clouder.container'].create({
+            'name': self.container_id.name + '-' + self.name.code,
+            'parent_id': self,
+            'application_id': self.name,
+            'server_id': self.server_id
+        })
+
+    @api.multi
+    def purge(self):
+        self.child_id and self.child_id.unlink()

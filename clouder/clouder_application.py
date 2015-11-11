@@ -121,6 +121,9 @@ class ClouderApplication(models.Model):
                                'Links')
     link_target_ids = fields.One2many('clouder.application.link', 'name',
                                       'Links Targets')
+    parent_id = fields.Many2one('clouder.application', 'Parent')
+    sequence = fields.Integer('Sequence')
+    child_ids = fields.One2many('clouder.application', 'parent_id', 'Childs')
     version_ids = fields.One2many('clouder.application.version',
                                   'application_id', 'Versions')
     buildfile = fields.Text('Build File')
@@ -207,8 +210,10 @@ class ClouderApplication(models.Model):
         return options
 
     _sql_constraints = [
-        ('code_uniq', 'unique(code)', 'Code must be unique!'),
+        ('code_uniq', 'unique(parent_id, code)', 'Code must be unique!'),
     ]
+
+    _order = 'code, sequence'
 
     @api.one
     @api.constrains('code', 'admin_name', 'admin_email')
