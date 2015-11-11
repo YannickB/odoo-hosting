@@ -583,7 +583,6 @@ class ClouderContainer(models.Model):
                      'or the backup isnt configured in conf, '
                      'skipping save container')
             return
-        self = self.with_context(self.create_log('save'))
 
         for backup_server in self.backup_ids:
             save_vals = {
@@ -606,7 +605,6 @@ class ClouderContainer(models.Model):
             or self.application_id.container_time_between_save
         )).strftime("%Y-%m-%d %H:%M:%S")
         self.write({'save_comment': False, 'date_next_save': date_next_save})
-        self.end_log()
         return save
 
     @api.multi

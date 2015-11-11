@@ -2,6 +2,20 @@
 <openerp>
     <data>
 
+        <record id="view_queue_job_form_clouder" model="ir.ui.view">
+            <field name="name">queue.job.form</field>
+            <field name="model">queue.job</field>
+            <field name="inherit_id" ref="connector.view_queue_job_form"/>
+            <field name="arch" type="xml">
+                <group name="result" position="before">
+                    <group name="clouder_trace" string="Clouder Trace" attrs="{'invisible': [('clouder_trace', '=', False)]}">
+                        <field nolabel="1" name="clouder_trace"/>
+                    </group>
+                </group>
+            </field>
+        </record>
+
+
         <menuitem id="menu_clouder" name="Clouder" sequence="40"/>
 
         <menuitem id="menu_clouder_clouder" name="Clouder" parent="menu_clouder" sequence="5"/>
@@ -69,7 +83,7 @@
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
-                            <field name="log_ids" colspan="4"/>
+                            <field name="job_ids" colspan="4"/>
                         </page>
                         <page string="Save">
                             <group col="4">
@@ -159,7 +173,7 @@
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
-                            <field name="log_ids" colspan="4"/>
+                            <field name="job_ids" colspan="4"/>
                         </page>
                         <page string="Invoicing">
                             <field name="partner_ids" colspan="4"/>
@@ -247,7 +261,7 @@
                             <button name="start" string="Restart" type="object"/>
                             <button name="stop" string="Stop" type="object"/>
                             <button name="deploy_key" string="Reset Key" type="object"/>
-                            <field name="log_ids" colspan="4"/>
+                            <field name="job_ids" colspan="4"/>
                         </page>
                         <page string="Save">
                             <group col="4">
@@ -320,7 +334,7 @@
                     <button name="test_connection" string="Test connection" type="object"/>
                     <button name="start_containers" string="Restart Containers" type="object"/>
                     <button name="stop_containers" string="Stop Containers" type="object"/>
-                    <field name="log_ids" colspan="4"/>
+                    <field name="job_ids" colspan="4"/>
                 </form>
             </field>
         </record>
@@ -476,7 +490,7 @@
                       <field name="base_restore_to_domain_id" attrs="{'invisible':[('type','!=','base')]}"/>
                     </group>
                     <button name="restore" string="Restore" type="object"/>
-                    <field name="log_ids" colspan="4"/>
+                    <field name="job_ids" colspan="4"/>
                 </form>
             </field>
         </record>
@@ -526,7 +540,7 @@
                         <field name="partner_id"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
-                    <field name="log_ids" colspan="4"/>
+                    <field name="job_ids" colspan="4"/>
                 </form>
             </field>
         </record>
@@ -687,7 +701,7 @@
                         <field name="archive_id"/>
                     </group>
                     <button name="build_database" string="Build Database" type="object"/> <!-- TODO Click on this button to generate a build-appcode.yolo-consulting.net, dump the base and save in the archive file so it can be use later by restore method. Then drop build-appcode.yolo-consulting.net.-->
-                    <field name="log_ids" colspan="4"/>
+                    <field name="job_ids" colspan="4"/>
                 </form>
             </field>
         </record>
@@ -702,51 +716,6 @@
                 </tree>
             </field>
         </record>
-
-
-        <record id="action_clouder_log_form" model="ir.actions.act_window">
-            <field name="name">Logs</field>
-            <field name="type">ir.actions.act_window</field>
-            <field name="res_model">clouder.log</field>
-            <field name="view_type">form</field>
-        </record>
-
-        <menuitem action="action_clouder_log_form" id="menu_action_clouder_log_form" parent="menu_clouder_configuration"/>
-
-        <record id="view_clouder_log_form" model="ir.ui.view">
-            <field name="name">clouder.log.form</field>
-            <field name="model">clouder.log</field>
-            <field name="arch" type="xml">
-                <form string="Version" version="7.0">
-                    <group col="4">
-                        <field name="model"/>
-                        <field name="res_id"/>
-                        <field name="name"/>
-                        <field name="action"/>
-                        <field name="create_date"/>
-                        <field name="expiration_date"/>
-                        <newline/>
-                        <field name="description" colspan="4"/>
-                        <field name="state"/>
-                    </group>
-                </form>
-            </field>
-        </record>
-        <record id="view_clouder_log_tree" model="ir.ui.view">
-            <field name="name">clouder.log.tree</field>
-            <field name="model">clouder.log</field>
-            <field name="arch" type="xml">
-                <tree string="Versions">
-                    <field name="model"/>
-                    <field name="res_id"/>
-                    <field name="name"/>
-                    <field name="action"/>
-                    <field name="create_date"/>
-                    <field name="state"/>
-                </tree>
-            </field>
-        </record>
-
 
         <record id="action_clouder_image_form" model="ir.actions.act_window">
             <field name="name">Images</field>
@@ -830,7 +799,7 @@
                         <field name="parent_id"/>
                         <field name="registry_id"/>
                     </group>
-                    <field name="log_ids" colspan="4"/>
+                    <field name="job_ids" colspan="4"/>
                 </form>
             </field>
         </record>

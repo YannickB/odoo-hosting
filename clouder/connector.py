@@ -20,101 +20,43 @@
 #
 ##############################################################################
 
-
-from openerp import models, fields, api, _
-from openerp.exceptions import except_orm
-from openerp.addons.connector.session import ConnectorSession
-from openerp.addons.connector.queue.job import job
+from openerp.addons.connector.queue.job import _unpickle, job, Job, OpenERPJobStorage
 from openerp.addons.connector.queue import worker
-
-import os
 
 import logging
 _logger = logging.getLogger(__name__)
 
 
+    def perform(self, session):
+        """ Execute the job.
 
-#
-# class QueueJob(models.Model):
-#
-#     _inherit = 'queue.job'
-#
-#
-#
-# rajout champs
-# rajouter un champ fonction/property qui va chercher les job prioritaires
+        The job is executed with the user which has initiated it.
 
-#question pour nico : j'ai une classe (pas une classe openerp) definie dans le module connector, avec une fonction a l'interieur.
-# Est-ce que j'ai moyen de surcharger dans mon module cette fonction de sorte que mon code qui surcharge soit appellé même si c'est le module connecteur qui appelle cette fonction, sans toucher le code du connecteur?
-
-
-class ClouderWorker(worker.Worker):
-    """ Post and retrieve jobs from the queue, execute them"""
-
-    def run_job(self, job):
-        """ Execute a job """
-        #si y'a des fonction prioritaires on return et on rajoute 1 de priorité en plus par rapport a la priorité la plus haute des fonctions prioritaires
-        #super
-        _logger.info('=======OK WORKER======')
-        return super(ClouderWorker, self).run_job(job)
-
-
-
-
-#
-# class Job(object):
-#
-#     def perform(self, session):
-#         _logger.info('=======OK JOB======')
-#         return super(Worker, self).perform(session)
-#         #
-#         # super
-#         # mettre a jour log
-
-
-class ClouderWatcher(worker.WorkerWatcher):
-
-    def _new(self, db_name):
-        _logger.info('=======OK WATCHER======')
-        """ Create a new worker for the database """
-        if db_name in self._workers:
-            raise Exception('Database %s already has a worker (%s)' %
-                            (db_name, self._workers[db_name].uuid))
-        worker = ClouderWorker(db_name, self)
-        self._workers[db_name] = worker
-        worker.daemon = True
-        worker.start()
-
-
-class QueueWorker(models.Model):
-    """ Worker """
-    _inherit = 'queue.worker'
-
-    @api.model
-    def enqueue_jobs(self):
-        """ Enqueue all the jobs assigned to the worker of the current
-        process
+        :param session: session to execute the job
+        :type session: ConnectorSession
         """
-        worker = ClouderWatcher().worker_for_db(self.env.cr.dbname)
-        if worker:
-            self._enqueue_jobs()
-        else:
-            _logger.debug('No worker started for process %s', os.getpid())
-        return True
-
-    def _enqueue_jobs(self):
-        """ Add to the queue of the worker all the jobs not
-        yet queued but already assigned."""
-        job_model = self.env['queue.job']
-        _logger.info('=======OK QUEUEWORKER======')
-        try:
-            db_worker_id = self._worker().id
-        except AssertionError as e:
-            _logger.exception(e)
-            return
-        jobs = job_model.search([('worker_id', '=', db_worker_id),
-                                 ('state', '=', 'pending')],
-                                )
-        worker = ClouderWatcher().worker_for_db(self.env.cr.dbname)
-        for job in jobs:
-            worker.enqueue_job_uuid(job.uuid)
+        assert not self.canceled, "Canceled job"
+        with session.change_user(self.user_id):
+            self.retry += 1
+            try:
+                ############
+                with session.change_context({'job_uuid': self._uuid}):
+                    self.result = self.func(session, *self.args, **self.kwargs)
+                ############
+            except RetryableJobError as err:
+                if err.ignore_retry:
+                    self.retry -= 1
+                    raise
+                elif not self.max_retries:  # infinite retries
+                    raise
+                elif self.retry >= self.max_retries:
+                    type_, value, traceback = sys.exc_info()
+                    # change the exception type but keep the original
+                    # traceback and message:
+                    # http://blog.ianbicking.org/2007/09/12/re-raising-exceptions/
+                    new_exc = FailedJobError("Max. retries (%d) reached: %s" %
+                                             (self.max_retries, value or type_)
+                                             )
+                    raise new_exc.__class__, new_exc, traceback
+                raise
+        return self.result
