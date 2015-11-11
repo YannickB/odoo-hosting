@@ -64,15 +64,16 @@ class ClouderContainer(models.Model):
             # ssh = self.connect(self.server_id.name)
             tmp_dir = '/tmp/' + self.image_id.name + '_' + \
                 self.image_version_id.fullname
-            self.execute(['mkdir', '-p', tmp_dir])
-            self.execute([
+            server = self.server_id
+            server.execute(['mkdir', '-p', tmp_dir])
+            server.execute([
                 'echo "' + self.image_id.dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
-            self.execute(['sudo', 'docker', 'rmi',
+            server.execute(['sudo', 'docker', 'rmi',
                                self.image_version_id.fullname])
-            self.execute(['sudo', 'docker', 'build', '-t',
+            server.execute(['sudo', 'docker', 'build', '-t',
                                self.image_version_id.fullname, tmp_dir])
-            self.execute(['rm', '-rf', tmp_dir])
+            server.execute(['rm', '-rf', tmp_dir])
 
         return super(ClouderContainer, self).deploy()
 
@@ -82,7 +83,6 @@ class ClouderContainer(models.Model):
         """
         if self.application_id.type_id.name == 'registry':
 
-            # ssh = self.connect(self.fullname)
 
             certfile = '/etc/ssl/certs/docker-registry.crt'
             keyfile = '/etc/ssl/private/docker-registry.key'
@@ -95,6 +95,5 @@ class ClouderContainer(models.Model):
                 '-newkey', 'rsa:2048', '-out', certfile, ' -keyout',
                 keyfile, '-subj', '"/C=FR/L=Paris/O=Clouder/CN=' +
                 self.server_id.name + '"'])
-            # ssh.close()
 
         return super(ClouderContainer, self).deploy_post()

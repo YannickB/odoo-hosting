@@ -23,6 +23,7 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 from openerp import modules
+
 import re
 
 import time
@@ -172,7 +173,7 @@ class ClouderServer(models.Model):
         Test connection to the server.
         """
         ssh = self.connect()
-        ssh.close()
+        ssh['ssh'].close()
 
     @api.multi
     def deploy(self):
@@ -636,7 +637,7 @@ class ClouderContainer(models.Model):
         """
         Deploy the container in the server.
         """
-        self.purge()
+        super(ClouderContainer, self).deploy()
 
         ports = []
         volumes = []
@@ -676,6 +677,8 @@ class ClouderContainer(models.Model):
         #For shinken
         self.save()
 
+        self.deploy_links()
+
         return
 
     @api.multi
@@ -685,6 +688,8 @@ class ClouderContainer(models.Model):
         """
 
         self.stop()
+
+        super(ClouderContainer, self).purge()
 
         return
 

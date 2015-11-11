@@ -24,6 +24,8 @@ from openerp import models, api, _
 from openerp.exceptions import except_orm
 import time
 
+import logging
+_logger = logging.getLogger(__name__)
 
 class ClouderImageVersion(models.Model):
     """
@@ -167,9 +169,7 @@ class ClouderContainer(models.Model):
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name == 'docker':
 
-            ssh = self.connect(self.server_id.name)
             self.server_id.execute(['docker', 'stop', self.name])
-            ssh.close()
 
         return res
 
@@ -184,9 +184,8 @@ class ClouderContainer(models.Model):
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name == 'docker':
 
-            ssh = self.connect(self.server_id.name)
             self.server_id.execute(['docker', 'start', self.name])
-            ssh.close()
+
             time.sleep(3)
 
         return res

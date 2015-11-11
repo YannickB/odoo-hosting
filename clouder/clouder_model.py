@@ -23,6 +23,8 @@
 
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
+from openerp.addons.connector.session import ConnectorSession
+from openerp.addons.connector.queue.job import job
 
 from datetime import datetime, timedelta
 import subprocess
@@ -39,6 +41,11 @@ import logging
 _logger = logging.getLogger(__name__)
 
 ssh_connections = {}
+
+@job
+def connector_enqueue(session, model_name, record_id, func_name, *args, **kargs):
+    record = session.env[model_name].browse(record_id)
+    return getattr(record, func_name)(*args, **kargs)
 
 class ClouderLog(models.Model):
     """
@@ -175,6 +182,13 @@ class ClouderModel(models.AbstractModel):
                 _("You need to specify the sysadmin email in configuration"))
 
     @api.multi
+    def enqueue(self, func_name):
+        session = ConnectorSession(self.env.cr, self.env.uid,
+                           context=self.env.context)
+        connector_enqueue.delay(session, self._name, self.id, func_name, description=func_name)
+        #TODO mettre les champs du job a jour, faire le lien avec les objets clouder
+
+    @api.multi
     def create_log(self, action):
         """
         Create the log record and add his id in context.
@@ -258,6 +272,7 @@ class ClouderModel(models.AbstractModel):
         Hook which can be used by inheriting objects to execute actions when
         we create a new record.
         """
+        self.purge()
         return
 
     @api.multi
@@ -266,6 +281,7 @@ class ClouderModel(models.AbstractModel):
         Hook which can be used by inheriting objects to execute actions when
         we delete a record.
         """
+        self.purge_links()
         return
 
     @api.multi
@@ -292,10 +308,8 @@ class ClouderModel(models.AbstractModel):
         Action which purge then redeploy a record.
         """
         self = self.with_context(self.create_log('reinstall'))
-        self.purge_links()
-        self.purge()
-        self.deploy()
-        self.deploy_links()
+        _logger.info(self._name)
+        self.enqueue('deploy')
         self.end_log()
 
     @api.model
@@ -310,7 +324,6 @@ class ClouderModel(models.AbstractModel):
         res = res.with_context(res.create_log('create'))
         try:
             res.deploy()
-            res.deploy_links()
         except:
             res.log('===================')
             res.log('FAIL! Reverting...')
@@ -327,7 +340,6 @@ class ClouderModel(models.AbstractModel):
         Override the default unlink function to create log and call purge hook.
         """
         try:
-            self.purge_links()
             self.purge()
         except:
             pass
