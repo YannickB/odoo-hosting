@@ -21,7 +21,6 @@
 ##############################################################################
 
 import clouder_model
-import connector
 import clouder_config
 import clouder_image
 import clouder_application

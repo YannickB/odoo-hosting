@@ -47,38 +47,13 @@ def connector_enqueue(session, model_name, record_id, func_name, *args, **kargs)
     record = session.env[model_name].browse(record_id)
     return getattr(record, func_name)(*args, **kargs)
 
-class ClouderLog(models.Model):
-    """
-    Define the log object, where is stored the log of the commands after
-    we execute an action.
-    """
 
-    _name = 'clouder.log'
+class QueueJob(models.Model):
 
-    @api.one
-    def _get_name(self):
-        """
-        Return the name of the record linked to this log.
-        """
-        model_obj = self.env[self.model]
-        record = model_obj.browse(self.res_id)
-        if record and hasattr(record, 'name'):
-            self.name = record.name
-        return
+    _inherit = 'queue.job'
 
-    model = fields.Char('Related Document Model', size=128, select=1)
-    res_id = fields.Integer('Related Document ID', select=1)
-    name = fields.Char('Name', compute='_get_name', size=128)
-    action = fields.Char('Action', size=64)
-    description = fields.Text('Description')
-    state = fields.Selection(
-        [('unfinished', 'Not finished'), ('ok', 'Ok'), ('ko', 'Ko')],
-        'State', required=True, default='unfinished')
-    create_date = fields.Datetime('Launch Date')
-    finish_date = fields.Datetime('Finish Date')
-    expiration_date = fields.Datetime('Expiration Date')
-
-    _order = 'create_date desc'
+    clouder_trace = fields.Text('Clouder Trace')
+    res_id = fields.Integer('Res ID')
 
 
 class ClouderModel(models.AbstractModel):
@@ -94,10 +69,10 @@ class ClouderModel(models.AbstractModel):
 
     # We create the name field to avoid warning for the constraints
     name = fields.Char('Name', size=64, required=True)
-    log_ids = fields.One2many(
-        'clouder.log', 'res_id',
-        domain=lambda self: [('model', '=', self._name)],
-        auto_join=True, string='Logs')
+    job_ids = fields.One2many(
+        'queue.job', 'res_id',
+        domain=lambda self: [('model_name', '=', self._name)],
+        auto_join=True, string='Jobs')
 
     @property
     def email_sysadmin(self):
@@ -185,54 +160,9 @@ class ClouderModel(models.AbstractModel):
     def enqueue(self, func_name):
         session = ConnectorSession(self.env.cr, self.env.uid,
                            context=self.env.context)
-        connector_enqueue.delay(session, self._name, self.id, func_name, description=func_name)
-        #TODO mettre les champs du job a jour, faire le lien avec les objets clouder
-
-    @api.multi
-    def create_log(self, action):
-        """
-        Create the log record and add his id in context.
-
-        :param action: The action which trigger the log.
-        """
-        if 'log_id' in self.env.context:
-            return self.env.context
-
-        if 'logs' in self.env.context:
-            logs = self.env.context['logs']
-        else:
-            logs = {}
-
-        if not self._name in logs:
-            logs[self._name] = {}
-        now = datetime.now()
-        if not self.id in logs[self._name]:
-            expiration_date = (
-                now + timedelta(days=self._log_expiration_days)
-            ).strftime("%Y-%m-%d")
-            log_id = self.env['clouder.log'].create({
-                'model': self._name, 'res_id': self.id,
-                'action': action, 'expiration_date': expiration_date})
-            logs[self._name][self.id] = {}
-            logs[self._name][self.id]['log_model'] = self._name
-            logs[self._name][self.id]['log_res_id'] = self.id
-            logs[self._name][self.id]['log_id'] = log_id.id
-            logs[self._name][self.id]['log_log'] = ''
-
-        self = self.with_context(logs=logs)
-        return self.env.context
-
-    @api.multi
-    def end_log(self):
-        """
-        Close the log record if the action finished correctly.
-        """
-        log_obj = self.env['clouder.log']
-        if 'logs' in self.env.context:
-            log = log_obj.browse(
-                self.env.context['logs'][self._name][self.id]['log_id'])
-            if log.state == 'unfinished':
-                log.state = 'ok'
+        job_uuid = connector_enqueue.delay(session, self._name, self.id, func_name, description=(func_name + ' - ' + self.name))
+        job_ids = self.env['queue.job'].search([('uuid', '=', job_uuid)])
+        job_ids.write({'res_id': self.id})
 
     @api.multi
     def log(self, message):
@@ -241,30 +171,17 @@ class ClouderModel(models.AbstractModel):
 
         :param message: The message which will be logged.
         """
+        now = datetime.now()
         message = filter(lambda x: x in string.printable, message)
         _logger.info(message)
-        log_obj = self.env['clouder.log']
-        if 'logs' in self.env.context:
-            for model, model_vals in self.env.context['logs'].iteritems():
-                for res_id, vals in \
-                        self.env.context['logs'][model].iteritems():
-                    log = log_obj.browse(
-                        self.env.context['logs'][model][res_id]['log_id'])
-                    log.description = (log.description or '') + message + '\n'
+        if 'job_uuid' in self.env.context:
+            job_ids = self.env['queue.job'].search(
+                [('uuid', '=', self.env.context['job_uuid'])])
+            for job in job_ids:
+                job.clouder_trace = (job.clouder_trace or '') +\
+                                    now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
+                                    message + '\n'
 
-    @api.multi
-    def ko_log(self):
-        """
-        Ko the log specified in context.
-        """
-        log_obj = self.env['clouder.log']
-        if 'logs' in self.env.context:
-            for model, model_vals in self.env.context['logs'].iteritems():
-                for res_id, vals in \
-                        self.env.context['logs'][model].iteritems():
-                    log = log_obj.browse(
-                        self.env.context['logs'][model][res_id]['log_id'])
-                    log.state = 'ko'
 
     @api.multi
     def deploy(self):
@@ -307,10 +224,7 @@ class ClouderModel(models.AbstractModel):
         """"
         Action which purge then redeploy a record.
         """
-        self = self.with_context(self.create_log('reinstall'))
-        _logger.info(self._name)
         self.enqueue('deploy')
-        self.end_log()
 
     @api.model
     def create(self, vals):
