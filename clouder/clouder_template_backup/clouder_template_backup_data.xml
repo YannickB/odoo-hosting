@@ -140,7 +140,7 @@ RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp g++
 
-RUN git clone git://github.com/bup/bup /opt/bup
+RUN git clone https://github.com/bup/bup.git /opt/bup
 RUN make -C /opt/bup
 RUN make install -C /opt/bup
 
