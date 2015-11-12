@@ -450,7 +450,8 @@ class ClouderContainer(models.Model):
 
             childs = []
             for child in self.application_id.child_ids:
-                childs.append((0, 0, {'name': child, 'server_id': child.next_server_id or self.server_id}))
+                if child.required:
+                    childs.append((0, 0, {'name': child, 'server_id': child.next_server_id or self.server_id}))
             self.child_ids = childs
 
             self.image_id = self.application_id.default_image_id

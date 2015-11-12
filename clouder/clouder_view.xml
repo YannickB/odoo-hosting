@@ -637,6 +637,7 @@
                         <field name="public"/>
                         <field name="partner_id"/>
                         <field name="sequence"/>
+                        <field name="required"/>
                     </group>
                     <notebook>
                         <page string="General">

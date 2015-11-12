@@ -122,6 +122,7 @@ class ClouderApplication(models.Model):
     link_target_ids = fields.One2many('clouder.application.link', 'name',
                                       'Links Targets')
     parent_id = fields.Many2one('clouder.application', 'Parent')
+    required = fields.Boolean('Required?')
     sequence = fields.Integer('Sequence')
     child_ids = fields.One2many('clouder.application', 'parent_id', 'Childs')
     version_ids = fields.One2many('clouder.application.version',
@@ -133,24 +134,24 @@ class ClouderApplication(models.Model):
         'clouder.container', 'clouder_application_container_backup_rel',
         'application_id', 'backup_id', 'Backups Containers')
     container_time_between_save = fields.Integer(
-        'Minutes between each container save', required=True)
+        'Minutes between each container save', required=True, default=9999)
     container_saverepo_change = fields.Integer(
-        'Days before container saverepo change', required=True)
+        'Days before container saverepo change', required=True, default=30)
     container_saverepo_expiration = fields.Integer(
-        'Days before container saverepo expiration', required=True)
+        'Days before container saverepo expiration', required=True, default=90)
     container_save_expiration = fields.Integer(
-        'Days before container save expiration', required=True)
+        'Days before container save expiration', required=True, default=5)
     base_backup_ids = fields.Many2many(
         'clouder.container', 'clouder_application_base_backup_rel',
         'application_id', 'backup_id', 'Backups Bases')
     base_time_between_save = fields.Integer('Minutes between each base save',
-                                            required=True)
+                                            required=True, default=9999)
     base_saverepo_change = fields.Integer('Days before base saverepo change',
-                                          required=True)
+                                          required=True, default=30)
     base_saverepo_expiration = fields.Integer(
-        'Days before base saverepo expiration', required=True)
+        'Days before base saverepo expiration', required=True, default=90)
     base_save_expiration = fields.Integer('Days before base save expiration',
-                                          required=True)
+                                          required=True, default=5)
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
