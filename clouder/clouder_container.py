@@ -334,6 +334,18 @@ class ClouderContainer(models.Model):
                 'id': option.id, 'name': option.name.id, 'value': option.value}
         return options
 
+    @property
+    def childs(self):
+        """
+        Property returning a dictionary containing childs.
+        """
+        childs = {}
+        for child in self.child_ids:
+            if child.child_id:
+                childs[child.application_id.code] = child.child_id
+        return childs
+
+
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,name)',
          'Name must be unique per server!'),
@@ -817,6 +829,7 @@ class ClouderContainerLink(models.Model):
 
     _name = 'clouder.container.link'
     _inherit = ['clouder.model']
+    _autodeploy = False
 
     container_id = fields.Many2one(
         'clouder.container', 'Container', ondelete="cascade", required=True)

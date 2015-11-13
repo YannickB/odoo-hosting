@@ -55,30 +55,27 @@ class ClouderContainerLink(models.Model):
         """
         Upload the whole backups to a distant container.
         """
-        if self.name.name.code == 'backup-upl' \
-                and self.container_id.application_id.type_id.name == 'backup':
-            directory = '/opt/upload/' + self.container_id.fullname
-            ssh_link = self.connect(self.target.fullname)
-            self.execute(ssh_link, ['mkdir', '-p', directory])
-            ssh_link.close()
-
-            ssh = self.connect(self.container_id.fullname,
-                               username='backup')
-            self.send(ssh, self.home_directory + '/.ssh/config',
-                      '/home/backup/.ssh/config')
-            self.send(ssh, self.home_directory + '/.ssh/keys/' +
-                      self.target.fullname + '.pub',
-                      '/home/backup/.ssh/keys/' +
-                      self.target.fullname + '.pub')
-            self.send(ssh, self.home_directory + '/.ssh/keys/' +
-                      self.target.fullname,
-                      '/home/backup/.ssh/keys/' + self.target.fullname)
-            self.execute(ssh, ['chmod', '-R', '700', '/home/backup/.ssh'])
-            self.execute(ssh, [
-                'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-                '/opt/backup/', self.target.fullname + ':' + directory])
-            self.execute(ssh, ['rm', '/home/backup/.ssh/keys/*'])
-            ssh.close()
+        #TODO
+        # if self.name.name.code == 'backup-upl' \
+        #         and self.container_id.application_id.type_id.name == 'backup':
+        #     directory = '/opt/upload/' + self.container_id.fullname
+        #     self.target.execute(['mkdir', '-p', directory])
+        #
+        #     container = self.container_id
+        #     container.send(self.home_directory + '/.ssh/config',
+        #               '/home/backup/.ssh/config', username='backup')
+        #     container.send(self.home_directory + '/.ssh/keys/' +
+        #               self.target.fullname + '.pub',
+        #               '/home/backup/.ssh/keys/' +
+        #               self.target.fullname + '.pub', username='backup')
+        #     container.send(self.home_directory + '/.ssh/keys/' +
+        #               self.target.fullname,
+        #               '/home/backup/.ssh/keys/' + self.target.fullname, username='backup')
+        #     container.execute(['chmod', '-R', '700', '/home/backup/.ssh'], username='backup')
+        #     container.execute([
+        #         'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
+        #         '/opt/backup/', self.target.fullname + ':' + directory], username='backup')
+        #     container.self.execute(['rm', '/home/backup/.ssh/keys/*'], username='backup')
 
         return super(ClouderContainerLink, self).deploy_link()
 
@@ -90,8 +87,6 @@ class ClouderContainerLink(models.Model):
         if self.name.name.code == 'backup-upl' \
                 and self.container_id.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.container_id.fullname
-            ssh = self.connect(self.target.fullname)
-            self.execute(ssh, ['rm', '-rf', directory])
-            ssh.close()
+            self.target.execute(['rm', '-rf', directory])
         return super(ClouderContainerLink, self).purge_link()
 

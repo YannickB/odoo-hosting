@@ -280,7 +280,8 @@ class ClouderModel(models.AbstractModel):
         """
         res = super(ClouderModel, self).create(vals)
         try:
-            res.enqueue('deploy')
+            if self._autodeploy:
+                res.enqueue('deploy')
         except:
             res.log('===================')
             res.log('FAIL! Reverting...')
@@ -296,8 +297,9 @@ class ClouderModel(models.AbstractModel):
         Override the default unlink function to create log and call purge hook.
         """
         try:
-            self = self.with_context(clouder_unlink=True)
-            self.enqueue('purge')
+            if self._autodeploy:
+                self = self.with_context(clouder_unlink=True)
+                self.enqueue('purge')
         except:
             pass
         return
@@ -314,6 +316,7 @@ class ClouderModel(models.AbstractModel):
 
         server = self
         if self._name == 'clouder.container':
+            username = False
             server = self.server_id
 
         global ssh_connections
@@ -392,7 +395,7 @@ class ClouderModel(models.AbstractModel):
         return {'ssh': ssh, 'server': server}
 
     @api.multi
-    def execute(self, cmd, stdin_arg=False, path=False, ssh=False):
+    def execute(self, cmd, stdin_arg=False, path=False, ssh=False, username=False):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -402,7 +405,7 @@ class ClouderModel(models.AbstractModel):
         :param path: The path where the command need to be executed.
         """
 
-        res_ssh = self.connect()
+        res_ssh = self.connect(username=username)
         ssh, server = res_ssh['ssh'], res_ssh['server']
 
         if path:
@@ -410,7 +413,10 @@ class ClouderModel(models.AbstractModel):
             cmd.insert(0, 'cd ' + path + ';')
 
         if self != server:
-            cmd.insert(0, 'docker exec ' + self.name)
+            cmd.insert(0, self.name)
+            if username:
+                cmd.insert(0, '-u' + username)
+            cmd.insert(0, 'docker exec')
 
         self.log('host : ' + server.name)
         self.log('command : ' + ' '.join(cmd))
@@ -450,7 +456,7 @@ class ClouderModel(models.AbstractModel):
         sftp.close()
 
     @api.multi
-    def send(self, source, destination, ssh=False):
+    def send(self, source, destination, ssh=False, username=False):
         """
         Method which can be used with an ssh connection to transfer files.
 
@@ -459,7 +465,7 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
-        res_ssh = self.connect()
+        res_ssh = self.connect(username=username)
         ssh, server = res_ssh['ssh'], res_ssh['server']
 
         final_destination = destination
@@ -476,6 +482,8 @@ class ClouderModel(models.AbstractModel):
 
         if tmp_dir != False:
             server.execute(['cat', destination, '|', 'docker', 'exec', '-i', self.name, 'sh', '-c', "'cat > " + final_destination + "'"])
+            if username:
+                server.execute(['docker', 'exec', '-i', self.name, 'chown', username, final_destination])
             server.execute(['rm', '-rf', tmp_dir])
 
     @api.multi
