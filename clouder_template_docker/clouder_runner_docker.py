@@ -73,7 +73,7 @@ class ClouderImageVersion(models.Model):
                           self.registry_id.ports['registry']['localport'] +\
                           '/v1/repositories/' + self.image_id.name + '/tags/' + \
                           self.name
-            self.registry_id.execute(ssh, ['curl', '-o curl.txt -X', 'DELETE', img_address])
+            self.registry_id.execute(['curl', '-o curl.txt -X', 'DELETE', img_address])
 
         return res
 

@@ -155,6 +155,8 @@ class ClouderImageVersion(models.Model):
     registry_id = fields.Many2one('clouder.container', 'Registry')
     container_ids = fields.One2many(
         'clouder.container', 'image_version_id', 'Containers')
+    child_ids = fields.One2many(
+        'clouder.image.version', 'parent_id', 'Childs')
 
     @property
     def fullname(self):
@@ -220,11 +222,24 @@ class ClouderImageVersion(models.Model):
                 _('Inherit error!'),
                 _("A container is linked to this image version, "
                   "you can't delete it!"))
+        if self.child_ids:
+            raise except_orm(
+                _('Inherit error!'),
+                _("A child is linked to this image version, "
+                  "you can't delete it!"))
         return super(ClouderImageVersion, self).unlink()
 
     @api.multi
     def hook_build(self, dockerfile):
         return
+
+    @api.multi
+    def control_priority(self):
+        if 'clouder_unlink' in self.env.context:
+            for image_version in self.search([('parent_id','=',self.id)]):
+                return image_version.check_priority()
+        else:
+            return self.parent_id.check_priority()
 
     @api.multi
     def deploy(self):

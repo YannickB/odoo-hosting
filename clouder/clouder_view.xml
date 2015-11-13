@@ -859,6 +859,7 @@
                     <button name="purge_expired_logs" string="Purge Expired Logs" type="object"/>
                     <button name="reset_bases" string="Reset Bases" type="object"/>
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
+                    <button name="reset_all_jobs" string="Reset Jobs" type="object"/>
                 </form>
             </field>
         </record>

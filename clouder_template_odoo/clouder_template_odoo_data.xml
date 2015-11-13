@@ -125,7 +125,7 @@ RUN git clone http://github.com/odoo/odoo.git /opt/odoo/files/odoo -b 8.0
         </record>
 
         <record id="image_odoo_exec" model="clouder.image">
-            <field name="name">img_odoo</field>
+            <field name="name">img_odoo_exec</field>
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
