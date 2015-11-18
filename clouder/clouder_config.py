@@ -208,3 +208,6 @@ class ClouderConfigSettings(models.Model):
         self.reset_bases()
         return True
 
+    @api.multi
+    def reset_all_jobs(self):
+        self.env.cr.execute("update queue_job set state='done' where state in ('started', 'enqueued')")

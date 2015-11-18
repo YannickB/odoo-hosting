@@ -22,7 +22,7 @@
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_nginx"/>
             <field name="dockerfile"><![CDATA[
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install php5-mysql php-apc php5-fpm php5-curl php5-gd php5-intl php-pear php5-imap php5-memcache memcached mc mysql-client php5-geoip php5-dev libgeoip-dev
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install supervisor php5-mysql php-apc php5-fpm php5-curl php5-gd php5-intl php-pear php5-imap php5-memcache memcached mc mysql-client php5-geoip php5-dev libgeoip-dev
 
 # php-fpm config
 RUN sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php5/fpm/php.ini

@@ -43,10 +43,31 @@ _logger = logging.getLogger(__name__)
 ssh_connections = {}
 
 @job
-def connector_enqueue(session, model_name, record_id, func_name, *args, **kargs):
-    record = session.env[model_name].browse(record_id)
-    return getattr(record, func_name)(*args, **kargs)
+def connector_enqueue(session, model_name, record_id, func_name, context, *args, **kargs):
 
+    context = context.copy()
+    context.update(session.env.context.copy())
+    with session.change_context(context):
+        record = session.env[model_name].browse(record_id)
+
+    job = record.env['queue.job'].search([('uuid', '=', record.env.context['job_uuid'])])
+    job.write({'clouder_trace': False})
+    job.env.cr.commit()
+
+    priority = record.control_priority()
+    if priority:
+        job.write({'priority': priority + 1})
+        job.env.cr.commit()
+        raise except_orm(
+            _('Priority error!'),
+            _("Waiting for another job to finish"))
+
+    res = getattr(record, func_name)(*args, **kargs)
+    # if 'clouder_unlink' in record.env.context:
+    #     res = super(ClouderModel, record).unlink()
+    record.log('===== END JOB ' + session.env.context['job_uuid'] + ' =====')
+    job.search([('state','=', 'failed')]).write({'state':'pending'})
+    return res
 
 class QueueJob(models.Model):
 
@@ -160,9 +181,21 @@ class ClouderModel(models.AbstractModel):
     def enqueue(self, func_name):
         session = ConnectorSession(self.env.cr, self.env.uid,
                            context=self.env.context)
-        job_uuid = connector_enqueue.delay(session, self._name, self.id, func_name, description=(func_name + ' - ' + self.name))
+        job_uuid = connector_enqueue.delay(session, self._name, self.id, func_name, self.env.context, description=(func_name + ' - ' + self.name), max_retries=0)
         job_ids = self.env['queue.job'].search([('uuid', '=', job_uuid)])
         job_ids.write({'res_id': self.id})
+
+    @api.multi
+    def check_priority(self):
+        priority = False
+        for job in self.job_ids:
+            if job.state != 'done' and job.priority <= 999:
+                priority = job.priority
+        return priority
+
+    @api.multi
+    def control_priority(self):
+        return False
 
     @api.multi
     def log(self, message):
@@ -174,13 +207,24 @@ class ClouderModel(models.AbstractModel):
         now = datetime.now()
         message = filter(lambda x: x in string.printable, message)
         _logger.info(message)
+
+        warning = False
         if 'job_uuid' in self.env.context:
             job_ids = self.env['queue.job'].search(
                 [('uuid', '=', self.env.context['job_uuid'])])
+            if not job_ids:
+                warning = True
             for job in job_ids:
                 job.clouder_trace = (job.clouder_trace or '') +\
                                     now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
                                     message + '\n'
+                job.env.cr.commit()
+        else:
+            warning = True
+
+        # if warning:
+        #     _logger.info("Can't find job_uuid %s", self.env.context)
+
 
 
     @api.multi
@@ -226,6 +270,10 @@ class ClouderModel(models.AbstractModel):
         """
         self.enqueue('deploy')
 
+    @api.multi
+    def hook_create(self):
+        return
+
     @api.model
     def create(self, vals):
         """
@@ -235,9 +283,10 @@ class ClouderModel(models.AbstractModel):
         :param vals: The values needed to create the record.
         """
         res = super(ClouderModel, self).create(vals)
-        res = res.with_context(res.create_log('create'))
+        res.hook_create()
         try:
-            res.deploy()
+            if self._autodeploy:
+                res.enqueue('deploy')
         except:
             res.log('===================')
             res.log('FAIL! Reverting...')
@@ -245,7 +294,6 @@ class ClouderModel(models.AbstractModel):
             res = res.with_context(nosave=True)
             res.unlink()
             raise
-        res.end_log()
         return res
 
     @api.one
@@ -253,19 +301,12 @@ class ClouderModel(models.AbstractModel):
         """
         Override the default unlink function to create log and call purge hook.
         """
-        try:
+        if self._autodeploy:
+            # self = self.with_context(clouder_unlink=True)
             self.purge()
-        except:
-            pass
-        res = super(ClouderModel, self).unlink()
-        # Security to prevent log to write in a removed clouder.log
-        if 'logs' in self.env.context \
-                and self._name in self.env.context['logs'] \
-                and self.id in self.env.context['logs'][self._name]:
-            del self.env.context['logs'][self._name][self.id]
-        log_ids = self.env['clouder.log'].search(
-            [('model', '=', self._name), ('res_id', '=', self.id)])
-        log_ids.unlink()
+            res = super(ClouderModel, self).unlink()
+        else:
+            res = super(ClouderModel, self).unlink()
         return res
 
     @api.multi
@@ -280,6 +321,7 @@ class ClouderModel(models.AbstractModel):
 
         server = self
         if self._name == 'clouder.container':
+            username = False
             server = self.server_id
 
         global ssh_connections
@@ -338,7 +380,7 @@ class ClouderModel(models.AbstractModel):
                      server.name + (port and ' -p ' + str(port) or ''))
 
             try:
-                ssh.connect(server.name, port=int(port), username=username,
+                ssh.connect(server.ip, port=int(port), username=username,
                         key_filename=os.path.expanduser(identityfile))
             except Exception as inst:
                 raise except_orm(
@@ -349,7 +391,7 @@ class ClouderModel(models.AbstractModel):
                       "If you were trying to connect to a container, a click on "
                       "the 'reset key' button on the container record may resolve "
                       "the problem.\n"
-                      "Target : " + server.name + "\n"
+                      "Target : " + server.name + " / " + server.ip + "\n"
                       "Error : " + str(inst)))
             ssh_connections[host_fullname] = ssh
         else:
@@ -358,7 +400,7 @@ class ClouderModel(models.AbstractModel):
         return {'ssh': ssh, 'server': server}
 
     @api.multi
-    def execute(self, cmd, stdin_arg=False, path=False, ssh=False):
+    def execute(self, cmd, stdin_arg=False, path=False, ssh=False, username=False):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -368,7 +410,7 @@ class ClouderModel(models.AbstractModel):
         :param path: The path where the command need to be executed.
         """
 
-        res_ssh = self.connect()
+        res_ssh = self.connect(username=username)
         ssh, server = res_ssh['ssh'], res_ssh['server']
 
         if path:
@@ -376,7 +418,20 @@ class ClouderModel(models.AbstractModel):
             cmd.insert(0, 'cd ' + path + ';')
 
         if self != server:
-            cmd.insert(0, 'docker exec ' + self.name)
+            cmd_temp = []
+            first = True
+            for c in cmd:
+                c = c.replace('"', '\\"')
+                if first:
+                    c = '"' + c
+                first = False
+                cmd_temp.append(c)
+            cmd = cmd_temp
+            cmd.append('"')
+            cmd.insert(0, self.name + ' bash -c ')
+            if username:
+                cmd.insert(0, '-u ' + username)
+            cmd.insert(0, 'docker exec')
 
         self.log('host : ' + server.name)
         self.log('command : ' + ' '.join(cmd))
@@ -416,7 +471,7 @@ class ClouderModel(models.AbstractModel):
         sftp.close()
 
     @api.multi
-    def send(self, source, destination, ssh=False):
+    def send(self, source, destination, ssh=False, username=False):
         """
         Method which can be used with an ssh connection to transfer files.
 
@@ -425,7 +480,7 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
-        res_ssh = self.connect()
+        res_ssh = self.connect(username=username)
         ssh, server = res_ssh['ssh'], res_ssh['server']
 
         final_destination = destination
@@ -442,7 +497,25 @@ class ClouderModel(models.AbstractModel):
 
         if tmp_dir != False:
             server.execute(['cat', destination, '|', 'docker', 'exec', '-i', self.name, 'sh', '-c', "'cat > " + final_destination + "'"])
+            if username:
+                server.execute(['docker', 'exec', '-i', self.name, 'chown', username, final_destination])
             server.execute(['rm', '-rf', tmp_dir])
+
+    @api.multi
+    def send_dir(self, source, destination, ssh=False, username=False):
+        self.log('Send directory ' + source + ' to ' + destination)
+        for dirpath, dirnames, filenames in os.walk(source):
+            self.log('dirpath ' + str(dirpath))
+            self.log('dirnames ' + str(dirnames))
+            self.log('filenames ' + str(filenames))
+            relpath = os.path.relpath(dirpath, source)
+            for dirname in dirnames:
+                remote_path = os.path.join(destination, os.path.join(relpath, dirname))
+                self.execute(['mkdir','-p',remote_path])
+            for filename in filenames:
+                local_path = os.path.join(dirpath, filename)
+                remote_filepath = os.path.join(destination, os.path.join(relpath, filename))
+                self.send(local_path, remote_filepath, ssh=ssh, username=username)
 
     @api.multi
     def execute_local(self, cmd, path=False, shell=False):

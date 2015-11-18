@@ -26,6 +26,8 @@ from openerp.exceptions import except_orm
 from datetime import datetime
 import re
 
+import clouder_model
+
 
 class ClouderApplicationType(models.Model):
     """
@@ -79,6 +81,9 @@ class ClouderApplicationTypeOption(models.Model):
 
     _name = 'clouder.application.type.option'
 
+
+
+
     apptype_id = fields.Many2one(
         'clouder.application.type',
         'Application Type', ondelete="cascade", required=True)
@@ -86,6 +91,7 @@ class ClouderApplicationTypeOption(models.Model):
     type = fields.Selection(
         [('application', 'Application'), ('container', 'Container'),
          ('service', 'Service'), ('base', 'Base')], 'Type', required=True)
+    app_code = fields.Char('Application Code')
     auto = fields.Boolean('Auto?')
     required = fields.Boolean('Required?')
     default = fields.Text('Default value')
@@ -94,6 +100,13 @@ class ClouderApplicationTypeOption(models.Model):
         ('name_uniq', 'unique(apptype_id,name)',
          'Options name must be unique per apptype!'),
     ]
+
+    @property
+    def get_default(self):
+        res = self.default
+        if self.name == 'db_password':
+            res = clouder_model.generate_random_password(20)
+        return res
 
 
 class ClouderApplication(models.Model):
@@ -121,6 +134,10 @@ class ClouderApplication(models.Model):
                                'Links')
     link_target_ids = fields.One2many('clouder.application.link', 'name',
                                       'Links Targets')
+    parent_id = fields.Many2one('clouder.application', 'Parent')
+    required = fields.Boolean('Required?')
+    sequence = fields.Integer('Sequence')
+    child_ids = fields.One2many('clouder.application', 'parent_id', 'Childs')
     version_ids = fields.One2many('clouder.application.version',
                                   'application_id', 'Versions')
     buildfile = fields.Text('Build File')
@@ -130,28 +147,35 @@ class ClouderApplication(models.Model):
         'clouder.container', 'clouder_application_container_backup_rel',
         'application_id', 'backup_id', 'Backups Containers')
     container_time_between_save = fields.Integer(
-        'Minutes between each container save', required=True)
+        'Minutes between each container save', required=True, default=9999)
     container_saverepo_change = fields.Integer(
-        'Days before container saverepo change', required=True)
+        'Days before container saverepo change', required=True, default=30)
     container_saverepo_expiration = fields.Integer(
-        'Days before container saverepo expiration', required=True)
+        'Days before container saverepo expiration', required=True, default=90)
     container_save_expiration = fields.Integer(
-        'Days before container save expiration', required=True)
+        'Days before container save expiration', required=True, default=5)
     base_backup_ids = fields.Many2many(
         'clouder.container', 'clouder_application_base_backup_rel',
         'application_id', 'backup_id', 'Backups Bases')
     base_time_between_save = fields.Integer('Minutes between each base save',
-                                            required=True)
+                                            required=True, default=9999)
     base_saverepo_change = fields.Integer('Days before base saverepo change',
-                                          required=True)
+                                          required=True, default=30)
     base_saverepo_expiration = fields.Integer(
-        'Days before base saverepo expiration', required=True)
+        'Days before base saverepo expiration', required=True, default=90)
     base_save_expiration = fields.Integer('Days before base save expiration',
-                                          required=True)
+                                          required=True, default=5)
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
         default=lambda self: self.env['clouder.model'].user_partner)
+
+    @property
+    def fullcode(self):
+        if not self.parent_id:
+            return self.type_id.name
+        else:
+            return self.parent_id.fullcode + '-' + self.code
 
     @property
     def full_archivepath(self):
@@ -207,8 +231,10 @@ class ClouderApplication(models.Model):
         return options
 
     _sql_constraints = [
-        ('code_uniq', 'unique(code)', 'Code must be unique!'),
+        ('code_uniq', 'unique(parent_id, code)', 'Code must be unique!'),
     ]
+
+    _order = 'sequence, code'
 
     @api.one
     @api.constrains('code', 'admin_name', 'admin_email')

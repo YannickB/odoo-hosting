@@ -36,6 +36,7 @@ class ClouderImage(models.Model):
     _name = 'clouder.image'
 
     name = fields.Char('Image name', size=64, required=True)
+    type_id = fields.Many2one('clouder.application.type', 'Application Type')
     current_version = fields.Char('Current version', size=64, required=True)
     parent_id = fields.Many2one('clouder.image', 'Parent image')
     parent_version_id = fields.Many2one(
@@ -103,6 +104,7 @@ class ClouderImageVolume(models.Model):
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
                                required=True)
     name = fields.Char('Path', size=128, required=True)
+    from_code = fields.Char('From', size=64)
     hostpath = fields.Char('Host path', size=128)
     user = fields.Char('System User', size=64)
     readonly = fields.Boolean('Readonly?')
@@ -154,6 +156,8 @@ class ClouderImageVersion(models.Model):
     registry_id = fields.Many2one('clouder.container', 'Registry')
     container_ids = fields.One2many(
         'clouder.container', 'image_version_id', 'Containers')
+    child_ids = fields.One2many(
+        'clouder.image.version', 'parent_id', 'Childs')
 
     @property
     def fullname(self):
@@ -219,11 +223,24 @@ class ClouderImageVersion(models.Model):
                 _('Inherit error!'),
                 _("A container is linked to this image version, "
                   "you can't delete it!"))
+        if self.child_ids:
+            raise except_orm(
+                _('Inherit error!'),
+                _("A child is linked to this image version, "
+                  "you can't delete it!"))
         return super(ClouderImageVersion, self).unlink()
 
     @api.multi
     def hook_build(self, dockerfile):
         return
+
+    @api.multi
+    def control_priority(self):
+        # if 'clouder_unlink' in self.env.context:
+        #     for image_version in self.search([('parent_id','=',self.id)]):
+        #         return image_version.check_priority()
+        # else:
+        return self.parent_id.check_priority()
 
     @api.multi
     def deploy(self):

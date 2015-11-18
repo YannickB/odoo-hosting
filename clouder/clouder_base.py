@@ -302,7 +302,7 @@ class ClouderBase(models.Model):
                     if not test:
                         options.append((0, 0, {
                             'name': type_option,
-                            'value': type_option.default}))
+                            'value': type_option.get_default}))
             self.option_ids = options
 
             links = []

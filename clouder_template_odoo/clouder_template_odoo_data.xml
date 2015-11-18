@@ -42,12 +42,350 @@
         </record>
         <record id="apptype_odoo_option6" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_odoo"/>
-            <field name="name">port</field>
-            <field name="type">service</field>
-            <field name="default">odoo1</field>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
             <field name="auto" eval="True"/>
+        </record>
+
+        <record id="image_odoo_data" model="clouder.image">
+            <field name="name">img_odoo_data</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
+# create the odoo user
+RUN adduser --home=/home/odoo --disabled-password --gecos "" --shell=/bin/bash odoo
+RUN touch /home/odoo/.pgpass
+
+RUN mkdir -p /opt/odoo/data
+RUN mkdir -p /opt/odoo/etc
+RUN mkdir -p /opt/odoo/extra-addons
+RUN mkdir -p /opt/odoo/var/{run,log,egg-cache}
+ADD sources/odoo.conf /opt/odoo/etc/odoo.conf
+
+RUN chown -R odoo:odoo /opt/odoo
+
+CMD tail -f /opt/odoo/etc/odoo.conf
+]]></field>
+        </record>
+        <record id="image_odoo_data_volume1" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_data"/>
+            <field name="name">/opt/odoo/data</field>
+        </record>
+        <record id="image_odoo_data_volume2" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_data"/>
+            <field name="name">/opt/odoo/etc</field>
+        </record>
+        <record id="image_odoo_data_volume3" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_data"/>
+            <field name="name">/opt/odoo/extra-addons</field>
+        </record>
+        <record id="image_odoo_data_volume4" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_data"/>
+            <field name="name">/opt/odoo/var</field>
+        </record>
+        <record id="image_odoo_data_volume5" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_data"/>
+            <field name="name">/home/odoo</field>
+        </record>
+
+
+        <record id="image_odoo_files8" model="clouder.image">
+            <field name="name">img_odoo_files8</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git
+
+RUN git clone http://github.com/odoo/odoo.git /opt/odoo/files/odoo -b 8.0
+
+]]></field>
+        </record>
+        <record id="image_odoo_files8_volume" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_files8"/>
+            <field name="name">/opt/odoo/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+
+        <record id="image_odoo_exec" model="clouder.image">
+            <field name="name">img_odoo_exec</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
+# generate locales
+RUN locale-gen en_US.UTF-8 && update-locale
+RUN echo 'LANG="en_US.UTF-8"' > /etc/default/locale
+
+# Add the PostgreSQL PGP key to verify their Debian packages.
+# It should be the same key as https://www.postgresql.org/media/keys/ACCC4CF8.asc
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
+
+# Add PostgreSQL's repository. It contains the most recent stable release
+#     of PostgreSQL, 9.4.
+# install dependencies as distrib packages when system bindings are required
+# some of them extend the basic odoo requirements for a better "apps" compatibility
+# most dependencies are distributed as wheel packages at the next step
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/pgdg.list &&         apt-get update &&         apt-get -yq install             adduser             ghostscript             postgresql-client-9.4             python                 python-pip                 python-imaging                 python-pychart python-libxslt1 xfonts-base xfonts-75dpi                 libxrender1 libxext6 fontconfig                 python-zsi                 python-lasso                 libzmq3                 gdebi
+
+ADD sources/pip-checksums.txt /opt/sources/pip-checksums.txt
+# use wheels from our public wheelhouse for proper versions of listed packages
+# as described in sourced pip-req.txt
+# these are python dependencies for odoo and "apps" as precompiled wheel packages
+
+RUN pip install peep &&     peep install --upgrade --use-wheel --no-index --pre         --find-links=https://wheelhouse.xcg.io/trusty/odoo/         -r /opt/sources/pip-checksums.txt
+
+# must unzip this package to make it visible as an odoo external dependency
+RUN easy_install -UZ py3o.template==0.9.5
+
+# install wkhtmltopdf based on QT5
+ADD http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb /opt/sources/wkhtmltox.deb
+RUN gdebi -n /opt/sources/wkhtmltox.deb
+
+ADD sources/bin /app/bin/
+
+# create the odoo user
+RUN adduser --home=/opt/odoo --disabled-password --gecos "" --shell=/bin/bash odoo
+RUN mkdir -p /opt/odoo/data
+RUN mkdir -p /opt/odoo/etc
+RUN mkdir -p /opt/odoo/extra-addons
+RUN mkdir -p /opt/odoo/var
+RUN chown -R odoo /opt/odoo/*
+#RUN chown -R odoo /opt/odoo/etc
+#RUN chown -R odoo /opt/odoo/extra-addons
+#RUN chown -R odoo /opt/odoo/data
+
+# Execution environment
+USER odoo
+CMD /opt/odoo/files/odoo/openerp-server -c /opt/odoo/etc/odoo.conf
+]]></field>
+        </record>
+        <record id="image_odoo_exec_volume1" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/var</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_exec_volume2" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/etc</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_exec_volume3" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/extra-addons</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_exec_volume4" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/data</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_exec_volume5" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_exec"/>
+            <field name="name">/home/odoo</field>
+        </record>
+        <record id="image_odoo_exec_volume6" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_exec"/>
+            <field name="from_code">files</field>
+            <field name="name">/opt/odoo/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_exec_port1" model="clouder.image.port">
+            <field name="image_id" ref="image_odoo_exec"/>
+            <field name="name">odoo</field>
+            <field name="localport">8069</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_odoo_exec_port2" model="clouder.image.port">
+            <field name="image_id" ref="image_odoo_exec"/>
+            <field name="name">longpolling</field>
+            <field name="localport">8072</field>
+            <field name="expose">internet</field>
+        </record>
+
+
+        <record id="image_odoo_ssh" model="clouder.image">
+            <field name="name">img_odoo_ssh</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install openssh-server
+USER root
+]]></field>
+        </record>
+        <record id="image_odoo_ssh_volume1" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_ssh"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/var</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_ssh_volume2" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_ssh"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/etc</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_ssh_volume3" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_ssh"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/extra-addons</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_ssh_volume4" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_ssh"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/data</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_ssh_volume5" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_ssh"/>
+            <field name="from_code">data</field>
+            <field name="name">/home/odoo</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_ssh_volume6" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_ssh"/>
+            <field name="from_code">files</field>
+            <field name="name">/opt/odoo/files</field>
+            <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_ssh_port1" model="clouder.image.port">
+            <field name="image_id" ref="image_odoo_ssh"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+
+
+        <record id="app_odoo" model="clouder.application">
+            <field name="name">Odoo</field>
+            <field name="code">odoo</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="default_image_id" ref="image_odoo_data"/>
+            <field name="current_version">8.0</field>
+        </record>
+        <record id="app_odoo_link1" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+<!--        <record id="app_odoo_link2" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>-->
+        <record id="app_odoo_link3" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="service" eval="True"/>
+        </record>
+        <record id="app_odoo_link4" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_link5" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_link6" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+            <field name="base" eval="True"/>
+        </record>
+
+        <record id="app_odoo_data" model="clouder.application">
+            <field name="name">Odoo Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="parent_id" ref="app_odoo"/>
+            <field name="default_image_id" ref="image_odoo_data"/>
+            <field name="current_version">8.0</field>
+            <field name="sequence">1</field>
             <field name="required" eval="True"/>
         </record>
+        <record id="app_odoo_data_link" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_data"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+
+        <record id="app_odoo_files" model="clouder.application">
+            <field name="name">Odoo Files</field>
+            <field name="code">files</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="parent_id" ref="app_odoo"/>
+            <field name="default_image_id" ref="image_odoo_files8"/>
+            <field name="current_version">8.0</field>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+        </record>
+
+        <record id="app_odoo_exec" model="clouder.application">
+            <field name="name">Odoo Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="parent_id" ref="app_odoo"/>
+            <field name="default_image_id" ref="image_odoo_exec"/>
+            <field name="current_version">8.0</field>
+            <field name="sequence">3</field>
+            <field name="required" eval="True"/>
+        </record>
+        <record id="app_odoo_exec_link" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_exec"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+
+        <record id="app_odoo_ssh" model="clouder.application">
+            <field name="name">Odoo SSH</field>
+            <field name="code">ssh</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="parent_id" ref="app_odoo"/>
+            <field name="default_image_id" ref="image_odoo_ssh"/>
+            <field name="current_version">8.0</field>
+            <field name="sequence">4</field>
+        </record>
+
+
+
+
+
+
+
+
+<!--
+
+
+
+
 
         <record id="image_odoo" model="clouder.image">
             <field name="name">img_odoo</field>
@@ -494,6 +832,6 @@ bin/buildout
             <field name="name" ref="apptype_odoo_option3"/>
             <field name="value">connector</field>
         </record>
-
+-->
     </data>
 </openerp>

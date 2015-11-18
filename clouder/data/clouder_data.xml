@@ -4,45 +4,29 @@
         <record id="image_base" model="clouder.image">
             <field name="name">img_base</field>
             <field name="current_version">1.0</field>
-            <field name="parent_from">debian:latest</field>
+            <field name="parent_from">ubuntu-debootstrap:trusty</field>
             <field name="dockerfile"><![CDATA[
-RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get -qy install locales
-ENV LANGUAGE en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-RUN DEBIAN_FRONTEND=noninteractive locale-gen en_US.UTF-8
-RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
-RUN update-locale LANG=en_US.UTF-8
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils wget patch rsync ca-certificates
+# generate a locale and ensure it on system users
+RUN locale-gen en_US.UTF-8 && update-locale && echo 'LANG="en_US.UTF-8"' > /etc/default/locale
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+# add some system packages
+RUN apt-get update && apt-get -y -q install \
+	sudo less \
+	net-tools \
+	--no-install-recommends
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y vim ssmtp mailutils wget patch rsync ca-certificates
+
 #/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix container.
 #Be cautious to any application which also use it.
-RUN mkdir -p /var/run/sshd
-RUN mkdir -p /var/log/supervisor
 RUN rm /usr/bin/mail
 RUN ln -s /usr/sbin/ssmtp /usr/bin/mail
 #RUN echo "" > /etc/ssmtp/ssmtp.conf
-
-
-RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=/usr/sbin/sshd -D" >> /etc/supervisor/conf.d/supervisord.conf
-
-RUN mkdir /root/.ssh
-RUN ln -s /opt/keys/authorized_keys /root/.ssh/authorized_keys
-
-CMD ["/usr/bin/supervisord"]
 ]]></field>
-        </record>
-        <record id="image_base_port1" model="clouder.image.port">
-            <field name="image_id" ref="image_base"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
         </record>
 
         <record id="image_apache" model="clouder.image">
