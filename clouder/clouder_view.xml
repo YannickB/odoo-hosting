@@ -40,8 +40,8 @@
                         <field name="name"/>
                         <field name="title"/>
                         <field name="domain_id"/>
-                        <field name="application_id"/>
-                        <field name="service_id" required="0"/>
+                        <field name="application_id" domain="[('base','=',True)]"/>
+                        <field name="container_id" required="0" domain="[('application_id.base', '=', True)]"/>
                         <field name="service_ids" widget="many2many_tags"/>
                         <field name="admin_name"/>
                         <field name="admin_password"/>
@@ -69,7 +69,7 @@
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('apptype_id.application_ids.container_ids.service_ids','in',parent.service_id),('type','=','base')]"/>
+                                    <field name="name" domain="[('apptype_id.application_ids.container_ids','in',parent.container_id),('type','=','base')]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
@@ -82,6 +82,20 @@
                                     <button name="purge_" type="object" string="Purge"/>
                                 </tree>
                             </field>
+                            <field name="child_ids" colspan="4">
+                                <tree string="Childs" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="sequence"/>
+                                    <field name="domainname"/>
+                                    <field name="domain_id" attrs="{'required': [('domainname', '!=', False)]}"/>
+                                    <field name="container_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
+                                    <field name="child_id"/>
+                                    <button name="deploy" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
+                                    <button name="purge" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
+                                </tree>
+                            </field>
+                            <button name="compute_childs" string="Compute links between childs" type="object" attrs="{'invisible': [('child_ids', '=', [])]}"/>
+                            <newline/>
                             <button name="reinstall" string="Reinstall" type="object"/>
                             <field name="job_ids" colspan="4"/>
                         </page>
@@ -645,6 +659,7 @@
                         <field name="current_version"/>
                         <field name="default_image_id"/>
                         <field name="next_server_id"/>
+                        <field name="base"/>
                         <field name="admin_name"/>
                         <field name="admin_email"/>
                         <field name="public"/>

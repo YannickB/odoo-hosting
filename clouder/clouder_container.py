@@ -342,7 +342,10 @@ class ClouderContainer(models.Model):
         """
         Property returning the database user of the service.
         """
-        db_user = self.fullname.replace('-', '_')
+        fullname = self.fullname
+        if self.parent_id and not self.child_ids:
+            fullname = self.parent_id.container_id.fullname
+        db_user = fullname.replace('-', '_')
         return db_user
 
     @property
@@ -413,7 +416,7 @@ class ClouderContainer(models.Model):
         if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(
                 _('Data error!'),
-                _("Name can only contains letters, digits and underscore"))
+                _("Name can only contains letters, digits and dash"))
 
     @api.one
     @api.constrains('application_id')
@@ -439,43 +442,6 @@ class ClouderContainer(models.Model):
                 _('Data error!'),
                 _("The image of image version must be "
                   "the same than the image of container."))
-
-    @api.one
-    @api.constrains('option_ids')
-    def _check_option_ids(self):
-        """
-        Check that the required options are filled.
-        """
-        for type_option in self.application_id.type_id.option_ids:
-            if type_option.type == 'container' and type_option.required:
-                test = False
-                for option in self.option_ids:
-                    if option.name == type_option and option.value:
-                        test = True
-                if not test:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("You need to specify a value for the option " +
-                          type_option.name + " for the container " +
-                          self.name + "."))
-
-    @api.one
-    @api.constrains('link_ids')
-    def _check_link_ids(self):
-        """
-        Check that the required links are specified.
-        """
-        for app_link in self.application_id.link_ids:
-            if app_link.container and app_link.required:
-                test = False
-                for link in self.link_ids:
-                    if link.name == app_link and link.target:
-                        test = True
-                if not test:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("You need to specify a link to " + app_link.name.name
-                          + " for the container " + self.name))
 
     @api.multi
     @api.onchange('application_id')
@@ -797,45 +763,46 @@ class ClouderContainer(models.Model):
         if self.child_ids:
             for child in self.child_ids:
                 child.deploy()
-        else:
-            ports = []
-            volumes = []
-            nextport = self.server_id.start_port
-            for port in self.port_ids:
-                if not port.hostport:
-                    while not port.hostport \
-                            and nextport != self.server_id.end_port:
-                        port_ids = self.env['clouder.container.port'].search(
-                            [('hostport', '=', nextport),
-                             ('container_id.server_id', '=', self.server_id.id)])
-                        if not port_ids and not self.server_id.execute([
-                                'netstat', '-an', '|', 'grep', str(nextport)]):
-                            port.hostport = nextport
-                        nextport += 1
-                if not port.hostport:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("We were not able to assign an hostport to the "
-                          "localport " + port.localport + ".\n"
-                          "If you don't want to assign one manually, make sure you"
-                          " fill the port range in the server configuration, and "
-                          "that all ports in that range are not already used."))
-                ports.append(port)
-            for volume in self.volume_ids:
-                volumes.append(volume)
+                return
 
-            self.hook_deploy(ports, volumes)
+        ports = []
+        volumes = []
+        nextport = self.server_id.start_port
+        for port in self.port_ids:
+            if not port.hostport:
+                while not port.hostport \
+                        and nextport != self.server_id.end_port:
+                    port_ids = self.env['clouder.container.port'].search(
+                        [('hostport', '=', nextport),
+                         ('container_id.server_id', '=', self.server_id.id)])
+                    if not port_ids and not self.server_id.execute([
+                            'netstat', '-an', '|', 'grep', str(nextport)]):
+                        port.hostport = nextport
+                    nextport += 1
+            if not port.hostport:
+                raise except_orm(
+                    _('Data error!'),
+                    _("We were not able to assign an hostport to the "
+                      "localport " + port.localport + ".\n"
+                      "If you don't want to assign one manually, make sure you"
+                      " fill the port range in the server configuration, and "
+                      "that all ports in that range are not already used."))
+            ports.append(port)
+        for volume in self.volume_ids:
+            volumes.append(volume)
 
-            time.sleep(3)
+        self.hook_deploy(ports, volumes)
 
-            self.deploy_post()
+        time.sleep(3)
 
-            self.start()
+        self.deploy_post()
 
-            #For shinken
-            self.save()
+        self.start()
 
-            self.deploy_links()
+        #For shinken
+        self.save()
+
+        self.deploy_links()
 
         return
 

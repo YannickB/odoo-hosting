@@ -77,7 +77,8 @@ class ClouderBase(models.Model):
     application_id = fields.Many2one('clouder.application', 'Application',
                                      required=True)
     domain_id = fields.Many2one('clouder.domain', 'Domain name', required=True)
-    service_id = fields.Many2one('clouder.service', 'Service', required=True)
+    container_id = fields.Many2one('clouder.container', 'Container', required=True)
+    service_id = fields.Many2one('clouder.service', 'Service')
     service_ids = fields.Many2many('clouder.service',
                                    'clouder_base_service_rel', 'base_id',
                                    'service_id', 'Alternative Services')
@@ -105,6 +106,9 @@ class ClouderBase(models.Model):
         'State', readonly=True)
     option_ids = fields.One2many('clouder.base.option', 'base_id', 'Options')
     link_ids = fields.One2many('clouder.base.link', 'base_id', 'Links')
+    parent_id = fields.Many2one('clouder.base.child', 'Parent')
+    child_ids = fields.One2many('clouder.base.child',
+                                'base_id', 'Childs')
     save_repository_id = fields.Many2one('clouder.save.repository',
                                          'Save repository')
     time_between_save = fields.Integer('Minutes between each save')
@@ -133,7 +137,7 @@ class ClouderBase(models.Model):
         """
         Property returning the full name of the base.
         """
-        return (self.application_id.code + '-' + self.name + '-'
+        return (self.application_id.fullcode + '-' + self.name + '-'
                 + self.domain_id.name).replace('.', '-')
 
     @property
@@ -220,63 +224,17 @@ class ClouderBase(models.Model):
                 "digits, underscore, - and @"))
 
     @api.one
-    @api.constrains('service_id', 'service_ids', 'application_id')
+    @api.constrains('container_id', 'application_id')
     def _check_application(self):
         """
         Check that the application of the base is the same than application
         of services.
         """
         if self.application_id.id != \
-                self.service_id.container_id.application_id.id:
+                self.container_id.application_id.id:
             raise except_orm(_('Data error!'),
                              _("The application of base must be the same "
-                               "than the application of service."))
-        for s in self.service_ids:
-            if self.application_id.id != s.container_idapplication_id.id:
-                raise except_orm(
-                    _('Data error!'),
-                    _("The application of base must be the "
-                      "same than the application of service.")
-                )
-
-    @api.one
-    @api.constrains('option_ids')
-    def _check_option_ids(self):
-        """
-        Check that the required options are filled.
-        """
-        for type_option in self.application_id.type_id.option_ids:
-            if type_option.type == 'base' and type_option.required:
-                test = False
-                for option in self.option_ids:
-                    if option.name == type_option and option.value:
-                        test = True
-                if not test:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("You need to specify a value for the option "
-                          + type_option.name + " for the base " +
-                          self.name + ".")
-                    )
-
-    @api.one
-    @api.constrains('link_ids')
-    def _check_link_ids(self):
-        """
-        Check that the required links are specified.
-        """
-        for app_link in self.application_id.link_ids:
-            if app_link.base and app_link.required:
-                test = False
-                for link in self.link_ids:
-                    if link.name == app_link and link.target:
-                        test = True
-                if not test:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("You need to specify a link to " + app_link.name
-                          + " for the container " + self.name)
-                    )
+                               "than the application of the container."))
 
     @api.multi
     @api.onchange('application_id')
@@ -303,7 +261,8 @@ class ClouderBase(models.Model):
                         options.append((0, 0, {
                             'name': type_option,
                             'value': type_option.get_default}))
-            self.option_ids = options
+            if not self.option_ids:
+                self.option_ids = options
 
             links = []
             for app_link in self.application_id.link_ids:
@@ -315,10 +274,23 @@ class ClouderBase(models.Model):
                     if not test:
                         links.append((0, 0, {'name': app_link,
                                              'target': app_link.next}))
-            self.link_ids = links
+            if not self.link_ids:
+                self.link_ids = links
 
-            self.backup_ids = [(6, 0, [
-                b.id for b in self.application_id.base_backup_ids])]
+            childs = []
+            for child in self.application_id.child_ids:
+                if child.required and child.base:
+                    childs.append((0, 0, {'name': child, 'sequence': child.sequence}))
+            if not self.child_ids:
+                self.child_ids = childs
+
+            if self.application_id.base_backup_ids:
+                self.backup_ids = [(6, 0, [
+                    b.id for b in self.application_id.base_backup_ids])]
+            else:
+                backups = self.env['clouder.container'].search([('application_id.type_id.name', '=', 'backup')])
+                if backups:
+                    self.backup_ids = [(6, 0, [backups[0].id])]
             self.time_between_save = self.application_id.base_time_between_save
             self.saverepo_change = self.application_id.base_saverepo_change
             self.saverepo_expiration = \
@@ -333,11 +305,10 @@ class ClouderBase(models.Model):
 
         :param vals: The values needed to create the record.
         """
-        if (not 'service_id' in vals) or (not vals['service_id']):
+        if (not 'container_id' in vals) or (not vals['container_id']):
             application_obj = self.env['clouder.application']
             domain_obj = self.env['clouder.domain']
             container_obj = self.env['clouder.container']
-            service_obj = self.env['clouder.service']
             if 'application_id' not in vals or not vals['application_id']:
                 raise except_orm(_('Error!'), _(
                     "You need to specify the application of the base."))
@@ -350,31 +321,20 @@ class ClouderBase(models.Model):
                 raise except_orm(_('Error!'), _(
                     "No version for the image linked to the application, "
                     "abandoning container autocreate..."))
-            if not application.version_ids:
-                raise except_orm(_('Error!'), _(
-                    "No version for the application, "
-                    "abandoning service autocreate..."))
             if 'domain_id' not in vals or not vals['domain_id']:
                 raise except_orm(_('Error!'), _(
                     "You need to specify the domain of the base."))
             domain = domain_obj.browse(vals['domain_id'])
             container_vals = {
-                'name': vals['name'] + '_' +
-                domain.name.replace('.', '_').replace('-', '_'),
+                'name': vals['name'] + '-' +
+                domain.name.replace('.', '-'),
                 'server_id': application.next_server_id.id,
                 'application_id': application.id,
                 'image_id': application.default_image_id.id,
                 'image_version_id':
                 application.default_image_id.version_ids[0].id,
             }
-            container_id = container_obj.create(container_vals)
-            service_vals = {
-                'name': 'production',
-                'container_id': container_id,
-                'application_version_id': application.version_ids[0].id,
-            }
-            vals['service_id'] = service_obj.create(service_vals)
-
+            vals['container_id'] = container_obj.create(container_vals)
         return super(ClouderBase, self).create(vals)
 
     @api.multi
@@ -534,7 +494,7 @@ class ClouderBase(models.Model):
         base.deploy_post()
 
     @api.multi
-    def deploy_create_database(self):
+    def deploy_database(self):
         """
         Hook which can be called by submodules to execute commands when we
         want to create the database. If return False, the database will be
@@ -592,64 +552,19 @@ class ClouderBase(models.Model):
         if 'base_restoration' in self.env.context:
             return
 
-        res = self.deploy_create_database()
-        if not res:
-            for key, database in self.databases.iteritems():
-                if self.service_id.database_type != 'mysql':
-                    ssh = self.connect(
-                        self.service_id.container_id.fullname,
-                        username=self.application_id.type_id.system_user)
-                    self.execute(ssh, ['createdb', '-h',
-                                       self.service_id.database_server, '-U',
-                                       self.service_id.db_user, database])
-                    ssh.close()
-                else:
-                    ssh = self.connect(
-                        self.service_id.database.fullname)
-                    self.execute(ssh, [
-                        "mysql -u root -p'"
-                        + self.service_id.database.root_password
-                        + "' -se \"create database " + database + ";\""
-                    ])
-                    self.execute(ssh, [
-                        "mysql -u root -p'"
-                        + self.service_id.database.root_password
-                        + "' -se \"grant all on " + database
-                        + ".* to '" + self.service_id.db_user + "';\""
-                    ])
-                    ssh.close()
+        if self.child_ids:
+            for child in self.child_ids:
+                child.deploy()
+                return
 
+        self.deploy_database()
         self.log('Database created')
+
         if self.build == 'build':
             self.deploy_build()
 
         elif self.build == 'restore':
-            if self.service_id.database_type != 'mysql':
-                ssh = self.connect(
-                    self.service_id.container_id.fullname,
-                    username=self.application_id.type_id.system_user)
-                self.execute(ssh, [
-                    'pg_restore', '-h', self.service_id.database_server,
-                    '-U', self.service_id.db_user, '--no-owner',
-                    '-Fc', '-d', self.fullname_,
-                    self.service_id.application_version_id.full_localpath
-                    + '/' + self.service_id.database_type + '/build.sql'
-                ])
-                ssh.close()
-            else:
-                ssh = self.connect(
-                    self.service_id.container_id.fullname,
-                    username=self.application_id.type_id.system_user)
-                self.execute(ssh, [
-                    'mysql', '-h', self.service_id.database_server,
-                    '-u', self.service_id.db_user,
-                    '-p' + self.service_id.database.root_password,
-                    self.fullname_, '<',
-                    self.service_id.application_version_id.full_localpath
-                    + '/' + self.service_id.database_type + '/build.sql'
-                ])
-                ssh.close()
-
+            #TODO restore from a selected save
             self.deploy_post_restore()
 
         if self.build != 'none':
@@ -662,7 +577,7 @@ class ClouderBase(models.Model):
         self.deploy_post()
 
         #For shinken
-        self.save()
+        # self.save()
 
     @api.multi
     def purge_post(self):
@@ -673,32 +588,10 @@ class ClouderBase(models.Model):
         return
 
     @api.multi
-    def purge_db(self):
+    def purge_database(self):
         """
         Purge the database.
         """
-        for key, database in self.databases.iteritems():
-            if self.service_id.database_type != 'mysql':
-                ssh = self.connect(self.service_id.database.fullname,
-                                   username='postgres')
-                self.execute(ssh, [
-                    'psql', '-c',
-                    '"update pg_database set datallowconn = \'false\' '
-                    'where datname = \'' + database + '\'; '
-                    'SELECT pg_terminate_backend(pid) '
-                    'FROM pg_stat_activity WHERE datname = \''
-                    + database + '\';"'
-                ])
-                self.execute(ssh, ['dropdb', database])
-                ssh.close()
-            else:
-                ssh = self.connect(self.service_id.database.fullname)
-                self.execute(ssh, [
-                    "mysql -u root -p'"
-                    + self.service_id.database.root_password
-                    + "' -se \"drop database " + database + ";\""
-                ])
-                ssh.close()
         return
 
     @api.multi
@@ -706,7 +599,7 @@ class ClouderBase(models.Model):
         """
         Purge the base.
         """
-        self.purge_db()
+        self.purge_database()
         self.purge_post()
 
     def update_base(self):
@@ -758,6 +651,7 @@ class ClouderBaseLink(models.Model):
     """
     _name = 'clouder.base.link'
     _inherit = ['clouder.model']
+    _autodeploy = False
 
     base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade",
                               required=True)
@@ -786,7 +680,7 @@ class ClouderBaseLink(models.Model):
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify a link to "
-                  + self.name.application_id.name + " for the base "
+                  + self.name.name.name + " for the base "
                   + self.base_id.name)
             )
 
@@ -835,3 +729,50 @@ class ClouderBaseLink(models.Model):
         Control and call the hook to purge the link.
         """
         self.control() and self.purge_link()
+
+
+class ClouderBaseChild(models.Model):
+    """
+    Define the base.child object, used to specify the applications linked
+    to a container.
+    """
+
+    _name = 'clouder.base.child'
+
+    base_id = fields.Many2one(
+        'clouder.base', 'Base', ondelete="cascade", required=True)
+    name = fields.Many2one(
+        'clouder.application', 'Application', required=True)
+    sequence = fields.Integer('Sequence')
+    domainname = fields.Char('Name')
+    domain_id = fields.Many2one('clouder.domain', 'Domain')
+    container_id = fields.Many2one(
+        'clouder.container', 'Container')
+    child_id = fields.Many2one(
+        'clouder.container', 'Container')
+
+    _order = 'sequence'
+
+    @api.one
+    @api.constrains('child_id')
+    def _check_child_id(self):
+        if self.child_id and not self.child_id.parent_id == self:
+            raise except_orm(
+                _('Data error!'),
+                _("The child container is not correctly linked to the parent"))
+
+    @api.multi
+    def deploy(self):
+        self = self.with_context(autocreate=True)
+        self.purge()
+        self.child_id = self.env['clouder.base'].create({
+            'name': self.domainname or self.base_id.name + '-' + self.name.code,
+            'domain_id': self.domainname and self.domain_id or self.base_id.domain_id.id,
+            'parent_id': self.id,
+            'application_id': self.name.id,
+            'container_id': self.container_id.id
+        })
+
+    @api.multi
+    def purge(self):
+        self.child_id and self.child_id.unlink()

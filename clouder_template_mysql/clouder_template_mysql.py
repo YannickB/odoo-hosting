@@ -114,3 +114,45 @@ class ClouderContainerLink(models.Model):
             self.container_id.database.execute([
                 "mysql -u root -p'" + self.container_id.database.root_password +
                 "' -se \"drop user " + self. container_id.db_user + ";\""])
+
+class ClouderBase(models.Model):
+    """
+    Add methods to manage the odoo base specificities.
+    """
+
+    _inherit = 'clouder.base'
+
+    @api.multi
+    def deploy_database(self):
+        """
+        Create the database with odoo functions.
+        """
+
+        if self.container_id.db_type == 'mysql':
+            for key, database in self.databases.iteritems():
+                self.container_id.database.execute([
+                    "mysql -u root -p'"
+                    + self.container_id.database.root_password
+                    + "' -se \"create database " + database + ";\""
+                ])
+                self.container_id.database.execute([
+                    "mysql -u root -p'"
+                    + self.container_id.database.root_password
+                    + "' -se \"grant all on " + database
+                    + ".* to '" + self.container_id.db_user + "';\""
+                ])
+        return super(ClouderBase, self).deploy_database()
+
+    @api.multi
+    def purge_database(self):
+        """
+        Purge the database.
+        """
+        if self.container_id.db_type == 'mysql':
+            for key, database in self.databases.iteritems():
+                self.container_id.database.execute([
+                    "mysql -u root -p'"
+                    + self.container_id.database.root_password
+                    + "' -se \"drop database " + database + ";\""
+                ])
+        return super(ClouderBase, self).purge_database()

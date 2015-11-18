@@ -125,6 +125,7 @@ class ClouderApplication(models.Model):
     next_server_id = fields.Many2one('clouder.server', 'Next server')
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=True)
+    base = fields.Boolean('Can have base?')
     admin_name = fields.Char('Admin name', size=64)
     admin_email = fields.Char('Admin email', size=64)
     archive_id = fields.Many2one('clouder.container', 'Archive')
@@ -172,10 +173,10 @@ class ClouderApplication(models.Model):
 
     @property
     def fullcode(self):
-        if not self.parent_id:
-            return self.type_id.name
-        else:
-            return self.parent_id.fullcode + '-' + self.code
+        fullcode = self.type_id.name
+        if self.parent_id:
+            fullcode = self.parent_id.fullcode + '-' + self.code
+        return fullcode
 
     @property
     def full_archivepath(self):
