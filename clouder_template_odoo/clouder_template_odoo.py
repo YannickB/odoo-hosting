@@ -100,6 +100,41 @@ class ClouderApplicationVersion(models.Model):
         return
 
 
+class ClouderContainer(models.Model):
+    """
+    Add methods to manage the postgres specificities.
+    """
+
+    _inherit = 'clouder.container'
+
+    @api.multi
+    def deploy_post(self):
+        super(ClouderContainer, self).deploy_post()
+        if self.application_id.fullcode == 'odoo-data':
+            config_file = '/opt/odoo/etc/odoo.conf'
+            # addons_path = '/opt/odoo/' +\
+            #               self.name + '/files/parts/odoo/addons,'
+            # for extra_dir in sftp.listdir(
+            #         '/opt/odoo/' + self.name + '/files/extra'):
+            #     addons_path += '/opt/odoo/' + self.name +\
+            #                    '/files/extra/' + extra_dir + ','
+            # self.execute(ssh, ['sed', '-i', '"s/ADDONS_PATH/' +
+            #                    addons_path.replace('/', '\/') + '/g"',
+            #                    config_file])
+            self.execute(['sed', '-i', '"s/APPLICATION/' +
+                               self.application_id.code
+                               .replace('-', '_') + '/g"', config_file])
+            self.execute(['sed', '-i', 's/DB_SERVER/' +
+                               self.db_server + '/g',
+                               config_file])
+            self.execute(['sed', '-i',
+                               's/DB_USER/' + self.db_user + '/g',
+                               config_file])
+            self.execute(['sed', '-i', 's/DB_PASSWORD/' +
+                               self.db_password + '/g',
+                               config_file])
+
+
 class ClouderService(models.Model):
     """
     Add methods to manage the odoo service specificities.

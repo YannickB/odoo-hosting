@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api
+from openerp import models, api, modules
 
 
 class ClouderContainer(models.Model):
@@ -30,6 +30,13 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
+    @property
+    def db_type(self):
+        db_type = super(ClouderContainer, self).db_type
+        if db_type == 'postgres':
+            db_type = 'pgsql'
+        return db_type
+
     @api.multi
     def deploy_post(self):
         """
@@ -37,14 +44,60 @@ class ClouderContainer(models.Model):
         """
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'postgres':
-            ssh = self.connect(self.fullname)
-            self.execute(ssh, [
+            self.execute([
                 'echo "host all  all    ' +
                 self.options['network']['value'] +
                 ' md5" >> /etc/postgresql/' +
                 self.application_id.current_version + '/main/pg_hba.conf'])
-            self.execute(ssh, [
+            self.execute([
                 'echo "listen_addresses=\'' +
                 self.options['listen']['value'] + '\'" >> /etc/postgresql/' +
                 self.application_id.current_version + '/main/postgresql.conf'])
-            ssh.close()
+
+class ClouderContainerLink(models.Model):
+    """
+    Add methods to manage the postgres specificities.
+    """
+
+    _inherit = 'clouder.container.link'
+
+    @api.multi
+    def deploy_link(self):
+        """
+        Deploy the configuration file to watch the container.
+        """
+        super(ClouderContainerLink, self).deploy_link()
+        if self.name.name.code == 'postgres':
+            self.log('Creating database user')
+
+            container = self.container_id
+            container.database.execute([
+                'psql', '-c', '"CREATE USER ' + container.db_user +
+                ' WITH PASSWORD \'' + container.db_password + '\' CREATEDB;"'
+            ], username='postgres')
+
+            username=container.application_id.type_id.system_user
+            home = '/home/' + username
+            container.execute([
+                'sed', '-i', '"/:*:' + container.db_user + ':/d" ' + home + '/.pgpass'], username=username)
+            container.execute([
+                'echo "' + container.db_server + ':5432:*:' +
+                container.db_user + ':' + container.db_password +
+                '" >> ' + home + '/.pgpass'], username=username)
+            container.execute(['chmod', '700', home + '/.pgpass'], username=username)
+
+            self.log('Database user created')
+
+    @api.multi
+    def purge_link(self):
+        """
+        Remove the configuration file.
+        """
+        super(ClouderContainerLink, self).purge_link()
+        if self.name.name.code == 'postgres':
+            container = self.container_id
+            container.database.execute( [
+                'psql', '-c', '"DROP USER ' + container.db_user + ';"'], username='postgres')
+            username=container.application_id.type_id.system_user
+            container.execute([
+                'sed', '-i', '"/:*:' + container.db_user + ':/d" /home/' + username + '/.pgpass'], username=username)

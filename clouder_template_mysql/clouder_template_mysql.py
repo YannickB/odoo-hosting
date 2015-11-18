@@ -32,6 +32,17 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
+    @property
+    def db_user(self):
+        """
+        Property returning the database user of the service.
+        """
+        db_user = super(ClouderContainer, self).db_user
+        if self.db_type == 'mysql':
+            db_user = self.container_id.name[:10] + '_' + self.name[:4]
+            db_user = db_user.replace('-', '_')
+        return db_user
+
     @api.multi
     def deploy_post(self):
         """
@@ -67,3 +78,39 @@ class ClouderContainer(models.Model):
                                            'value': password})
             self.execute(ssh,
                          ['mysqladmin', '-u', 'root', 'password', password])
+
+
+class ClouderContainerLink(models.Model):
+    """
+    Add methods to manage the postgres specificities.
+    """
+
+    _inherit = 'clouder.container.link'
+
+    @api.multi
+    def deploy_link(self):
+        """
+        Deploy the configuration file to watch the container.
+        """
+        super(ClouderContainerLink, self).deploy_link()
+        if self.name.name.code == 'mysql':
+            self.log('Creating database user')
+
+            self.container_id.database.execute([
+                "mysql -u root -p'" + self.container_id.database.root_password +
+                "' -se \"create user '" + self.container_id.db_user +
+                "' identified by '" + self.container_id.db_password + "';\""])
+
+
+            self.log('Database user created')
+
+    @api.multi
+    def purge_link(self):
+        """
+        Remove the configuration file.
+        """
+        super(ClouderContainerLink, self).purge_link()
+        if self.name.name.code == 'mysql':
+            self.container_id.database.execute([
+                "mysql -u root -p'" + self.container_id.database.root_password +
+                "' -se \"drop user " + self. container_id.db_user + ";\""])

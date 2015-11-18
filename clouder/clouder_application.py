@@ -26,6 +26,8 @@ from openerp.exceptions import except_orm
 from datetime import datetime
 import re
 
+import clouder_model
+
 
 class ClouderApplicationType(models.Model):
     """
@@ -79,6 +81,9 @@ class ClouderApplicationTypeOption(models.Model):
 
     _name = 'clouder.application.type.option'
 
+
+
+
     apptype_id = fields.Many2one(
         'clouder.application.type',
         'Application Type', ondelete="cascade", required=True)
@@ -86,6 +91,7 @@ class ClouderApplicationTypeOption(models.Model):
     type = fields.Selection(
         [('application', 'Application'), ('container', 'Container'),
          ('service', 'Service'), ('base', 'Base')], 'Type', required=True)
+    app_code = fields.Char('Application Code')
     auto = fields.Boolean('Auto?')
     required = fields.Boolean('Required?')
     default = fields.Text('Default value')
@@ -94,6 +100,13 @@ class ClouderApplicationTypeOption(models.Model):
         ('name_uniq', 'unique(apptype_id,name)',
          'Options name must be unique per apptype!'),
     ]
+
+    @property
+    def get_default(self):
+        res = self.default
+        if self.name == 'db_password':
+            res = clouder_model.generate_random_password(20)
+        return res
 
 
 class ClouderApplication(models.Model):
@@ -158,6 +171,13 @@ class ClouderApplication(models.Model):
         default=lambda self: self.env['clouder.model'].user_partner)
 
     @property
+    def fullcode(self):
+        if not self.parent_id:
+            return self.type_id.name
+        else:
+            return self.parent_id.fullcode + '-' + self.code
+
+    @property
     def full_archivepath(self):
         """
         Property returning the full path to the archive
@@ -214,7 +234,7 @@ class ClouderApplication(models.Model):
         ('code_uniq', 'unique(parent_id, code)', 'Code must be unique!'),
     ]
 
-    _order = 'code, sequence'
+    _order = 'sequence, code'
 
     @api.one
     @api.constrains('code', 'admin_name', 'admin_email')

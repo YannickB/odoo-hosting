@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, _
+from openerp import models, api, _, modules
 from openerp.exceptions import except_orm
 import time
 
@@ -44,6 +44,11 @@ class ClouderImageVersion(models.Model):
             tmp_dir = '/tmp/' + self.image_id.name + '_' + self.fullname
             server = self.registry_id.server_id
             server.execute(['mkdir', '-p', tmp_dir])
+
+            if self.image_id.type_id:
+                sources_path = modules.get_module_path('clouder_template_' + self.image_id.type_id.name) +  '/sources'
+                if self.local_dir_exist(sources_path):
+                    server.send_dir(sources_path, tmp_dir + '/sources')
 
             server.execute([
                 'echo "' + dockerfile.replace('"', '\\"') +
@@ -124,13 +129,17 @@ class ClouderContainer(models.Model):
                 if port.udp:
                     udp = '/udp'
                 cmd.extend(['-p', str(port.hostport) + ':' + port.localport + udp])
+            volumes_from = {}
             for volume in volumes:
-                arg = volume.hostpath + ':' + volume.name
-                if volume.readonly:
-                    arg += ':ro'
-                cmd.extend(['-v', arg])
+                if volume.hostpath:
+                    arg = volume.hostpath + ':' + volume.name
+                    if volume.readonly:
+                        arg += ':ro'
+                    cmd.extend(['-v', arg])
                 if volume.from_id:
-                    cmd.extend(['--volume-from', volume.from_id.name])
+                    volumes_from[volume.from_id.name] = volume.from_id.name
+            for key, volume in volumes_from.iteritems():
+                cmd.extend(['--volumes-from', volume])
             for link in self.link_ids:
                 if link.name.make_link and link.target.server_id == self.server_id:
                     cmd.extend(['--link', link.target.name +
@@ -147,11 +156,11 @@ class ClouderContainer(models.Model):
         return res
 
     @api.multi
-    def purge(self):
+    def hook_purge(self):
         """
         Remove the container.
         """
-        res = super(ClouderContainer, self).purge()
+        res = super(ClouderContainer, self).hook_purge()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name == 'docker':

@@ -54,10 +54,7 @@ then
 else
     file=$ODOO_CONF
 fi
-if [ ! -f "$file" ]; then
-    cp /opt/sources/odoo.conf $file
-    echo "Copy template as conf file $file"
-fi
+
 chown -R odoo /opt/odoo
 echo "Running command..."
 for arg in "$*"

@@ -40,58 +40,38 @@
             <field name="type">application</field>
             <field name="auto" eval="True"/>
         </record>
-
-
-
+        <record id="apptype_odoo_option6" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_odoo"/>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+        </record>
 
         <record id="image_odoo_data" model="clouder.image">
             <field name="name">img_odoo_data</field>
+            <field name="type_id" ref="apptype_odoo"/>
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
-RUN echo "deb http://http.debian.net/debian wheezy main" >> /etc/apt/sources.list
-RUN echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-passlib python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils python-paramiko postgresql-client libfontenc1 libxfont1 xfonts-75dpi xfonts-base xfonts-encodings xfonts-utils libjpeg8
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-pip
+# create the odoo user
+RUN adduser --home=/home/odoo --disabled-password --gecos "" --shell=/bin/bash odoo
+RUN touch /home/odoo/.pgpass
 
-RUN wget http://downloads.sourceforge.net/wkhtmltopdf/wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb -O /tmp/wkhtmltox.deb
-RUN dpkg -i /tmp/wkhtmltox.deb
+RUN mkdir -p /opt/odoo/data
+RUN mkdir -p /opt/odoo/etc
+RUN mkdir -p /opt/odoo/extra-addons
+RUN mkdir -p /opt/odoo/var/{run,log,egg-cache}
+ADD sources/odoo.conf /opt/odoo/etc/odoo.conf
 
-# Note: The official Debian and Ubuntu images automatically ``apt-get clean``
-# after each ``apt-get``
-RUN pip install psycogreen
-RUN pip install erppeek
+RUN chown -R odoo:odoo /opt/odoo
 
-#echo "deb http://ftp.us.debian.org/debian wheezy-backports main" >> /etc/apt/sources.list
-
-RUN useradd -m -s /bin/bash odoo
-USER odoo
-RUN mkdir /home/odoo/.ssh
-RUN mkdir /home/odoo/.ssh/keys
-RUN ln -s /opt/keys/authorized_keys /home/odoo/.ssh/authorized_keys
-
-
-
-USER root
-
-RUN mkdir /opt/versions
-RUN mkdir /opt/odoo
-RUN mkdir /opt/odoo/logs
-
-RUN touch /opt/odoo/supervisor.conf
-RUN ln -s /opt/odoo/supervisor.conf /etc/supervisor/conf.d/odoo.conf
-
-RUN chown -R odoo /opt/odoo
-RUN chmod 644 /opt/odoo/supervisor.conf
-
-RUN mkdir /base-backup
-RUN chown -R odoo /base-backup
-VOLUME /base-backup
+CMD tail -f /opt/odoo/etc/odoo.conf
 ]]></field>
         </record>
         <record id="image_odoo_data_volume1" model="clouder.image.volume">
             <field name="image_id" ref="image_odoo_data"/>
-            <field name="name">/opt/odoo/var</field>
+            <field name="name">/opt/odoo/data</field>
         </record>
         <record id="image_odoo_data_volume2" model="clouder.image.volume">
             <field name="image_id" ref="image_odoo_data"/>
@@ -103,12 +83,17 @@ VOLUME /base-backup
         </record>
         <record id="image_odoo_data_volume4" model="clouder.image.volume">
             <field name="image_id" ref="image_odoo_data"/>
-            <field name="name">/opt/odoo/data</field>
+            <field name="name">/opt/odoo/var</field>
+        </record>
+        <record id="image_odoo_data_volume5" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_data"/>
+            <field name="name">/home/odoo</field>
         </record>
 
 
         <record id="image_odoo_files8" model="clouder.image">
             <field name="name">img_odoo_files8</field>
+            <field name="type_id" ref="apptype_odoo"/>
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
@@ -126,6 +111,7 @@ RUN git clone http://github.com/odoo/odoo.git /opt/odoo/files/odoo -b 8.0
 
         <record id="image_odoo_exec" model="clouder.image">
             <field name="name">img_odoo_exec</field>
+            <field name="type_id" ref="apptype_odoo"/>
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
@@ -138,35 +124,18 @@ RUN echo 'LANG="en_US.UTF-8"' > /etc/default/locale
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
 
 # Add PostgreSQL's repository. It contains the most recent stable release
-#     of PostgreSQL, ``9.4``.
+#     of PostgreSQL, 9.4.
 # install dependencies as distrib packages when system bindings are required
 # some of them extend the basic odoo requirements for a better "apps" compatibility
 # most dependencies are distributed as wheel packages at the next step
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
-        apt-get update && \
-        apt-get -yq install \
-            adduser \
-            ghostscript \
-            postgresql-client-9.4 \
-            python \
-                python-pip \
-                python-imaging \
-                python-pychart python-libxslt1 xfonts-base xfonts-75dpi \
-                libxrender1 libxext6 fontconfig \
-                python-zsi \
-                python-lasso \
-                libzmq3 \
-                gdebi
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/pgdg.list &&         apt-get update &&         apt-get -yq install             adduser             ghostscript             postgresql-client-9.4             python                 python-pip                 python-imaging                 python-pychart python-libxslt1 xfonts-base xfonts-75dpi                 libxrender1 libxext6 fontconfig                 python-zsi                 python-lasso                 libzmq3                 gdebi
 
 ADD sources/pip-checksums.txt /opt/sources/pip-checksums.txt
 # use wheels from our public wheelhouse for proper versions of listed packages
 # as described in sourced pip-req.txt
 # these are python dependencies for odoo and "apps" as precompiled wheel packages
 
-RUN pip install peep && \
-    peep install --upgrade --use-wheel --no-index --pre \
-        --find-links=https://wheelhouse.xcg.io/trusty/odoo/ \
-        -r /opt/sources/pip-checksums.txt
+RUN pip install peep &&     peep install --upgrade --use-wheel --no-index --pre         --find-links=https://wheelhouse.xcg.io/trusty/odoo/         -r /opt/sources/pip-checksums.txt
 
 # must unzip this package to make it visible as an odoo external dependency
 RUN easy_install -UZ py3o.template==0.9.5
@@ -175,38 +144,22 @@ RUN easy_install -UZ py3o.template==0.9.5
 ADD http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb /opt/sources/wkhtmltox.deb
 RUN gdebi -n /opt/sources/wkhtmltox.deb
 
+ADD sources/bin /app/bin/
+
 # create the odoo user
 RUN adduser --home=/opt/odoo --disabled-password --gecos "" --shell=/bin/bash odoo
-
-# ADD sources for the oe components
-# ADD an URI always gives 600 permission with UID:GID 0 => need to chmod accordingly
-# /!\ carefully select the source archive depending on the version
-ADD https://wheelhouse.xcg.io/odoo/odoo9.tgz /opt/odoo/odoo.tgz
-RUN echo "84cfce9dd60ac40cfcbf9d7cc1f3eaf1eb2d1f88d5f9b6bcdfea70ae6573c2bb /opt/odoo/odoo.tgz" | sha256sum -c -
-RUN chown odoo:odoo /opt/odoo/odoo.tgz
-
-# changing user is required by odoo which won't start with root
-# makes the container more unlikely to be unwillingly changed in interactive mode
-USER odoo
-
-RUN /bin/bash -c "mkdir -p /opt/odoo/{bin,etc,sources/odoo,additional_addons,data}" && \
-    cd /opt/odoo/sources/odoo && \
-        tar xzf /opt/odoo/odoo.tgz &&\
-        rm /opt/odoo/odoo.tgz
-
-RUN /bin/bash -c "mkdir -p /opt/odoo/var/{run,log,egg-cache}"
+RUN mkdir -p /opt/odoo/data
+RUN mkdir -p /opt/odoo/etc
+RUN mkdir -p /opt/odoo/extra-addons
+RUN mkdir -p /opt/odoo/var
+RUN chown -R odoo /opt/odoo/*
+#RUN chown -R odoo /opt/odoo/etc
+#RUN chown -R odoo /opt/odoo/extra-addons
+#RUN chown -R odoo /opt/odoo/data
 
 # Execution environment
-USER 0
-ADD sources/odoo.conf /opt/sources/odoo.conf
-WORKDIR /app
-VOLUME ["/opt/odoo/var", "/opt/odoo/etc", "/opt/odoo/additional_addons", "/opt/odoo/data"]
-# Set the default entrypoint (non overridable) to run when starting the container
-ENTRYPOINT ["/app/bin/boot"]
-CMD ["help"]
-# Expose the odoo ports (for linked containers)
-EXPOSE 8069 8072
-ADD bin /app/bin/
+USER odoo
+CMD /opt/odoo/files/odoo/openerp-server -c /opt/odoo/etc/odoo.conf
 ]]></field>
         </record>
         <record id="image_odoo_exec_volume1" model="clouder.image.volume">
@@ -235,6 +188,10 @@ ADD bin /app/bin/
         </record>
         <record id="image_odoo_exec_volume5" model="clouder.image.volume">
             <field name="image_id" ref="image_odoo_exec"/>
+            <field name="name">/home/odoo</field>
+        </record>
+        <record id="image_odoo_exec_volume6" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_exec"/>
             <field name="from_code">files</field>
             <field name="name">/opt/odoo/files</field>
             <field name="nosave" eval="True"/>
@@ -255,6 +212,7 @@ ADD bin /app/bin/
 
         <record id="image_odoo_ssh" model="clouder.image">
             <field name="name">img_odoo_ssh</field>
+            <field name="type_id" ref="apptype_odoo"/>
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
@@ -288,6 +246,12 @@ USER root
         </record>
         <record id="image_odoo_ssh_volume5" model="clouder.image.volume">
             <field name="image_id" ref="image_odoo_ssh"/>
+            <field name="from_code">data</field>
+            <field name="name">/home/odoo</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_ssh_volume6" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_ssh"/>
             <field name="from_code">files</field>
             <field name="name">/opt/odoo/files</field>
             <field name="readonly" eval="True"/>
@@ -302,7 +266,7 @@ USER root
 
 
         <record id="app_odoo" model="clouder.application">
-            <field name="name">Odoo New</field>
+            <field name="name">Odoo</field>
             <field name="code">odoo</field>
             <field name="type_id" ref="apptype_odoo"/>
             <field name="default_image_id" ref="image_odoo_data"/>
@@ -315,14 +279,14 @@ USER root
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_odoo_link2" model="clouder.application.link">
+<!--        <record id="app_odoo_link2" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
             <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
-        </record>
+        </record>-->
         <record id="app_odoo_link3" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
             <field name="name" ref="clouder_template_postgres.app_postgres"/>
@@ -359,7 +323,16 @@ USER root
             <field name="parent_id" ref="app_odoo"/>
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="current_version">8.0</field>
+            <field name="sequence">1</field>
             <field name="required" eval="True"/>
+        </record>
+        <record id="app_odoo_data_link" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_data"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
         </record>
 
         <record id="app_odoo_files" model="clouder.application">
@@ -369,6 +342,7 @@ USER root
             <field name="parent_id" ref="app_odoo"/>
             <field name="default_image_id" ref="image_odoo_files8"/>
             <field name="current_version">8.0</field>
+            <field name="sequence">2</field>
             <field name="required" eval="True"/>
         </record>
 
@@ -379,6 +353,7 @@ USER root
             <field name="parent_id" ref="app_odoo"/>
             <field name="default_image_id" ref="image_odoo_exec"/>
             <field name="current_version">8.0</field>
+            <field name="sequence">3</field>
             <field name="required" eval="True"/>
         </record>
         <record id="app_odoo_exec_link" model="clouder.application.link">
@@ -387,7 +362,6 @@ USER root
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
         </record>
 
         <record id="app_odoo_ssh" model="clouder.application">
@@ -397,6 +371,7 @@ USER root
             <field name="parent_id" ref="app_odoo"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
             <field name="current_version">8.0</field>
+            <field name="sequence">4</field>
         </record>
 
 

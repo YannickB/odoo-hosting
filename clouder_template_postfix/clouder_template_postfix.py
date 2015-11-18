@@ -41,48 +41,41 @@ class ClouderContainer(models.Model):
 
         for link in self.link_ids:
             if link.name.name.code == 'postfix' and link.target:
-                ssh = self.connect(self.fullname)
-                self.execute(ssh, ['echo "root=' + self.email_sysadmin +
+                self.execute(['echo "root=' + self.email_sysadmin +
                                    '" > /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "mailhub=postfix:25" '
+                self.execute(['echo "mailhub=postfix:25" '
                                    '>> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "rewriteDomain=' + self.fullname +
+                self.execute(['echo "rewriteDomain=' + self.fullname +
                                    '" >> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "hostname=' + self.fullname +
+                self.execute(['echo "hostname=' + self.fullname +
                                    '" >> /etc/ssmtp/ssmtp.conf'])
-                self.execute(ssh, ['echo "FromLineOverride=YES" >> '
+                self.execute(['echo "FromLineOverride=YES" >> '
                                    '/etc/ssmtp/ssmtp.conf'])
-                ssh.close()
-
         if self.application_id.type_id.name == 'postfix':
-            ssh = self.connect(self.fullname)
-            self.execute(ssh, [
+            self.execute([
                 'echo "relayhost = [smtp.mandrillapp.com]" '
                 '>> /etc/postfix/main.cf'])
-            self.execute(ssh, [
+            self.execute([
                 'echo "smtp_sasl_auth_enable = yes" >> /etc/postfix/main.cf'])
-            self.execute(ssh, [
+            self.execute([
                 'echo "smtp_sasl_password_maps = '
                 'hash:/etc/postfix/sasl_passwd" >> /etc/postfix/main.cf'])
-            self.execute(ssh, [
+            self.execute([
                 'echo "smtp_sasl_security_options = noanonymous" '
                 '>> /etc/postfix/main.cf'])
-            self.execute(ssh,
-                         ['echo "smtp_use_tls = yes" >> /etc/postfix/main.cf'])
-            self.execute(ssh, [
+            self.execute(['echo "smtp_use_tls = yes" >> /etc/postfix/main.cf'])
+            self.execute([
                 'echo "mynetworks = 127.0.0.0/8 172.17.0.0/16" '
                 '>> /etc/postfix/main.cf'])
-            self.execute(ssh, [
+            self.execute([
                 'echo "[smtp.mandrillapp.com]    ' +
                 self.options['mailchimp_username']['value'] + ':' +
                 self.options['mailchimp_apikey']['value'] +
                 '" > /etc/postfix/sasl_passwd'])
-            self.execute(ssh, ['postmap /etc/postfix/sasl_passwd'])
+            self.execute(['postmap /etc/postfix/sasl_passwd'])
 
-            self.send(ssh,
-                      modules.get_module_path('clouder_template_postfix') +
+            self.send(modules.get_module_path('clouder_template_postfix') +
                       '/res/openerp_mailgate.py',
                       '/bin/openerp_mailgate.py')
 
-            self.execute(ssh, ['chmod', '+x', '/bin/openerp_mailgate.py'])
-            ssh.close()
+            self.execute(['chmod', '+x', '/bin/openerp_mailgate.py'])

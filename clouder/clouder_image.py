@@ -36,6 +36,7 @@ class ClouderImage(models.Model):
     _name = 'clouder.image'
 
     name = fields.Char('Image name', size=64, required=True)
+    type_id = fields.Many2one('clouder.application.type', 'Application Type')
     current_version = fields.Char('Current version', size=64, required=True)
     parent_id = fields.Many2one('clouder.image', 'Parent image')
     parent_version_id = fields.Many2one(
@@ -235,11 +236,11 @@ class ClouderImageVersion(models.Model):
 
     @api.multi
     def control_priority(self):
-        if 'clouder_unlink' in self.env.context:
-            for image_version in self.search([('parent_id','=',self.id)]):
-                return image_version.check_priority()
-        else:
-            return self.parent_id.check_priority()
+        # if 'clouder_unlink' in self.env.context:
+        #     for image_version in self.search([('parent_id','=',self.id)]):
+        #         return image_version.check_priority()
+        # else:
+        return self.parent_id.check_priority()
 
     @api.multi
     def deploy(self):
