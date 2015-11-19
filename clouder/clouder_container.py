@@ -182,11 +182,15 @@ class ClouderServer(models.Model):
         """
         Add the keys in the filesystem and the ssh config.
         """
-        self.purge()
+
+        super(ClouderServer, self).deploy()
+
         self.execute_local(['mkdir', '-p', self.home_directory + '/.ssh/keys'])
         key_file = self.home_directory + '/.ssh/keys/' + self.name
         self.execute_write_file(key_file, self.private_key)
+        self.execute_write_file(key_file + '.pub', self.public_key)
         self.execute_local(['chmod', '700', key_file])
+        self.execute_local(['chmod', '700', key_file + '.pub'])
         self.execute_write_file(self.home_directory +
                                 '/.ssh/config', 'Host ' + self.name)
         self.execute_write_file(self.home_directory +
@@ -197,8 +201,7 @@ class ClouderServer(models.Model):
         self.execute_write_file(self.home_directory +
                                 '/.ssh/config', '\n  User root')
         self.execute_write_file(self.home_directory +
-                                '/.ssh/config', '\n  IdentityFile ' +
-                                self.home_directory + '/.ssh/keys/' +
+                                '/.ssh/config', '\n  IdentityFile ~/.ssh/keys/' +
                                 self.name)
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.name + '\n')
@@ -213,6 +216,7 @@ class ClouderServer(models.Model):
                             self.home_directory + '/.ssh/config'])
         self.execute_local(['rm', '-rf', self.home_directory +
                             '/.ssh/keys/' + self.name])
+        super(ClouderServer, self).purge()
 
 
 class ClouderContainer(models.Model):
@@ -245,15 +249,11 @@ class ClouderContainer(models.Model):
     server_id = fields.Many2one('clouder.server', 'Server', required=True)
     image_version_id = fields.Many2one('clouder.image.version',
                                        'Image version', required=True)
-    save_repository_id = fields.Many2one('clouder.save.repository',
-                                         'Save repository')
     time_between_save = fields.Integer('Minutes between each save')
-    saverepo_change = fields.Integer('Days before saverepo change')
-    saverepo_expiration = fields.Integer('Days before saverepo expiration')
     save_expiration = fields.Integer('Days before save expiration')
     date_next_save = fields.Datetime('Next save planned')
     save_comment = fields.Text('Save Comment')
-    nosave = fields.Boolean('No Save?')
+    autosave = fields.Boolean('Save?')
     privileged = fields.Boolean('Privileged?')
     port_ids = fields.One2many('clouder.container.port',
                                'container_id', 'Ports')
@@ -263,8 +263,8 @@ class ClouderContainer(models.Model):
                                  'container_id', 'Options')
     link_ids = fields.One2many('clouder.container.link',
                                'container_id', 'Links')
-    service_ids = fields.One2many('clouder.service',
-                                  'container_id', 'Services')
+    base_ids = fields.One2many('clouder.base',
+                                  'container_id', 'Bases')
     parent_id = fields.Many2one('clouder.container.child', 'Parent')
     child_ids = fields.One2many('clouder.container.child',
                                 'container_id', 'Childs')
@@ -342,7 +342,10 @@ class ClouderContainer(models.Model):
         """
         Property returning the database user of the service.
         """
-        db_user = self.fullname.replace('-', '_')
+        fullname = self.fullname
+        if self.parent_id and not self.child_ids:
+            fullname = self.parent_id.container_id.fullname
+        db_user = fullname.replace('-', '_')
         return db_user
 
     @property
@@ -356,6 +359,10 @@ class ClouderContainer(models.Model):
             if option.name.name == 'db_password':
                 db_password = option.value
         return db_password
+
+    @property
+    def base_backup_container(self):
+        return self
 
     @property
     def ports(self):
@@ -413,7 +420,7 @@ class ClouderContainer(models.Model):
         if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(
                 _('Data error!'),
-                _("Name can only contains letters, digits and underscore"))
+                _("Name can only contains letters, digits and dash"))
 
     @api.one
     @api.constrains('application_id')
@@ -439,43 +446,6 @@ class ClouderContainer(models.Model):
                 _('Data error!'),
                 _("The image of image version must be "
                   "the same than the image of container."))
-
-    @api.one
-    @api.constrains('option_ids')
-    def _check_option_ids(self):
-        """
-        Check that the required options are filled.
-        """
-        for type_option in self.application_id.type_id.option_ids:
-            if type_option.type == 'container' and type_option.required:
-                test = False
-                for option in self.option_ids:
-                    if option.name == type_option and option.value:
-                        test = True
-                if not test:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("You need to specify a value for the option " +
-                          type_option.name + " for the container " +
-                          self.name + "."))
-
-    @api.one
-    @api.constrains('link_ids')
-    def _check_link_ids(self):
-        """
-        Check that the required links are specified.
-        """
-        for app_link in self.application_id.link_ids:
-            if app_link.container and app_link.required:
-                test = False
-                for link in self.link_ids:
-                    if link.name == app_link and link.target:
-                        test = True
-                if not test:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("You need to specify a link to " + app_link.name.name
-                          + " for the container " + self.name))
 
     @api.multi
     @api.onchange('application_id')
@@ -536,13 +506,10 @@ class ClouderContainer(models.Model):
 
             self.backup_ids = [(6, 0, [
                 b.id for b in self.application_id.container_backup_ids])]
+            self.autosave = self.application_id.autosave
 
             self.time_between_save = \
                 self.application_id.container_time_between_save
-            self.saverepo_change = \
-                self.application_id.container_saverepo_change
-            self.saverepo_expiration = \
-                self.application_id.container_saverepo_expiration
             self.save_expiration = \
                 self.application_id.container_save_expiration
 
@@ -648,26 +615,24 @@ class ClouderContainer(models.Model):
 
         :param vals: The values to update
         """
-        version_obj = self.env['clouder.image.version']
-        flag = False
-        if not 'autocreate' in self.env.context:
-            if 'image_version_id' in vals or 'port_ids' in vals \
-                    or 'volume_ids' in vals:
-                flag = True
-                self = self.with_context(self.create_log('upgrade version'))
-                if 'image_version_id' in vals:
-                    new_version = version_obj.browse(vals['image_version_id'])
-                    self = self.with_context(
-                        save_comment='Before upgrade from ' +
-                                     self.image_version_id.name +
-                                     ' to ' + new_version.name)
-                else:
-                    self = self.with_context(
-                        save_comment='Change on port or volumes')
+        # version_obj = self.env['clouder.image.version']
+        # flag = False
+        # if not 'autocreate' in self.env.context:
+        #     if 'image_version_id' in vals or 'port_ids' in vals \
+        #             or 'volume_ids' in vals:
+        #         flag = True
+        #         if 'image_version_id' in vals:
+        #             new_version = version_obj.browse(vals['image_version_id'])
+        #             self = self.with_context(
+        #                 save_comment='Before upgrade from ' +
+        #                              self.image_version_id.name +
+        #                              ' to ' + new_version.name)
+        #         else:
+        #             self = self.with_context(
+        #                 save_comment='Change on port or volumes')
         res = super(ClouderContainer, self).write(vals)
-        if flag:
-            self.reinstall()
-            self.end_log()
+        # if flag:
+        #     self.reinstall()
         if 'nosave' in vals:
             self.deploy_links()
         return res
@@ -678,9 +643,10 @@ class ClouderContainer(models.Model):
         Override unlink method to remove all services
         and make a save before deleting a container.
         """
-        self.service_ids and self.service_ids.unlink()
-        self = self.with_context(save_comment='Before unlink')
-        self.save()
+        self.base_ids and self.base_ids.unlink()
+        save = self.save(comment='Before unlink', no_enqueue=True)
+        if self.parent_id:
+            self.parent_id.save_id = save
         return super(ClouderContainer, self).unlink()
 
     @api.multi
@@ -691,72 +657,47 @@ class ClouderContainer(models.Model):
         if not 'save_comment' in self.env.context:
             self = self.with_context(save_comment='Before reinstall')
         self = self.with_context(forcesave=True)
-        self.save()
+        self.save(no_enqueue=True)
         self = self.with_context(forcesave=False)
         self = self.with_context(nosave=True)
         super(ClouderContainer, self).reinstall()
 
     @api.multi
-    def save(self):
+    def save(self, comment=False, no_enqueue=False):
         """
         Create a new container save.
         """
-        return
+
         save = False
         now = datetime.now()
-        repo_obj = self.env['clouder.save.repository']
-
-        if not self.save_repository_id:
-            repo_ids = repo_obj.search(
-                [('container_name', '=', self.name),
-                 ('container_server', '=', self.server_id.name)])
-            if repo_ids:
-                self.save_repository_id = repo_ids[0]
-
-        if not self.save_repository_id \
-                or datetime.strptime(self.save_repository_id.date_change,
-                                     "%Y-%m-%d") < now or False:
-            repo_vals = {
-                'name': now.strftime("%Y-%m-%d") + '_' +
-                self.name + '_' + self.server_id.name,
-                'type': 'container',
-                'date_change': (now + timedelta(
-                    days=self.saverepo_change
-                        or self.application_id.container_saverepo_change
-                )).strftime("%Y-%m-%d"),
-                'date_expiration': (now + timedelta(
-                    days=self.saverepo_expiration
-                    or self.application_id.container_saverepo_expiration
-                )).strftime("%Y-%m-%d"),
-                'container_name': self.name,
-                'container_server': self.server_id.name,
-            }
-            repo_id = repo_obj.create(repo_vals)
-            self.save_repository_id = repo_id
 
         if 'nosave' in self.env.context \
-                or (self.nosave and not 'forcesave' in self.env.context):
+                or (not self.autosave and not 'forcesave' in self.env.context):
             self.log('This base container not be saved '
                      'or the backup isnt configured in conf, '
                      'skipping save container')
             return
 
+        if no_enqueue:
+            self = self.with_context(no_enqueue=True)
+
         for backup_server in self.backup_ids:
             save_vals = {
                 'name': self.now_bup + '_' + self.fullname,
                 'backup_id': backup_server.id,
-                'repo_id': self.save_repository_id.id,
+                # 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration
                     or self.application_id.container_save_expiration
                 )).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in self.env.context
-                           and self.env.context['save_comment']
-                           or self.save_comment or 'Manual',
+                'comment': comment or 'Manual',
+                           #            ''save_comment' in self.env.context
+                           # and self.env.context['save_comment']
+                           # or self.save_comment or 'Manual',
                 'now_bup': self.now_bup,
                 'container_id': self.id,
             }
-            save = self.env['clouder.save.save'].create(save_vals)
+            save = self.env['clouder.save'].create(save_vals)
         date_next_save = (datetime.now() + timedelta(
             minutes=self.time_between_save
             or self.application_id.container_time_between_save
@@ -797,45 +738,46 @@ class ClouderContainer(models.Model):
         if self.child_ids:
             for child in self.child_ids:
                 child.deploy()
-        else:
-            ports = []
-            volumes = []
-            nextport = self.server_id.start_port
-            for port in self.port_ids:
-                if not port.hostport:
-                    while not port.hostport \
-                            and nextport != self.server_id.end_port:
-                        port_ids = self.env['clouder.container.port'].search(
-                            [('hostport', '=', nextport),
-                             ('container_id.server_id', '=', self.server_id.id)])
-                        if not port_ids and not self.server_id.execute([
-                                'netstat', '-an', '|', 'grep', str(nextport)]):
-                            port.hostport = nextport
-                        nextport += 1
-                if not port.hostport:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("We were not able to assign an hostport to the "
-                          "localport " + port.localport + ".\n"
-                          "If you don't want to assign one manually, make sure you"
-                          " fill the port range in the server configuration, and "
-                          "that all ports in that range are not already used."))
-                ports.append(port)
-            for volume in self.volume_ids:
-                volumes.append(volume)
+                return
 
-            self.hook_deploy(ports, volumes)
+        ports = []
+        volumes = []
+        nextport = self.server_id.start_port
+        for port in self.port_ids:
+            if not port.hostport:
+                while not port.hostport \
+                        and nextport != self.server_id.end_port:
+                    port_ids = self.env['clouder.container.port'].search(
+                        [('hostport', '=', nextport),
+                         ('container_id.server_id', '=', self.server_id.id)])
+                    if not port_ids and not self.server_id.execute([
+                            'netstat', '-an', '|', 'grep', str(nextport)]):
+                        port.hostport = nextport
+                    nextport += 1
+            if not port.hostport:
+                raise except_orm(
+                    _('Data error!'),
+                    _("We were not able to assign an hostport to the "
+                      "localport " + port.localport + ".\n"
+                      "If you don't want to assign one manually, make sure you"
+                      " fill the port range in the server configuration, and "
+                      "that all ports in that range are not already used."))
+            ports.append(port)
+        for volume in self.volume_ids:
+            volumes.append(volume)
 
-            time.sleep(3)
+        self.hook_deploy(ports, volumes)
 
-            self.deploy_post()
+        time.sleep(3)
 
-            self.start()
+        self.deploy_post()
 
-            #For shinken
-            self.save()
+        self.start()
 
-            self.deploy_links()
+        #For shinken
+        self.save(comment='First save', no_enqueue=True)
+
+        self.deploy_links()
 
         return
 
@@ -1061,6 +1003,7 @@ class ClouderContainerChild(models.Model):
         'clouder.server', 'Server')
     child_id = fields.Many2one(
         'clouder.container', 'Container')
+    save_id = fields.Many2one('clouder.save', 'Restore this save on deployment')
 
     _order = 'sequence'
 
@@ -1082,6 +1025,9 @@ class ClouderContainerChild(models.Model):
             'application_id': self.name.id,
             'server_id': self.server_id.id
         })
+        if self.save_id:
+            self.save_id.container_id = self.child_id
+            self.save_id.restore()
 
     @api.multi
     def purge(self):

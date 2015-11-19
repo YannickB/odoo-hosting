@@ -270,16 +270,17 @@ USER root
             <field name="code">odoo</field>
             <field name="type_id" ref="apptype_odoo"/>
             <field name="default_image_id" ref="image_odoo_data"/>
+            <field name="base" eval="True"/>
             <field name="current_version">8.0</field>
         </record>
-        <record id="app_odoo_link1" model="clouder.application.link">
+<!--        <record id="app_odoo_link1" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
             <field name="name" ref="clouder_template_bind.app_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-<!--        <record id="app_odoo_link2" model="clouder.application.link">
+        <record id="app_odoo_link2" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
             <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="required" eval="True"/>
@@ -302,7 +303,7 @@ USER root
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="base" eval="True"/>
-        </record>
+        </record><!--
         <record id="app_odoo_link5" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
             <field name="name" ref="clouder_template_proxy.app_proxy"/>
@@ -314,7 +315,7 @@ USER root
             <field name="application_id" ref="app_odoo"/>
             <field name="name" ref="clouder_template_piwik.app_piwik"/>
             <field name="base" eval="True"/>
-        </record>
+        </record>-->
 
         <record id="app_odoo_data" model="clouder.application">
             <field name="name">Odoo Data</field>
@@ -325,6 +326,7 @@ USER root
             <field name="current_version">8.0</field>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
         </record>
         <record id="app_odoo_data_link" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_data"/>

@@ -125,6 +125,7 @@ class ClouderApplication(models.Model):
     next_server_id = fields.Many2one('clouder.server', 'Next server')
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=True)
+    base = fields.Boolean('Can have base?')
     admin_name = fields.Char('Admin name', size=64)
     admin_email = fields.Char('Admin email', size=64)
     archive_id = fields.Many2one('clouder.container', 'Archive')
@@ -143,15 +144,12 @@ class ClouderApplication(models.Model):
     buildfile = fields.Text('Build File')
     container_ids = fields.One2many('clouder.container', 'application_id',
                                     'Containers')
+    autosave = fields.Boolean('Save?')
     container_backup_ids = fields.Many2many(
         'clouder.container', 'clouder_application_container_backup_rel',
         'application_id', 'backup_id', 'Backups Containers')
     container_time_between_save = fields.Integer(
         'Minutes between each container save', required=True, default=9999)
-    container_saverepo_change = fields.Integer(
-        'Days before container saverepo change', required=True, default=30)
-    container_saverepo_expiration = fields.Integer(
-        'Days before container saverepo expiration', required=True, default=90)
     container_save_expiration = fields.Integer(
         'Days before container save expiration', required=True, default=5)
     base_backup_ids = fields.Many2many(
@@ -159,10 +157,6 @@ class ClouderApplication(models.Model):
         'application_id', 'backup_id', 'Backups Bases')
     base_time_between_save = fields.Integer('Minutes between each base save',
                                             required=True, default=9999)
-    base_saverepo_change = fields.Integer('Days before base saverepo change',
-                                          required=True, default=30)
-    base_saverepo_expiration = fields.Integer(
-        'Days before base saverepo expiration', required=True, default=90)
     base_save_expiration = fields.Integer('Days before base save expiration',
                                           required=True, default=5)
     public = fields.Boolean('Public?')
@@ -172,10 +166,10 @@ class ClouderApplication(models.Model):
 
     @property
     def fullcode(self):
-        if not self.parent_id:
-            return self.type_id.name
-        else:
-            return self.parent_id.fullcode + '-' + self.code
+        fullcode = self.type_id.name
+        if self.parent_id:
+            fullcode = self.parent_id.fullcode + '-' + self.code
+        return fullcode
 
     @property
     def full_archivepath(self):

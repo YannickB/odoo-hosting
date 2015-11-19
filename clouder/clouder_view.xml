@@ -40,8 +40,8 @@
                         <field name="name"/>
                         <field name="title"/>
                         <field name="domain_id"/>
-                        <field name="application_id"/>
-                        <field name="service_id" required="0"/>
+                        <field name="application_id" domain="[('base','=',True)]"/>
+                        <field name="container_id" required="0" domain="[('application_id.base', '=', True)]"/>
                         <field name="service_ids" widget="many2many_tags"/>
                         <field name="admin_name"/>
                         <field name="admin_password"/>
@@ -69,7 +69,7 @@
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('apptype_id.application_ids.container_ids.service_ids','in',parent.service_id),('type','=','base')]"/>
+                                    <field name="name" domain="[('apptype_id.application_ids.container_ids','in',parent.container_id),('type','=','base')]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
@@ -82,16 +82,28 @@
                                     <button name="purge_" type="object" string="Purge"/>
                                 </tree>
                             </field>
+                            <field name="child_ids" colspan="4">
+                                <tree string="Childs" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="sequence"/>
+                                    <field name="domainname"/>
+                                    <field name="domain_id" attrs="{'required': [('domainname', '!=', False)]}"/>
+                                    <field name="container_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
+                                    <field name="child_id"/>
+                                    <field name="save_id"/>
+                                    <button name="deploy" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
+                                    <button name="purge" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
+                                </tree>
+                            </field>
+                            <button name="compute_childs" string="Compute links between childs" type="object" attrs="{'invisible': [('child_ids', '=', [])]}"/>
+                            <newline/>
                             <button name="reinstall" string="Reinstall" type="object"/>
                             <field name="job_ids" colspan="4"/>
                         </page>
                         <page string="Save">
                             <group col="4">
                                 <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
-                                <field name="save_repository_id"/>
                                 <field name="time_between_save"/>
-                                <field name="saverepo_change"/>
-                                <field name="saverepo_expiration"/>
                                 <field name="save_expiration"/>
                                 <newline/>
                                 <field name="date_next_save"/>
@@ -218,7 +230,6 @@
                         <field name="server_id"/>
                         <field name="image_id"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
-                        <field name="nosave"/>
                         <field name="privileged"/>
                         <newline/>
                         <field name="public"/>
@@ -266,6 +277,7 @@
                                     <field name="sequence"/>
                                     <field name="server_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
                                     <field name="child_id"/>
+                                    <field name="save_id"/>
                                     <button name="deploy" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
                                     <button name="purge" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
                                 </tree>
@@ -279,10 +291,8 @@
                         <page string="Save">
                             <group col="4">
                                 <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
-                                <field name="save_repository_id"/>
+                                <field name="autosave"/>
                                 <field name="time_between_save"/>
-                                <field name="saverepo_change"/>
-                                <field name="saverepo_expiration"/>
                                 <field name="save_expiration"/>
                                 <newline/>
                                 <field name="date_next_save"/>
@@ -374,92 +384,32 @@
             </field>
         </record>
 
-        <record id="action_clouder_save_repository_form" model="ir.actions.act_window">
-            <field name="name">Save Repositories</field>
-            <field name="type">ir.actions.act_window</field>
-            <field name="res_model">clouder.save.repository</field>
-            <field name="view_type">form</field>
-        </record>
-
-        <menuitem action="action_clouder_save_repository_form" id="menu_action_clouder_save_repository_form" parent="menu_clouder_clouder"/>
-
-        <record id="view_clouder_save_repository_form" model="ir.ui.view">
-            <field name="name">clouder.save.repository.form</field>
-            <field name="model">clouder.save.repository</field>
-            <field name="arch" type="xml">
-                <form string="Save Repository" version="7.0">
-                    <group col="4">
-                      <field name="name"/>
-                      <field name="type"/>
-                      <field name="date_change"/>
-                      <field name="date_expiration"/>
-                    </group>
-                    <notebook>
-                        <page string="Container" attrs="{'invisible':[('type','!=','container')]}">
-                            <group col="4">
-                              <field name="container_name"/>
-                              <field name="container_server"/>
-                            </group>  
-                        </page>
-                        <page string="Base" attrs="{'invisible':[('type','!=','base')]}">
-                            <group col="4">
-                              <field name="base_name"/>
-                              <field name="base_domain"/>
-                            </group>  
-                        </page>
-                     </notebook>
-                    <field name="save_ids" colspan="4"/>
-                </form>
-            </field>
-        </record>
-        <record id="view_clouder_save_repository_tree" model="ir.ui.view">
-            <field name="name">clouder.save.repository.tree</field>
-            <field name="model">clouder.save.repository</field>
-            <field name="arch" type="xml">
-                <tree string="Save Repository">
-                    <field name="name"/>
-                    <field name='type'/>
-                </tree>
-            </field>
-        </record>
-
         <record id="action_clouder_save_save_form" model="ir.actions.act_window">
             <field name="name">Saves</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">clouder.save.save</field>
+            <field name="res_model">clouder.save</field>
             <field name="view_type">form</field>
         </record>
 
         <menuitem action="action_clouder_save_save_form" id="menu_action_clouder_save_save_form" parent="menu_clouder_clouder"/>
 
-        <record id="view_clouder_save_save_form" model="ir.ui.view">
-            <field name="name">clouder.save.save.form</field>
-            <field name="model">clouder.save.save</field>
+        <record id="view_clouder_save_form" model="ir.ui.view">
+            <field name="name">clouder.save.form</field>
+            <field name="model">clouder.save</field>
             <field name="arch" type="xml">
                 <form string="Save" version="7.0">
                     <group col="4">
                       <field name="name"/>
-                      <field name="type" invisible="1"/>
                       <field name="backup_id"/>
-                      <field name="repo_id"/>
                       <field name='comment'/>
                       <field name="now_bup"/>
                       <field name="date_expiration"/>
-<!--                      <field name="instance_id"/>
-                      <field name="clouder_ids"/>
-                      <field name="create_date"/>
-                      <field name="version"/>
-                      <field name="application_id" invisible="1"/>
-                      <newline/>
-                      <newline/>
-                      <field name="restore_instance_id" domain="[('application_id','=',application_id)]"/>
-                      <field name="restore_prefix"/>
-                      <field name="restore_clouder_ids" domain="[('id','in',clouder_ids[0][2])]"/>-->
                     </group>
                     <notebook>
                         <page string="Container">
                             <group col="4">
                                 <field name="container_id"/>
+                                <field name="container_fullname"/>
                                 <field name="container_app"/>
                                 <field name="container_img"/>
                                 <field name="container_img_version"/>
@@ -470,18 +420,10 @@
                                 <field name="container_volumes"/>
                             </group>  
                        </page>
-                        <page string="Service" attrs="{'invisible':[('type','!=','base')]}">
-                            <group col="4">
-                                <field name="service_id"/>
-                                <field name="service_name"/>
-                                <field name="service_app_version"/>
-                                <field name="service_options"/>
-                                <field name="service_links"/>
-                            </group>  
-                       </page>
-                        <page string="Base" attrs="{'invisible':[('type','!=','base')]}">
+                        <page string="Base" attrs="{'invisible':[('base_fullname','=',False)]}">
                             <group col="4">
                                 <field name="base_id"/>
+                                <field name="base_fullname"/>
                                 <field name="base_title"/>
                                 <field name="base_admin_name"/>
                                 <field name="base_admin_password"/>
@@ -501,35 +443,32 @@
                     <group col="4">
                       <separator string="Restore"/>
                       <newline/>
-                      <field name="container_name" attrs="{'invisible':[('type','!=','container')]}"/>
-                      <field name="container_server" attrs="{'invisible':[('type','!=','container')]}"/>
-                      <field name="base_container_name" readonly="1" attrs="{'invisible':[('type','!=','base')]}"/>
-                      <field name="base_container_server" readonly="1" attrs="{'invisible':[('type','!=','base')]}"/>
+                      <field name="container_name" attrs="{'invisible':[('base_id','!=',False)]}"/>
+                      <field name="container_server" attrs="{'invisible':[('base_id','!=',False)]}"/>
+                      <field name="base_container_name" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
+                      <field name="base_container_server" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="container_restore_to_name"/>
                       <field name="container_restore_to_server_id"/>
-                      <field name="base_name" attrs="{'invisible':[('type','!=','base')]}"/>
-                      <field name="base_domain" attrs="{'invisible':[('type','!=','base')]}"/>
-                      <field name="base_restore_to_name" attrs="{'invisible':[('type','!=','base')]}"/>
-                      <field name="base_restore_to_domain_id" attrs="{'invisible':[('type','!=','base')]}"/>
+                      <field name="base_name" attrs="{'invisible':[('base_id','=',False)]}"/>
+                      <field name="base_domain" attrs="{'invisible':[('base_id','=',False)]}"/>
+                      <field name="base_restore_to_name" attrs="{'invisible':[('base_id','=',False)]}"/>
+                      <field name="base_restore_to_domain_id" attrs="{'invisible':[('base_id','=',False)]}"/>
                     </group>
                     <button name="restore" string="Restore" type="object"/>
                     <field name="job_ids" colspan="4"/>
                 </form>
             </field>
         </record>
-        <record id="view_clouder_save_save_tree" model="ir.ui.view">
-            <field name="name">clouder.save.save.tree</field>
-            <field name="model">clouder.save.save</field>
+        <record id="view_clouder_save_tree" model="ir.ui.view">
+            <field name="name">clouder.save.tree</field>
+            <field name="model">clouder.save</field>
             <field name="arch" type="xml">
                 <tree string="Save">
                     <field name="name"/>
-                    <field name='type'/>
+                    <field name='container_fullname' attrs="{'invisible': [('base_fullname','!=',False)]}"/>
+                    <field name='base_fullname'/>
                     <field name='comment'/>
                     <field name='date_expiration'/>
-<!--                    <field name='instance_id'/>
-                    <field name="clouder_ids"/>
-                    <field name="create_date"/>
-                    <field name="version"/>-->
                 </tree>
             </field>
         </record>
@@ -645,6 +584,7 @@
                         <field name="current_version"/>
                         <field name="default_image_id"/>
                         <field name="next_server_id"/>
+                        <field name="base"/>
                         <field name="admin_name"/>
                         <field name="admin_email"/>
                         <field name="public"/>
@@ -690,14 +630,12 @@
                         </page>
                         <page string="Save">
                             <group>
+                                <field name="autosave"/>
+                                <newline/>
                                 <field name="container_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
                                 <field name="base_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
                                 <field name="container_time_between_save"/>
                                 <field name="base_time_between_save"/>
-                                <field name="container_saverepo_change"/>
-                                <field name="base_saverepo_change"/>
-                                <field name="container_saverepo_expiration"/>
-                                <field name="base_saverepo_expiration"/>
                                 <field name="container_save_expiration"/>
                                 <field name="base_save_expiration"/>
                             </group>

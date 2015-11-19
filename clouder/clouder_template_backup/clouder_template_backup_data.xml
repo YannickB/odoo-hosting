@@ -136,6 +136,10 @@ RUN bup init
 
 USER root
 
+RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:cron]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=cron -f" >> /etc/supervisor/conf.d/supervisord.conf
@@ -146,6 +150,7 @@ RUN echo "command=su backup -c 'BUP_DIR=/opt/backup/bup bup web :8080'" >> /etc/
 
 RUN echo "* * * * * root supervisorctl restart bup-web" >> /etc/crontab
 
+CMD ["/usr/bin/supervisord"]
 
 ]]></field>
         </record>

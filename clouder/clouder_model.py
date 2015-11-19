@@ -226,6 +226,16 @@ class ClouderModel(models.AbstractModel):
         #     _logger.info("Can't find job_uuid %s", self.env.context)
 
 
+    @api.multi
+    def deploy_frame(self):
+        try:
+            self.deploy()
+        except:
+            self.log('===================')
+            self.log('FAIL! Reverting...')
+            self.log('===================')
+            self.purge()
+            raise
 
     @api.multi
     def deploy(self):
@@ -284,16 +294,11 @@ class ClouderModel(models.AbstractModel):
         """
         res = super(ClouderModel, self).create(vals)
         res.hook_create()
-        try:
-            if self._autodeploy:
-                res.enqueue('deploy')
-        except:
-            res.log('===================')
-            res.log('FAIL! Reverting...')
-            res.log('===================')
-            res = res.with_context(nosave=True)
-            res.unlink()
-            raise
+        if self._autodeploy:
+            if not 'no_enqueue' in self.env.context:
+                res.enqueue('deploy_frame')
+            else:
+                res.deploy_frame()
         return res
 
     @api.one
