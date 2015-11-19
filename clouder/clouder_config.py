@@ -148,7 +148,7 @@ class ClouderConfigSettings(models.Model):
         self.env['clouder.save.repository'].search(
             [('date_expiration', '!=', False),
              ('date_expiration', '<', self.now_date)]).unlink()
-        self.env['clouder.save.save'].search([('date_expiration', '!=', False),
+        self.env['clouder.save'].search([('date_expiration', '!=', False),
                                               ('date_expiration', '<',
                                                self.now_date)]).unlink()
 

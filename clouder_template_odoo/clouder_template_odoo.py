@@ -107,6 +107,13 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
+    @property
+    def base_backup_container(self):
+        res = super(ClouderContainer, self).base_backup_container
+        if self.application_id.type_id.name == 'odoo':
+            res = self.childs['exec']
+        return res
+
     @api.multi
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
@@ -567,54 +574,6 @@ class ClouderBase(models.Model):
         return res
 
 
-class ClouderSaveSave(models.Model):
-    """
-    Add methods to manage the odoo save specificities.
-    """
-
-    _inherit = 'clouder.save.save'
-
-    @api.multi
-    def deploy_base(self):
-        """
-        Backup filestore.
-        """
-        res = super(ClouderSaveSave, self).deploy_base()
-        if self.base_id.application_id.type_id.name == 'odoo':
-            ssh = self.connect(
-                self.container_id.fullname,
-                username=self.base_id.application_id.type_id.system_user)
-            self.execute(ssh, [
-                'cp', '-R',
-                '/opt/odoo/' + self.service_id.name + '/filestore/' +
-                self.base_id.fullname_,
-                '/base-backup/' + self.repo_id.name + '/filestore'])
-            ssh.close()
-        return res
-
-    @api.multi
-    def restore_base(self):
-        """
-        Restore filestore.
-        """
-        res = super(ClouderSaveSave, self).restore_base()
-        if self.base_id.application_id.type_id.name == 'odoo':
-            ssh = self.connect(
-                self.container_id.fullname,
-                username=self.base_id.application_id.type_id.system_user)
-            self.execute(ssh, [
-                'rm', '-rf',
-                '/opt/odoo/' + self.service_id.name +
-                '/filestore/' + self.base_id.fullname_])
-            self.execute(ssh, [
-                'cp', '-R',
-                '/base-backup/' + self.repo_id.name + '/filestore',
-                '/opt/odoo/' + self.service_id.name + '/filestore/' +
-                self.base_id.fullname_])
-            ssh.close()
-        return res
-
-
 class ClouderBaseLink(models.Model):
     """
     Add methods to manage the odoo specificities.
@@ -701,3 +660,42 @@ class ClouderBaseLink(models.Model):
                                '/etc/aliases'])
             self.target.execute(['newaliases'])
             self.target.execute(['/etc/init.d/postfix', 'reload'])
+
+
+class ClouderSave(models.Model):
+    """
+    Add methods to manage the odoo save specificities.
+    """
+
+    _inherit = 'clouder.save'
+
+    @api.multi
+    def deploy_base(self):
+        """
+        Backup filestore.
+        """
+        res = super(ClouderSave, self).deploy_base()
+        if self.base_id.application_id.type_id.name == 'odoo':
+            self.container_id.base_backup_container.execute([
+                'cp', '-R',
+                '/opt/odoo/data/filestore/' +
+                self.base_id.fullname_,
+                '/base-backup/' + self.name + '/filestore'], username=self.base_id.application_id.type_id.system_user)
+        return res
+
+    @api.multi
+    def restore_base(self, base):
+        """
+        Restore filestore.
+        """
+        res = super(ClouderSave, self).restore_base(base)
+        if self.base_id.application_id.type_id.name == 'odoo':
+            base.container_id.base_backup_container.execute([
+                'rm', '-rf',
+                '/opt/odoo/data/filestore/' + self.base_id.fullname_], username=self.base_id.application_id.type_id.system_user)
+            base.container_id.base_backup_container.execute([
+                'cp', '-R',
+                '/base-backup/restore-' + self.name + '/filestore',
+                '/opt/odoo/data/filestore/' +
+                self.base_id.fullname_], username=self.base_id.application_id.type_id.system_user)
+        return res

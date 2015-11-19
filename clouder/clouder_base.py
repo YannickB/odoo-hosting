@@ -371,47 +371,47 @@ class ClouderBase(models.Model):
         """
         Override unlink method to make a save before we delete a base.
         """
-        self = self.with_context(save_comment='Before unlink')
-        self.save()
+        # save = self.save(comment='Before unlink')
+        if self.parent_id:
+            self.parent_id.save_id = save
         return super(ClouderBase, self).unlink()
 
     @api.multi
-    def save(self):
+    def save(self, comment=False, no_enqueue=False):
         """
         Make a new save.
         """
-        save_obj = self.env['clouder.save.save']
-        repo_obj = self.env['clouder.save.repository']
+        save_obj = self.env['clouder.save']
 
         save = False
 
         now = datetime.now()
-        if not self.save_repository_id:
-            repo_ids = repo_obj.search([
-                ('base_name', '=', self.name),
-                ('base_domain', '=', self.domain_id.name)])
-            if repo_ids:
-                self.save_repository_id = repo_ids[0]
-
-        if not self.save_repository_id or datetime.strptime(
-                self.save_repository_id.date_change,
-                "%Y-%m-%d") < now or False:
-            repo_vals = {
-                'name': now.strftime(
-                    "%Y-%m-%d") + '_' + self.name + '_' + self.domain_id.name,
-                'type': 'base',
-                'date_change': (now + timedelta(days=self.saverepo_change
-                                or self.application_id.base_saverepo_change)
-                                ).strftime("%Y-%m-%d"),
-                'date_expiration': (now + timedelta(
-                    days=self.saverepo_expiration
-                    or self.application_id.base_saverepo_expiration)
-                ).strftime("%Y-%m-%d"),
-                'base_name': self.name,
-                'base_domain': self.domain_id.name,
-            }
-            repo_id = repo_obj.create(repo_vals)
-            self.save_repository_id = repo_id
+        # if not self.save_repository_id:
+        #     repo_ids = repo_obj.search([
+        #         ('base_name', '=', self.name),
+        #         ('base_domain', '=', self.domain_id.name)])
+        #     if repo_ids:
+        #         self.save_repository_id = repo_ids[0]
+        #
+        # if not self.save_repository_id or datetime.strptime(
+        #         self.save_repository_id.date_change,
+        #         "%Y-%m-%d") < now or False:
+        #     repo_vals = {
+        #         'name': now.strftime(
+        #             "%Y-%m-%d") + '_' + self.name + '_' + self.domain_id.name,
+        #         'type': 'base',
+        #         'date_change': (now + timedelta(days=self.saverepo_change
+        #                         or self.application_id.base_saverepo_change)
+        #                         ).strftime("%Y-%m-%d"),
+        #         'date_expiration': (now + timedelta(
+        #             days=self.saverepo_expiration
+        #             or self.application_id.base_saverepo_expiration)
+        #         ).strftime("%Y-%m-%d"),
+        #         'base_name': self.name,
+        #         'base_domain': self.domain_id.name,
+        #     }
+        #     repo_id = repo_obj.create(repo_vals)
+        #     self.save_repository_id = repo_id
 
         if 'nosave' in self.env.context \
                 or (self.nosave and not 'forcesave' in self.env.context):
@@ -419,33 +419,30 @@ class ClouderBase(models.Model):
                 'This base shall not be saved or the backup '
                 'isnt configured in conf, skipping save base')
             return
-        self = self.with_context(self.create_log('save'))
-        if not self.backup_ids:
-            self.log('The backup isnt configured in conf, skipping save base')
+
+        if no_enqueue:
+            self = self.with_context(no_enqueue=True)
+
         for backup_server in self.backup_ids:
             save_vals = {
                 'name': self.now_bup + '_' + self.fullname,
                 'backup_id': backup_server.id,
-                'repo_id': self.save_repository_id.id,
+                # 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration
                     or self.application_id.base_save_expiration)
                 ).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in self.env.context
-                           and self.env.context['save_comment']
-                           or self.save_comment or 'Manual',
+                'comment': comment or 'Manual',
                 'now_bup': self.now_bup,
-                'container_id': self.service_id.container_id.id,
-                'service_id': self.service_id.id,
+                'container_id': self.container_id.id,
                 'base_id': self.id,
             }
-            save = save_obj.create(save_vals)
+            save = self.env['clouder.save'].create(save_vals)
         date_next_save = (datetime.now() + timedelta(
             minutes=self.time_between_save
             or self.application_id.base_time_between_save)
         ).strftime("%Y-%m-%d %H:%M:%S")
         self.write({'save_comment': False, 'date_next_save': date_next_save})
-        self.end_log()
         return save
 
     @api.multi
@@ -577,7 +574,7 @@ class ClouderBase(models.Model):
         self.deploy_post()
 
         #For shinken
-        # self.save()
+        # self.save(comment='First save', no_enqueue=True)
 
     @api.multi
     def purge_post(self):
@@ -750,6 +747,7 @@ class ClouderBaseChild(models.Model):
         'clouder.container', 'Container')
     child_id = fields.Many2one(
         'clouder.container', 'Container')
+    save_id = fields.Many2one('clouder.save', 'Restore this save on deployment')
 
     _order = 'sequence'
 
@@ -772,6 +770,10 @@ class ClouderBaseChild(models.Model):
             'application_id': self.name.id,
             'container_id': self.container_id.id
         })
+        if self.save_id:
+            self.save_id.container_id = self.child_id.container_id
+            self.save_id.base_id = self.child_id
+            self.save_id.restore()
 
     @api.multi
     def purge(self):

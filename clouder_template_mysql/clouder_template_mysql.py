@@ -156,3 +156,53 @@ class ClouderBase(models.Model):
                     + "' -se \"drop database " + database + ";\""
                 ])
         return super(ClouderBase, self).purge_database()
+
+
+class ClouderSave(models.Model):
+
+    _inherit = 'clouder.save'
+
+    @api.multi
+    def save_database(self):
+        """
+
+        :return:
+        """
+
+        res = super(ClouderSave, self).save_database()
+
+        if self.base_id.container_id.db_type == 'mysql':
+            container = self.base_id.container_id
+            for key, database in self.base_id.databases.iteritems():
+                container.execute([
+                    'mysqldump',
+                    '-h', container.db_server,
+                    '-u', container.db_user,
+                    '-p' + container.db_password,
+                    database, '>', '/base-backup/' + self.name +
+                    '/' + database + '.dump'], username=self.base_id.application_id.type_id.system_user)
+        return res
+
+
+    @api.multi
+    def restore_database(self, base):
+        super(ClouderSave, self).restore_database(base)
+        if base.container_id.db_type == 'mysql':
+
+            for key, database in base.databases.iteritems():
+                db = base.container_id.database
+                db.execute([
+                    "mysql -u root -p'" +
+                    database.root_password +
+                    "' -se \"create database " + database + ";\""])
+                db.execute([
+                    "mysql -u root -p'" +
+                    database.root_password +
+                    "' -se \"grant all on " + database + ".* to '" +
+                    base.conteneur_id.db_user + "';\""])
+                base.conteneur_id.execute([
+                    'mysql', '-h', base.conteneur_id.db_server, '-u',
+                    base.conteneur_id.db_user,
+                    '-p' + base.conteneur_id.db_password, database,
+                    '<', '/base-backup/' + self.name + '/' +
+                    database + '.dump'])

@@ -144,6 +144,7 @@ class ClouderApplication(models.Model):
     buildfile = fields.Text('Build File')
     container_ids = fields.One2many('clouder.container', 'application_id',
                                     'Containers')
+    autosave = fields.Boolean('Save?')
     container_backup_ids = fields.Many2many(
         'clouder.container', 'clouder_application_container_backup_rel',
         'application_id', 'backup_id', 'Backups Containers')

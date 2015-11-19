@@ -68,6 +68,7 @@ class ClouderServer(models.Model):
             self.execute(ssh, ['rm', self.shinken_configfile])
             self.execute(ssh, ['/usr/local/shinken/bin/init.d/shinken', 'reload'])
             ssh.close()
+        super(ClouderServer, self).purge()
 
 
 class ClouderContainer(models.Model):

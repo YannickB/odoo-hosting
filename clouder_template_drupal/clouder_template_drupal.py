@@ -298,12 +298,12 @@ class ClouderBase(models.Model):
             ssh.close()
 
 
-class ClouderSaveSave(models.Model):
+class ClouderSave(models.Model):
     """
     Add methods to manage the drupal save specificities.
     """
 
-    _inherit = 'clouder.save.save'
+    _inherit = 'clouder.save'
 
     @api.multi
     def deploy_base(self):

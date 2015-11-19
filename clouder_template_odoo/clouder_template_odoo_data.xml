@@ -326,6 +326,7 @@ USER root
             <field name="current_version">8.0</field>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
         </record>
         <record id="app_odoo_data_link" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_data"/>
