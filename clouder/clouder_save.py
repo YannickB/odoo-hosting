@@ -33,28 +33,6 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderSaveRepository(models.Model):
-    """
-    Define the save.repository object, which represent the repository where
-    the saves are stored.
-    """
-
-    _name = 'clouder.save.repository'
-
-    name = fields.Char('Name', size=128, required=True)
-    type = fields.Selection([('container', 'Container'), ('base', 'Base')],
-                            'Name', required=True)
-    date_change = fields.Date('Change Date')
-    date_expiration = fields.Date('Expiration Date')
-    container_name = fields.Char('Container Name', size=64)
-    container_server = fields.Char('Container Server', size=128)
-    base_name = fields.Char('Base Name', size=64)
-    base_domain = fields.Char('Base Domain', size=128)
-    # save_ids = fields.One2many('clouder.save', 'repo_id', 'Saves')
-
-    _order = 'create_date desc'
-
-
 class ClouderSave(models.Model):
     """
     Define the save.save object, which represent the saves of containers/bases.
@@ -64,12 +42,8 @@ class ClouderSave(models.Model):
     _inherit = ['clouder.model']
 
     name = fields.Char('Name', size=256, required=True)
-    # type = fields.Selection([('container', 'Container'), ('base', 'Base')],
-    #                         'Type', related='repo_id.type', readonly=True)
     backup_id = fields.Many2one(
         'clouder.container', 'Backup Server', required=True)
-    # repo_id = fields.Many2one('clouder.save.repository', 'Repository',
-    #                           ondelete='cascade', required=True)
     date_expiration = fields.Date('Expiration Date')
     comment = fields.Text('Comment')
     now_bup = fields.Char('Now bup', size=64)
@@ -434,11 +408,9 @@ class ClouderSave(models.Model):
         server_obj = self.env['clouder.server']
         domain_obj = self.env['clouder.domain']
         application_obj = self.env['clouder.application']
-        application_version_obj = self.env['clouder.application.version']
         application_link_obj = self.env['clouder.application.link']
         image_obj = self.env['clouder.image']
         image_version_obj = self.env['clouder.image.version']
-        service_obj = self.env['clouder.service']
 
         apps = application_obj.search([('code', '=', self.container_app)])
         if not apps:

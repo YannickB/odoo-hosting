@@ -109,11 +109,7 @@ class ClouderBase(models.Model):
     parent_id = fields.Many2one('clouder.base.child', 'Parent')
     child_ids = fields.One2many('clouder.base.child',
                                 'base_id', 'Childs')
-    save_repository_id = fields.Many2one('clouder.save.repository',
-                                         'Save repository')
     time_between_save = fields.Integer('Minutes between each save')
-    saverepo_change = fields.Integer('Days before saverepo change')
-    saverepo_expiration = fields.Integer('Days before saverepo expiration')
     save_expiration = fields.Integer('Days before save expiration')
     date_next_save = fields.Datetime('Next save planned')
     save_comment = fields.Text('Save Comment')
@@ -292,9 +288,6 @@ class ClouderBase(models.Model):
                 if backups:
                     self.backup_ids = [(6, 0, [backups[0].id])]
             self.time_between_save = self.application_id.base_time_between_save
-            self.saverepo_change = self.application_id.base_saverepo_change
-            self.saverepo_expiration = \
-                self.application_id.base_saverepo_expiration
             self.save_expiration = self.application_id.base_save_expiration
 
     @api.model
@@ -386,32 +379,6 @@ class ClouderBase(models.Model):
         save = False
 
         now = datetime.now()
-        # if not self.save_repository_id:
-        #     repo_ids = repo_obj.search([
-        #         ('base_name', '=', self.name),
-        #         ('base_domain', '=', self.domain_id.name)])
-        #     if repo_ids:
-        #         self.save_repository_id = repo_ids[0]
-        #
-        # if not self.save_repository_id or datetime.strptime(
-        #         self.save_repository_id.date_change,
-        #         "%Y-%m-%d") < now or False:
-        #     repo_vals = {
-        #         'name': now.strftime(
-        #             "%Y-%m-%d") + '_' + self.name + '_' + self.domain_id.name,
-        #         'type': 'base',
-        #         'date_change': (now + timedelta(days=self.saverepo_change
-        #                         or self.application_id.base_saverepo_change)
-        #                         ).strftime("%Y-%m-%d"),
-        #         'date_expiration': (now + timedelta(
-        #             days=self.saverepo_expiration
-        #             or self.application_id.base_saverepo_expiration)
-        #         ).strftime("%Y-%m-%d"),
-        #         'base_name': self.name,
-        #         'base_domain': self.domain_id.name,
-        #     }
-        #     repo_id = repo_obj.create(repo_vals)
-        #     self.save_repository_id = repo_id
 
         if 'nosave' in self.env.context \
                 or (self.nosave and not 'forcesave' in self.env.context):

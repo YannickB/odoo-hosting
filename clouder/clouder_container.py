@@ -249,11 +249,7 @@ class ClouderContainer(models.Model):
     server_id = fields.Many2one('clouder.server', 'Server', required=True)
     image_version_id = fields.Many2one('clouder.image.version',
                                        'Image version', required=True)
-    save_repository_id = fields.Many2one('clouder.save.repository',
-                                         'Save repository')
     time_between_save = fields.Integer('Minutes between each save')
-    saverepo_change = fields.Integer('Days before saverepo change')
-    saverepo_expiration = fields.Integer('Days before saverepo expiration')
     save_expiration = fields.Integer('Days before save expiration')
     date_next_save = fields.Datetime('Next save planned')
     save_comment = fields.Text('Save Comment')
@@ -514,10 +510,6 @@ class ClouderContainer(models.Model):
 
             self.time_between_save = \
                 self.application_id.container_time_between_save
-            self.saverepo_change = \
-                self.application_id.container_saverepo_change
-            self.saverepo_expiration = \
-                self.application_id.container_saverepo_expiration
             self.save_expiration = \
                 self.application_id.container_save_expiration
 
@@ -678,35 +670,6 @@ class ClouderContainer(models.Model):
 
         save = False
         now = datetime.now()
-        # repo_obj = self.env['clouder.save.repository']
-        #
-        # if not self.save_repository_id:
-        #     repo_ids = repo_obj.search(
-        #         [('container_name', '=', self.name),
-        #          ('container_server', '=', self.server_id.name)])
-        #     if repo_ids:
-        #         self.save_repository_id = repo_ids[0]
-        #
-        # if not self.save_repository_id \
-        #         or datetime.strptime(self.save_repository_id.date_change,
-        #                              "%Y-%m-%d") < now or False:
-        #     repo_vals = {
-        #         'name': now.strftime("%Y-%m-%d") + '_' +
-        #         self.name + '_' + self.server_id.name,
-        #         'type': 'container',
-        #         'date_change': (now + timedelta(
-        #             days=self.saverepo_change
-        #                 or self.application_id.container_saverepo_change
-        #         )).strftime("%Y-%m-%d"),
-        #         'date_expiration': (now + timedelta(
-        #             days=self.saverepo_expiration
-        #             or self.application_id.container_saverepo_expiration
-        #         )).strftime("%Y-%m-%d"),
-        #         'container_name': self.name,
-        #         'container_server': self.server_id.name,
-        #     }
-        #     repo_id = repo_obj.create(repo_vals)
-        #     self.save_repository_id = repo_id
 
         if 'nosave' in self.env.context \
                 or (not self.autosave and not 'forcesave' in self.env.context):
