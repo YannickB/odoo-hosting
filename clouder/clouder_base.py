@@ -229,62 +229,111 @@ class ClouderBase(models.Model):
                                "than the application of the container."))
 
     @api.multi
-    @api.onchange('application_id')
-    def onchange_application_id(self):
+    def onchange_application_id_vals(self, vals):
         """
         Update the options, links and some other fields when we change
         the application_id field.
         """
-        if self.application_id:
+        if 'application_id' in vals and vals['application_id']:
+            application = self.env['clouder.application'].browse(vals['application_id'])
 
-            self.admin_name = self.application_id.admin_name
-            self.admin_email = self.application_id.admin_email \
-                and self.application_id.admin_email \
-                or self.email_sysadmin
+            if not 'admin_name' in vals or not vals['admin_name']:
+                vals['admin_name'] = application.admin_name
 
+            if not 'admin_name' in vals or not vals['admin_name']:
+                vals['admin_email'] = application.admin_email \
+                    and application.admin_email \
+                    or self.email_sysadmin
+
+            if not 'option_ids' in vals:
+                vals['option_ids'] = []
             options = []
-            for type_option in self.application_id.type_id.option_ids:
+            for type_option in application.type_id.option_ids:
                 if type_option.type == 'base' and type_option.auto:
                     test = False
-                    for option in self.option_ids:
-                        if option.name == type_option:
-                            test = True
+                    if 'option_ids' in vals:
+                        for option in vals['option_ids']:
+                            if option.name == type_option:
+                                test = True
                     if not test:
-                        options.append((0, 0, {
-                            'name': type_option,
-                            'value': type_option.get_default}))
-            if not self.option_ids:
-                self.option_ids = options
+                        options.append((0, 0,
+                                        {'name': type_option.id,
+                                         'value': type_option.get_default}))
+            vals['option_ids'] = options
 
+            if not 'link_ids' in vals:
+                vals['link_ids'] = []
             links = []
-            for app_link in self.application_id.link_ids:
+            for app_link in application.link_ids:
                 if app_link.base and app_link.auto:
                     test = False
-                    for link in self.link_ids:
-                        if link.name == app_link:
-                            test = True
+                    if 'link_ids' in vals:
+                        for link in vals['link_ids']:
+                            if link.name == app_link:
+                                test = True
                     if not test:
-                        links.append((0, 0, {'name': app_link,
-                                             'target': app_link.next}))
-            if not self.link_ids:
-                self.link_ids = links
+                        next_id = False
+                        if 'parent_id' in vals and vals['parent_id']:
+                            parent = self.env['clouder.base.child'].browse(vals['parent_id'])
+                            for parent_link in parent.base_id.link_ids:
+                                if app_link.name.code == parent_link.name.name.code and parent_link.target:
+                                    next_id = parent_link.target.id
+                        context = self.env.context
+                        if not next_id and 'base_links' in context:
+                            fullcode = app_link.name.fullcode
+                            if fullcode in context['base_links']:
+                                next_id = context['base_links'][fullcode]
+                        if not next_id:
+                            next_id = app_link.next.id
+                        links.append((0, 0, {'name': app_link.id,
+                                             'target': next_id}))
+            vals['link_ids'] = links
 
+            if not 'child_ids' in vals:
+                vals['child_ids'] = []
             childs = []
-            for child in self.application_id.child_ids:
-                if child.required and child.base:
-                    childs.append((0, 0, {'name': child, 'sequence': child.sequence}))
-            if not self.child_ids:
-                self.child_ids = childs
+            for app_child in application.child_ids:
+                test = False
+                if 'child_ids' in vals:
+                    for child in vals['child_ids']:
+                        if child.name == app_child:
+                            test = True
+                if not test and app_child.base and app_child.required:
+                    childs.append((0, 0, {'name': app_child.id, 'sequence':  app_child.sequence}))
+            vals['child_ids'] = childs
 
-            if self.application_id.base_backup_ids:
-                self.backup_ids = [(6, 0, [
-                    b.id for b in self.application_id.base_backup_ids])]
-            else:
-                backups = self.env['clouder.container'].search([('application_id.type_id.name', '=', 'backup')])
-                if backups:
-                    self.backup_ids = [(6, 0, [backups[0].id])]
-            self.time_between_save = self.application_id.base_time_between_save
-            self.save_expiration = self.application_id.base_save_expiration
+            if not 'backup_ids' in vals or not vals['backup_ids']:
+                if application.base_backup_ids:
+                    vals['backup_ids'] = [(6, 0, [
+                        b.id for b in application.base_backup_ids])]
+                else:
+                    backups = self.env['clouder.container'].search([('application_id.type_id.name', '=', 'backup')])
+                    if backups:
+                        vals['backup_ids'] = [(6, 0, [backups[0].id])]
+
+            vals['autosave'] = application.autosave
+
+            vals['time_between_save'] = \
+                application.base_time_between_save
+            vals['save_expiration'] = \
+                application.base_save_expiration
+
+        return vals
+
+    @api.multi
+    @api.onchange('application_id')
+    def onchange_application_id(self):
+        vals = {
+            'application_id': self.application_id.id,
+            'admin_name': self.admin_name,
+            'admin_email': self.admin_email,
+            'option_ids': self.option_ids,
+            'link_ids': self.link_ids,
+            'child_ids': self.child_ids,
+            }
+        vals = self.onchange_application_id_vals(vals)
+        for key, value in vals.iteritems():
+            setattr(self, key, value)
 
     @api.multi
     def control_priority(self):
@@ -328,6 +377,9 @@ class ClouderBase(models.Model):
                 application.default_image_id.version_ids[0].id,
             }
             vals['container_id'] = container_obj.create(container_vals)
+
+        vals = self.onchange_application_id_vals(vals)
+
         return super(ClouderBase, self).create(vals)
 
     @api.multi
