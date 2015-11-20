@@ -268,6 +268,7 @@ class ClouderContainer(models.Model):
     parent_id = fields.Many2one('clouder.container.child', 'Parent')
     child_ids = fields.One2many('clouder.container.child',
                                 'container_id', 'Childs')
+    subservice_name = fields.Char('Subservice Name')
     ports_string = fields.Text('Ports', compute='_get_ports')
     backup_ids = fields.Many2many(
         'clouder.container', 'clouder_container_backup_rel',
@@ -448,106 +449,172 @@ class ClouderContainer(models.Model):
                   "the same than the image of container."))
 
     @api.multi
-    @api.onchange('application_id')
-    def onchange_application_id(self):
+    def onchange_application_id_vals(self, vals):
         """
         Update the options, links and some other fields when we change
         the application_id field.
         """
-        if self.application_id:
-            if not self.server_id:
-                self.server_id = self.application_id.next_server_id
+        if 'application_id' in vals and vals['application_id']:
+            application = self.env['clouder.application'].browse(vals['application_id'])
+            if not 'server_id' in vals or not vals['server_id']:
+                vals['server_id'] = application.next_server_id.id
 
+            if not 'option_ids' in vals:
+                vals['option_ids'] = []
             options = []
-            for type_option in self.application_id.type_id.option_ids:
+            for type_option in application.type_id.option_ids:
                 if type_option.type == 'container' and type_option.auto:
-                    if type_option.app_code and type_option.app_code != self.application_id.code:
+                    if type_option.app_code and type_option.app_code != application.code:
                         continue
                     test = False
-                    for option in self.option_ids:
-                        if option.name == type_option:
-                            test = True
+                    if 'option_ids' in vals:
+                        for option in vals['option_ids']:
+                            if option.name == type_option:
+                                test = True
                     if not test:
                         options.append((0, 0,
-                                        {'name': type_option,
+                                        {'name': type_option.id,
                                          'value': type_option.get_default}))
-            if not self.option_ids:
-                self.option_ids = options
+            vals['option_ids'] = options
 
+            if not 'link_ids' in vals:
+                vals['link_ids'] = []
             links = []
-            for app_link in self.application_id.link_ids:
+            for app_link in application.link_ids:
                 if app_link.container and app_link.auto or app_link.make_link:
                     test = False
-                    for link in self.link_ids:
-                        if link.name == app_link:
-                            test = True
+                    if 'link_ids' in vals:
+                        for link in vals['link_ids']:
+                            if link.name == app_link:
+                                test = True
                     if not test:
-                        next = False
-                        if self.parent_id:
-                            for parent_link in self.parent_id.container_id.link_ids:
+                        next_id = False
+                        if 'parent_id' in vals and vals['parent_id']:
+                            parent = self.env['clouder.container.child'].browse(vals['parent_id'])
+                            for parent_link in parent.container_id.link_ids:
                                 if app_link.name.code == parent_link.name.name.code and parent_link.target:
-                                    next = parent_link.target
-                        if not next:
-                            next = app_link.next
-                        links.append((0, 0, {'name': app_link,
-                                             'target': next}))
-            if not self.link_ids:
-                self.link_ids = links
+                                    next_id = parent_link.target.id
+                        context = self.env.context
+                        if not next_id and 'container_links' in context:
+                            fullcode = app_link.name.fullcode
+                            if fullcode in context['container_links']:
+                                next_id = context['container_links'][fullcode]
+                        if not next_id:
+                            next_id = app_link.next.id
+                        links.append((0, 0, {'name': app_link.id,
+                                             'target': next_id}))
+            vals['link_ids'] = links
 
+            if not 'child_ids' in vals:
+                vals['child_ids'] = []
             childs = []
-            for child in self.application_id.child_ids:
-                if child.required:
-                    childs.append((0, 0, {'name': child, 'sequence': child.sequence, 'server_id': child.next_server_id or self.server_id}))
-            if not self.child_ids:
-                self.child_ids = childs
+            for app_child in application.child_ids:
+                test = False
+                if 'child_ids' in vals:
+                    for child in vals['child_ids']:
+                        if child.name == app_child:
+                            test = True
+                if not test and app_child.required:
+                    childs.append((0, 0, {'name': app_child.id, 'sequence':  app_child.sequence, 'server_id': app_child.next_server_id.id or self.server_id.id}))
+            vals['child_ids'] = childs
 
-            if not self.image_id:
-                self.image_id = self.application_id.default_image_id
+            if not 'image_id' in vals or not vals['image_id']:
+                vals['image_id'] = application.default_image_id.id
 
-            self.backup_ids = [(6, 0, [
-                b.id for b in self.application_id.container_backup_ids])]
-            self.autosave = self.application_id.autosave
+            if not 'backup_ids' in vals or not vals['backup_ids']:
+                if application.container_backup_ids:
+                    vals['backup_ids'] = [(6, 0, [
+                        b.id for b in application.container_backup_ids])]
+                else:
+                    backups = self.env['clouder.container'].search([('application_id.type_id.name', '=', 'backup')])
+                    if backups:
+                        vals['backup_ids'] = [(6, 0, [backups[0].id])]
 
-            self.time_between_save = \
-                self.application_id.container_time_between_save
-            self.save_expiration = \
-                self.application_id.container_save_expiration
+            vals['autosave'] = application.autosave
+
+            vals['time_between_save'] = \
+                application.container_time_between_save
+            vals['save_expiration'] = \
+                application.container_save_expiration
+        return vals
+
+    @api.multi
+    @api.onchange('application_id')
+    def onchange_application_id(self):
+        #TODO replace with self.read
+        vals = {
+            'application_id': self.application_id.id,
+            'server_id': self.server_id.id,
+            'option_ids': self.option_ids,
+            'link_ids': self.link_ids,
+            'child_ids': self.child_ids,
+            }
+        vals = self.onchange_application_id_vals(vals)
+        for key, value in vals.iteritems():
+            setattr(self, key, value)
+
+    @api.multi
+    def onchange_image_id_vals(self, vals):
+        """
+        Update the ports and volumes when we change the image_id field.
+        """
+        if 'image_id' in vals and vals['image_id']:
+            image = self.env['clouder.image'].browse(vals['image_id'])
+            vals['privileged'] = image.privileged
+
+            if not 'image_version_id' in vals or not vals['image_version_id']:
+                if not image.version_ids:
+                    raise except_orm(
+                        _('Data error!'),
+                        _("You need to build a version for the image " + image.name))
+                else:
+                    vals['image_version_id'] = image.version_ids[0].id
+
+            ports = []
+            for img_port in image.port_ids:
+                test = False
+                if 'port_ids' in vals:
+                    for port in vals['port_ids']:
+                        if port.name == img_port.name:
+                            test = True
+                if not test and img_port.expose != 'none':
+                    ports.append(((0, 0, {
+                        'name': img_port.name, 'localport': img_port.localport,
+                        'expose': img_port.expose, 'udp': img_port.udp})))
+            vals['port_ids'] = ports
+
+            volumes = []
+            for img_volume in image.volume_ids:
+                test = False
+                if 'volume_ids' in vals:
+                    for volume in vals['volume_ids']:
+                        if volume.name == img_volume.name:
+                            test = True
+                from_id = False
+                if 'parent_id' in vals and vals['parent_id']:
+                    parent = self.env['clouder.container.child'].browse(vals['parent_id'])
+                    if img_volume.from_code in parent.container_id.childs:
+                        from_id = parent.container_id.childs[img_volume.from_code].id
+                if not test:
+                    volumes.append(((0, 0, {
+                        'name': img_volume.name, 'from_id': from_id, 'hostpath': img_volume.hostpath,
+                        'user': img_volume.user, 'readonly': img_volume.readonly,
+                        'nosave': img_volume.nosave})))
+            vals['volume_ids'] = volumes
+        return vals
 
     @api.multi
     @api.onchange('image_id')
     def onchange_image_id(self):
-        """
-        Update the ports and volumes when we change the image_id field.
-        """
-        if self.image_id:
-
-            self.privileged = self.application_id.default_image_id.privileged
-
-            if not self.image_version_id:
-                self.image_version_id = \
-                    self.application_id.default_image_id.version_ids \
-                    and self.application_id.default_image_id.version_ids[0]
-
-            ports = []
-            for port in self.image_id.port_ids:
-                if port.expose != 'none':
-                    ports.append(((0, 0, {
-                        'name': port.name, 'localport': port.localport,
-                        'expose': port.expose, 'udp': port.udp})))
-            if not self.port_ids:
-                self.port_ids = ports
-
-            volumes = []
-            for volume in self.image_id.volume_ids:
-                from_id = False
-                if volume.from_code in self.parent_id.container_id.childs:
-                    from_id = self.parent_id.container_id.childs[volume.from_code]
-                volumes.append(((0, 0, {
-                    'name': volume.name, 'from_id': from_id, 'hostpath': volume.hostpath,
-                    'user': volume.user, 'readonly': volume.readonly,
-                    'nosave': volume.nosave})))
-            if not self.volume_ids:
-                self.volume_ids = volumes
+        vals = {
+            'image_id': self.image_id.id,
+            'port_ids': self.port_ids,
+            'volume_ids': self.volume_ids,
+            'parent_id': self.parent_id.id
+            }
+        vals = self.onchange_image_id_vals(vals)
+        for key, value in vals.iteritems():
+            setattr(self, key, value)
 
     @api.multi
     def check_priority_childs(self, container):
@@ -585,26 +652,8 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def create(self, vals):
-        if 'application_id' in vals:
-            application = self.env['clouder.application'].browse(vals['application_id'])
-            if not 'image_id' in vals and application.default_image_id:
-                vals['image_id'] = application.default_image_id.id
-            if not 'backup_ids' in vals and application.container_backup_ids:
-                vals['backup_ids'] = [(6, 0, [
-                    b.id for b in application.container_backup_ids])]
-            else:
-                backups = self.env['clouder.container'].search([('application_id.type_id.name', '=', 'backup')])
-                if backups:
-                    vals['backup_ids'] = [(6, 0, [backups[0].id])]
-
-        if 'image_id' in vals and not 'image_version_id' in vals:
-            image =  self.env['clouder.image'].browse(vals['image_id'])
-            if not image.version_ids:
-                raise except_orm(
-                    _('Data error!'),
-                    _("You need to build a version for the image " + image.name))
-            vals['image_version_id'] = image.version_ids[0].id
-
+        vals = self.onchange_application_id_vals(vals)
+        vals = self.onchange_image_id_vals(vals)
         return super(ClouderContainer, self).create(vals)
 
     @api.multi
@@ -738,7 +787,7 @@ class ClouderContainer(models.Model):
         if self.child_ids:
             for child in self.child_ids:
                 child.deploy()
-                return
+            return
 
         ports = []
         volumes = []
@@ -822,6 +871,40 @@ class ClouderContainer(models.Model):
         """
         self.stop()
         return
+
+    @api.multi
+    def install_subservice(self):
+        """
+        Create a subservice and duplicate the bases
+        linked to the parent service.
+        """
+        if not self.subservice_name:
+            return
+
+        self = self.with_context(no_enqueue=True)
+
+        subservice_name = self.name + '-' + self.subservice_name
+        containers = self.search([('name', '=', subservice_name),
+                                ('server_id', '=', self.server_id.id)])
+        containers.unlink()
+
+        links = {}
+        for link in self.link_ids:
+            links[link.name.name.fullcode] = link.target.id
+        self = self.with_context(container_links=links)
+        container_vals = {
+            'name': subservice_name,
+            'server_id': self.server_id.id,
+            'application_id': self.application_id.id,
+            'image_version_id': self.image_version_id.id
+        }
+        subservice = self.create(container_vals)
+        for base in self.base_ids:
+            subbase_name = self.subservice_name + '-' + base.name
+            self = self.with_context(
+                save_comment='Duplicate base into ' + subbase_name)
+            base.reset_base(subbase_name, container=subservice)
+        self.sub_service_name = False
 
 
 class ClouderContainerPort(models.Model):

@@ -218,12 +218,12 @@ class ClouderModel(models.AbstractModel):
                 job.clouder_trace = (job.clouder_trace or '') +\
                                     now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
                                     message + '\n'
-                job.env.cr.commit()
         else:
             warning = True
 
         # if warning:
         #     _logger.info("Can't find job_uuid %s", self.env.context)
+        self.env.cr.commit()
 
 
     @api.multi
@@ -278,7 +278,7 @@ class ClouderModel(models.AbstractModel):
         """"
         Action which purge then redeploy a record.
         """
-        self.enqueue('deploy')
+        self.enqueue('deploy_frame')
 
     @api.multi
     def hook_create(self):

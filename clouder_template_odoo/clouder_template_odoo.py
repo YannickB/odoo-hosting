@@ -142,91 +142,6 @@ class ClouderContainer(models.Model):
                                config_file])
 
 
-class ClouderService(models.Model):
-    """
-    Add methods to manage the odoo service specificities.
-    """
-
-    _inherit = 'clouder.service'
-
-    @api.multi
-    def deploy_post_service(self):
-        """
-        Update the odoo configuration file and supervisor conf.
-        """
-        super(ClouderService, self).deploy_post_service()
-        if self.container_id.application_id.type_id.name == 'odoo':
-            ssh = self.connect(
-                self.container_id.fullname,
-                username=self.container_id.application_id.type_id.system_user)
-
-            config_file = '/opt/odoo/' + self.name + '/etc/config'
-            self.execute(ssh,
-                         ['mkdir', '-p', '/opt/odoo/' + self.name + '/etc'])
-            self.send(ssh, modules.get_module_path('clouder_template_odoo') +
-                      '/res/openerp.config', config_file)
-            addons_path = '/opt/odoo/' +\
-                          self.name + '/files/parts/odoo/addons,'
-            sftp = ssh.open_sftp()
-            for extra_dir in sftp.listdir(
-                    '/opt/odoo/' + self.name + '/files/extra'):
-                addons_path += '/opt/odoo/' + self.name +\
-                               '/files/extra/' + extra_dir + ','
-            sftp.close()
-            self.execute(ssh, ['sed', '-i', '"s/ADDONS_PATH/' +
-                               addons_path.replace('/', '\/') + '/g"',
-                               config_file])
-            self.execute(ssh, ['sed', '-i', '"s/APPLICATION/' +
-                               self.container_id.application_id.code
-                               .replace('-', '_') + '/g"', config_file])
-            self.execute(ssh, ['sed', '-i', 's/SERVICE/' + self.name + '/g',
-                               config_file])
-            self.execute(ssh, ['sed', '-i', 's/DATABASE_SERVER/' +
-                               self.database_server + '/g',
-                               config_file])
-            self.execute(ssh, ['sed', '-i',
-                               's/DBUSER/' + self.db_user + '/g',
-                               config_file])
-            self.execute(ssh, ['sed', '-i', 's/DATABASE_PASSWORD/' +
-                               self.database_password + '/g',
-                               config_file])
-            self.execute(ssh, ['sed', '-i', 's/PORT/' +
-                               self.port['localport'] + '/g', config_file])
-            self.execute(ssh, ['mkdir', '-p',
-                               '/opt/odoo/' + self.name + '/filestore'])
-
-            self.execute(ssh, ['echo "[program:' + self.name + ']" '
-                               '>> /opt/odoo/supervisor.conf'])
-            self.execute(ssh, [
-                'echo "command=su odoo -c \'/opt/odoo/' + self.name +
-                '/files/parts/odoo/odoo.py -c ' + config_file +
-                '\'" >> /opt/odoo/supervisor.conf'])
-
-            ssh.close()
-
-        return
-
-    @api.multi
-    def purge_pre_service(self):
-        """
-        Purge supervisor conf.
-        """
-        super(ClouderService, self).purge_pre_service()
-        if self.container_id.application_id.type_id.name == 'odoo':
-            ssh = self.connect(
-                self.container_id.fullname,
-                username=self.container_id.application_id.type_id.system_user)
-            self.execute(ssh, ['sed', '-i', '"/program:' + self.name + '/d"',
-                               '/opt/odoo/supervisor.conf'])
-            self.execute(ssh, [
-                'sed', '-i',
-                '"/command=su odoo -c \'\/opt\/odoo\/' + self.name + '/d"',
-                '/opt/odoo/supervisor.conf'])
-            ssh.close()
-
-        return
-
-
 class ClouderBase(models.Model):
     """
     Add methods to manage the odoo base specificities.
@@ -504,7 +419,7 @@ class ClouderBase(models.Model):
                      ", user=" + self.admin_name +
                      ", password=" + self.admin_password + ")")
             client = erppeek.Client(
-                'http://' + self.container_id.server_id.name + ':' +
+                'http://' + self.container_id.server_id.ip + ':' +
                 self.odoo_port,
                 db=self.fullname_, user=self.admin_name,
                 password=self.admin_password)
@@ -526,13 +441,6 @@ class ClouderBase(models.Model):
                      str(cron_ids) + ", {'active': False})")
             client.model('ir.cron').write(cron_ids, {'active': False})
 
-            self.container_id.execute([
-                'cp', '-R', '/opt/odoo/' +
-                self.env.context['service_parent_name'] + '/filestore/' +
-                self.env.context['base_parent_fullname_'],
-                '/opt/odoo/' + self.service_id.name + '/filestore/' +
-                self.fullname_], username=self.application_id.type_id.system_user)
-
         return res
 
     @api.multi
@@ -550,7 +458,7 @@ class ClouderBase(models.Model):
                          self.admin_name + ", password=" +
                          self.admin_password + ")")
                 client = erppeek.Client(
-                    'http://' + self.container_id.server_id.name +
+                    'http://' + self.container_id.server_id.ip +
                     ':' + self.odoo_port,
                     db=self.fullname_, user=self.admin_name,
                     password=self.admin_password)
@@ -589,6 +497,7 @@ class ClouderBaseLink(models.Model):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
+            return
             try:
                 self.log("client = erppeek.Client('http://" +
                          self.base_id.container_id.server_id.ip +
@@ -647,6 +556,7 @@ class ClouderBaseLink(models.Model):
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
+            return
             self.target.execute([
                 'sed', '-i',
                 '"/^mydestination =/ s/, ' + self.base_id.fulldomain + '//"',

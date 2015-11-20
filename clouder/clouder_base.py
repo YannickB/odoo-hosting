@@ -117,7 +117,7 @@ class ClouderBase(models.Model):
     reset_each_day = fields.Boolean('Reset each day?')
     cert_key = fields.Text('Cert Key')
     cert_cert = fields.Text('Cert')
-    parent_id = fields.Many2one('clouder.base', 'Parent Base')
+    reset_id = fields.Many2one('clouder.base', 'Reset with this base')
     backup_ids = fields.Many2many(
         'clouder.container', 'clouder_base_backup_rel',
         'base_id', 'backup_id', 'Backup containers', required=True)
@@ -290,6 +290,10 @@ class ClouderBase(models.Model):
             self.time_between_save = self.application_id.base_time_between_save
             self.save_expiration = self.application_id.base_save_expiration
 
+    @api.multi
+    def control_priority(self):
+        return self.container_id.check_priority_childs(self)
+
     @api.model
     def create(self, vals):
         """
@@ -422,7 +426,7 @@ class ClouderBase(models.Model):
         return
 
     @api.multi
-    def reset_base(self, base_name=False, service_id=False):
+    def reset_base(self, base_name=False, container=False):
         """
         Reset the base with the parent base.
 
@@ -432,27 +436,27 @@ class ClouderBase(models.Model):
         :param service_id: Specify the service_id is the reset
         need to be done in another service.
         """
-        base_parent_id = self.parent_id and self.parent_id or self
+        base_reset_id = self.reset_id and self.reset_id or self
         if not 'save_comment' in self.env.context:
             self = self.with_context(save_comment='Reset base')
         self.with_context(forcesave=True)
-        save = base_parent_id.save()
+        save = base_reset_id.save(comment=self.env.context['save_comment'], no_enqueue=True)
         self.with_context(forcesave=False)
         self.with_context(nosave=True)
         vals = {'base_id': self.id, 'base_restore_to_name': self.name,
                 'base_restore_to_domain_id': self.domain_id.id,
-                'service_id': self.service_id.id, 'base_nosave': True}
-        if base_name and service_id:
+                'container_id': self.container_id.id, 'base_nosave': True}
+        if base_name and container:
             vals = {'base_id': False, 'base_restore_to_name': base_name,
                     'base_restore_to_domain_id': self.domain_id.id,
-                    'service_id': service_id.id, 'base_nosave': True}
+                    'container_id': container.id, 'base_nosave': True}
         save.write(vals)
         base = save.restore()
-        base.write({'parent_id': base_parent_id.id})
+        base.write({'reset_id': base_reset_id.id})
         base = base.with_context(
-            base_parent_fullname_=base_parent_id.fullname_)
+            base_reset_fullname_=base_reset_id.fullname_)
         base = base.with_context(
-            service_parent_name=base_parent_id.service_id.name)
+            container_reset_name=base_reset_id.container_id.name)
         base.update_base()
         base.post_reset()
         base.deploy_post()
@@ -519,7 +523,7 @@ class ClouderBase(models.Model):
         if self.child_ids:
             for child in self.child_ids:
                 child.deploy()
-                return
+            return
 
         self.deploy_database()
         self.log('Database created')

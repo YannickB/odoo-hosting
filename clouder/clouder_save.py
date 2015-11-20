@@ -57,11 +57,6 @@ class ClouderSave(models.Model):
     container_volumes_comma = fields.Text('Volumes comma')
     container_options = fields.Text('Container Options')
     container_links = fields.Text('Container Links')
-    service_id = fields.Many2one('clouder.service', 'Service')
-    service_name = fields.Char('Service Name', size=64)
-    service_app_version = fields.Char('Application Version', size=64)
-    service_options = fields.Text('Service Options')
-    service_links = fields.Text('Service Links')
     base_id = fields.Many2one('clouder.base', 'Base')
     base_fullname = fields.Char('Base Fullname')
     base_title = fields.Char('Title', size=64)
@@ -112,7 +107,7 @@ class ClouderSave(models.Model):
         Property returning the dumpfile name.
         """
         return \
-            self.base_id \
+            self.base_fullname \
             and self.container_app.replace('-', '_') + '_' + \
             self.base_name.replace('-', '_') + '_' + \
             self.base_domain.replace('-', '_').replace('.', '_') + '.dump'
@@ -264,7 +259,7 @@ class ClouderSave(models.Model):
         self.log('Comment: ' + self.comment)
 
         container = self.container_id
-        if self.base_id:
+        if self.base_fullname:
             container = container.base_backup_container
             container.execute(
                          ['mkdir', '-p', '/base-backup/' + self.name], username='root')
@@ -277,10 +272,10 @@ class ClouderSave(models.Model):
         directory = '/tmp/clouder/' + self.name
         container.server_id.execute(['rm', '-rf', directory + '/*'])
         container.server_id.execute(['mkdir', directory])
-        if self.base_id:
+        if self.base_fullname:
             container.server_id.execute(['docker', 'cp',
                                container.name + ':/base-backup/' + self.name,
-                               '/tmp'])
+                               '/tmp/clouder'])
         else:
             for volume in self.container_volumes_comma.split(','):
                 container.server_id.execute(['mkdir', '-p', directory + volume])
@@ -291,7 +286,7 @@ class ClouderSave(models.Model):
         container.server_id.execute(['chmod', '-R', '777', directory + '*'])
 
         backup = self.backup_id
-        if self.base_id:
+        if self.base_fullname:
             name = self.base_id.fullname_
         else:
             name = self.container_id.fullname
@@ -353,7 +348,7 @@ class ClouderSave(models.Model):
 
         container.execute(['rm', '-rf', directory + '*'])
 
-        if self.base_id:
+        if self.base_fullname:
             container.execute(
                          ['rm', '-rf', '/base-backup/' + self.name], username='root')
         return
@@ -366,7 +361,7 @@ class ClouderSave(models.Model):
         self.backup_id.execute(['rm', '-rf', '/opt/backup/simple/' +
                            self.repo_name + '/' + self.name])
         flag = False
-        if self.base_id:
+        if self.base_fullname:
             if self.search([('base_fullname', '=', self.repo_name)]) == self:
                 flag = True
         else:
@@ -505,7 +500,7 @@ class ClouderSave(models.Model):
             self.log("A container_id was linked in the save")
             container = self.container_id
 
-        if not self.base_id:
+        if not self.base_fullname:
 
             if container.image_version_id != img_versions[0]:
                 # if upgrade:
@@ -530,7 +525,7 @@ class ClouderSave(models.Model):
 
         else:
 
-            if self.base_restore_to_name or not self.base_id:
+            if self.base_restore_to_name or not self.base_fullname:
                 bases = base_obj.search(
                     [('name', '=', self.computed_base_restore_to_name), (
                         'domain_id.name', '=',
@@ -665,7 +660,7 @@ class ClouderSave(models.Model):
         backup.execute(['rm', '-rf', directory + '*'], username='backup')
         # backup.execute(['rm', '/home/backup/.ssh/keys/*'], username='backup')
 
-        if not self.base_id:
+        if not self.base_fullname:
             for volume in self.container_volumes_comma.split(','):
                 container.execute(['rm', '-rf', volume + '/*'], username='root')
         else:
@@ -674,11 +669,12 @@ class ClouderSave(models.Model):
 
         container.server_id.execute(['cat', directory + '/backup-date'])
         container.server_id.execute(['rm', '-rf', directory + '/backup-date'])
-        if not self.base_id:
+        if not self.base_fullname:
             for item in container.server_id.execute(['ls', directory]).split('\n'):
                 if item:
                     container.server_id.execute(['docker', 'cp', directory + '/' + item, container.name + ':/'])
         else:
+            container.execute(['mkdir', '/base-backup/'], username='root')
             container.server_id.execute(['docker', 'cp', directory,
                                container.name + ':/base-backup'])
             container.execute(['chmod', '-R', '777',

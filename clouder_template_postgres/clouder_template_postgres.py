@@ -177,10 +177,10 @@ class ClouderSave(models.Model):
                 container.execute(['createdb', '-h',
                                    base.container_id.db_server, '-U',
                                    base.container_id.db_user,
-                                   base.fullname_])
+                                   database])
                 container.execute(['cat',
                                    '/base-backup/restore-' + self.name + '/' + self.base_dumpfile,
                                    '|', 'psql', '-q', '-h',
                                    base.container_id.db_server, '-U',
                                    base.container_id.db_user,
-                                   base.fullname_])
+                                   database])

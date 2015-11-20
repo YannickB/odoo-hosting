@@ -98,6 +98,7 @@
                             <button name="compute_childs" string="Compute links between childs" type="object" attrs="{'invisible': [('child_ids', '=', [])]}"/>
                             <newline/>
                             <button name="reinstall" string="Reinstall" type="object"/>
+                            <button name="purge" string="Purge" type="object"/>
                             <field name="job_ids" colspan="4"/>
                         </page>
                         <page string="Save">
@@ -283,9 +284,16 @@
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
+                            <button name="purge" string="Purge" type="object"/>
+                            <newline/>
                             <button name="start" string="Restart" type="object"/>
                             <button name="stop" string="Stop" type="object"/>
                             <button name="deploy_key" string="Reset Key" type="object"/>
+                            <newline/>
+                            <group col="4">
+                                    <field name="subservice_name"/>
+                                    <button name="install_subservice" string="Install Subservice" type="object"/>
+                            </group>
                             <field name="job_ids" colspan="4"/>
                         </page>
                         <page string="Save">
