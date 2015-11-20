@@ -35,6 +35,14 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
+class ClouderOneclick(models.Model):
+
+    _name = 'clouder.oneclick'
+
+    name = fields.Char('Nom', required=True)
+    function = fields.Char('Function', required=True)
+
+
 class ClouderServer(models.Model):
     """
     Define the server object, which represent the servers
@@ -127,6 +135,7 @@ class ClouderServer(models.Model):
         'res.partner', 'Manager',
         default=lambda self: self.user_partner)
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
+    oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, ssh_port)',
@@ -217,6 +226,16 @@ class ClouderServer(models.Model):
         self.execute_local(['rm', '-rf', self.home_directory +
                             '/.ssh/keys/' + self.name])
         super(ClouderServer, self).purge()
+
+
+    @api.multi
+    def oneclick_deploy(self):
+        getattr(self, self.oneclick_id.function + '_purge')()
+        getattr(self, self.oneclick_id.function + '_deploy')()
+
+    @api.multi
+    def oneclick_purge(self):
+        getattr(self, self.oneclick_id.function + '_purge')()
 
 
 class ClouderContainer(models.Model):

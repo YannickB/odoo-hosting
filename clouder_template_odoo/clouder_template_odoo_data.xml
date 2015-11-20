@@ -2,6 +2,10 @@
 <openerp>
     <data>
 
+        <record id="oneclick_clouder" model="clouder.oneclick">
+            <field name="name">Clouder</field>
+            <field name="function">oneclick_clouder</field>
+        </record>
 
         <record id="apptype_odoo" model="clouder.application.type">
             <field name="name">odoo</field>

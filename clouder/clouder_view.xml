@@ -297,6 +297,12 @@
                     <button name="test_connection" string="Test connection" type="object"/>
                     <button name="start_containers" string="Restart Containers" type="object"/>
                     <button name="stop_containers" string="Stop Containers" type="object"/>
+                    <newline/>
+                    <group col="4">
+                        <field name="oneclick_id" widget="selection"/>
+                        <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
+                        <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
+                    </group>
                     <field name="job_ids" colspan="4"/>
                 </form>
             </field>
