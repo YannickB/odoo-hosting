@@ -24,35 +24,35 @@
 from openerp import models, api
 from openerp import modules
 
-
-class ClouderApplicationVersion(models.Model):
-    """
-    Add methods to manage the piwik specificities.
-    """
-
-    _inherit = 'clouder.application.version'
-
-    @api.multi
-    def build_application(self):
-        """
-        Get the archive from official website.
-        """
-        super(ClouderApplicationVersion, self).build_application()
-        if self.application_id.type_id.name == 'piwik':
-            ssh = self.connect(self.archive_id.fullname)
-            self.execute(ssh,
-                         ['wget', '-q', 'http://builds.piwik.org/piwik.zip',
-                          'piwik.zip'], path=self.full_archivepath)
-            self.execute(ssh, ['unzip', '-q', 'piwik.zip'],
-                         path=self.full_archivepath)
-            self.execute(ssh, ['mv', 'piwik/*', './'],
-                         path=self.full_archivepath)
-            self.execute(ssh, ['rm', '-rf', './*.zip'],
-                         path=self.full_archivepath)
-            self.execute(ssh, ['rm', '-rf', 'piwik/'],
-                         path=self.full_archivepath)
-            ssh.close()
-        return
+#
+# class ClouderApplicationVersion(models.Model):
+#     """
+#     Add methods to manage the piwik specificities.
+#     """
+#
+#     _inherit = 'clouder.application.version'
+#
+#     @api.multi
+#     def build_application(self):
+#         """
+#         Get the archive from official website.
+#         """
+#         super(ClouderApplicationVersion, self).build_application()
+#         if self.application_id.type_id.name == 'piwik':
+#             ssh = self.connect(self.archive_id.fullname)
+#             self.execute(ssh,
+#                          ['wget', '-q', 'http://builds.piwik.org/piwik.zip',
+#                           'piwik.zip'], path=self.full_archivepath)
+#             self.execute(ssh, ['unzip', '-q', 'piwik.zip'],
+#                          path=self.full_archivepath)
+#             self.execute(ssh, ['mv', 'piwik/*', './'],
+#                          path=self.full_archivepath)
+#             self.execute(ssh, ['rm', '-rf', './*.zip'],
+#                          path=self.full_archivepath)
+#             self.execute(ssh, ['rm', '-rf', 'piwik/'],
+#                          path=self.full_archivepath)
+#             ssh.close()
+#         return
 
 
 class ClouderBase(models.Model):

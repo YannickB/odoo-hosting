@@ -121,7 +121,6 @@ class ClouderApplication(models.Model):
     code = fields.Char('Code', size=20, required=True)
     type_id = fields.Many2one('clouder.application.type', 'Type',
                               required=True)
-    current_version = fields.Char('Current version', size=64, required=True)
     next_server_id = fields.Many2one('clouder.server', 'Next server')
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=True)
@@ -139,9 +138,6 @@ class ClouderApplication(models.Model):
     required = fields.Boolean('Required?')
     sequence = fields.Integer('Sequence')
     child_ids = fields.One2many('clouder.application', 'parent_id', 'Childs')
-    version_ids = fields.One2many('clouder.application.version',
-                                  'application_id', 'Versions')
-    buildfile = fields.Text('Build File')
     container_ids = fields.One2many('clouder.container', 'application_id',
                                     'Containers')
     autosave = fields.Boolean('Save?')
@@ -283,33 +279,6 @@ class ClouderApplication(models.Model):
                 "It's too dangerous to modify the application code!"))
         return super(ClouderApplication, self).write(vals)
 
-    @api.multi
-    def get_current_version(self):
-        """
-        Hook which can be used to return the version of the application.
-        """
-        return False
-
-    @api.multi
-    def build(self):
-        """
-        Method to generate a new application version.
-        """
-        if not self.archive_id:
-            raise except_orm(_('Data error!'), _(
-                "You need to specify the archive where "
-                "the version must be stored."))
-
-        current_version = self.get_current_version()
-        if current_version:
-            self.write({'current_version': current_version})
-        current_version = current_version or self.current_version
-        now = datetime.now()
-        version = current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
-        self.env['clouder.application.version'].create(
-            {'application_id': self.id, 'name': version,
-             'archive_id': self.archive_id and self.archive_id.id})
-
 
 class ClouderApplicationOption(models.Model):
     """
@@ -329,129 +298,6 @@ class ClouderApplicationOption(models.Model):
         ('name_uniq', 'unique(application_id,name)',
          'Option name must be unique per application!'),
     ]
-
-
-class ClouderApplicationVersion(models.Model):
-    """
-    Define the application.version object, which represent each build of
-    the application.
-    """
-
-    _name = 'clouder.application.version'
-    _inherit = ['clouder.model']
-
-    name = fields.Char('Name', size=64, required=True)
-    application_id = fields.Many2one('clouder.application', 'Application',
-                                     required=True)
-    archive_id = fields.Many2one('clouder.container', 'Archive', required=True)
-    service_ids = fields.One2many('clouder.service', 'application_version_id',
-                                  'Services')
-
-    @property
-    def fullname(self):
-        """
-        Property returning the full name of the application version.
-        """
-        return self.application_id.code + '_' + self.name
-
-    @property
-    def full_archivepath(self):
-        """
-        Property returning the full path to the archive version
-        in the archive container.
-        """
-        return self.application_id.full_archivepath + '/' + self.name
-
-    @property
-    def full_archivepath_targz(self):
-        """
-        Property returning the full path to the tar.gz of the archive version
-        in the archive container.
-        """
-        return self.application_id.full_archivepath \
-            + '/' + self.name + '.tar.gz'
-
-    @property
-    def full_hostpath(self):
-        """
-        Property returning the full path to the archive version
-        in the hosting system.
-        """
-        return self.application_id.full_hostpath + '/' + self.name
-
-    @property
-    def full_localpath(self):
-        """
-        Property returning the full path to the archive version
-        in the destination container.
-        """
-        return self.application_id.full_localpath + '/' + self.name
-
-    _sql_constraints = [
-        ('name_app_uniq', 'unique (name,application_id)',
-         'The name of the version must be unique per application !')
-    ]
-
-    @api.one
-    @api.constrains('name')
-    def _validate_data(self):
-        """
-        Check that the application version name does not contain any forbidden
-        characters.
-        """
-        if not re.match("^[\w\d_.]*$", self.name):
-            raise except_orm(_('Data error!'), _(
-                "Application version can only contains letters, "
-                "digits and underscore and dot"))
-
-    _order = 'create_date desc'
-
-    @api.one
-    def unlink(self):
-        """
-        Override unlink method to prevent application version unlink if
-        some services are linked to it.
-        """
-        if self.service_ids:
-            raise except_orm(_('Inherit error!'), _(
-                "A service is linked to this application version, "
-                "you can't delete it!"))
-        return super(ClouderApplicationVersion, self).unlink()
-
-    @api.multi
-    def build_application(self):
-        """
-        Hook which can be used to call command specific to an application
-        to build an application.
-        """
-        return
-
-    @api.multi
-    def deploy(self):
-        """
-        Build the application archive and store it in the archive container.
-        """
-        ssh = self.connect(self.archive_id.fullname)
-        self.execute(ssh, ['mkdir', self.application_id.full_archivepath])
-        self.execute(ssh, ['rm', '-rf', self.full_archivepath])
-        self.execute(ssh, ['mkdir', self.full_archivepath])
-        self.build_application()
-        self.execute(ssh, ['echo "' + self.name + '" >> '
-                           + self.full_archivepath + '/VERSION.txt'])
-        self.execute(ssh, ['tar', 'czf', self.full_archivepath_targz, '-C',
-                           self.application_id.full_archivepath + '/'
-                           + self.name, '.'])
-        ssh.close()
-
-    @api.multi
-    def purge(self):
-        """
-        Remove the application archive in the archive container.
-        """
-        ssh = self.connect(self.archive_id.fullname)
-        self.execute(ssh, ['rm', '-rf', self.full_archivepath])
-        self.execute(ssh, ['rm', self.full_archivepath_targz])
-        ssh.close()
 
 
 class ClouderApplicationLink(models.Model):

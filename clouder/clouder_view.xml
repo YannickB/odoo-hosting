@@ -42,7 +42,6 @@
                         <field name="domain_id"/>
                         <field name="application_id" domain="[('base','=',True)]"/>
                         <field name="container_id" required="0" domain="[('application_id.base', '=', True)]"/>
-                        <field name="service_ids" widget="many2many_tags"/>
                         <field name="admin_name"/>
                         <field name="admin_password"/>
                         <field name="admin_email"/>
@@ -130,83 +129,6 @@
                 </tree>
             </field>
         </record>
-
-
-        <record id="action_clouder_service_form" model="ir.actions.act_window">
-            <field name="name">Services</field>
-            <field name="type">ir.actions.act_window</field>
-            <field name="res_model">clouder.service</field>
-            <field name="view_type">form</field>
-        </record>
-
-        <menuitem action="action_clouder_service_form" id="menu_action_clouder_service_form" parent="menu_clouder_clouder"/>
-
-        <record id="view_clouder_service_form" model="ir.ui.view">
-            <field name="name">clouder.service.form</field>
-            <field name="model">clouder.service</field>
-            <field name="arch" type="xml">
-                <form string="Service" version="7.0">
-                    <group col="4">
-                        <field name="name"/>
-                        <field name="container_id"/>
-                        <field name="application_id"/>
-                        <field name="application_version_id" domain="[('application_id.container_ids','=',container_id)]"/>
-                        <field name="database_password"/>
-                        <newline/>
-                        <field name="custom_version"/>
-                        <newline/>
-                        <field name="parent_id"/>
-                        <button name="deploy_to_parent" string="Deploy to parent" type="object" attrs="{'invisible': [('parent_id','=', False)]}"/>
-                        <newline/>
-                        <field name="public"/>
-                        <field name="partner_id"/>
-                    </group>
-                    <group col="4" attrs="{'invisible': [('parent_id','!=', False)]}">
-                        <button name="install_formation" string="Install Formation" type="object"/>
-                        <button name="install_test" string="Install Test" type="object"/>
-                        <newline/>
-                        <field name="sub_service_name"/>
-                        <button name="install_subservice" string="Install Subservice" type="object"/>
-                    </group>
-                    <notebook>
-                        <page string="General">
-                            <field name="option_ids" colspan="4">
-                                <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('apptype_id.application_ids.container_ids','in',parent.container_id),('type','=','service')]"/>
-                                    <field name="value"/>
-                                </tree>
-                            </field>
-                            <field name="link_ids" colspan="4">
-                                <tree string="Links" editable="bottom">
-                                    <field name="name" domain="[('application_id.container_ids','=',parent.container_id),('service','=',True)]"/>
-                                    <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
-                                    <field name="deployed"/>
-                                    <button name="deploy_" type="object" string="Reload"/>
-                                    <button name="purge_" type="object" string="Purge"/>
-                                </tree>
-                            </field>
-                            <button name="reinstall" string="Reinstall" type="object"/>
-                            <field name="job_ids" colspan="4"/>
-                        </page>
-                        <page string="Invoicing">
-                            <field name="partner_ids" colspan="4"/>
-                        </page>
-                    </notebook>
-                </form>
-            </field>
-        </record>
-        <record id="view_clouder_service_tree" model="ir.ui.view">
-            <field name="name">clouder.service.tree</field>
-            <field name="model">clouder.service</field>
-            <field name="arch" type="xml">
-                <tree string="Services">
-                    <field name="name"/>
-                    <field name="application_id"/>
-                    <field name="container_id"/>
-                </tree>
-            </field>
-        </record>
-
 
 
         <record id="action_clouder_container_form" model="ir.actions.act_window">
@@ -589,7 +511,6 @@
                         <field name="name"/>
                         <field name="code"/>
                         <field name="type_id"/>
-                        <field name="current_version"/>
                         <field name="default_image_id"/>
                         <field name="next_server_id"/>
                         <field name="base"/>
@@ -628,13 +549,6 @@
                                     <field name="next_server_id"/>
                                 </tree>
                             </field>
-                            <field name="buildfile" colspan="4"/>
-                            <newline/>
-                            <group>
-                                <field name="archive_id" domain="[('application_id.type_id.name','=','archive')]"/>
-                            </group>
-                            <button name="build" string="Build" type="object"/>
-                            <field name="version_ids" colspan="4"/>
                         </page>
                         <page string="Save">
                             <group>
@@ -662,42 +576,6 @@
             </field>
         </record>
 
-
-        <record id="action_clouder_application_version_form" model="ir.actions.act_window">
-            <field name="name">App Versions</field>
-            <field name="type">ir.actions.act_window</field>
-            <field name="res_model">clouder.application.version</field>
-            <field name="view_type">form</field>
-        </record>
-
-        <menuitem action="action_clouder_application_version_form" id="menu_action_clouder_application_version_form" parent="menu_clouder_configuration"/>
-
-        <record id="view_clouder_application_version_form" model="ir.ui.view">
-            <field name="name">clouder.application.version.form</field>
-            <field name="model">clouder.application.version</field>
-            <field name="arch" type="xml">
-                <form string="App Version" version="7.0">
-                    <group col="4">
-                        <field name="name"/>
-                        <field name="application_id"/>
-                        <field name="archive_id"/>
-                    </group>
-                    <button name="build_database" string="Build Database" type="object"/> <!-- TODO Click on this button to generate a build-appcode.yolo-consulting.net, dump the base and save in the archive file so it can be use later by restore method. Then drop build-appcode.yolo-consulting.net.-->
-                    <field name="job_ids" colspan="4"/>
-                </form>
-            </field>
-        </record>
-        <record id="view_clouder_application_version_tree" model="ir.ui.view">
-            <field name="name">clouder.application.version.tree</field>
-            <field name="model">clouder.application.version</field>
-            <field name="arch" type="xml">
-                <tree string="App Versions">
-                    <field name="name"/>
-                    <field name="application_id"/>
-                    <field name="service_ids"/>
-                </tree>
-            </field>
-        </record>
 
         <record id="action_clouder_image_form" model="ir.actions.act_window">
             <field name="name">Images</field>

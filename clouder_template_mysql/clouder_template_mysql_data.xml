@@ -68,17 +68,8 @@ USER root
         <record id="app_mysql" model="clouder.application">
             <field name="name">Mysql</field>
             <field name="code">mysql</field>
-            <field name="current_version">1</field>
             <field name="type_id" ref="apptype_mysql"/>
             <field name="default_image_id" ref="image_mysql"/>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
-            <field name="base_time_between_save">9999</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-            <field name="base_save_expiration">5</field>
         </record>
         <record id="app_mysql_link1" model="clouder.application.link">
             <field name="application_id" ref="app_mysql"/>

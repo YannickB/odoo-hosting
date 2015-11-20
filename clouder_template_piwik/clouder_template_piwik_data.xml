@@ -82,15 +82,6 @@ VOLUME /base-backup
             <field name="code">piwik</field>
             <field name="type_id" ref="apptype_piwik"/>
             <field name="default_image_id" ref="image_piwik"/>
-            <field name="current_version">8.0</field>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
-            <field name="base_time_between_save">9999</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-            <field name="base_save_expiration">5</field>
         </record>
         <record id="app_piwik_link1" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>

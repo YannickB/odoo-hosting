@@ -78,10 +78,6 @@ class ClouderBase(models.Model):
                                      required=True)
     domain_id = fields.Many2one('clouder.domain', 'Domain name', required=True)
     container_id = fields.Many2one('clouder.container', 'Container', required=True)
-    service_id = fields.Many2one('clouder.service', 'Service')
-    service_ids = fields.Many2many('clouder.service',
-                                   'clouder_base_service_rel', 'base_id',
-                                   'service_id', 'Alternative Services')
     admin_name = fields.Char('Admin name', size=64, required=True)
     admin_password = fields.Char(
         'Admin password', size=64, required=True,
@@ -633,9 +629,8 @@ class ClouderBaseLink(models.Model):
         """
         Property returning the first base of the target container.
         """
-        return self.target.service_ids and \
-            self.target.service_ids[0].base_ids and \
-            self.target.service_ids[0].base_ids[0]
+        return self.target.base_ids and \
+            self.target.base_ids[0]
 
     @api.one
     @api.constrains('base_id')

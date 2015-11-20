@@ -323,7 +323,6 @@ USER root
             <field name="type_id" ref="apptype_odoo"/>
             <field name="parent_id" ref="app_odoo"/>
             <field name="default_image_id" ref="image_odoo_data"/>
-            <field name="current_version">8.0</field>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
             <field name="autosave" eval="True"/>
@@ -343,7 +342,6 @@ USER root
             <field name="type_id" ref="apptype_odoo"/>
             <field name="parent_id" ref="app_odoo"/>
             <field name="default_image_id" ref="image_odoo_files8"/>
-            <field name="current_version">8.0</field>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
         </record>
@@ -354,7 +352,6 @@ USER root
             <field name="type_id" ref="apptype_odoo"/>
             <field name="parent_id" ref="app_odoo"/>
             <field name="default_image_id" ref="image_odoo_exec"/>
-            <field name="current_version">8.0</field>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
         </record>
@@ -372,7 +369,6 @@ USER root
             <field name="type_id" ref="apptype_odoo"/>
             <field name="parent_id" ref="app_odoo"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
-            <field name="current_version">8.0</field>
             <field name="sequence">4</field>
         </record>
 
