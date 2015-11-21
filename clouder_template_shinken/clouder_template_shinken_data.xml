@@ -13,6 +13,7 @@
             <field name="current_version">1</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
+RUN touch /tmp/shinken
 RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor curl nagios-nrpe-plugin lsb-release
@@ -27,14 +28,6 @@ RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:shinken]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/usr/local/shinken/bin/init.d/shinken restart" >> /etc/supervisor/conf.d/supervisord.conf
 
-
-USER shinken
-
-RUN mkdir /home/shinken/.ssh
-RUN touch /home/shinken/.ssh/config
-RUN mkdir /home/shinken/.ssh/keys
-RUN ln -s /opt/keys/authorized_keys /home/shinken/.ssh/authorized_keys
-RUN chmod -R 700 /home/shinken/.ssh
 
 USER root
 CMD ["/usr/bin/supervisord"]

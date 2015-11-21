@@ -253,6 +253,8 @@ class ClouderBase(models.Model):
                     test = False
                     if 'option_ids' in vals:
                         for option in vals['option_ids']:
+                            if isinstance(option, (list, tuple)):
+                                option = self.get_o2m_struct(option)
                             if option.name == type_option:
                                 test = True
                     if not test:
@@ -269,6 +271,8 @@ class ClouderBase(models.Model):
                     test = False
                     if 'link_ids' in vals:
                         for link in vals['link_ids']:
+                            if isinstance(link, (list, tuple)):
+                                link = self.get_o2m_struct(link)
                             if link.name == app_link:
                                 test = True
                     if not test:
@@ -300,6 +304,8 @@ class ClouderBase(models.Model):
                 test = False
                 if 'child_ids' in vals:
                     for child in vals['child_ids']:
+                        if isinstance(child, (list, tuple)):
+                            child = self.get_o2m_struct(child)
                         if child.name == app_child:
                             test = True
                 if not test and app_child.base and app_child.required:

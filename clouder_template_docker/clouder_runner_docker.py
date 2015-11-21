@@ -46,7 +46,10 @@ class ClouderImageVersion(models.Model):
             server.execute(['mkdir', '-p', tmp_dir])
 
             if self.image_id.type_id:
-                sources_path = modules.get_module_path('clouder_template_' + self.image_id.type_id.name) +  '/sources'
+                if self.image_id.type_id.name == 'backup':
+                    sources_path = modules.get_module_path('clouder') +  '/sources'
+                else:
+                    sources_path = modules.get_module_path('clouder_template_' + self.image_id.type_id.name) +  '/sources'
                 if self.local_dir_exist(sources_path):
                     server.send_dir(sources_path, tmp_dir + '/sources')
 

@@ -216,9 +216,9 @@ class ClouderSave(models.Model):
                 'base_name': base.name,
                 'base_domain': base.domain_id.name,
                 'base_title': base.title,
-                'base_container_name': base.service_id.container_id.name,
+                'base_container_name': base.container_id.name,
                 'base_container_server':
-                base.service_id.container_id.server_id.name,
+                base.container_id.server_id.name,
                 'base_admin_name': base.admin_name,
                 'base_admin_password': base.admin_password,
                 'base_admin_email': base.admin_email,

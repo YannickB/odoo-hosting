@@ -516,6 +516,7 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def send_dir(self, source, destination, ssh=False, username=False):
         self.log('Send directory ' + source + ' to ' + destination)
+        self.execute(['mkdir','-p',destination])
         for dirpath, dirnames, filenames in os.walk(source):
             self.log('dirpath ' + str(dirpath))
             self.log('dirnames ' + str(dirnames))

@@ -103,6 +103,7 @@ CMD tail -f /opt/odoo/etc/odoo.conf
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
+RUN touch /tmp/odoo-files8
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git
 
 RUN git clone http://github.com/odoo/odoo.git /opt/odoo/files/odoo -b 8.0
@@ -121,6 +122,7 @@ RUN git clone http://github.com/odoo/odoo.git /opt/odoo/files/odoo -b 8.0
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
+RUN touch /tmp/odoo-exec
 # generate locales
 RUN locale-gen en_US.UTF-8 && update-locale
 RUN echo 'LANG="en_US.UTF-8"' > /etc/default/locale
@@ -222,6 +224,7 @@ CMD /opt/odoo/files/odoo/openerp-server -c /opt/odoo/etc/odoo.conf
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
+RUN touch /tmp/odoo-ssh
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install openssh-server
 USER root
 ]]></field>
@@ -386,6 +389,7 @@ USER root
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
+RUN touch /tmp/clouder-files8
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git
 
 RUN git clone http://github.com/odoo/odoo.git /opt/odoo/files/odoo -b 8.0

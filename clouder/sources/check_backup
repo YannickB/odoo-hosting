@@ -1,0 +1,55 @@
+#!/bin/bash
+IFS=","
+
+repo=$3
+
+directory=/opt/backup/simple/$repo/latest
+if [[ $1 == 'bup' ]]
+then
+    directory=/tmp/check-backup/$repo
+    rm -rf $directory
+    mkdir -p $directory
+    export BUP_DIR=/opt/backup/bup
+    bup restore -C $directory $repo/latest
+
+    directory=/tmp/check-backup/$repo/latest
+fi
+
+
+if ! [ -d $directory ]
+then
+  echo "$3 backup missing."
+  exit 2
+fi
+
+
+date=`date +%Y-%m-%d`
+date_save=( $(cat $directory/backup-date) )
+if [[ $date != $date_save ]]
+then
+  echo "No backup for today."
+  exit 2
+fi
+
+if [[ $2 == 'base' ]]
+then
+  for database in $4
+  do
+    if ! [ -s $directory/${database}.dump ]
+    then
+      echo "The database file ${database}.dump is empty."
+      exit 2
+    fi
+  done
+fi
+
+
+
+if [[ $1 == 'bup' ]]
+then
+    directory=/tmp/check-backup/$repo
+    rm -rf $directory
+fi
+
+echo "Backup of ${3} OK"
+exit 0

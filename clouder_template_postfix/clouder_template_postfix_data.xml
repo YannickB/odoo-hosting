@@ -26,7 +26,7 @@
             <field name="current_version">1</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
-
+RUN touch /tmp/postfix
 # Install Postfix.
 run echo "postfix postfix/main_mailer_type string Internet site" > preseed.txt
 run echo "postfix postfix/mailname string mail.yolo-consulting.net" >> preseed.txt

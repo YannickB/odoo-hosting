@@ -95,42 +95,8 @@ class ClouderContainer(models.Model):
                 'sed', '-i', '"s/SYSADMIN_MAIL/' +
                 self.email_sysadmin + '/g"',
                 '/usr/local/shinken/etc/services/clouder.cfg'], username='shinken')
-            self.send(
-                      modules.get_module_path('clouder_template_shinken') +
-                      '/res/control_backup.sh',
-                      '/home/shinken/control_backup.sh', username='shinken')
-            self.execute(['chmod', '+x',
-                               '/home/shinken/control_backup.sh'], username='shinken')
             self.execute(['rm',
                                '/usr/local/shinken/etc/hosts/localhost.cfg'], username='shinken')
-
-    @api.multi
-    def deploy_key(self):
-        """
-        Reset the backup ssh key in shinken containers after we change the
-        key of a backup container
-        """
-        super(ClouderContainer, self).deploy_key()
-        if self.application_id.type_id.name == 'backup':
-            shinkens = {}
-            containers = self.search([('backup_ids', 'in', self.id)])
-            for container in containers:
-                shinken_links = self.env['clouder.container.link'].search([
-                    ('container_id', '=', container.id),
-                    ('name.name.code', '=', 'shinken'),
-                    ('target', '!=', False)
-                ])
-                for shinken_link in shinken_links:
-                    shinkens[shinken_link.target.id] = {
-                        'shinken': shinken_link.target,
-                        'container': container
-                    }
-
-            for key, shinken in shinkens.iteritems():
-                ssh = self.connect(shinken['shinken'].fullname,
-                                   username='shinken')
-                send_key_to_shinken(ssh, shinken['container'])
-                ssh.close()
 
 
 class ClouderBase(models.Model):
@@ -210,6 +176,14 @@ class ClouderContainerLink(models.Model):
                       '/res/' + config_file + '.config',
                       self.container_id.shinken_configfile, username='shinken')
             self.target.execute([
+                'sed', '-i',
+                '"s/BACKUPIP/' + self.container_id.backup_ids[0].server_id.ip + '/g"',
+                self.container_id.shinken_configfile], username='shinken')
+            self.target.execute([
+                'sed', '-i',
+                '"s/PORT/' + self.container_id.backup_ids[0].ports['nrpe']['hostport'] + '/g"',
+                self.container_id.shinken_configfile], username='shinken')
+            self.target.execute([
                 'sed', '-i', '"s/METHOD/' +
                 self.container_id.backup_ids[0].backup_method + '/g"',
                 self.container_id.shinken_configfile], username='shinken')
@@ -217,7 +191,7 @@ class ClouderContainerLink(models.Model):
                                self.container_id.shinken_configfile], username='shinken')
             self.target.execute([
                 'sed', '-i',
-                '"s/CONTAINER/' + self.container_id.backup_ids[0].server_id.name + '/g"',
+                '"s/BACKUPIP/' + self.container_id.backup_ids[0].server_id.ip + '/g"',
                 self.container_id.shinken_configfile], username='shinken')
             self.target.execute([
                 'sed', '-i',
@@ -264,11 +238,23 @@ class ClouderBaseLink(models.Model):
                       modules.get_module_path('clouder_template_shinken') +
                       '/res/' + config_file + '.config',
                       self.base_id.shinken_configfile, username='shinken')
+            self.target.execute([
+                'sed', '-i',
+                '"s/BACKUPIP/' + self.base_id.backup_ids[0].server_id.ip + '/g"',
+                self.base_id.shinken_configfile], username='shinken')
+            self.target.execute([
+                'sed', '-i',
+                '"s/PORT/' + self.base_id.backup_ids[0].ports['nrpe']['hostport'] + '/g"',
+                self.base_id.shinken_configfile], username='shinken')
+            self.target.execute([
+                'sed', '-i', '"s/METHOD/' +
+                self.base_id.backup_ids[0].backup_method + '/g"',
+                self.base_id.shinken_configfile], username='shinken')
             self.target.execute(['sed', '-i', '"s/TYPE/base/g"',
                                self.base_id.shinken_configfile], username='shinken')
             self.target.execute([
                 'sed', '-i',
-                '"s/UNIQUE_NAME/' + self.base_id.fullname_ + '/g"',
+                '"s/UNIQUE_NAME/' + self.base_id.fullname + '/g"',
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute([
                 'sed', '-i',
@@ -280,15 +266,6 @@ class ClouderBaseLink(models.Model):
             self.target.execute([
                 'sed', '-i',
                 '"s/DOMAIN/' + self.base_id.domain_id.name + '/g"',
-                self.base_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i', '"s/METHOD/' +
-                self.base_id.backup_ids[0].backup_method + '/g"',
-                self.base_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/CONTAINER/' + self.base_id
-                         .backup_ids[0].server_id.name + '/g"',
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'], username='shinken')
 

@@ -75,7 +75,7 @@ class ClouderBase(models.Model):
 
     @property
     def odoo_port(self):
-        return self.container_id.childs['exec'] and self.container_id.childs['exec'].ports['odoo']['hostport']
+        return self.container_id.childs['exec'] and self.container_id.childs['exec'].ports['http']['hostport']
 
     @api.multi
     def deploy_database(self):

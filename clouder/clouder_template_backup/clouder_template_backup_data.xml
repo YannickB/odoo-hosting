@@ -44,6 +44,7 @@ RUN mkdir /opt/upload
 
         <record id="image_backup_simple" model="clouder.image">
             <field name="name">img_backup_simple</field>
+            <field name="type_id" ref="apptype_backup"/>
             <field name="current_version">1</field>
             <field name="parent_id" ref="image_base"/>
             <field name="dockerfile"><![CDATA[
@@ -105,12 +106,14 @@ RUN echo "command=cron -f" >> /etc/supervisor/conf.d/supervisord.conf
 
         <record id="image_backup_bup" model="clouder.image">
             <field name="name">img_backup_bup</field>
+            <field name="type_id" ref="apptype_backup"/>
             <field name="current_version">1</field>
             <field name="parent_id" ref="image_base"/>
             <field name="dockerfile"><![CDATA[
+RUN touch /tmp/backup-bup
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp g++
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor python2.7-dev python-fuse python-pyxattr python-pylibacl python-tornado linux-libc-dev acl attr par2 git make cron ncftp g++ nagios-nrpe-server
 
 RUN git clone git://github.com/bup/bup /opt/bup
 RUN make -C /opt/bup
@@ -134,7 +137,17 @@ RUN mkdir /opt/backup/bup
 ENV BUP_DIR /opt/backup/bup
 RUN bup init
 
+
+
 USER root
+
+ADD sources/check_backup /opt/check_backup
+RUN chmod +x /opt/check_backup
+RUN sed -i "s/nrpe_user=nagios/nrpe_user=backup/g" /etc/nagios/nrpe.cfg
+RUN sed -i "s/nrpe_group=nagios/nrpe_group=backup/g" /etc/nagios/nrpe.cfg
+RUN sed -i "s/allowed_hosts=127.0.0.1/allowed_hosts=172.17.0.0\\\/16/g" /etc/nagios/nrpe.cfg
+RUN sed -i "s/dont_blame_nrpe=0/dont_blame_nrpe=1/g" /etc/nagios/nrpe.cfg
+RUN echo "command[check_backup]=/opt/check_backup \\\$ARG1\\\$ \\\$ARG2\\\$ \\\$ARG3\\\$ \\\$ARG4\\$" >> /etc/nagios/nrpe.cfg
 
 RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
@@ -147,6 +160,13 @@ RUN echo "command=cron -f" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:bup-web]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=su backup -c 'BUP_DIR=/opt/backup/bup bup web :8080'" >> /etc/supervisor/conf.d/supervisord.conf
+
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:nrpe]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/etc/init.d/nagios-nrpe-server restart" >> /etc/supervisor/conf.d/supervisord.conf
+
+
 
 RUN echo "* * * * * root supervisorctl restart bup-web" >> /etc/crontab
 
@@ -163,6 +183,12 @@ CMD ["/usr/bin/supervisord"]
             <field name="image_id" ref="image_backup_bup"/>
             <field name="name">backup-web</field>
             <field name="localport">8080</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_backup_bup_port2" model="clouder.image.port">
+            <field name="image_id" ref="image_backup_bup"/>
+            <field name="name">nrpe</field>
+            <field name="localport">5666</field>
             <field name="expose">internet</field>
         </record>
 

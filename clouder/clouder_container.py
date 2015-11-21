@@ -489,6 +489,8 @@ class ClouderContainer(models.Model):
                     test = False
                     if 'option_ids' in vals:
                         for option in vals['option_ids']:
+                            if isinstance(option, (list, tuple)):
+                                option = self.get_o2m_struct(option)
                             if option.name == type_option:
                                 test = True
                     if not test:
@@ -505,6 +507,8 @@ class ClouderContainer(models.Model):
                     test = False
                     if 'link_ids' in vals:
                         for link in vals['link_ids']:
+                            if isinstance(link, (list, tuple)):
+                                link = self.get_o2m_struct(link)
                             if link.name == app_link:
                                 test = True
                     if not test:
@@ -536,6 +540,8 @@ class ClouderContainer(models.Model):
                 test = False
                 if 'child_ids' in vals:
                     for child in vals['child_ids']:
+                        if isinstance(child, (list, tuple)):
+                            child = self.get_o2m_struct(child)
                         if child.name == app_child:
                             test = True
                 if not test and app_child.required:
@@ -597,9 +603,8 @@ class ClouderContainer(models.Model):
             for img_port in image.port_ids:
                 test = False
                 if 'port_ids' in vals:
-
                     for port in vals['port_ids']:
-                        if type(port) is list:
+                        if isinstance(port, (list, tuple)):
                             port = self.get_o2m_struct(port)
                         if port.name == img_port.name:
                             test = True
@@ -620,6 +625,8 @@ class ClouderContainer(models.Model):
                 test = False
                 if 'volume_ids' in vals:
                     for volume in vals['volume_ids']:
+                        if isinstance(volume, (list, tuple)):
+                            volume = self.get_o2m_struct(volume)
                         if volume.name == img_volume.name:
                             test = True
                 from_id = False
@@ -725,6 +732,8 @@ class ClouderContainer(models.Model):
         and make a save before deleting a container.
         """
         self.base_ids and self.base_ids.unlink()
+        self.env['clouder.save'].search([('backup_id','=',self.id)]).unlink()
+        self.env['clouder.image.version'].search([('registry_id','=',self.id)]).unlink()
         save = self.save(comment='Before unlink', no_enqueue=True)
         if self.parent_id:
             self.parent_id.save_id = save
