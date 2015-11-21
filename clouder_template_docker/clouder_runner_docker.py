@@ -59,8 +59,9 @@ class ClouderImageVersion(models.Model):
                                self.fullpath_localhost])
             server.execute(
                          ['sudo', 'docker', 'push', self.fullpath_localhost])
-            server.execute(['sudo', 'docker', 'rmi', self.fullname])
-            server.execute(['sudo', 'docker', 'rmi', self.fullpath_localhost])
+            #TODO
+            # server.execute(['sudo', 'docker', 'rmi', self.fullname])
+            # server.execute(['sudo', 'docker', 'rmi', self.fullpath_localhost])
             server.execute(['rm', '-rf', tmp_dir])
         return res
 

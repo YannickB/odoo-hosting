@@ -153,7 +153,7 @@ class ClouderImageVersion(models.Model):
         'clouder.image', 'Image', ondelete='cascade', required=True)
     name = fields.Char('Version', size=64, required=True)
     parent_id = fields.Many2one('clouder.image.version', 'Parent version')
-    registry_id = fields.Many2one('clouder.container', 'Registry')
+    registry_id = fields.Many2one('clouder.container', 'Registry', required=True, ondelete="cascade")
     container_ids = fields.One2many(
         'clouder.container', 'image_version_id', 'Containers')
     child_ids = fields.One2many(

@@ -69,6 +69,12 @@ def connector_enqueue(session, model_name, record_id, func_name, context, *args,
     job.search([('state','=', 'failed')]).write({'state':'pending'})
     return res
 
+
+class Struct:
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
+
+
 class QueueJob(models.Model):
 
     _inherit = 'queue.job'
@@ -230,6 +236,7 @@ class ClouderModel(models.AbstractModel):
     def deploy_frame(self):
         try:
             self.deploy()
+            self.deploy_links()
         except:
             self.log('===================')
             self.log('FAIL! Reverting...')
@@ -595,6 +602,12 @@ class ClouderModel(models.AbstractModel):
         f = open(localfile, 'a')
         f.write(value)
         f.close()
+
+    @api.multi
+    def get_o2m_struct(self, list):
+        dict = list[2]
+        return Struct(**dict)
+
 
 
 def generate_random_password(size):

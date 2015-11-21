@@ -57,26 +57,26 @@ class ClouderBaseLink(models.Model):
                 configfile = 'proxy.config'
             else:
                 configfile = 'proxy-sslonly.config'
-            ssh = self.connect(self.target.fullname)
-            self.send(ssh,
+            target = self.target
+            target.send(
                       modules.get_module_path(
                           'clouder_template_' +
                           self.base_id.application_id.type_id.name
                       ) + '/res/' + configfile, self.base_id.nginx_configfile)
-            self.execute(ssh,
+            target.execute(
                          ['sed', '-i', '"s/BASE/' + self.base_id.name + '/g"',
                           self.base_id.nginx_configfile])
-            self.execute(ssh, [
+            target.execute([
                 'sed', '-i', '"s/DOMAIN/' + self.base_id.domain_id.name +
                 '/g"', self.base_id.nginx_configfile])
-            self.execute(ssh, [
+            target.execute([
                 'sed', '-i', '"s/SERVER/' +
-                self.base_id.service_id.container_id.server_id.name + '/g"',
+                self.base_id.container_id.server_id.name + '/g"',
                 self.base_id.nginx_configfile])
-            if 'port' in self.base_id.service_id.options:
-                self.execute(ssh, [
+            if 'http' in self.base_id.container_id.ports:
+                target.execute([
                     'sed', '-i', '"s/PORT/' +
-                    self.base_id.service_id.port['hostport'] +
+                    self.base_id.container_ids.ports['http']['hostport'] +
                     '/g"', self.base_id.nginx_configfile])
             # self.deploy_prepare_apache(cr, uid, vals, context)
             cert_file = '/etc/ssl/certs/' + self.base_id.name + '.' + \
@@ -84,32 +84,31 @@ class ClouderBaseLink(models.Model):
             key_file = '/etc/ssl/private/' + self.base_id.name + '.' +\
                        self.base_id.domain_id.name + '.key'
             if self.base_id.cert_cert and self.base_id.cert_key:
-                self.execute(ssh, [
+                target.execute([
                     'echo', '"' + self.base_id.cert_cert + '"', '>', cert_file
                 ])
-                self.execute(ssh, [
+                target.execute([
                     'echo', '"' + self.base_id.cert_key + '"', '>', key_file])
             elif self.base_id.domain_id.cert_cert\
                     and self.base_id.domain_id.cert_key:
-                self.execute(ssh, [
+                target.execute([
                     'echo', '"' + self.base_id.domain_id.cert_cert + '"',
                     '>', cert_file])
-                self.execute(ssh, [
+                target.execute([
                     'echo', '"' + self.base_id.domain_id.domain_cert_key + '"',
                     '>', key_file])
             else:
-                self.execute(ssh, [
+                target.execute([
                     'openssl', 'req', '-x509', '-nodes', '-days', '365',
                     '-newkey', 'rsa:2048', '-out', cert_file,
                     ' -keyout', key_file, '-subj', '"/C=FR/L=Paris/O=' +
                     self.base_id.domain_id.organisation +
                     '/CN=' + self.base_id.name +
                     '.' + self.base_id.domain_id.name + '"'])
-            self.execute(ssh, [
+            target.execute([
                 'ln', '-s', self.base_id.nginx_configfile,
                 '/etc/nginx/sites-enabled/' + self.base_id.fullname])
-            self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close()
+            target.execute(['/etc/init.d/nginx', 'reload'])
 
     @api.multi
     def purge_link(self):
@@ -118,16 +117,15 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'proxy':
-            ssh = self.connect(self.target.fullname)
-            self.execute(ssh, [
+            target = self.target
+            target.execute([
                 'rm',
                 '/etc/nginx/sites-enabled/' + self.base_id.fullname])
-            self.execute(ssh, ['rm', self.base_id.nginx_configfile])
-            self.execute(ssh, [
+            target.execute(['rm', self.base_id.nginx_configfile])
+            target.execute([
                 'rm', '/etc/ssl/certs/' + self.base_id.name +
                 '.' + self.base_id.domain_id.name + '.*'])
-            self.execute(ssh, [
+            target.execute([
                 'rm', '/etc/ssl/private/' + self.base_id.name +
                 '.' + self.base_id.domain_id.name + '.*'])
-            self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close()
+            target.execute(['/etc/init.d/nginx', 'reload'])

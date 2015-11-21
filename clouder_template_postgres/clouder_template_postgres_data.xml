@@ -40,7 +40,7 @@
             <field name="name">/var/lib/postgresql</field>
             <field name="user">postgres</field>
         </record>
-        <record id="image_postgres_port2" model="clouder.image.port">
+        <record id="image_postgres_port" model="clouder.image.port">
             <field name="image_id" ref="image_postgres"/>
             <field name="name">postgres</field>
             <field name="localport">5432</field>

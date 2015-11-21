@@ -136,6 +136,7 @@ class ClouderServer(models.Model):
         default=lambda self: self.user_partner)
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
     oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
+    oneclick_prefix = fields.Char('Prefix')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, ssh_port)',
@@ -520,6 +521,10 @@ class ClouderContainer(models.Model):
                                 next_id = context['container_links'][fullcode]
                         if not next_id:
                             next_id = app_link.next.id
+                        if not next_id:
+                            target_ids = self.search([('application_id.code','=',app_link.name.code),('parent_id','=',False)])
+                            if target_ids:
+                                next_id = target_ids[0].id
                         links.append((0, 0, {'name': app_link.id,
                                              'target': next_id}))
             vals['link_ids'] = links
@@ -534,9 +539,8 @@ class ClouderContainer(models.Model):
                         if child.name == app_child:
                             test = True
                 if not test and app_child.required:
-                    childs.append((0, 0, {'name': app_child.id, 'sequence':  app_child.sequence, 'server_id': app_child.next_server_id.id or self.server_id.id}))
+                    childs.append((0, 0, {'name': app_child.id, 'sequence':  app_child.sequence, 'server_id': app_child.next_server_id.id or vals['server_id']}))
             vals['child_ids'] = childs
-
             if not 'image_id' in vals or not vals['image_id']:
                 vals['image_id'] = application.default_image_id.id
 
@@ -593,12 +597,21 @@ class ClouderContainer(models.Model):
             for img_port in image.port_ids:
                 test = False
                 if 'port_ids' in vals:
+
                     for port in vals['port_ids']:
+                        if type(port) is list:
+                            port = self.get_o2m_struct(port)
                         if port.name == img_port.name:
                             test = True
+                context = self.env.context
+                hostport = False
+                if 'container_ports' in context:
+                    name = img_port.name
+                    if name in context['container_ports']:
+                        hostport = context['container_ports'][name]
                 if not test and img_port.expose != 'none':
                     ports.append(((0, 0, {
-                        'name': img_port.name, 'localport': img_port.localport,
+                        'name': img_port.name, 'localport': img_port.localport, 'hostport': hostport,
                         'expose': img_port.expose, 'udp': img_port.udp})))
             vals['port_ids'] = ports
 

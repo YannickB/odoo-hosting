@@ -300,6 +300,8 @@
                     <newline/>
                     <group col="4">
                         <field name="oneclick_id" widget="selection"/>
+                        <field name="oneclick_prefix" attrs="{'required': [('oneclick_id','!=',False)], 'invisible': [('oneclick_id','=',False)]}"/>
+                        <newline/>
                         <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
                         <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
                     </group>

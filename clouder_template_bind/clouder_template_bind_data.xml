@@ -17,43 +17,19 @@ RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install bind9
 
-#mkdir -m 0775 -p /var/run/named
-#chown root:bind /var/run/named
-
-#https://github.com/Supervisor/supervisor/issues/147
-#RUN echo 'trap "{ /etc/init.d/bind9 stop; exit 0; }" EXIT' >> /opt/bind_init.sh
-#RUN echo '/etc/init.d/bind9 start' >> /opt/bind_init.sh
-#RUN echo 'tail -f /dev/null' >> /opt/bind_init.sh
-#RUN chmod +x /opt/bind_init.sh
-
-RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "[program:bind]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=/etc/init.d/bind9 start" >> /etc/supervisor/conf.d/supervisord.conf
-
-
-#USER bind
-
-#RUN mkdir ~/.ssh
-#RUN ln -s /opt/authorized_keys ~/.ssh/authorized_keys
-
 USER root
+CMD /usr/sbin/named -u bind -g
 ]]></field>
         </record>
         <record id="image_bind_volume1" model="clouder.image.volume">
             <field name="image_id" ref="image_bind"/>
             <field name="name">/etc/bind</field>
         </record>
-        <record id="image_bind_port1" model="clouder.image.port">
-            <field name="image_id" ref="image_bind"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_bind_port2" model="clouder.image.port">
+        <record id="image_bind_port" model="clouder.image.port">
             <field name="image_id" ref="image_bind"/>
             <field name="name">bind</field>
             <field name="localport">53</field>
-            <field name="expose" eval="True"/>
+            <field name="udp" eval="True"/>
             <field name="expose">internet</field>
         </record>
 

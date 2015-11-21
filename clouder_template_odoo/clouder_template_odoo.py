@@ -41,29 +41,29 @@ class ClouderContainer(models.Model):
     @api.multi
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
-        if self.application_id.fullcode == 'odoo-data':
+        if self.application_id.type_id.name == 'odoo':
             config_file = '/opt/odoo/etc/odoo.conf'
-            # addons_path = '/opt/odoo/' +\
-            #               self.name + '/files/parts/odoo/addons,'
-            # for extra_dir in sftp.listdir(
-            #         '/opt/odoo/' + self.name + '/files/extra'):
-            #     addons_path += '/opt/odoo/' + self.name +\
-            #                    '/files/extra/' + extra_dir + ','
-            # self.execute(ssh, ['sed', '-i', '"s/ADDONS_PATH/' +
-            #                    addons_path.replace('/', '\/') + '/g"',
-            #                    config_file])
-            self.execute(['sed', '-i', '"s/APPLICATION/' +
-                               self.application_id.parent_id.fullcode
-                               .replace('-', '_') + '/g"', config_file])
-            self.execute(['sed', '-i', 's/DB_SERVER/' +
-                               self.db_server + '/g',
-                               config_file])
-            self.execute(['sed', '-i',
-                               's/DB_USER/' + self.db_user + '/g',
-                               config_file])
-            self.execute(['sed', '-i', 's/DB_PASSWORD/' +
-                               self.db_password + '/g',
-                               config_file])
+            if self.application_id.code == 'data':
+                self.execute(['sed', '-i', '"s/APPLICATION/' +
+                                   self.application_id.parent_id.fullcode
+                                   .replace('-', '_') + '/g"', config_file])
+                self.execute(['sed', '-i', 's/DB_SERVER/' +
+                                   self.db_server + '/g',
+                                   config_file])
+                self.execute(['sed', '-i',
+                                   's/DB_USER/' + self.db_user + '/g',
+                                   config_file])
+                self.execute(['sed', '-i', 's/DB_PASSWORD/' +
+                                   self.db_password + '/g',
+                                   config_file])
+            if self.application_id.code == 'exec':
+                addons_path = '/opt/odoo/files/odoo/addons,/opt/odoo/extra-addons,'
+                for extra_dir in self.execute(['ls', '/opt/odoo/files/extra']).split('\n'):
+                    if extra_dir:
+                        addons_path += '/opt/odoo/files/extra/' + extra_dir + ','
+                self.execute(['sed', '-i', '"s/ADDONS_PATH/' +
+                                   addons_path.replace('/', '\/') + '/g"',
+                                   config_file])
 
 
 class ClouderBase(models.Model):
@@ -421,7 +421,7 @@ class ClouderBaseLink(models.Model):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
-            return
+
             try:
                 self.log("client = erppeek.Client('http://" +
                          self.base_id.container_id.server_id.ip +
@@ -480,7 +480,6 @@ class ClouderBaseLink(models.Model):
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
-            return
             self.target.execute([
                 'sed', '-i',
                 '"/^mydestination =/ s/, ' + self.base_id.fulldomain + '//"',

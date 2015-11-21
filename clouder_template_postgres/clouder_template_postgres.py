@@ -48,11 +48,11 @@ class ClouderContainer(models.Model):
                 'echo "host all  all    ' +
                 self.options['network']['value'] +
                 ' md5" >> /etc/postgresql/' +
-                self.application_id.current_version + '/main/pg_hba.conf'])
+                self.image_id.current_version + '/main/pg_hba.conf'])
             self.execute([
                 'echo "listen_addresses=\'' +
                 self.options['listen']['value'] + '\'" >> /etc/postgresql/' +
-                self.application_id.current_version + '/main/postgresql.conf'])
+                self.image_id.current_version + '/main/postgresql.conf'])
 
 class ClouderContainerLink(models.Model):
     """

@@ -159,13 +159,7 @@ CMD ["/usr/bin/supervisord"]
             <field name="name">/opt/backup</field>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_backup_bup_port1" model="clouder.image.port">
-            <field name="image_id" ref="image_backup_bup"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_backup_bup_port2" model="clouder.image.port">
+        <record id="image_backup_bup_port" model="clouder.image.port">
             <field name="image_id" ref="image_backup_bup"/>
             <field name="name">backup-web</field>
             <field name="localport">8080</field>
@@ -186,7 +180,6 @@ CMD ["/usr/bin/supervisord"]
         <record id="app_backup_bup_link1" model="clouder.application.link">
             <field name="application_id" ref="app_backup_bup"/>
             <field name="name" ref="app_backup_upload"/>
-            <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
         </record>

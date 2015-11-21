@@ -176,7 +176,7 @@ class ClouderBase(models.Model):
         """
         options = {}
         for option in \
-                self.service_id.container_id.application_id.type_id.option_ids:
+                self.application_id.type_id.option_ids:
             if option.type == 'base':
                 options[option.name] = {'id': option.id, 'name': option.id,
                                         'value': option.default}
@@ -240,7 +240,7 @@ class ClouderBase(models.Model):
             if not 'admin_name' in vals or not vals['admin_name']:
                 vals['admin_name'] = application.admin_name
 
-            if not 'admin_name' in vals or not vals['admin_name']:
+            if not 'admin_email' in vals or not vals['admin_email']:
                 vals['admin_email'] = application.admin_email \
                     and application.admin_email \
                     or self.email_sysadmin
@@ -285,6 +285,10 @@ class ClouderBase(models.Model):
                                 next_id = context['base_links'][fullcode]
                         if not next_id:
                             next_id = app_link.next.id
+                        if not next_id:
+                            target_ids = self.env['clouder.container'].search([('application_id.code','=',app_link.name.code),('parent_id','=',False)])
+                            if target_ids:
+                                next_id = target_ids[0].id
                         links.append((0, 0, {'name': app_link.id,
                                              'target': next_id}))
             vals['link_ids'] = links
@@ -593,7 +597,7 @@ class ClouderBase(models.Model):
         self.deploy_post()
 
         #For shinken
-        # self.save(comment='First save', no_enqueue=True)
+        self.save(comment='First save', no_enqueue=True)
 
     @api.multi
     def purge_post(self):

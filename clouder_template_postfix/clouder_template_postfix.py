@@ -69,8 +69,8 @@ class ClouderContainer(models.Model):
                 '>> /etc/postfix/main.cf'])
             self.execute([
                 'echo "[smtp.mandrillapp.com]    ' +
-                self.options['mailchimp_username']['value'] + ':' +
-                self.options['mailchimp_apikey']['value'] +
+                (self.options['mailchimp_username']['value'] or '') + ':' +
+                (self.options['mailchimp_apikey']['value'] or '') +
                 '" > /etc/postfix/sasl_passwd'])
             self.execute(['postmap /etc/postfix/sasl_passwd'])
 

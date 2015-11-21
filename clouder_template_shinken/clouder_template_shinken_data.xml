@@ -15,12 +15,14 @@
             <field name="dockerfile"><![CDATA[
 RUN apt-get update
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install curl nagios-nrpe-plugin lsb-release
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor curl nagios-nrpe-plugin lsb-release
 
 # Install Shinken from the installation script
 RUN export TERM=xterm
 RUN curl -L http://install.shinken-monitoring.org | /bin/bash
 
+RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:shinken]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/usr/local/shinken/bin/init.d/shinken restart" >> /etc/supervisor/conf.d/supervisord.conf
@@ -35,6 +37,7 @@ RUN ln -s /opt/keys/authorized_keys /home/shinken/.ssh/authorized_keys
 RUN chmod -R 700 /home/shinken/.ssh
 
 USER root
+CMD ["/usr/bin/supervisord"]
 ]]></field>
         </record>
         <record id="image_shinken_volume1" model="clouder.image.volume">
@@ -42,13 +45,7 @@ USER root
             <field name="name">/usr/local/shinken/etc</field>
             <field name="user">shinken</field>
         </record>
-        <record id="image_shinken_port1" model="clouder.image.port">
-            <field name="image_id" ref="image_shinken"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_shinken_port2" model="clouder.image.port">
+        <record id="image_shinken_port" model="clouder.image.port">
             <field name="image_id" ref="image_shinken"/>
             <field name="name">shinken</field>
             <field name="localport">7767</field>
