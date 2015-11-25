@@ -20,4 +20,5 @@
 #
 ##############################################################################
 
-import clouder_template_ldap
+from . import runner
+from . import template

@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-import clouder_template_postgres
+import template

@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-import clouder_template_drupal
+from __unfinished__.clouder_template_wordpress import clouder_template_wordpress

@@ -33,7 +33,7 @@
     Clouder Template MySQL
     """,
     'demo': [],
-    'data': ['clouder_template_mysql_data.xml'],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

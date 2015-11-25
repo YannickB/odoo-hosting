@@ -26,7 +26,7 @@ from openerp.exceptions import except_orm
 from datetime import datetime
 import re
 
-import clouder_model
+import model
 
 
 class ClouderApplicationRole(models.Model):
@@ -115,7 +115,7 @@ class ClouderApplicationTypeOption(models.Model):
     def get_default(self):
         res = self.default
         if self.name == 'db_password':
-            res = clouder_model.generate_random_password(20)
+            res = model.generate_random_password(20)
         return res
 
 

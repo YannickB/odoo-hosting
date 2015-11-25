@@ -32,7 +32,7 @@
     Clouder Shinken
     """,
     'demo': [],
-    'data': ['clouder_template_shinken_data.xml'],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

@@ -20,5 +20,5 @@
 #
 ##############################################################################
 
-import clouder_runner_docker
-import clouder_template_docker
+from __unfinished__.clouder_template_drupal_wikicompare import \
+    clouder_template_drupal_wikicompare

@@ -33,7 +33,7 @@
     Clouder Template Proxy
     """,
     'demo': [],
-    'data': ['clouder_template_proxy_data.xml'],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

@@ -32,7 +32,7 @@
     Clouder Template Postfix
     """,
     'demo': [],
-    'data': ['clouder_template_postfix_data.xml'],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

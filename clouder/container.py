@@ -24,7 +24,7 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 from openerp import modules
 
-import clouder_model
+import model
 
 import re
 

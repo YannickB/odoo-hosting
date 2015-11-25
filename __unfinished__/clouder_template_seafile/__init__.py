@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-import clouder_template_wordpress
+from __unfinished__.clouder_template_seafile import clouder_template_seafile

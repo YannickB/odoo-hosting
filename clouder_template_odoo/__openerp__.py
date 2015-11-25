@@ -40,7 +40,7 @@
     """,
     'demo': [],
     'data': [
-        'clouder_template_odoo_data.xml'
+        'template.xml'
     ],
     'installable': True,
     'application': True,

@@ -33,7 +33,7 @@
     Clouder Template Postgres
     """,
     'demo': [],
-    'data': ['clouder_template_postgres_data.xml'],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

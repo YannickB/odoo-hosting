@@ -25,7 +25,7 @@ from openerp.exceptions import except_orm
 import re
 
 from datetime import datetime, timedelta
-import clouder_model
+import model
 
 
 class ClouderDomain(models.Model):
@@ -81,12 +81,12 @@ class ClouderBase(models.Model):
     admin_name = fields.Char('Admin name', size=64, required=True)
     admin_password = fields.Char(
         'Admin password', size=64, required=True,
-        default=clouder_model.generate_random_password(20))
+        default=model.generate_random_password(20))
     admin_email = fields.Char('Admin email', size=64, required=True)
     poweruser_name = fields.Char('PowerUser name', size=64)
     poweruser_password = fields.Char(
         'PowerUser password', size=64,
-        default=clouder_model.generate_random_password(12))
+        default=model.generate_random_password(12))
     poweruser_email = fields.Char('PowerUser email', size=64)
     build = fields.Selection(
         [('none', 'No action'), ('build', 'Build'), ('restore', 'Restore')],

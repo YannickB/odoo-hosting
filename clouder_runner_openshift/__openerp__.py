@@ -32,7 +32,7 @@
     Clouder Runner OpenShift
     """,
     'demo': [],
-    'data': ['clouder_template_openshift_data.xml'],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

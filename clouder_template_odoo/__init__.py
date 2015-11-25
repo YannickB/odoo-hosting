@@ -20,5 +20,5 @@
 #
 ##############################################################################
 
-import clouder_template_odoo
+import template
 import oneclick

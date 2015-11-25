@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-import clouder_template_seafile
+from __unfinished__.clouder_template_ldap import clouder_template_ldap

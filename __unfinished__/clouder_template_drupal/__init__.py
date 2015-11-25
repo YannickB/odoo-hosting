@@ -20,19 +20,4 @@
 #
 ##############################################################################
 
-{
-    'name': 'Clouder Template Docker',
-    'version': '1.0',
-    'category': 'Clouder',
-    'depends': ['clouder'],
-    'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
-    'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder Template Docker
-    """,
-    'demo': [],
-    'data': ['clouder_template_docker_data.xml'],
-    'installable': True,
-    'application': True,
-}
+from __unfinished__.clouder_template_drupal import clouder_template_drupal

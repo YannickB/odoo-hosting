@@ -20,12 +20,13 @@
 #
 ##############################################################################
 
-import clouder_model
-import clouder_config
-import clouder_image
-import clouder_application
-import clouder_container
-import clouder_base
-import clouder_save
+import model
+import config
+import image
+import application
+import container
+import base
+import save
+from . import clouder_runner_docker
 from . import clouder_template_registry
 from . import clouder_template_backup

@@ -33,12 +33,13 @@
     """,
     'demo': [],
     'data': [
-        'clouder_view.xml',
-        'data/clouder_data.xml',
-        'security/clouder_security.xml',
+        'view.xml',
+        'data/data.xml',
+        'security/security.xml',
         'security/ir.model.access.csv',
         'clouder_template_backup/template.xml',
-        'clouder_template_registry/clouder_template_registry_data.xml'
+        'clouder_template_registry/template.xml',
+        'clouder_runner_docker/template.xml',
     ],
     'installable': True,
     'application': True,

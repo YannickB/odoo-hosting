@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-from . import clouder_template_registry
+from . import template

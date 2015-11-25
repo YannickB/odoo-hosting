@@ -32,7 +32,7 @@
     Clouder Template Bind
     """,
     'demo': [],
-    'data': ['clouder_template_bind_data.xml'],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }
