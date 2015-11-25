@@ -43,6 +43,7 @@ class ClouderImageVersion(models.Model):
 
             tmp_dir = '/tmp/' + self.image_id.name + '_' + self.fullname
             server = self.registry_id.server_id
+            server.execute(['rm', '-rf', tmp_dir])
             server.execute(['mkdir', '-p', tmp_dir])
 
             if self.image_id.type_id:

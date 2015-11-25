@@ -487,9 +487,12 @@ class ClouderContainer(models.Model):
                     test = False
                     if 'option_ids' in vals:
                         for option in vals['option_ids']:
+                            option2 = option
                             if isinstance(option, (list, tuple)):
+                                option2 = option[2]
                                 option = self.get_o2m_struct(option)
                             if option.name == type_option:
+                                options.append(((0, 0, option2)))
                                 test = True
                     if not test:
                         options.append((0, 0,
@@ -505,9 +508,12 @@ class ClouderContainer(models.Model):
                     test = False
                     if 'link_ids' in vals:
                         for link in vals['link_ids']:
+                            link2 = link
                             if isinstance(link, (list, tuple)):
+                                linke2 = link[2]
                                 link = self.get_o2m_struct(link)
                             if link.name == app_link:
+                                links.append(((0, 0, link2)))
                                 test = True
                     if not test:
                         next_id = False
@@ -538,9 +544,12 @@ class ClouderContainer(models.Model):
                 test = False
                 if 'child_ids' in vals:
                     for child in vals['child_ids']:
+                        child2 = child
                         if isinstance(child, (list, tuple)):
+                            child2 = child[2]
                             child = self.get_o2m_struct(child)
                         if child.name == app_child:
+                            childs.append(((0, 0, child2)))
                             test = True
                 if not test and app_child.required:
                     childs.append((0, 0, {'name': app_child.id, 'sequence':  app_child.sequence, 'server_id': app_child.next_server_id.id or vals['server_id']}))
@@ -585,6 +594,7 @@ class ClouderContainer(models.Model):
         """
         Update the ports and volumes when we change the image_id field.
         """
+
         if 'image_id' in vals and vals['image_id']:
             image = self.env['clouder.image'].browse(vals['image_id'])
 
@@ -601,9 +611,12 @@ class ClouderContainer(models.Model):
                 test = False
                 if 'port_ids' in vals:
                     for port in vals['port_ids']:
+                        port2 = port
                         if isinstance(port, (list, tuple)):
+                            port2 = port[2]
                             port = self.get_o2m_struct(port)
                         if port.name == img_port.name:
+                            ports.append(((0, 0, port2)))
                             test = True
                 context = self.env.context
                 hostport = False
@@ -622,9 +635,12 @@ class ClouderContainer(models.Model):
                 test = False
                 if 'volume_ids' in vals:
                     for volume in vals['volume_ids']:
+                        volume2 = volume
                         if isinstance(volume, (list, tuple)):
+                            volume2 = volume[2]
                             volume = self.get_o2m_struct(volume)
                         if volume.name == img_volume.name:
+                            ports.append(((0, 0, volume2)))
                             test = True
                 from_id = False
                 if 'parent_id' in vals and vals['parent_id']:

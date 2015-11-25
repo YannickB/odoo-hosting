@@ -12,9 +12,9 @@
         <record id="image_registry" model="clouder.image">
             <field name="name">img_registry</field>
             <field name="current_version">1</field>
-            <field name="parent_from">registry</field>
+            <field name="parent_from">registry:2</field>
             <field name="dockerfile"><![CDATA[
-FROM registry
+FROM registry:2
 
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get -qy install locales
@@ -26,7 +26,7 @@ RUN DEBIAN_FRONTEND=noninteractive locale-gen en_US.UTF-8
 RUN DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
 RUN update-locale LANG=en_US.UTF-8
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server supervisor vim ssmtp mailutils curl
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y supervisor vim ssmtp mailutils curl
 #/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix container.
 #Be cautious to any application which also use it.
 RUN mkdir -p /var/run/sshd
@@ -83,16 +83,11 @@ RUN ln -s /etc/nginx/sites-available/docker-registry /etc/nginx/sites-enabled/do
 RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=/usr/sbin/sshd -D" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:docker-registry]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=docker-registry" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/etc/init.d/nginx start" >> /etc/supervisor/conf.d/supervisord.conf
-
-RUN mkdir /root/.ssh
-RUN ln -s /opt/keys/authorized_keys /root/.ssh/authorized_keys
 
 CMD ["/usr/bin/supervisord"]
 
