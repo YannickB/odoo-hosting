@@ -274,7 +274,6 @@ class ClouderContainer(models.Model):
     date_next_save = fields.Datetime('Next save planned')
     save_comment = fields.Text('Save Comment')
     autosave = fields.Boolean('Save?')
-    privileged = fields.Boolean('Privileged?')
     port_ids = fields.One2many('clouder.container.port',
                                'container_id', 'Ports')
     volume_ids = fields.One2many('clouder.container.volume',
@@ -336,7 +335,7 @@ class ClouderContainer(models.Model):
         database = False
         for link in self.link_ids:
             if link.target:
-                if 'database' in link.name.name.type_id.role_ids.name:
+                if link.name.name.check_role('database'):
                     database = link.target
         return database
 
@@ -449,11 +448,10 @@ class ClouderContainer(models.Model):
         """
         Check that a backup server is specified.
         """
-        if not self.backup_ids and self.application_id.type_id.name \
-                not in ['backup', 'backup_upload', 'archive', 'registry', 'openshift']:
+        if not self.backup_ids and not self.application_id.check_role('no-backup'):
             raise except_orm(
                 _('Data error!'),
-                _("You need to create at least one backup container (it will be automatically assigned)."))
+                _("You need to create at least one backup container."))
 
     @api.one
     @api.constrains('image_id', 'image_version_id')
@@ -589,7 +587,6 @@ class ClouderContainer(models.Model):
         """
         if 'image_id' in vals and vals['image_id']:
             image = self.env['clouder.image'].browse(vals['image_id'])
-            vals['privileged'] = image.privileged
 
             if not 'image_version_id' in vals or not vals['image_version_id']:
                 if not image.version_ids:

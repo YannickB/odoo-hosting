@@ -117,6 +117,10 @@ class ClouderContainer(models.Model):
                 return self.image_version_id.fullpath
 
     @api.multi
+    def hook_deploy_special_args(self, cmd):
+        return cmd
+
+    @api.multi
     def hook_deploy(self, ports, volumes):
         """
         Deploy the container in the server.
@@ -127,7 +131,7 @@ class ClouderContainer(models.Model):
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name == 'docker':
 
-            cmd = ['sudo', 'docker', 'run', '-d', '--restart=always']
+            cmd = ['sudo', 'docker', 'run', '-d', '-t', '--restart=always']
             for port in ports:
                 udp = ''
                 if port.udp:
@@ -148,8 +152,7 @@ class ClouderContainer(models.Model):
                 if link.name.make_link and link.target.server_id == self.server_id:
                     cmd.extend(['--link', link.target.name +
                                 ':' + link.name.name.code])
-            if self.privileged:
-                cmd.extend(['--privileged'])
+            cmd = self.hook_deploy_special_args(cmd)
             cmd.extend(['--name', self.name])
 
             cmd.extend([self.hook_deploy_source()])

@@ -38,33 +38,6 @@ class ClouderServer(models.Model):
         """
         return '/usr/local/shinken/etc/hosts/' + self.name + '.cfg'
 
-    @api.multi
-    def deploy(self):
-        """
-        Deploy the configuration file to watch the server performances.
-        """
-        super(ClouderServer, self).deploy()
-
-        if self.supervision_id:
-            self.supervision_id.send(
-                      modules.get_module_path('clouder_template_shinken') +
-                      '/res/server-shinken.config', self.shinken_configfile, username='shinken')
-            self.supervision_id.execute(['sed', '-i',
-                               '"s/NAME/' + self.name + '/g"',
-                               self.shinken_configfile], username='shinken')
-            self.supervision_id.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'], username='shinken')
-
-    @api.multi
-    def purge(self):
-        """
-        Remove the configuration file.
-        """
-        if self.supervision_id:
-            self.supervision_id.execute(['rm', self.shinken_configfile], username='shinken')
-            self.supervision_id.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'], username='shinken')
-
-        super(ClouderServer, self).purge()
-
 
 class ClouderContainer(models.Model):
     """
@@ -79,6 +52,36 @@ class ClouderContainer(models.Model):
         Property returning the shinken config file.
         """
         return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
+
+    @api.multi
+    def deploy_shinken_server(self, nrpe):
+        """
+        Deploy the configuration file to watch the server performances.
+        """
+
+        server = nrpe.server_id
+        self.send(
+                  modules.get_module_path('clouder_template_shinken') +
+                  '/res/server-shinken.config', server.shinken_configfile, username='shinken')
+        self.execute(['sed', '-i',
+                           '"s/IP/' + server.ip + '/g"',
+                           server.shinken_configfile], username='shinken')
+        self.execute(['sed', '-i',
+                           '"s/NAME/' + server.name + '/g"',
+                           server.shinken_configfile], username='shinken')
+        self.execute([
+            'sed', '-i',
+            '"s/PORT/' + nrpe.ports['nrpe']['hostport'] + '/g"',
+            server.shinken_configfile], username='shinken')
+        self.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'], username='shinken')
+
+    @api.multi
+    def purge_shinken_server(self, nrpe):
+        """
+        Remove the configuration file.
+        """
+        self.execute(['rm', nrpe.server_id.shinken_configfile], username='shinken')
+        self.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'], username='shinken')
 
     @api.multi
     def deploy_post(self):
@@ -114,46 +117,6 @@ class ClouderBase(models.Model):
         return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
 
 
-def send_key_to_shinken(shinken, self):
-    """
-    Update the ssh key in the shinken container so it can access the
-    backup container.
-
-    :param ssh: The connection to the shinken container.
-    """
-    for backup in self.backup_ids:
-        shinken.execute(['rm', '-rf', '/home/shinken/.ssh/keys/' +
-                           backup.server_id.name + '*'], username='shinken')
-        shinken.send(
-            self.home_directory + '/.ssh/keys/' +
-            backup.server_id.name + '.pub', '/home/shinken/.ssh/keys/' +
-            backup.server_id.name + '.pub', username='shinken')
-        shinken.send(self.home_directory + '/.ssh/keys/' +
-                  backup.server_id.name, '/home/shinken/.ssh/keys/' +
-                  backup.server_id.name, username='shinken')
-        shinken.execute(['chmod', '-R', '700', '/home/shinken/.ssh'], username='shinken')
-        shinken.execute([
-            'sed', '-i', "'/Host " + backup.server_id.name +
-            "/,/END " + backup.server_id.name + "/d'",
-            '/home/shinken/.ssh/config'], username='shinken')
-        shinken.execute([
-            'echo "Host ' + backup.server_id.name +
-            '" >> /home/shinken/.ssh/config'], username='shinken')
-        shinken.execute([
-            'echo "    Hostname ' +
-            backup.server_id.ip + '" >> /home/shinken/.ssh/config'], username='shinken')
-        shinken.execute([
-            'echo "    Port ' + str(backup.server_id.ssh_port) +
-            '" >> /home/shinken/.ssh/config'], username='shinken')
-        shinken.execute([
-            'echo "    User backup" >> /home/shinken/.ssh/config'], username='shinken')
-        shinken.execute([
-            'echo "    IdentityFile  ~/.ssh/keys/' +
-            backup.server_id.name + '" >> /home/shinken/.ssh/config'], username='shinken')
-        shinken.execute(['echo "#END ' + backup.server_id.name +
-                           '" >> ~/.ssh/config'], username='shinken')
-
-
 class ClouderContainerLink(models.Model):
     """
     Add methods to manage the shinken specificities.
@@ -169,7 +132,7 @@ class ClouderContainerLink(models.Model):
         super(ClouderContainerLink, self).deploy_link()
         if self.name.name.code == 'shinken':
             config_file = 'container-shinken'
-            if not self.container_id.save:
+            if not self.container_id.autosave:
                 config_file = 'container-shinken-nosave'
             self.target.send(
                       modules.get_module_path('clouder_template_shinken') +
@@ -204,7 +167,6 @@ class ClouderContainerLink(models.Model):
 
             self.target.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'], username='shinken')
 
-            send_key_to_shinken(self.target, self.container_id)
 
     @api.multi
     def purge_link(self):
@@ -269,7 +231,6 @@ class ClouderBaseLink(models.Model):
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'], username='shinken')
 
-            send_key_to_shinken(self.target, self.base_id)
 
     @api.multi
     def purge_link(self):

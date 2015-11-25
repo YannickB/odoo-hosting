@@ -30,12 +30,10 @@
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
 
-RUN apt-get update
-
 #RUN echo "mysql-server mysql-server/root_password password root" | debconf-set-selections
 #RUN echo "mysql-server mysql-server/root_password_again password root" | debconf-set-selections
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install mysql-server
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install mysql-server
 
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:mysql]" >> /etc/supervisor/conf.d/supervisord.conf

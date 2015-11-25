@@ -42,11 +42,6 @@ class ClouderImage(models.Model):
     parent_version_id = fields.Many2one(
         'clouder.image.version', 'Parent version')
     parent_from = fields.Char('From', size=64)
-    privileged = fields.Boolean(
-        'Privileged?',
-        help="Indicate if the containers shall be in privilaged mode. "
-             "Warning : Theses containers will have access to the host system."
-    )
     registry_id = fields.Many2one('clouder.container', 'Registry')
     dockerfile = fields.Text('DockerFile')
     volume_ids = fields.One2many('clouder.image.volume', 'image_id', 'Volumes')

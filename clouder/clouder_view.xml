@@ -153,7 +153,6 @@
                         <field name="server_id"/>
                         <field name="image_id"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
-                        <field name="privileged"/>
                         <newline/>
                         <field name="public"/>
                         <field name="partner_id"/>
@@ -606,7 +605,6 @@
                         <field name="type_id"/>
                         <field name="current_version"/>
                         <field name="parent_id"/>
-                        <field name="privileged"/>
                         <field name="public"/>
                         <field name="partner_id"/>
                     </group>

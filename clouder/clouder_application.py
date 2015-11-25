@@ -278,6 +278,13 @@ class ClouderApplication(models.Model):
             self.option_ids = options
 
     @api.multi
+    def check_role(self, role):
+        for app_role in self.type_id.role_ids:
+            if app_role.name == role:
+                return True
+        return False
+
+    @api.multi
     def write(self, vals):
         """
         Override the write method to prevent change of the application code.

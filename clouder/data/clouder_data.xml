@@ -7,6 +7,9 @@
         <record id="role_backup" model="clouder.application.role">
             <field name="name">backup</field>
         </record>
+        <record id="role_no_backup" model="clouder.application.role">
+            <field name="name">no-backup</field>
+        </record>
         <record id="role_database" model="clouder.application.role">
             <field name="name">database</field>
         </record>
@@ -47,10 +50,7 @@ RUN ln -s /usr/sbin/ssmtp /usr/bin/mail
             <field name="current_version">1</field>
             <field name="parent_id" ref="image_base"/>
             <field name="dockerfile"><![CDATA[
-RUN touch /tmp/nginx
-RUN apt-get update
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor nginx openssl
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor nginx openssl
 
 # nginx config
 RUN sed -i -e"s/keepalive_timeout\s*65/keepalive_timeout 2/" /etc/nginx/nginx.conf

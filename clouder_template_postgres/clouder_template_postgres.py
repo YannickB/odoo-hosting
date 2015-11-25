@@ -73,7 +73,7 @@ class ClouderContainerLink(models.Model):
             container = self.container_id
             container.database.execute([
                 'psql', '-c', '"CREATE USER ' + container.db_user +
-                ' WITH PASSWORD \'' + container.db_password + '\' CREATEDB;"'
+                ' WITH PASSWORD \'$$$' + container.db_password + '$$$\' CREATEDB;"'
             ], username='postgres')
 
             username=container.application_id.type_id.system_user
@@ -82,8 +82,8 @@ class ClouderContainerLink(models.Model):
                 'sed', '-i', '"/:*:' + container.db_user + ':/d" ' + home + '/.pgpass'], username=username)
             container.execute([
                 'echo "' + container.db_server + ':5432:*:' +
-                container.db_user + ':' + container.db_password +
-                '" >> ' + home + '/.pgpass'], username=username)
+                container.db_user + ':$$$' + container.db_password +
+                '$$$" >> ' + home + '/.pgpass'], username=username)
             container.execute(['chmod', '700', home + '/.pgpass'], username=username)
 
             self.log('Database user created')

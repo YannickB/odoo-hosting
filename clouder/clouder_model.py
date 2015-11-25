@@ -33,6 +33,7 @@ import os.path
 import string
 import errno
 import random
+import re
 import time
 
 from os.path import expanduser
@@ -211,6 +212,7 @@ class ClouderModel(models.AbstractModel):
         :param message: The message which will be logged.
         """
         now = datetime.now()
+        message = re.sub(r'$$$\w+$$$', '**********', message)
         message = filter(lambda x: x in string.printable, message)
         _logger.info(message)
 
@@ -447,6 +449,7 @@ class ClouderModel(models.AbstractModel):
 
         self.log('host : ' + server.name)
         self.log('command : ' + ' '.join(cmd))
+        cmd = [c.replace('$$$', '') for c in cmd]
         stdin, stdout, stderr = ssh.exec_command(' '.join(cmd))
         if stdin_arg:
             for arg in stdin_arg:

@@ -99,6 +99,13 @@ class ClouderContainer(models.Model):
         return super(ClouderContainer, self).create(vals)
 
     @api.multi
+    def hook_deploy_special_args(self, cmd):
+        cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)
+        if self.application_id.type_id.name == 'docker':
+            cmd.extend(['--privileged'])
+        return cmd
+
+    @api.multi
     def deploy_post(self):
         """
         Add the public key to the allowed keys in the container.

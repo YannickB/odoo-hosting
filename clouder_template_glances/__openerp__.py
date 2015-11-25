@@ -21,25 +21,18 @@
 ##############################################################################
 
 {
-    'name': 'Clouder',
+    'name': 'Clouder Template Glances',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['base', 'connector'],
+    'depends': ['clouder', 'clouder_template_shinken'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
-    Clouder
+    Clouder Template Glances
     """,
     'demo': [],
-    'data': [
-        'clouder_view.xml',
-        'data/clouder_data.xml',
-        'security/clouder_security.xml',
-        'security/ir.model.access.csv',
-        'clouder_template_backup/template.xml',
-        'clouder_template_registry/clouder_template_registry_data.xml'
-    ],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

@@ -13,10 +13,7 @@
             <field name="current_version">1</field>
             <field name="parent_id" ref="clouder.image_base"/>
             <field name="dockerfile"><![CDATA[
-RUN touch /tmp/shinken
-RUN apt-get update
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor curl nagios-nrpe-plugin lsb-release
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor curl nagios-nrpe-plugin lsb-release
 
 # Install Shinken from the installation script
 RUN export TERM=xterm

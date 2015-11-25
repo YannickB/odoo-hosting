@@ -89,6 +89,12 @@ class ClouderServer(models.Model):
             image.parent_version_id = base.id
             image.build()
 
+        image = image_obj.search([('name','=','img_glances')])
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
+
         image = image_obj.search([('name','=','img_postgres')])
         if not image.has_version:
             image.registry_id = registry.id
@@ -148,6 +154,13 @@ class ClouderServer(models.Model):
             'application_id': application.id,
         })
 
+        application = application_obj.search([('code','=','glances')])
+        container_obj.create({
+            'name': prefix + '-glances',
+            'server_id': self.id,
+            'application_id': application.id,
+        })
+
         application = application_obj.search([('code','=','postgres')])
         container_obj.create({
             'name': prefix + '-postgres',
@@ -201,6 +214,8 @@ class ClouderServer(models.Model):
         self.env['clouder.domain'].search([('name','=','mydomain')]).unlink()
 
         container_obj.search([('name','=',prefix + '-postgres')]).unlink()
+
+        container_obj.search([('name','=',prefix + '-glances')]).unlink()
 
         container_obj.search([('name','=',prefix + '-shinken')]).unlink()
 
