@@ -36,7 +36,7 @@ class ClouderConfigBackupMethod(models.Model):
     _name = 'clouder.config.backup.method'
     _description = 'Backup Method'
 
-    name = fields.Char('Name', size=64, required=True)
+    name = fields.Char('Name', required=True)
 
 
 class ClouderConfigSettings(models.Model):
@@ -48,8 +48,8 @@ class ClouderConfigSettings(models.Model):
     _name = 'clouder.config.settings'
     _description = 'Clouder configuration'
 
-    name = fields.Char('Name', size=64)
-    email_sysadmin = fields.Char('Email SysAdmin', size=128)
+    name = fields.Char('Name')
+    email_sysadmin = fields.Char('Email SysAdmin')
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')
     end_reset_bases = fields.Datetime('Last Reset Bases ended at')

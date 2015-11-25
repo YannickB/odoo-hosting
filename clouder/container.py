@@ -117,9 +117,9 @@ class ClouderServer(models.Model):
             self._destroy_key()
         return key
 
-    name = fields.Char('Domain name', size=64, required=True)
+    name = fields.Char('Domain name', required=True)
     runner_id = fields.Many2one('clouder.container', 'Runner')
-    ip = fields.Char('IP', size=64)
+    ip = fields.Char('IP')
     ssh_port = fields.Integer('SSH port')
 
     private_key = fields.Text(
@@ -262,7 +262,7 @@ class ClouderContainer(models.Model):
                 self.ports_string += port.name + ' : ' + port.hostport
             first = False
 
-    name = fields.Char('Name', size=64, required=True)
+    name = fields.Char('Name', required=True)
     application_id = fields.Many2one('clouder.application',
                                      'Application', required=True)
     image_id = fields.Many2one('clouder.image', 'Image', required=True)
@@ -971,9 +971,9 @@ class ClouderContainerPort(models.Model):
 
     container_id = fields.Many2one(
         'clouder.container', 'Container', ondelete="cascade", required=True)
-    name = fields.Char('Name', size=64, required=True)
-    localport = fields.Char('Local port', size=12, required=True)
-    hostport = fields.Char('Host port', size=12)
+    name = fields.Char('Name', required=True)
+    localport = fields.Char('Local port', required=True)
+    hostport = fields.Char('Host port')
     expose = fields.Selection(
         [('internet', 'Internet'), ('local', 'Local')], 'Expose?',
         required=True, default='local')
@@ -997,9 +997,9 @@ class ClouderContainerVolume(models.Model):
     container_id = fields.Many2one(
         'clouder.container', 'Container', ondelete="cascade", required=True)
     from_id = fields.Many2one('clouder.container', 'From')
-    name = fields.Char('Path', size=128, required=True)
-    hostpath = fields.Char('Host path', size=128)
-    user = fields.Char('System User', size=64)
+    name = fields.Char('Path', required=True)
+    hostpath = fields.Char('Host path')
+    user = fields.Char('System User')
     readonly = fields.Boolean('Readonly?')
     nosave = fields.Boolean('No save?')
 

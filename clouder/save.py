@@ -41,17 +41,17 @@ class ClouderSave(models.Model):
     _name = 'clouder.save'
     _inherit = ['clouder.model']
 
-    name = fields.Char('Name', size=256, required=True)
+    name = fields.Char('Name', required=True)
     backup_id = fields.Many2one(
         'clouder.container', 'Backup Server', required=True)
     date_expiration = fields.Date('Expiration Date')
     comment = fields.Text('Comment')
-    now_bup = fields.Char('Now bup', size=64)
+    now_bup = fields.Char('Now bup')
     container_id = fields.Many2one('clouder.container', 'Container')
     container_fullname = fields.Char('Container Fullname')
-    container_app = fields.Char('Application', size=64)
-    container_img = fields.Char('Image', size=64)
-    container_img_version = fields.Char('Image Version', size=64)
+    container_app = fields.Char('Application')
+    container_img = fields.Char('Image')
+    container_img_version = fields.Char('Image Version')
     container_ports = fields.Text('Ports')
     container_volumes = fields.Text('Volumes')
     container_volumes_comma = fields.Text('Volumes comma')
@@ -59,36 +59,36 @@ class ClouderSave(models.Model):
     container_links = fields.Text('Container Links')
     base_id = fields.Many2one('clouder.base', 'Base')
     base_fullname = fields.Char('Base Fullname')
-    base_title = fields.Char('Title', size=64)
-    base_container_name = fields.Char('Container', size=64)
-    base_container_server = fields.Char('Server', size=64)
-    base_admin_name = fields.Char('Admin name', size=64)
-    base_admin_password = fields.Char('Admin passwd', size=64)
-    base_admin_email = fields.Char('Admin email', size=64)
-    base_poweruser_name = fields.Char('Poweruser name', size=64)
-    base_poweruser_password = fields.Char('Poweruser Password', size=64)
-    base_poweruser_email = fields.Char('Poweruser email', size=64)
-    base_build = fields.Char('Build', size=64)
+    base_title = fields.Char('Title')
+    base_container_name = fields.Char('Container')
+    base_container_server = fields.Char('Server')
+    base_admin_name = fields.Char('Admin name')
+    base_admin_password = fields.Char('Admin passwd')
+    base_admin_email = fields.Char('Admin email')
+    base_poweruser_name = fields.Char('Poweruser name')
+    base_poweruser_password = fields.Char('Poweruser Password')
+    base_poweruser_email = fields.Char('Poweruser email')
+    base_build = fields.Char('Build')
     base_test = fields.Boolean('Test?')
-    base_lang = fields.Char('Lang', size=64)
+    base_lang = fields.Char('Lang')
     base_nosave = fields.Boolean('No save?')
     base_options = fields.Text('Base Options')
     base_links = fields.Text('Base Links')
     container_name = fields.Char(
-        'Container Name', size=64, readonly=True)
+        'Container Name', readonly=True)
     container_server = fields.Char(
         'Container Server',
-        type='char', size=64, readonly=True)
-    container_restore_to_name = fields.Char('Restore to (Name)', size=64)
+        type='char', readonly=True)
+    container_restore_to_name = fields.Char('Restore to (Name)')
     container_restore_to_server_id = fields.Many2one(
         'clouder.server', 'Restore to (Server)')
     base_name = fields.Char(
         'Base Name',
-        type='char', size=64, readonly=True)
+        type='char', readonly=True)
     base_domain = fields.Char(
         'Base Domain',
-        type='char', size=64, readonly=True)
-    base_restore_to_name = fields.Char('Restore to (Name)', size=64)
+        type='char', readonly=True)
+    base_restore_to_name = fields.Char('Restore to (Name)')
     base_restore_to_domain_id = fields.Many2one(
         'clouder.domain', 'Restore to (Domain)')
     create_date = fields.Datetime('Create Date')

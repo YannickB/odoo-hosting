@@ -37,8 +37,8 @@ class ClouderDomain(models.Model):
     _name = 'clouder.domain'
     _inherit = ['clouder.model']
 
-    name = fields.Char('Domain name', size=64, required=True)
-    organisation = fields.Char('Organisation', size=64, required=True)
+    name = fields.Char('Domain name', required=True)
+    organisation = fields.Char('Organisation', required=True)
     dns_id = fields.Many2one('clouder.container', 'DNS Server', required=True)
     cert_key = fields.Text('Wildcard Cert Key')
     cert_cert = fields.Text('Wildcart Cert')
@@ -72,22 +72,22 @@ class ClouderBase(models.Model):
     _name = 'clouder.base'
     _inherit = ['clouder.model']
 
-    name = fields.Char('Name', size=64, required=True)
-    title = fields.Char('Title', size=64, required=True)
+    name = fields.Char('Name', required=True)
+    title = fields.Char('Title', required=True)
     application_id = fields.Many2one('clouder.application', 'Application',
                                      required=True)
     domain_id = fields.Many2one('clouder.domain', 'Domain name', required=True)
     container_id = fields.Many2one('clouder.container', 'Container', required=True)
-    admin_name = fields.Char('Admin name', size=64, required=True)
+    admin_name = fields.Char('Admin name', required=True)
     admin_password = fields.Char(
-        'Admin password', size=64, required=True,
+        'Admin password', required=True,
         default=model.generate_random_password(20))
-    admin_email = fields.Char('Admin email', size=64, required=True)
-    poweruser_name = fields.Char('PowerUser name', size=64)
+    admin_email = fields.Char('Admin email', required=True)
+    poweruser_name = fields.Char('PowerUser name')
     poweruser_password = fields.Char(
-        'PowerUser password', size=64,
+        'PowerUser password',
         default=model.generate_random_password(12))
-    poweruser_email = fields.Char('PowerUser email', size=64)
+    poweruser_email = fields.Char('PowerUser email')
     build = fields.Selection(
         [('none', 'No action'), ('build', 'Build'), ('restore', 'Restore')],
         'Build?', default='build')

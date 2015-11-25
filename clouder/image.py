@@ -35,13 +35,13 @@ class ClouderImage(models.Model):
 
     _name = 'clouder.image'
 
-    name = fields.Char('Image name', size=64, required=True)
+    name = fields.Char('Image name', required=True)
     type_id = fields.Many2one('clouder.application.type', 'Application Type')
-    current_version = fields.Char('Current version', size=64, required=True)
+    current_version = fields.Char('Current version', required=True)
     parent_id = fields.Many2one('clouder.image', 'Parent image')
     parent_version_id = fields.Many2one(
         'clouder.image.version', 'Parent version')
-    parent_from = fields.Char('From', size=64)
+    parent_from = fields.Char('From')
     registry_id = fields.Many2one('clouder.container', 'Registry')
     dockerfile = fields.Text('DockerFile')
     volume_ids = fields.One2many('clouder.image.volume', 'image_id', 'Volumes')
@@ -105,10 +105,10 @@ class ClouderImageVolume(models.Model):
 
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
                                required=True)
-    name = fields.Char('Path', size=128, required=True)
-    from_code = fields.Char('From', size=64)
-    hostpath = fields.Char('Host path', size=128)
-    user = fields.Char('System User', size=64)
+    name = fields.Char('Path', required=True)
+    from_code = fields.Char('From')
+    hostpath = fields.Char('Host path')
+    user = fields.Char('System User')
     readonly = fields.Boolean('Readonly?')
     nosave = fields.Boolean('No save?')
 
@@ -129,8 +129,8 @@ class ClouderImagePort(models.Model):
 
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
                                required=True)
-    name = fields.Char('Name', size=64, required=True)
-    localport = fields.Char('Local port', size=12, required=True)
+    name = fields.Char('Name', required=True)
+    localport = fields.Char('Local port', required=True)
     expose = fields.Selection(
         [('internet', 'Internet'), ('local', 'Local'), ('none', 'None')],
         'Expose?', required=True, default='local')
@@ -153,7 +153,7 @@ class ClouderImageVersion(models.Model):
 
     image_id = fields.Many2one(
         'clouder.image', 'Image', ondelete='cascade', required=True)
-    name = fields.Char('Version', size=64, required=True)
+    name = fields.Char('Version', required=True)
     parent_id = fields.Many2one('clouder.image.version', 'Parent version')
     registry_id = fields.Many2one('clouder.container', 'Registry', required=True, ondelete="cascade")
     container_ids = fields.One2many(

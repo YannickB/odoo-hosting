@@ -96,7 +96,7 @@ class ClouderModel(models.AbstractModel):
     _autodeploy = True
 
     # We create the name field to avoid warning for the constraints
-    name = fields.Char('Name', size=64, required=True)
+    name = fields.Char('Name', required=True)
     job_ids = fields.One2many(
         'queue.job', 'res_id',
         domain=lambda self: [('model_name', '=', self._name)],

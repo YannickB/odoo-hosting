@@ -48,10 +48,10 @@ class ClouderApplicationType(models.Model):
 
     _name = 'clouder.application.type'
 
-    name = fields.Char('Name', size=64, required=True)
-    system_user = fields.Char('System User', size=64, required=True)
-    localpath = fields.Char('Localpath', size=128)
-    localpath_services = fields.Char('Localpath Services', size=128)
+    name = fields.Char('Name', required=True)
+    system_user = fields.Char('System User', required=True)
+    localpath = fields.Char('Localpath')
+    localpath_services = fields.Char('Localpath Services')
     option_ids = fields.One2many(
         'clouder.application.type.option', 'apptype_id', 'Options'
     )
@@ -59,7 +59,7 @@ class ClouderApplicationType(models.Model):
         'clouder.application', 'type_id', 'Applications'
     )
     symlink = fields.Boolean('Use Symlink by default?')
-    multiple_databases = fields.Char('Multiples databases?', size=128)
+    multiple_databases = fields.Char('Multiples databases?')
     role_ids = fields.Many2many(
         'clouder.application.role', 'clouder_application_type_role_rel',
         'type_id', 'role_id', 'Roles')
@@ -97,7 +97,7 @@ class ClouderApplicationTypeOption(models.Model):
     apptype_id = fields.Many2one(
         'clouder.application.type',
         'Application Type', ondelete="cascade", required=True)
-    name = fields.Char('Name', size=64, required=True)
+    name = fields.Char('Name', required=True)
     type = fields.Selection(
         [('application', 'Application'), ('container', 'Container'),
          ('service', 'Service'), ('base', 'Base')], 'Type', required=True)
@@ -127,7 +127,7 @@ class ClouderApplication(models.Model):
 
     _name = 'clouder.application'
 
-    name = fields.Char('Name', size=64, required=True)
+    name = fields.Char('Name', required=True)
     code = fields.Char('Code', size=20, required=True)
     type_id = fields.Many2one('clouder.application.type', 'Type',
                               required=True)
@@ -135,8 +135,8 @@ class ClouderApplication(models.Model):
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=True)
     base = fields.Boolean('Can have base?')
-    admin_name = fields.Char('Admin name', size=64)
-    admin_email = fields.Char('Admin email', size=64)
+    admin_name = fields.Char('Admin name')
+    admin_email = fields.Char('Admin email')
     archive_id = fields.Many2one('clouder.container', 'Archive')
     option_ids = fields.One2many('clouder.application.option',
                                  'application_id', 'Options')
