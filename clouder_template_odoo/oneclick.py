@@ -36,6 +36,7 @@ class ClouderServer(models.Model):
         prefix = self.oneclick_prefix
 
         image_obj = self.env['clouder.image']
+        image_version_obj = self.env['clouder.image.version']
 
         image = image_obj.search([('name','=','img_registry')])
         image.build()
@@ -50,55 +51,67 @@ class ClouderServer(models.Model):
             'application_id': application.id,
         })
 
+
         image = image_obj.search([('name','=','img_base')])
-        image.registry_id = registry.id
-        image.build()
-        base = self.env['clouder.image.version'].search([('image_id','=',image.id)])
+        if not image.has_version:
+            image = image_obj.search([('name','=','img_base')])
+            image.registry_id = registry.id
+            image.build()
+        base = image_version_obj.search([('image_id','=',image.id)])
 
         image = image_obj.search([('name','=','img_backup_bup')])
-        image.registry_id = registry.id
-        image.parent_version_id = base.id
-        image.build()
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
 
         image = image_obj.search([('name','=','img_postfix')])
-        image.registry_id = registry.id
-        image.parent_version_id = base.id
-        image.build()
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
 
         image = image_obj.search([('name','=','img_bind')])
-        image.registry_id = registry.id
-        image.parent_version_id = base.id
-        image.build()
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
 
         image = image_obj.search([('name','=','img_nginx')])
-        image.registry_id = registry.id
-        image.parent_version_id = base.id
-        image.build()
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
 
         image = image_obj.search([('name','=','img_shinken')])
-        image.registry_id = registry.id
-        image.parent_version_id = base.id
-        image.build()
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
 
         image = image_obj.search([('name','=','img_postgres')])
-        image.registry_id = registry.id
-        image.parent_version_id = base.id
-        image.build()
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
 
         image = image_obj.search([('name','=','img_odoo_data')])
-        image.registry_id = registry.id
-        image.parent_version_id = base.id
-        image.build()
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
 
         image = image_obj.search([('name','=','img_odoo_files8')])
-        image.registry_id = registry.id
-        image.parent_version_id = base.id
-        image.build()
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
 
         image = image_obj.search([('name','=','img_odoo_exec')])
-        image.registry_id = registry.id
-        image.parent_version_id = base.id
-        image.build()
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
 
         application = application_obj.search([('code','=','backup-bup')])
         container_obj.create({

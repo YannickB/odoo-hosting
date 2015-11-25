@@ -102,7 +102,7 @@
                         </page>
                         <page string="Save">
                             <group col="4">
-                                <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
+                                <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
                                 <field name="time_between_save"/>
                                 <field name="save_expiration"/>
                                 <newline/>
@@ -220,7 +220,7 @@
                         </page>
                         <page string="Save">
                             <group col="4">
-                                <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
+                                <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
                                 <field name="autosave"/>
                                 <field name="time_between_save"/>
                                 <field name="save_expiration"/>
@@ -475,6 +475,7 @@
                         <field name="localpath"/>
                         <field name="localpath_services"/>
                         <field name="multiple_databases"/>
+                        <field name="role_ids" widget="many2many_tags"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -495,6 +496,7 @@
             <field name="arch" type="xml">
                 <tree string="Application types">
                     <field name="name"/>
+                    <field name="role_ids"/>
                 </tree>
             </field>
         </record>
@@ -562,8 +564,8 @@
                             <group>
                                 <field name="autosave"/>
                                 <newline/>
-                                <field name="container_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
-                                <field name="base_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.name','=','backup')]"/>
+                                <field name="container_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
+                                <field name="base_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
                                 <field name="container_time_between_save"/>
                                 <field name="base_time_between_save"/>
                                 <field name="container_save_expiration"/>
@@ -630,7 +632,7 @@
                     <group col="4">
                         <field name="parent_version_id" domain="[('image_id','=',parent_id)]" attrs="{'invisible': [('parent_id','=',False)],'required': [('parent_id','!=',False)]}"/>
                         <field name="parent_from" attrs="{'invisible': [('parent_id','!=',False)],'required': [('parent_id','=',False)]}"/>
-                        <field name="registry_id" attrs="{'invisible': [('name','=','img_registry')],'required': [('name','!=','img_registry')]}" domain="[('application_id.type_id.name','=','registry')]"/>
+                        <field name="registry_id" attrs="{'invisible': [('name','=','img_registry')],'required': [('name','!=','img_registry')]}" domain="[('application_id.type_id.role_ids.name','=','registry')]"/>
                     </group>
                     <button name="build" string="Build" type="object"/>
                     <field name="version_ids" colspan="4"/>

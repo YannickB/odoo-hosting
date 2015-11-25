@@ -29,6 +29,13 @@ import re
 import clouder_model
 
 
+class ClouderApplicationRole(models.Model):
+
+    _name = 'clouder.application.role'
+
+    name = fields.Char('Name', required=True)
+
+
 class ClouderApplicationType(models.Model):
     """
     Define the application.type object, mainly used to know which python code
@@ -53,6 +60,9 @@ class ClouderApplicationType(models.Model):
     )
     symlink = fields.Boolean('Use Symlink by default?')
     multiple_databases = fields.Char('Multiples databases?', size=128)
+    role_ids = fields.Many2many(
+        'clouder.application.role', 'clouder_application_type_role_rel',
+        'type_id', 'role_id', 'Roles')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),

@@ -1,6 +1,19 @@
 <openerp>
     <data>
 
+        <record id="role_registry" model="clouder.application.role">
+            <field name="name">registry</field>
+        </record>
+        <record id="role_backup" model="clouder.application.role">
+            <field name="name">backup</field>
+        </record>
+        <record id="role_database" model="clouder.application.role">
+            <field name="name">database</field>
+        </record>
+        <record id="role_dns" model="clouder.application.role">
+            <field name="name">dns</field>
+        </record>
+
         <record id="image_base" model="clouder.image">
             <field name="name">img_base</field>
             <field name="current_version">1.0</field>

@@ -6,6 +6,7 @@
         <record id="apptype_bind" model="clouder.application.type">
             <field name="name">bind</field>
             <field name="system_user">bind</field>
+            <field name="role_ids" eval="[(6, 0, [ref('clouder.role_dns')])]"/>
         </record>
 
         <record id="image_bind" model="clouder.image">

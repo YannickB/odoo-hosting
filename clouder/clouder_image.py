@@ -62,6 +62,13 @@ class ClouderImage(models.Model):
         ('name_uniq', 'unique(name)', 'Image name must be unique!')
     ]
 
+    @property
+    def has_versions(self):
+        for version in self.version_ids:
+            if not version.check_priority():
+                return True
+        return False
+
     @api.one
     @api.constrains('name')
     def _validate_data(self):

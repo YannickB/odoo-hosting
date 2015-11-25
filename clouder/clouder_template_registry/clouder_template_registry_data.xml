@@ -6,6 +6,7 @@
         <record id="apptype_registry" model="clouder.application.type">
             <field name="name">registry</field>
             <field name="system_user">registry</field>
+            <field name="role_ids" eval="[(6, 0, [ref('role_registry')])]"/>
         </record>
 
         <record id="image_registry" model="clouder.image">

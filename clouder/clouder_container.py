@@ -336,7 +336,7 @@ class ClouderContainer(models.Model):
         database = False
         for link in self.link_ids:
             if link.target:
-                if link.name.name.code in ['postgres', 'mysql']:
+                if 'database' in link.name.name.type_id.role_ids.name:
                     database = link.target
         return database
 

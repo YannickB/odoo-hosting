@@ -6,6 +6,7 @@
         <record id="apptype_backup_upload" model="clouder.application.type">
             <field name="name">backup_upload</field>
             <field name="system_user">backup</field>
+            <field name="role_ids" eval="[(6, 0, [ref('role_backup')])]"/>
         </record>
 
         <record id="image_backup_upload" model="clouder.image">

@@ -6,6 +6,7 @@
         <record id="apptype_postgres" model="clouder.application.type">
             <field name="name">postgres</field>
             <field name="system_user">postgres</field>
+            <field name="role_ids" eval="[(6, 0, [ref('clouder.role_database')])]"/>
         </record>
         <record id="apptype_postgres_option1" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_postgres"/>
