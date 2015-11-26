@@ -477,83 +477,46 @@ class ClouderContainer(models.Model):
             if not 'server_id' in vals or not vals['server_id']:
                 vals['server_id'] = application.next_server_id.id
 
-            if not 'option_ids' in vals:
-                vals['option_ids'] = []
             options = []
-            for type_option in application.type_id.option_ids:
-                if type_option.type == 'container' and type_option.auto:
-                    if type_option.app_code and type_option.app_code != application.code:
+            for key, option in self.sanitize_o2m('option', vals, application.type_id.option_ids, True).iteritems():
+                if option.source.type == 'container' and option.source.auto:
+                    if option.source.app_code and option.source.app_code != application.code:
                         continue
-                    test = False
-                    if 'option_ids' in vals:
-                        for option in vals['option_ids']:
-                            option2 = option
-                            if isinstance(option, (list, tuple)):
-                                option2 = option[2]
-                                option = self.get_o2m_struct(option)
-                            options.append(((0, 0, option2)))
-                            if option.name == type_option:
-                                test = True
-                    if not test:
-                        options.append((0, 0,
-                                        {'name': type_option.id,
-                                         'value': type_option.get_default}))
+                    options.append((0, 0,
+                                    {'name': option.source.id,
+                                     'value': option.value or option.source.get_default}))
             vals['option_ids'] = options
 
-            if not 'link_ids' in vals:
-                vals['link_ids'] = []
             links = []
-            for app_link in application.link_ids:
-                if app_link.container and app_link.auto or app_link.make_link:
-                    test = False
-                    if 'link_ids' in vals:
-                        for link in vals['link_ids']:
-                            link2 = link
-                            if isinstance(link, (list, tuple)):
-                                linke2 = link[2]
-                                link = self.get_o2m_struct(link)
-                            links.append(((0, 0, link2)))
-                            if link.name == app_link:
-                                test = True
-                    if not test:
-                        next_id = False
-                        if 'parent_id' in vals and vals['parent_id']:
-                            parent = self.env['clouder.container.child'].browse(vals['parent_id'])
-                            for parent_link in parent.container_id.link_ids:
-                                if app_link.name.code == parent_link.name.name.code and parent_link.target:
-                                    next_id = parent_link.target.id
-                        context = self.env.context
-                        if not next_id and 'container_links' in context:
-                            fullcode = app_link.name.fullcode
-                            if fullcode in context['container_links']:
-                                next_id = context['container_links'][fullcode]
-                        if not next_id:
-                            next_id = app_link.next.id
-                        if not next_id:
-                            target_ids = self.search([('application_id.code','=',app_link.name.code),('parent_id','=',False)])
-                            if target_ids:
-                                next_id = target_ids[0].id
-                        links.append((0, 0, {'name': app_link.id,
-                                             'target': next_id}))
+            for key, link in self.sanitize_o2m('link', vals, application.link_ids, True).iteritems():
+                if link.source.container and link.source.auto or link.source.make_link:
+                    next_id = link.next
+                    if not next_id and 'parent_id' in vals and vals['parent_id']:
+                        parent = self.env['clouder.container.child'].browse(vals['parent_id'])
+                        for parent_link in parent.container_id.link_ids:
+                            if link.name.code == parent_link.name.name.code and parent_link.target:
+                                next_id = parent_link.target.id
+                    context = self.env.context
+                    if not next_id and 'container_links' in context:
+                        fullcode = link.source.name.fullcode
+                        if fullcode in context['container_links']:
+                            next_id = context['container_links'][fullcode]
+                    if not next_id:
+                        next_id = link.source.next.id
+                    if not next_id:
+                        target_ids = self.search([('application_id.code','=',link.source.name.code),('parent_id','=',False)])
+                        if target_ids:
+                            next_id = target_ids[0].id
+                    links.append((0, 0, {'name': link.source.id,
+                                         'target': next_id}))
             vals['link_ids'] = links
 
-            if not 'child_ids' in vals:
-                vals['child_ids'] = []
             childs = []
-            for app_child in application.child_ids:
-                test = False
-                if 'child_ids' in vals:
-                    for child in vals['child_ids']:
-                        child2 = child
-                        if isinstance(child, (list, tuple)):
-                            child2 = child[2]
-                            child = self.get_o2m_struct(child)
-                        childs.append(((0, 0, child2)))
-                        if child.name == app_child:
-                            test = True
-                if not test and app_child.required:
-                    childs.append((0, 0, {'name': app_child.id, 'sequence':  app_child.sequence, 'server_id': app_child.next_server_id.id or vals['server_id']}))
+            for key, child in self.sanitize_o2m('child', vals, application.child_ids, True).iteritems():
+                if child.required:
+                    childs.append((0, 0, {'name': child.source.id, 'sequence':  child.sequence, 'server_id': getattr(child, 'server_id', False) and child.server_id.id or child.source.next_server_id.id}))
             vals['child_ids'] = childs
+
             if not 'image_id' in vals or not vals['image_id']:
                 vals['image_id'] = application.default_image_id.id
 
@@ -607,51 +570,30 @@ class ClouderContainer(models.Model):
                     vals['image_version_id'] = image.version_ids[0].id
 
             ports = []
-            for img_port in image.port_ids:
-                test = False
-                if 'port_ids' in vals:
-                    for port in vals['port_ids']:
-                        port2 = port
-                        if isinstance(port, (list, tuple)):
-                            port2 = port[2]
-                            port = self.get_o2m_struct(port)
-                        ports.append(((0, 0, port2)))
-                        if port.name == img_port.name:
-                            test = True
+            for key, port in self.sanitize_o2m('port', vals, image.port_ids, False).iteritems():
                 context = self.env.context
-                hostport = False
+                hostport = getattr(port, 'hostport', False)
                 if 'container_ports' in context:
-                    name = img_port.name
-                    if name in context['container_ports']:
+                    name = port.name
+                    if not hostport and name in context['container_ports']:
                         hostport = context['container_ports'][name]
-                if not test and img_port.expose != 'none':
+                if port.expose != 'none':
                     ports.append(((0, 0, {
-                        'name': img_port.name, 'localport': img_port.localport, 'hostport': hostport,
-                        'expose': img_port.expose, 'udp': img_port.udp})))
+                        'name': port.name, 'localport': port.localport, 'hostport': hostport,
+                        'expose': port.expose, 'udp': port.udp})))
             vals['port_ids'] = ports
 
             volumes = []
-            for img_volume in image.volume_ids:
-                test = False
-                if 'volume_ids' in vals:
-                    for volume in vals['volume_ids']:
-                        volume2 = volume
-                        if isinstance(volume, (list, tuple)):
-                            volume2 = volume[2]
-                            volume = self.get_o2m_struct(volume)
-                        volumes.append(((0, 0, volume2)))
-                        if volume.name == img_volume.name:
-                            test = True
+            for key, volume in self.sanitize_o2m('volume', vals, image.volume_ids, False).iteritems():
                 from_id = False
                 if 'parent_id' in vals and vals['parent_id']:
                     parent = self.env['clouder.container.child'].browse(vals['parent_id'])
-                    if img_volume.from_code in parent.container_id.childs:
-                        from_id = parent.container_id.childs[img_volume.from_code].id
-                if not test:
-                    volumes.append(((0, 0, {
-                        'name': img_volume.name, 'from_id': from_id, 'hostpath': img_volume.hostpath,
-                        'user': img_volume.user, 'readonly': img_volume.readonly,
-                        'nosave': img_volume.nosave})))
+                    if volume.from_code in parent.container_id.childs:
+                        from_id = parent.container_id.childs[volume.from_code].id
+                volumes.append(((0, 0, {
+                        'name': volume.name, 'from_id': from_id, 'hostpath': volume.hostpath,
+                        'user': volume.user, 'readonly': volume.readonly,
+                        'nosave': volume.nosave})))
             vals['volume_ids'] = volumes
         return vals
 

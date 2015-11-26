@@ -612,6 +612,30 @@ class ClouderModel(models.AbstractModel):
         dict = list[2]
         return Struct(**dict)
 
+    @api.multi
+    def sanitize_o2m(self, key, vals, source_ids, linked_to_source):
+        if not key + '_ids' in vals:
+            vals[key + '_ids'] = []
+        res = {}
+        if key + '_ids' in vals:
+            for item in vals[key + '_ids']:
+                if isinstance(item, (list, tuple)):
+                    item = self.get_o2m_struct(item)
+                item.source = False
+                res[item.name] = item
+        for source_item in source_ids:
+            name = source_item.name
+            if linked_to_source:
+                name = source_item.id
+
+            if not source_item.name in res:
+                source_item.source = source_item
+                res[name] = source_item
+            else:
+                res[name].source = source_item
+        return res
+
+
 
 
 def generate_random_password(size):

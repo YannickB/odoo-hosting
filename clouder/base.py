@@ -245,80 +245,44 @@ class ClouderBase(models.Model):
                     and application.admin_email \
                     or self.email_sysadmin
 
-            if not 'option_ids' in vals:
-                vals['option_ids'] = []
             options = []
-            for type_option in application.type_id.option_ids:
-                if type_option.type == 'base' and type_option.auto:
-                    test = False
-                    if 'option_ids' in vals:
-                        for option in vals['option_ids']:
-                            option2 = option
-                            if isinstance(option, (list, tuple)):
-                                option2 = option[2]
-                                option = self.get_o2m_struct(option)
-                            options.append(((0, 0, option2)))
-                            if option.name == type_option:
-                                test = True
-                    if not test:
-                        options.append((0, 0,
-                                        {'name': type_option.id,
-                                         'value': type_option.get_default}))
+            for key, option in self.sanitize_o2m('option', vals, application.type_id.option_ids, True).iteritems():
+                if option.source.type == 'base' and option.source.auto:
+                    if option.source.app_code and option.source.app_code != application.code:
+                        continue
+                    options.append((0, 0,
+                                    {'name': option.source.id,
+                                     'value': option.value or option.source.get_default}))
             vals['option_ids'] = options
 
-            if not 'link_ids' in vals:
-                vals['link_ids'] = []
             links = []
-            for app_link in application.link_ids:
-                if app_link.base and app_link.auto:
-                    test = False
-                    if 'link_ids' in vals:
-                        for link in vals['link_ids']:
-                            link2 = link
-                            if isinstance(link, (list, tuple)):
-                                link2 = link[2]
-                                link = self.get_o2m_struct(link)
-                            links.append(((0, 0, link2)))
-                            if link.name == app_link:
-                                test = True
-                    if not test:
-                        next_id = False
-                        if 'parent_id' in vals and vals['parent_id']:
-                            parent = self.env['clouder.base.child'].browse(vals['parent_id'])
-                            for parent_link in parent.base_id.link_ids:
-                                if app_link.name.code == parent_link.name.name.code and parent_link.target:
-                                    next_id = parent_link.target.id
-                        context = self.env.context
-                        if not next_id and 'base_links' in context:
-                            fullcode = app_link.name.fullcode
-                            if fullcode in context['base_links']:
-                                next_id = context['base_links'][fullcode]
-                        if not next_id:
-                            next_id = app_link.next.id
-                        if not next_id:
-                            target_ids = self.env['clouder.container'].search([('application_id.code','=',app_link.name.code),('parent_id','=',False)])
-                            if target_ids:
-                                next_id = target_ids[0].id
-                        links.append((0, 0, {'name': app_link.id,
-                                             'target': next_id}))
+            for key, link in self.sanitize_o2m('link', vals, application.link_ids, True).iteritems():
+                if link.source.base and link.source.auto:
+                    next_id = link.next
+                    if not next_id and 'parent_id' in vals and vals['parent_id']:
+                        parent = self.env['clouder.base.child'].browse(vals['parent_id'])
+                        for parent_link in parent.base_id.link_ids:
+                            if link.name.code == parent_link.name.name.code and parent_link.target:
+                                next_id = parent_link.target.id
+                    context = self.env.context
+                    if not next_id and 'base_links' in context:
+                        fullcode = link.source.name.fullcode
+                        if fullcode in context['base_links']:
+                            next_id = context['base_links'][fullcode]
+                    if not next_id:
+                        next_id = link.source.next.id
+                    if not next_id:
+                        target_ids = self.env['clouder.container'].search([('application_id.code','=',link.source.name.code),('parent_id','=',False)])
+                        if target_ids:
+                            next_id = target_ids[0].id
+                    links.append((0, 0, {'name': link.source.id,
+                                         'target': next_id}))
             vals['link_ids'] = links
 
-            if not 'child_ids' in vals:
-                vals['child_ids'] = []
             childs = []
-            for app_child in application.child_ids:
-                test = False
-                if 'child_ids' in vals:
-                    for child in vals['child_ids']:
-                        child2 = child
-                        if isinstance(child, (list, tuple)):
-                            child2 = child[2]
-                            child = self.get_o2m_struct(child)
-                        options.append(((0, 0, child2)))
-                        if child.name == app_child:
-                            test = True
-                if not test and app_child.base and app_child.required:
-                    childs.append((0, 0, {'name': app_child.id, 'sequence':  app_child.sequence}))
+            for key, child in self.sanitize_o2m('child', vals, application.child_ids, True).iteritems():
+                if child.required:
+                    childs.append((0, 0, {'name': child.source.id, 'sequence':  child.sequence}))
             vals['child_ids'] = childs
 
             if not 'backup_ids' in vals or not vals['backup_ids']:
