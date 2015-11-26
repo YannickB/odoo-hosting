@@ -257,8 +257,8 @@ class ClouderBase(models.Model):
                             if isinstance(option, (list, tuple)):
                                 option2 = option[2]
                                 option = self.get_o2m_struct(option)
+                            options.append(((0, 0, option2)))
                             if option.name == type_option:
-                                options.append(((0, 0, option2)))
                                 test = True
                     if not test:
                         options.append((0, 0,
@@ -278,8 +278,8 @@ class ClouderBase(models.Model):
                             if isinstance(link, (list, tuple)):
                                 link2 = link[2]
                                 link = self.get_o2m_struct(link)
+                            links.append(((0, 0, link2)))
                             if link.name == app_link:
-                                links.append(((0, 0, link2)))
                                 test = True
                     if not test:
                         next_id = False
@@ -314,8 +314,8 @@ class ClouderBase(models.Model):
                         if isinstance(child, (list, tuple)):
                             child2 = child[2]
                             child = self.get_o2m_struct(child)
+                        options.append(((0, 0, child2)))
                         if child.name == app_child:
-                            options.append(((0, 0, child2)))
                             test = True
                 if not test and app_child.base and app_child.required:
                     childs.append((0, 0, {'name': app_child.id, 'sequence':  app_child.sequence}))

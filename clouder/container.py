@@ -491,8 +491,8 @@ class ClouderContainer(models.Model):
                             if isinstance(option, (list, tuple)):
                                 option2 = option[2]
                                 option = self.get_o2m_struct(option)
+                            options.append(((0, 0, option2)))
                             if option.name == type_option:
-                                options.append(((0, 0, option2)))
                                 test = True
                     if not test:
                         options.append((0, 0,
@@ -512,8 +512,8 @@ class ClouderContainer(models.Model):
                             if isinstance(link, (list, tuple)):
                                 linke2 = link[2]
                                 link = self.get_o2m_struct(link)
+                            links.append(((0, 0, link2)))
                             if link.name == app_link:
-                                links.append(((0, 0, link2)))
                                 test = True
                     if not test:
                         next_id = False
@@ -548,8 +548,8 @@ class ClouderContainer(models.Model):
                         if isinstance(child, (list, tuple)):
                             child2 = child[2]
                             child = self.get_o2m_struct(child)
+                        childs.append(((0, 0, child2)))
                         if child.name == app_child:
-                            childs.append(((0, 0, child2)))
                             test = True
                 if not test and app_child.required:
                     childs.append((0, 0, {'name': app_child.id, 'sequence':  app_child.sequence, 'server_id': app_child.next_server_id.id or vals['server_id']}))
@@ -615,8 +615,8 @@ class ClouderContainer(models.Model):
                         if isinstance(port, (list, tuple)):
                             port2 = port[2]
                             port = self.get_o2m_struct(port)
+                        ports.append(((0, 0, port2)))
                         if port.name == img_port.name:
-                            ports.append(((0, 0, port2)))
                             test = True
                 context = self.env.context
                 hostport = False
@@ -639,8 +639,8 @@ class ClouderContainer(models.Model):
                         if isinstance(volume, (list, tuple)):
                             volume2 = volume[2]
                             volume = self.get_o2m_struct(volume)
+                        volumes.append(((0, 0, volume2)))
                         if volume.name == img_volume.name:
-                            ports.append(((0, 0, volume2)))
                             test = True
                 from_id = False
                 if 'parent_id' in vals and vals['parent_id']:
