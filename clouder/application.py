@@ -91,9 +91,6 @@ class ClouderApplicationTypeOption(models.Model):
 
     _name = 'clouder.application.type.option'
 
-
-
-
     apptype_id = fields.Many2one(
         'clouder.application.type',
         'Application Type', ondelete="cascade", required=True)

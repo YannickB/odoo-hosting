@@ -6,14 +6,14 @@
             <field name="name">docker</field>
             <field name="system_user">docker</field>
         </record>
-        <record id="apptype_docker_option1" model="clouder.application.type.option">
+        <record id="apptype_docker_option_ports" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_docker"/>
             <field name="name">ports</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>
-        <record id="apptype_docker_option3" model="clouder.application.type.option">
+        <record id="apptype_docker_option_publickey" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_docker"/>
             <field name="name">public_key</field>
             <field name="type">container</field>
@@ -45,11 +45,11 @@ RUN echo "command=/etc/init.d/docker start" >> /etc/supervisor/conf.d/supervisor
 
 ]]></field>
 </record>
-<record id="image_docker_volume1" model="clouder.image.volume">
+<record id="image_docker_volume_docker" model="clouder.image.volume">
     <field name="image_id" ref="image_docker"/>
     <field name="name">/var/lib/docker</field>
 </record>
-<record id="image_docker_port1" model="clouder.image.port">
+<record id="image_docker_port_ssh" model="clouder.image.port">
     <field name="image_id" ref="image_docker"/>
     <field name="name">ssh</field>
     <field name="localport">22</field>

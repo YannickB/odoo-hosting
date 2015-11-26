@@ -601,6 +601,7 @@ class ClouderBase(models.Model):
         self.purge_database()
         self.purge_post()
 
+    @api.multi
     def update_base(self):
         """
         Hook which can be called by submodules to execute commands when we

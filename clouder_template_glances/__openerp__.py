@@ -32,7 +32,7 @@
     Clouder Template Glances
     """,
     'demo': [],
-    'data': ['template.xml'],
+    # 'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

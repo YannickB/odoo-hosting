@@ -20,11 +20,11 @@ USER root
 CMD /usr/sbin/named -u bind -g
 ]]></field>
         </record>
-        <record id="image_bind_volume1" model="clouder.image.volume">
+        <record id="image_bind_volume_bind" model="clouder.image.volume">
             <field name="image_id" ref="image_bind"/>
             <field name="name">/etc/bind</field>
         </record>
-        <record id="image_bind_port" model="clouder.image.port">
+        <record id="image_bind_port_bind" model="clouder.image.port">
             <field name="image_id" ref="image_bind"/>
             <field name="name">bind</field>
             <field name="localport">53</field>
@@ -39,7 +39,7 @@ CMD /usr/sbin/named -u bind -g
             <field name="type_id" ref="apptype_bind"/>
             <field name="default_image_id" ref="image_bind"/>
         </record>
-        <record id="app_bind_link1" model="clouder.application.link">
+        <record id="app_bind_link_shinken" model="clouder.application.link">
             <field name="application_id" ref="app_bind"/>
             <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="container" eval="True"/>

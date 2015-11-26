@@ -66,25 +66,25 @@ USER root
 CMD ["/usr/bin/supervisord"]
 ]]></field>
         </record>
-        <record id="image_nginx_volume1" model="clouder.image.volume">
+        <record id="image_nginx_volume_etc_nginx" model="clouder.image.volume">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">/etc/nginx</field>
         </record>
-        <record id="image_nginx_volume2" model="clouder.image.volume">
+        <record id="image_nginx_volume_www" model="clouder.image.volume">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">/var/www</field>
         </record>
-        <record id="image_nginx_volume3" model="clouder.image.volume">
+        <record id="image_nginx_volume_etc_ssl" model="clouder.image.volume">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">/etc/ssl</field>
         </record>
-        <record id="image_nginx_port1" model="clouder.image.port">
+        <record id="image_nginx_port_nginx" model="clouder.image.port">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">nginx</field>
             <field name="localport">80</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_nginx_port2" model="clouder.image.port">
+        <record id="image_nginx_port_nginx_ssl" model="clouder.image.port">
             <field name="image_id" ref="image_nginx"/>
             <field name="name">nginx-ssl</field>
             <field name="localport">443</field>

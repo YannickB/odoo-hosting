@@ -30,12 +30,12 @@ USER root
 CMD ["/usr/bin/supervisord"]
 ]]></field>
         </record>
-        <record id="image_shinken_volume1" model="clouder.image.volume">
+        <record id="image_shinken_volume_shinken" model="clouder.image.volume">
             <field name="image_id" ref="image_shinken"/>
             <field name="name">/usr/local/shinken/etc</field>
             <field name="user">shinken</field>
         </record>
-        <record id="image_shinken_port" model="clouder.image.port">
+        <record id="image_shinken_port_shinken" model="clouder.image.port">
             <field name="image_id" ref="image_shinken"/>
             <field name="name">shinken</field>
             <field name="localport">7767</field>
@@ -49,7 +49,7 @@ CMD ["/usr/bin/supervisord"]
             <field name="type_id" ref="apptype_shinken"/>
             <field name="default_image_id" ref="image_shinken"/>
         </record>
-        <record id="app_shinken_link1" model="clouder.application.link">
+        <record id="app_shinken_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="app_shinken"/>
             <field name="name" ref="clouder_template_postfix.app_postfix"/>
             <field name="container" eval="True"/>
@@ -57,14 +57,14 @@ CMD ["/usr/bin/supervisord"]
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>
-        <record id="app_shinken_link2" model="clouder.application.link">
+        <record id="app_shinken_link_shinken" model="clouder.application.link">
             <field name="application_id" ref="app_shinken"/>
             <field name="name" ref="app_shinken"/>
             <field name="container" eval="True"/>
             <field name="auto" eval="True"/>
         </record>
 
-        <record id="app_postfix_link1" model="clouder.application.link">
+        <record id="app_postfix_link_shinken" model="clouder.application.link">
             <field name="application_id" ref="clouder_template_postfix.app_postfix"/>
             <field name="name" ref="app_shinken"/>
             <field name="container" eval="True"/>

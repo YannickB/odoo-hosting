@@ -14,7 +14,7 @@
             <field name="type_id" ref="apptype_proxy"/>
             <field name="default_image_id" ref="clouder.image_nginx"/>
         </record>
-        <record id="app_proxy_link1" model="clouder.application.link">
+        <record id="app_proxy_link_shinken" model="clouder.application.link">
             <field name="application_id" ref="app_proxy"/>
             <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="container" eval="True"/>

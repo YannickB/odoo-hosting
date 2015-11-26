@@ -235,6 +235,7 @@ class ClouderSave(models.Model):
 
         return super(ClouderSave, self).create(vals)
 
+    @api.multi
     def save_database(self):
         """
 

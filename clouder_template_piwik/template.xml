@@ -9,7 +9,7 @@
             <field name="localpath">/opt/versions</field>
             <field name="localpath_services">/var/www</field>
         </record>
-        <record id="apptype_piwik_option5" model="clouder.application.type.option">
+        <record id="apptype_piwik_option_port" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_piwik"/>
             <field name="name">port</field>
             <field name="type">service</field>
@@ -47,29 +47,29 @@ RUN chown -R www-data /base-backup
 VOLUME /base-backup
 ]]></field>
         </record>
-        <record id="image_piwik_volume1" model="clouder.image.volume">
+        <record id="image_piwik_volume_versions" model="clouder.image.volume">
             <field name="image_id" ref="image_piwik"/>
             <field name="name">/opt/versions</field>
             <field name="hostpath">/opt/services</field>
             <field name="readonly" eval="True"/>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_piwik_volume2" model="clouder.image.volume">
+        <record id="image_piwik_volume_www" model="clouder.image.volume">
             <field name="image_id" ref="image_piwik"/>
             <field name="name">/var/www</field>
             <field name="user">www-data</field>
         </record>
-        <record id="image_piwik_volume3" model="clouder.image.volume">
+        <record id="image_piwik_volume_etc" model="clouder.image.volume">
             <field name="image_id" ref="image_piwik"/>
             <field name="name">/etc/nginx</field>
         </record>
-        <record id="image_piwik_port1" model="clouder.image.port">
+        <record id="image_piwik_port_ssh" model="clouder.image.port">
             <field name="image_id" ref="image_piwik"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_piwik_port2" model="clouder.image.port">
+        <record id="image_piwik_port_nginx" model="clouder.image.port">
             <field name="image_id" ref="image_piwik"/>
             <field name="name">nginx</field>
             <field name="localport">80</field>
@@ -83,14 +83,14 @@ VOLUME /base-backup
             <field name="type_id" ref="apptype_piwik"/>
             <field name="default_image_id" ref="image_piwik"/>
         </record>
-        <record id="app_piwik_link1" model="clouder.application.link">
+        <record id="app_piwik_link_bind" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="clouder_template_bind.app_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_piwik_link2" model="clouder.application.link">
+        <record id="app_piwik_link_shinken" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="required" eval="True"/>
@@ -98,7 +98,7 @@ VOLUME /base-backup
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_piwik_link3" model="clouder.application.link">
+        <record id="app_piwik_link_mysql" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="clouder_template_mysql.app_mysql"/>
             <field name="required" eval="True"/>
@@ -106,14 +106,14 @@ VOLUME /base-backup
             <field name="make_link" eval="True"/>
             <field name="service" eval="True"/>
         </record>
-        <record id="app_piwik_link4" model="clouder.application.link">
+        <record id="app_piwik_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="clouder_template_postfix.app_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
-        <record id="app_piwik_link5" model="clouder.application.link">
+        <record id="app_piwik_link_proxy" model="clouder.application.link">
             <field name="application_id" ref="app_piwik"/>
             <field name="name" ref="clouder_template_proxy.app_proxy"/>
             <field name="required" eval="True"/>

@@ -68,13 +68,13 @@ RUN echo "command=/etc/init.d/tomcat6 start" >> /etc/supervisor/conf.d/superviso
             <field name="image_id" ref="image_cas"/>
             <field name="name">/opt/idp-cas/cas</field>
         </record>
-        <record id="image_cas_port1" model="clouder.image.port">
+        <record id="image_cas_port_ssh" model="clouder.image.port">
             <field name="image_id" ref="image_cas"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_cas_port2" model="clouder.image.port">
+        <record id="image_cas_port_tomcat" model="clouder.image.port">
             <field name="image_id" ref="image_cas"/>
             <field name="name">tomcat</field>
             <field name="localport">8080</field>

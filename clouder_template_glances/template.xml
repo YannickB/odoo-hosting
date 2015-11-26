@@ -41,19 +41,19 @@ CMD ["/usr/bin/supervisord"]
 
 ]]></field>
         </record>
-        <record id="image_glances_volume1" model="clouder.image.volume">
+        <record id="image_glances_volume_etc" model="clouder.image.volume">
             <field name="image_id" ref="image_glances"/>
             <field name="name">/etc/nagios</field>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_glances_volume2" model="clouder.image.volume">
+        <record id="image_glances_volume_docker_sock" model="clouder.image.volume">
             <field name="image_id" ref="image_glances"/>
             <field name="name">/var/run/docker.sock</field>
             <field name="hostpath">/var/run/docker.sock</field>
             <field name="readonly" eval="True"/>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_glances_port1" model="clouder.image.port">
+        <record id="image_glances_port_nrpe" model="clouder.image.port">
             <field name="image_id" ref="image_glances"/>
             <field name="name">nrpe</field>
             <field name="localport">5666</field>
@@ -66,7 +66,7 @@ CMD ["/usr/bin/supervisord"]
             <field name="type_id" ref="apptype_glances"/>
             <field name="default_image_id" ref="image_glances"/>
         </record>
-        <record id="app_glances_link1" model="clouder.application.link">
+        <record id="app_glances_link_shinken" model="clouder.application.link">
             <field name="application_id" ref="app_glances"/>
             <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="auto" eval="True"/>

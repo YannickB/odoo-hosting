@@ -12,52 +12,52 @@
             <field name="current_version">1</field>
             <field name="privileged">True</field>
             <field name="parent_from">openshift/origin</field>
-</record>
-<record id="image_openshift_volume1" model="clouder.image.volume">
-    <field name="image_id" ref="image_openshift"/>
-    <field name="name">/rootfs</field>
-    <field name="hostpath">/</field>
-    <field name="readonly" eval="True"/>
-    <field name="nosave" eval="True"/>
-</record>
-<record id="image_openshift_volume2" model="clouder.image.volume">
-    <field name="image_id" ref="image_openshift"/>
-    <field name="name">/var/run</field>
-    <field name="hostpath">/var/run</field>
-    <field name="nosave" eval="True"/>
-</record>
-<record id="image_openshift_volume3" model="clouder.image.volume">
-    <field name="image_id" ref="image_openshift"/>
-    <field name="name">/sys</field>
-    <field name="hostpath">/sys</field>
-    <field name="readonly" eval="True"/>
-    <field name="nosave" eval="True"/>
-</record>
-<record id="image_openshift_volume4" model="clouder.image.volume">
-    <field name="image_id" ref="image_openshift"/>
-    <field name="name">/var/lib/docker</field>
-    <field name="hostpath">/var/lib/docker</field>
-    <field name="nosave" eval="True"/>
-</record>
-<record id="image_openshift_volume5" model="clouder.image.volume">
-    <field name="image_id" ref="image_openshift"/>
-    <field name="name">/var/lib/openshift/openshift.local.volumes</field>
-    <field name="hostpath">/var/lib/openshift/openshift.local.volumes</field>
-    <field name="nosave" eval="True"/>
-</record>
-<record id="image_openshift_port1" model="clouder.image.port">
-    <field name="image_id" ref="image_openshift"/>
-    <field name="name">dns</field>
-    <field name="localport">53</field>
-    <field name="udp" eval="True"/>
-    <field name="expose">internet</field>
-</record>
-<record id="image_openshift_port2" model="clouder.image.port">
-    <field name="image_id" ref="image_openshift"/>
-    <field name="name">openshift</field>
-    <field name="localport">8443</field>
-    <field name="expose">internet</field>
-</record>
+        </record>
+        <record id="image_openshift_volume_rootfs" model="clouder.image.volume">
+            <field name="image_id" ref="image_openshift"/>
+            <field name="name">/rootfs</field>
+            <field name="hostpath">/</field>
+            <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_openshift_volume_ver_run" model="clouder.image.volume">
+            <field name="image_id" ref="image_openshift"/>
+            <field name="name">/var/run</field>
+            <field name="hostpath">/var/run</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_openshift_volume_sys" model="clouder.image.volume">
+            <field name="image_id" ref="image_openshift"/>
+            <field name="name">/sys</field>
+            <field name="hostpath">/sys</field>
+            <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_openshift_volume_docker" model="clouder.image.volume">
+            <field name="image_id" ref="image_openshift"/>
+            <field name="name">/var/lib/docker</field>
+            <field name="hostpath">/var/lib/docker</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_openshift_volume_openshift_volumes" model="clouder.image.volume">
+            <field name="image_id" ref="image_openshift"/>
+            <field name="name">/var/lib/openshift/openshift.local.volumes</field>
+            <field name="hostpath">/var/lib/openshift/openshift.local.volumes</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_openshift_port_dns" model="clouder.image.port">
+            <field name="image_id" ref="image_openshift"/>
+            <field name="name">dns</field>
+            <field name="localport">53</field>
+            <field name="udp" eval="True"/>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_openshift_port_openshift" model="clouder.image.port">
+            <field name="image_id" ref="image_openshift"/>
+            <field name="name">openshift</field>
+            <field name="localport">8443</field>
+            <field name="expose">internet</field>
+        </record>
 
 
 

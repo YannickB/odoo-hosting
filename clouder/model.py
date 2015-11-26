@@ -510,7 +510,7 @@ class ClouderModel(models.AbstractModel):
         sftp.put(source, destination)
         sftp.close()
 
-        if tmp_dir != False:
+        if tmp_dir:
             server.execute(['cat', destination, '|', 'docker', 'exec', '-i', self.name, 'sh', '-c', "'cat > " + final_destination + "'"])
             if username:
                 server.execute(['docker', 'exec', '-i', self.name, 'chown', username, final_destination])

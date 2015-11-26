@@ -7,13 +7,13 @@
             <field name="name">postfix</field>
             <field name="system_user">postfix</field>
         </record>
-        <record id="apptype_postfix_option1" model="clouder.application.type.option">
+        <record id="apptype_postfix_option_mailchimp_username" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_postfix"/>
             <field name="name">mailchimp_username</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_postfix_option2" model="clouder.application.type.option">
+        <record id="apptype_postfix_option_mailchimp_apikey" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_postfix"/>
             <field name="name">mailchimp_apikey</field>
             <field name="type">container</field>
@@ -52,15 +52,15 @@ USER root
 CMD ["/usr/bin/supervisord"]
 ]]></field>
         </record>
-        <record id="image_postfix_volume1" model="clouder.image.volume">
+        <record id="image_postfix_volume_postfix" model="clouder.image.volume">
             <field name="image_id" ref="image_postfix"/>
             <field name="name">/etc/postfix</field>
         </record>
-        <record id="image_postfix_volume2" model="clouder.image.volume">
+        <record id="image_postfix_volume_aliases" model="clouder.image.volume">
             <field name="image_id" ref="image_postfix"/>
             <field name="name">/etc/aliases-dir</field>
         </record>
-        <record id="image_postfix_port" model="clouder.image.port">
+        <record id="image_postfix_port_postfix" model="clouder.image.port">
             <field name="image_id" ref="image_postfix"/>
             <field name="name">postfix</field>
             <field name="localport">25</field>

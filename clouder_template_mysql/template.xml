@@ -8,7 +8,7 @@
             <field name="system_user">mysql</field>
             <field name="role_ids" eval="[(6, 0, [ref('clouder.role_database')])]"/>
         </record>
-        <record id="apptype_mysql_option1" model="clouder.application.type.option">
+        <record id="apptype_mysql_option_network" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_mysql"/>
             <field name="name">network</field>
             <field name="type">container</field>
@@ -16,7 +16,7 @@
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>
-        <record id="apptype_mysql_option2" model="clouder.application.type.option">
+        <record id="apptype_mysql_option_root_password" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_mysql"/>
             <field name="name">root_password</field>
             <field name="type">container</field>
@@ -42,23 +42,23 @@ RUN echo "command=mysqld_safe" >> /etc/supervisor/conf.d/supervisord.conf
 USER root
 ]]></field>
         </record>
-        <record id="image_mysql_volume1" model="clouder.image.volume">
+        <record id="image_mysql_volume_etc" model="clouder.image.volume">
             <field name="image_id" ref="image_mysql"/>
             <field name="name">/etc/mysql</field>
             <field name="user">mysql</field>
         </record>
-        <record id="image_mysql_volume2" model="clouder.image.volume">
+        <record id="image_mysql_volume_var" model="clouder.image.volume">
             <field name="image_id" ref="image_mysql"/>
             <field name="name">/var/lib/mysql</field>
             <field name="user">mysql</field>
         </record>
-        <record id="image_mysql_port1" model="clouder.image.port">
+        <record id="image_mysql_port_ssh" model="clouder.image.port">
             <field name="image_id" ref="image_mysql"/>
             <field name="name">ssh</field>
             <field name="localport">22</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_mysql_port2" model="clouder.image.port">
+        <record id="image_mysql_port_mysql" model="clouder.image.port">
             <field name="image_id" ref="image_mysql"/>
             <field name="name">mysql</field>
             <field name="localport">3306</field>
@@ -70,7 +70,7 @@ USER root
             <field name="type_id" ref="apptype_mysql"/>
             <field name="default_image_id" ref="image_mysql"/>
         </record>
-        <record id="app_mysql_link1" model="clouder.application.link">
+        <record id="app_mysql_link_shinken" model="clouder.application.link">
             <field name="application_id" ref="app_mysql"/>
             <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="container" eval="True"/>

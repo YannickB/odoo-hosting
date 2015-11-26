@@ -17,7 +17,7 @@
 RUN mkdir /opt/upload
 ]]></field>
         </record>
-        <record id="image_backup_upload_volume1" model="clouder.image.volume">
+        <record id="image_backup_upload_volume_upload" model="clouder.image.volume">
             <field name="image_id" ref="image_backup_upload"/>
             <field name="name">/opt/upload</field>
             <field name="nosave" eval="True"/>
@@ -38,7 +38,7 @@ RUN mkdir /opt/upload
             <field name="system_user">backup</field>
             <field name="role_ids" eval="[(6, 0, [ref('role_backup'),ref('role_no_backup')])]"/>
         </record>
-        <record id="apptype_backup_option1" model="clouder.application.type.option">
+        <record id="apptype_backup_option_method" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_backup"/>
             <field name="name">backup_method</field>
             <field name="type">application</field>
@@ -78,7 +78,7 @@ RUN echo "command=cron -f" >> /etc/supervisor/conf.d/supervisord.conf
 
 ]]></field>
         </record>
-        <record id="image_backup_simple_volume1" model="clouder.image.volume">
+        <record id="image_backup_simple_volume_backup" model="clouder.image.volume">
             <field name="image_id" ref="image_backup_simple"/>
             <field name="name">/opt/backup</field>
             <field name="nosave" eval="True"/>
@@ -91,12 +91,12 @@ RUN echo "command=cron -f" >> /etc/supervisor/conf.d/supervisord.conf
             <field name="type_id" ref="apptype_backup"/>
             <field name="default_image_id" ref="image_backup_simple"/>
         </record>
-        <record id="app_backup_option1" model="clouder.application.option">
+        <record id="app_backup_option_method_simple" model="clouder.application.option">
             <field name="application_id" ref="app_backup_simple"/>
-            <field name="name" ref="apptype_backup_option1"/>
+            <field name="name" ref="apptype_backup_option_method"/>
             <field name="value">simple</field>
         </record>
-        <record id="app_backup_simple_link1" model="clouder.application.link">
+        <record id="app_backup_simple_link_upload" model="clouder.application.link">
             <field name="application_id" ref="app_backup_simple"/>
             <field name="name" ref="app_backup_upload"/>
             <field name="required" eval="True"/>
@@ -172,18 +172,18 @@ CMD ["/usr/bin/supervisord"]
 
 ]]></field>
         </record>
-        <record id="image_backup_bup_volume1" model="clouder.image.volume">
+        <record id="image_backup_bup_volume_backup" model="clouder.image.volume">
             <field name="image_id" ref="image_backup_bup"/>
             <field name="name">/opt/backup</field>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_backup_bup_port" model="clouder.image.port">
+        <record id="image_backup_bup_port_web" model="clouder.image.port">
             <field name="image_id" ref="image_backup_bup"/>
             <field name="name">backup-web</field>
             <field name="localport">8080</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_backup_bup_port2" model="clouder.image.port">
+        <record id="image_backup_bup_port_nrpe" model="clouder.image.port">
             <field name="image_id" ref="image_backup_bup"/>
             <field name="name">nrpe</field>
             <field name="localport">5666</field>
@@ -196,12 +196,12 @@ CMD ["/usr/bin/supervisord"]
             <field name="type_id" ref="apptype_backup"/>
             <field name="default_image_id" ref="image_backup_bup"/>
         </record>
-        <record id="app_backup_option1" model="clouder.application.option">
+        <record id="app_backup_option_method_bup" model="clouder.application.option">
             <field name="application_id" ref="app_backup_bup"/>
-            <field name="name" ref="apptype_backup_option1"/>
+            <field name="name" ref="apptype_backup_option_method"/>
             <field name="value">bup</field>
         </record>
-        <record id="app_backup_bup_link1" model="clouder.application.link">
+        <record id="app_backup_bup_link_upload" model="clouder.application.link">
             <field name="application_id" ref="app_backup_bup"/>
             <field name="name" ref="app_backup_upload"/>
             <field name="auto" eval="True"/>
