@@ -46,6 +46,13 @@ CMD ["/usr/bin/supervisord"]
             <field name="name">/etc/nagios</field>
             <field name="nosave" eval="True"/>
         </record>
+        <record id="image_glances_volume2" model="clouder.image.volume">
+            <field name="image_id" ref="image_glances"/>
+            <field name="name">/var/run/docker.sock</field>
+            <field name="hostpath">/var/run/docker.sock</field>
+            <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
+        </record>
         <record id="image_glances_port1" model="clouder.image.port">
             <field name="image_id" ref="image_glances"/>
             <field name="name">nrpe</field>
