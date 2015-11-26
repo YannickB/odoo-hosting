@@ -27,9 +27,10 @@ import time
 import logging
 _logger = logging.getLogger(__name__)
 
+
 class ClouderImageVersion(models.Model):
     """
-    Add methods to manage the docker build specificities.
+    Add methods to manage the docker build specificity.
     """
 
     _inherit = 'clouder.image.version'
@@ -48,9 +49,12 @@ class ClouderImageVersion(models.Model):
 
             if self.image_id.type_id:
                 if self.image_id.type_id.name == 'backup':
-                    sources_path = modules.get_module_path('clouder') +  '/sources'
+                    sources_path = \
+                        modules.get_module_path('clouder') + '/sources'
                 else:
-                    sources_path = modules.get_module_path('clouder_template_' + self.image_id.type_id.name) +  '/sources'
+                    sources_path = modules.get_module_path(
+                        'clouder_template_' + self.image_id.type_id.name
+                    ) + '/sources'
                 if self.local_dir_exist(sources_path):
                     server.send_dir(sources_path, tmp_dir + '/sources')
 
@@ -58,12 +62,12 @@ class ClouderImageVersion(models.Model):
                 'echo "' + dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
             server.execute(
-                         ['sudo', 'docker', 'build', '-t', self.fullname, tmp_dir])
+                ['sudo', 'docker', 'build', '-t', self.fullname, tmp_dir])
             server.execute(['sudo', 'docker', 'tag', self.fullname,
-                               self.fullpath_localhost])
+                            self.fullpath_localhost])
             server.execute(
-                         ['sudo', 'docker', 'push', self.fullpath_localhost])
-            #TODO
+                ['sudo', 'docker', 'push', self.fullpath_localhost])
+            # TODO
             # server.execute(['sudo', 'docker', 'rmi', self.fullname])
             # server.execute(['sudo', 'docker', 'rmi', self.fullpath_localhost])
             server.execute(['rm', '-rf', tmp_dir])
@@ -80,10 +84,11 @@ class ClouderImageVersion(models.Model):
         if self.registry_id.application_id.type_id.name == 'registry':
 
             img_address = self.registry_id and 'localhost:' + \
-                          self.registry_id.ports['registry']['localport'] +\
-                          '/v1/repositories/' + self.image_id.name + '/tags/' + \
-                          self.name
-            self.registry_id.execute(['curl', '-o curl.txt -X', 'DELETE', img_address])
+                self.registry_id.ports['registry']['localport'] +\
+                '/v1/repositories/' + self.image_id.name + \
+                '/tags/' + self.name
+            self.registry_id.execute(
+                ['curl', '-o curl.txt -X', 'DELETE', img_address])
 
         return res
 
@@ -111,7 +116,7 @@ class ClouderContainer(models.Model):
                 tmp_file = '/tmp/' + self.fullname
                 self.server_id.execute(['rm', certfile])
                 self.image_version_id.registry_id.get(
-                         '/etc/ssl/certs/docker-registry.crt', tmp_file)
+                    '/etc/ssl/certs/docker-registry.crt', tmp_file)
                 self.server_id.execute(['mkdir', '-p', folder])
                 self.server_id.send(tmp_file, certfile)
                 self.server_id.execute_local(['rm', tmp_file])
@@ -130,14 +135,16 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).hook_deploy(ports, volumes)
 
         if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name == 'docker':
+                self.server_id.runner_id.application_id.type_id.name \
+                == 'docker':
 
             cmd = ['sudo', 'docker', 'run', '-d', '-t', '--restart=always']
             for port in ports:
                 udp = ''
                 if port.udp:
                     udp = '/udp'
-                cmd.extend(['-p', str(port.hostport) + ':' + port.localport + udp])
+                cmd.extend(
+                    ['-p', str(port.hostport) + ':' + port.localport + udp])
             volumes_from = {}
             for volume in volumes:
                 if volume.hostpath:
@@ -150,7 +157,8 @@ class ClouderContainer(models.Model):
             for key, volume in volumes_from.iteritems():
                 cmd.extend(['--volumes-from', volume])
             for link in self.link_ids:
-                if link.name.make_link and link.target.server_id == self.server_id:
+                if link.name.make_link \
+                        and link.target.server_id == self.server_id:
                     cmd.extend(['--link', link.target.name +
                                 ':' + link.name.name.code])
             cmd = self.hook_deploy_special_args(cmd)
@@ -158,7 +166,7 @@ class ClouderContainer(models.Model):
 
             cmd.extend([self.hook_deploy_source()])
 
-            #Run container
+            # Run container
             self.server_id.execute(cmd)
 
         return res
@@ -171,7 +179,8 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).hook_purge()
 
         if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name == 'docker':
+                self.server_id.runner_id.application_id.type_id.name\
+                == 'docker':
 
             self.server_id.execute(['sudo', 'docker', 'rm', self.name])
 
@@ -186,7 +195,8 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).stop()
 
         if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name == 'docker':
+                self.server_id.runner_id.application_id.type_id.name\
+                == 'docker':
 
             self.server_id.execute(['docker', 'stop', self.name])
 
@@ -201,7 +211,8 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).start()
 
         if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name == 'docker':
+                self.server_id.runner_id.application_id.type_id.name\
+                == 'docker':
 
             self.server_id.execute(['docker', 'start', self.name])
 

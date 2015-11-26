@@ -101,7 +101,6 @@ class ClouderContainerLink(models.Model):
                 "' -se \"create user '" + self.container_id.db_user +
                 "' identified by '" + self.container_id.db_password + "';\""])
 
-
             self.log('Database user created')
 
     @api.multi
@@ -114,6 +113,7 @@ class ClouderContainerLink(models.Model):
             self.container_id.database.execute([
                 "mysql -u root -p'" + self.container_id.database.root_password +
                 "' -se \"drop user " + self. container_id.db_user + ";\""])
+
 
 class ClouderBase(models.Model):
     """
@@ -180,9 +180,9 @@ class ClouderSave(models.Model):
                     '-u', container.db_user,
                     '-p' + container.db_password,
                     database, '>', '/base-backup/' + self.name +
-                    '/' + database + '.dump'], username=self.base_id.application_id.type_id.system_user)
+                    '/' + database + '.dump'],
+                    username=self.base_id.application_id.type_id.system_user)
         return res
-
 
     @api.multi
     def restore_database(self, base):

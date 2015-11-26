@@ -148,9 +148,9 @@ class ClouderConfigSettings(models.Model):
         self.env['clouder.save.repository'].search(
             [('date_expiration', '!=', False),
              ('date_expiration', '<', self.now_date)]).unlink()
-        self.env['clouder.save'].search([('date_expiration', '!=', False),
-                                              ('date_expiration', '<',
-                                               self.now_date)]).unlink()
+        self.env['clouder.save'].search([
+            ('date_expiration', '!=', False),
+            ('date_expiration', '<', self.now_date)]).unlink()
 
     @api.multi
     def purge_expired_logs(self):
@@ -210,4 +210,6 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def reset_all_jobs(self):
-        self.env.cr.execute("update queue_job set state='done' where state in ('started', 'enqueued')")
+        self.env.cr.execute(
+            "update queue_job set state='done' "
+            "where state in ('started', 'enqueued')")

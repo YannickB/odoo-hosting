@@ -210,9 +210,8 @@ class ClouderServer(models.Model):
                                 str(self.ssh_port))
         self.execute_write_file(self.home_directory +
                                 '/.ssh/config', '\n  User root')
-        self.execute_write_file(self.home_directory +
-                                '/.ssh/config', '\n  IdentityFile ~/.ssh/keys/' +
-                                self.name)
+        self.execute_write_file(self.home_directory + '/.ssh/config',
+                                '\n  IdentityFile ~/.ssh/keys/' + self.name)
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.name + '\n')
 
@@ -227,7 +226,6 @@ class ClouderServer(models.Model):
         self.execute_local(['rm', '-rf', self.home_directory +
                             '/.ssh/keys/' + self.name])
         super(ClouderServer, self).purge()
-
 
     @api.multi
     def oneclick_deploy(self):
@@ -283,7 +281,7 @@ class ClouderContainer(models.Model):
     link_ids = fields.One2many('clouder.container.link',
                                'container_id', 'Links')
     base_ids = fields.One2many('clouder.base',
-                                  'container_id', 'Bases')
+                               'container_id', 'Bases')
     parent_id = fields.Many2one('clouder.container.child', 'Parent')
     child_ids = fields.One2many('clouder.container.child',
                                 'container_id', 'Childs')
@@ -424,7 +422,6 @@ class ClouderContainer(models.Model):
                 childs[child.child_id.application_id.code] = child.child_id
         return childs
 
-
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,name)',
          'Name must be unique per server!'),
@@ -448,7 +445,8 @@ class ClouderContainer(models.Model):
         """
         Check that a backup server is specified.
         """
-        if not self.backup_ids and not self.application_id.check_role('no-backup'):
+        if not self.backup_ids and \
+                not self.application_id.check_role('no-backup'):
             raise except_orm(
                 _('Data error!'),
                 _("You need to create at least one backup container."))
@@ -473,28 +471,37 @@ class ClouderContainer(models.Model):
         the application_id field.
         """
         if 'application_id' in vals and vals['application_id']:
-            application = self.env['clouder.application'].browse(vals['application_id'])
-            if not 'server_id' in vals or not vals['server_id']:
+            application = self.env['clouder.application'].browse(
+                vals['application_id'])
+            if 'server_id' not in vals or not vals['server_id']:
                 vals['server_id'] = application.next_server_id.id
 
             options = []
-            for key, option in self.sanitize_o2m('option', vals, application.type_id.option_ids, True).iteritems():
+            for key, option in self.sanitize_o2m(
+                    'option', vals, application.type_id.option_ids, True
+            ).iteritems():
                 if option.source.type == 'container' and option.source.auto:
-                    if option.source.app_code and option.source.app_code != application.code:
+                    if option.source.app_code and \
+                            option.source.app_code != application.code:
                         continue
-                    options.append((0, 0,
-                                    {'name': option.source.id,
-                                     'value': option.value or option.source.get_default}))
+                    options.append((0, 0, {
+                        'name': option.source.id,
+                        'value': option.value or option.source.get_default}))
             vals['option_ids'] = options
 
             links = []
-            for key, link in self.sanitize_o2m('link', vals, application.link_ids, True).iteritems():
-                if link.source.container and link.source.auto or link.source.make_link:
+            for key, link in self.sanitize_o2m(
+                    'link', vals, application.link_ids, True).iteritems():
+                if link.source.container and \
+                        link.source.auto or link.source.make_link:
                     next_id = link.next
-                    if not next_id and 'parent_id' in vals and vals['parent_id']:
-                        parent = self.env['clouder.container.child'].browse(vals['parent_id'])
+                    if not next_id and \
+                            'parent_id' in vals and vals['parent_id']:
+                        parent = self.env['clouder.container.child'].browse(
+                            vals['parent_id'])
                         for parent_link in parent.container_id.link_ids:
-                            if link.name.code == parent_link.name.name.code and parent_link.target:
+                            if link.name.code == parent_link.name.name.code \
+                                    and parent_link.target:
                                 next_id = parent_link.target.id
                     context = self.env.context
                     if not next_id and 'container_links' in context:
@@ -504,7 +511,9 @@ class ClouderContainer(models.Model):
                     if not next_id:
                         next_id = link.source.next.id
                     if not next_id:
-                        target_ids = self.search([('application_id.code','=',link.source.name.code),('parent_id','=',False)])
+                        target_ids = self.search([
+                            ('application_id.code', '=', link.source.name.code),
+                            ('parent_id', '=', False)])
                         if target_ids:
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link.source.id,
@@ -512,20 +521,27 @@ class ClouderContainer(models.Model):
             vals['link_ids'] = links
 
             childs = []
-            for key, child in self.sanitize_o2m('child', vals, application.child_ids, True).iteritems():
+            for key, child in self.sanitize_o2m(
+                    'child', vals, application.child_ids, True).iteritems():
                 if child.required:
-                    childs.append((0, 0, {'name': child.source.id, 'sequence':  child.sequence, 'server_id': getattr(child, 'server_id', False) and child.server_id.id or child.source.next_server_id.id}))
+                    childs.append((0, 0, {
+                        'name': child.source.id, 'sequence':  child.sequence,
+                        'server_id':
+                            getattr(child, 'server_id', False)
+                            and child.server_id.id
+                            or child.source.next_server_id.id}))
             vals['child_ids'] = childs
 
-            if not 'image_id' in vals or not vals['image_id']:
+            if 'image_id' not in vals or not vals['image_id']:
                 vals['image_id'] = application.default_image_id.id
 
-            if not 'backup_ids' in vals or not vals['backup_ids']:
+            if 'backup_ids' not in vals or not vals['backup_ids']:
                 if application.container_backup_ids:
                     vals['backup_ids'] = [(6, 0, [
                         b.id for b in application.container_backup_ids])]
                 else:
-                    backups = self.env['clouder.container'].search([('application_id.type_id.name', '=', 'backup')])
+                    backups = self.env['clouder.container'].search([
+                        ('application_id.type_id.name', '=', 'backup')])
                     if backups:
                         vals['backup_ids'] = [(6, 0, [backups[0].id])]
 
@@ -540,7 +556,7 @@ class ClouderContainer(models.Model):
     @api.multi
     @api.onchange('application_id')
     def onchange_application_id(self):
-        #TODO replace with self.read
+        # TODO replace with self.read
         vals = {
             'application_id': self.application_id.id,
             'server_id': self.server_id.id,
@@ -561,16 +577,18 @@ class ClouderContainer(models.Model):
         if 'image_id' in vals and vals['image_id']:
             image = self.env['clouder.image'].browse(vals['image_id'])
 
-            if not 'image_version_id' in vals or not vals['image_version_id']:
+            if 'image_version_id' not in vals or not vals['image_version_id']:
                 if not image.version_ids:
                     raise except_orm(
                         _('Data error!'),
-                        _("You need to build a version for the image " + image.name))
+                        _("You need to build a version for the image " +
+                          image.name))
                 else:
                     vals['image_version_id'] = image.version_ids[0].id
 
             ports = []
-            for key, port in self.sanitize_o2m('port', vals, image.port_ids, False).iteritems():
+            for key, port in self.sanitize_o2m(
+                    'port', vals, image.port_ids, False).iteritems():
                 context = self.env.context
                 hostport = getattr(port, 'hostport', False)
                 if 'container_ports' in context:
@@ -579,21 +597,26 @@ class ClouderContainer(models.Model):
                         hostport = context['container_ports'][name]
                 if port.expose != 'none':
                     ports.append(((0, 0, {
-                        'name': port.name, 'localport': port.localport, 'hostport': hostport,
+                        'name': port.name, 'localport': port.localport,
+                        'hostport': hostport,
                         'expose': port.expose, 'udp': port.udp})))
             vals['port_ids'] = ports
 
             volumes = []
-            for key, volume in self.sanitize_o2m('volume', vals, image.volume_ids, False).iteritems():
+            for key, volume in self.sanitize_o2m(
+                    'volume', vals, image.volume_ids, False).iteritems():
                 from_id = False
                 if 'parent_id' in vals and vals['parent_id']:
-                    parent = self.env['clouder.container.child'].browse(vals['parent_id'])
+                    parent = self.env['clouder.container.child'].browse(
+                        vals['parent_id'])
                     if volume.from_code in parent.container_id.childs:
-                        from_id = parent.container_id.childs[volume.from_code].id
+                        from_id = \
+                            parent.container_id.childs[volume.from_code].id
                 volumes.append(((0, 0, {
-                        'name': volume.name, 'from_id': from_id, 'hostpath': volume.hostpath,
-                        'user': volume.user, 'readonly': volume.readonly,
-                        'nosave': volume.nosave})))
+                    'name': volume.name, 'from_id': from_id,
+                    'hostpath': volume.hostpath,
+                    'user': volume.user, 'readonly': volume.readonly,
+                    'nosave': volume.nosave})))
             vals['volume_ids'] = volumes
         return vals
 
@@ -620,7 +643,8 @@ class ClouderContainer(models.Model):
                 child_priority = child.child_id.check_priority()
                 if not priority or priority < child_priority:
                     priority = child_priority
-                childs_priority = child.child_id.check_priority_childs(container)
+                childs_priority = child.child_id.check_priority_childs(
+                    container)
                 if not priority or priority < childs_priority:
                     priority = childs_priority
         return priority
@@ -629,7 +653,8 @@ class ClouderContainer(models.Model):
     def control_priority(self):
         priority = self.image_version_id.check_priority()
         if self.parent_id:
-            parent_priority = self.parent_id.container_id.check_priority_childs(self)
+            parent_priority = \
+                self.parent_id.container_id.check_priority_childs(self)
             if not priority or priority < parent_priority:
                 priority = parent_priority
         return priority
@@ -687,8 +712,9 @@ class ClouderContainer(models.Model):
         and make a save before deleting a container.
         """
         self.base_ids and self.base_ids.unlink()
-        self.env['clouder.save'].search([('backup_id','=',self.id)]).unlink()
-        self.env['clouder.image.version'].search([('registry_id','=',self.id)]).unlink()
+        self.env['clouder.save'].search([('backup_id', '=', self.id)]).unlink()
+        self.env['clouder.image.version'].search(
+            [('registry_id', '=', self.id)]).unlink()
         save = self.save(comment='Before unlink', no_enqueue=True)
         if self.parent_id:
             self.parent_id.save_id = save
@@ -699,7 +725,7 @@ class ClouderContainer(models.Model):
         """
         Make a save before making a reinstall.
         """
-        if not 'save_comment' in self.env.context:
+        if 'save_comment' not in self.env.context:
             self = self.with_context(save_comment='Before reinstall')
         self = self.with_context(forcesave=True)
         self.save(no_enqueue=True)
@@ -717,7 +743,7 @@ class ClouderContainer(models.Model):
         now = datetime.now()
 
         if 'nosave' in self.env.context \
-                or (not self.autosave and not 'forcesave' in self.env.context):
+                or (not self.autosave and 'forcesave' not in self.env.context):
             self.log('This base container not be saved '
                      'or the backup isnt configured in conf, '
                      'skipping save container')
@@ -736,9 +762,9 @@ class ClouderContainer(models.Model):
                     or self.application_id.container_save_expiration
                 )).strftime("%Y-%m-%d"),
                 'comment': comment or 'Manual',
-                           #            ''save_comment' in self.env.context
-                           # and self.env.context['save_comment']
-                           # or self.save_comment or 'Manual',
+                #            ''save_comment' in self.env.context
+                # and self.env.context['save_comment']
+                # or self.save_comment or 'Manual',
                 'now_bup': self.now_bup,
                 'container_id': self.id,
             }
@@ -753,7 +779,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def hook_deploy_source(self):
         """
-        Hook which can be called by submodules to change the source of the image.
+        Hook which can be called by submodules to change the source of the image
         """
         return
 
@@ -819,7 +845,7 @@ class ClouderContainer(models.Model):
 
         self.start()
 
-        #For shinken
+        # For shinken
         self.save(comment='First save', no_enqueue=True)
 
         self.deploy_links()
@@ -840,7 +866,8 @@ class ClouderContainer(models.Model):
         Remove the container.
         """
 
-        childs = self.env['clouder.container.child'].search([('container_id','=',self.id)], order='sequence DESC')
+        childs = self.env['clouder.container.child'].search(
+            [('container_id', '=', self.id)], order='sequence DESC')
         if childs:
             for child in childs:
                 child.purge()
@@ -858,7 +885,6 @@ class ClouderContainer(models.Model):
         """
 
         return
-
 
     @api.multi
     def start(self):
@@ -881,7 +907,7 @@ class ClouderContainer(models.Model):
 
         subservice_name = self.name + '-' + self.subservice_name
         containers = self.search([('name', '=', subservice_name),
-                                ('server_id', '=', self.server_id.id)])
+                                  ('server_id', '=', self.server_id.id)])
         containers.unlink()
 
         links = {}

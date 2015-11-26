@@ -54,6 +54,7 @@ class ClouderContainer(models.Model):
                 self.options['listen']['value'] + '\'" >> /etc/postgresql/' +
                 self.image_id.current_version + '/main/postgresql.conf'])
 
+
 class ClouderContainerLink(models.Model):
     """
     Add methods to manage the postgres specificities.
@@ -73,18 +74,22 @@ class ClouderContainerLink(models.Model):
             container = self.container_id
             container.database.execute([
                 'psql', '-c', '"CREATE USER ' + container.db_user +
-                ' WITH PASSWORD \'$$$' + container.db_password + '$$$\' CREATEDB;"'
+                ' WITH PASSWORD \'$$$' + container.db_password +
+                '$$$\' CREATEDB;"'
             ], username='postgres')
 
-            username=container.application_id.type_id.system_user
+            username = container.application_id.type_id.system_user
             home = '/home/' + username
             container.execute([
-                'sed', '-i', '"/:*:' + container.db_user + ':/d" ' + home + '/.pgpass'], username=username)
+                'sed', '-i',
+                '"/:*:' + container.db_user + ':/d" ' + home + '/.pgpass'],
+                username=username)
             container.execute([
                 'echo "' + container.db_server + ':5432:*:' +
                 container.db_user + ':$$$' + container.db_password +
                 '$$$" >> ' + home + '/.pgpass'], username=username)
-            container.execute(['chmod', '700', home + '/.pgpass'], username=username)
+            container.execute(['chmod', '700', home + '/.pgpass'],
+                              username=username)
 
             self.log('Database user created')
 
@@ -96,11 +101,16 @@ class ClouderContainerLink(models.Model):
         super(ClouderContainerLink, self).purge_link()
         if self.name.name.code == 'postgres':
             container = self.container_id
-            container.database.execute( [
-                'psql', '-c', '"DROP USER ' + container.db_user + ';"'], username='postgres')
-            username=container.application_id.type_id.system_user
+            container.database.execute([
+                'psql', '-c', '"DROP USER ' + container.db_user + ';"'],
+                username='postgres')
+            username = container.application_id.type_id.system_user
             container.execute([
-                'sed', '-i', '"/:*:' + container.db_user + ':/d" /home/' + username + '/.pgpass'], username=username)
+                'sed', '-i',
+                '"/:*:' + container.db_user +
+                ':/d" /home/' + username + '/.pgpass'],
+                username=username)
+
 
 class ClouderBase(models.Model):
     """
@@ -118,11 +128,10 @@ class ClouderBase(models.Model):
         if self.container_id.db_type == 'pgsql':
             for key, database in self.databases.iteritems():
                 self.container_id.execute(['createdb', '-h',
-                                   self.container_id.db_server, '-U',
-                                   self.container_id.db_user, database])
+                                           self.container_id.db_server, '-U',
+                                           self.container_id.db_user, database])
 
         return super(ClouderBase, self).deploy_database()
-
 
     @api.multi
     def purge_database(self):
@@ -139,12 +148,12 @@ class ClouderBase(models.Model):
                     'FROM pg_stat_activity WHERE datname = \''
                     + database + '\';"'
                 ], username='postgres')
-                self.container_id.database.execute(['dropdb', database], username='postgres')
+                self.container_id.database.execute(['dropdb', database],
+                                                   username='postgres')
         return super(ClouderBase, self).purge_database()
 
 
 class ClouderSave(models.Model):
-
 
     _inherit = 'clouder.save'
 
@@ -165,7 +174,8 @@ class ClouderSave(models.Model):
                     '-h', self.container_id.db_server,
                     '-U', self.container_id.db_user, database,
                     '>', '/base-backup/' + self.name + '/' +
-                    database + '.dump'], username=self.base_id.application_id.type_id.system_user)
+                    database + '.dump'],
+                    username=self.base_id.application_id.type_id.system_user)
         return res
 
     @api.multi
@@ -178,9 +188,11 @@ class ClouderSave(models.Model):
                                    base.container_id.db_server, '-U',
                                    base.container_id.db_user,
                                    database])
-                container.execute(['cat',
-                                   '/base-backup/restore-' + self.name + '/' + self.base_dumpfile,
-                                   '|', 'psql', '-q', '-h',
-                                   base.container_id.db_server, '-U',
-                                   base.container_id.db_user,
-                                   database])
+                container.execute([
+                    'cat',
+                    '/base-backup/restore-' + self.name +
+                    '/' + self.base_dumpfile,
+                    '|', 'psql', '-q', '-h',
+                    base.container_id.db_server, '-U',
+                    base.container_id.db_user,
+                    database])

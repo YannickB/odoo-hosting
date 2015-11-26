@@ -46,21 +46,25 @@ class ClouderDomain(models.Model):
         Configure the domain in the bind container, if configured.
         """
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
-            self.dns_id.send(modules.get_module_path('clouder_template_bind') +
-                      '/res/bind.config', self.configfile)
-            self.dns_id.execute(['sed', '-i', '"s/DOMAIN/' + self.name + '/g"',
-                               self.configfile])
-            self.dns_id.execute(
-                         ['sed', '-i', 
-                          '"s/IP/' + self.dns_id.server_id.ip + '/g"',
-                          self.configfile])
+            self.dns_id.send(
+                modules.get_module_path('clouder_template_bind') +
+                '/res/bind.config', self.configfile)
+            self.dns_id.execute([
+                'sed', '-i', '"s/DOMAIN/' + self.name + '/g"',
+                self.configfile])
+            self.dns_id.execute([
+                'sed', '-i',
+                '"s/IP/' + self.dns_id.server_id.ip + '/g"',
+                self.configfile])
             self.dns_id.execute([
                 "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
             self.dns_id.execute(['echo "type master;" >> /etc/bind/named.conf'])
-            self.dns_id.execute(['echo "allow-transfer {213.186.33.199;};" '
-                               '>> /etc/bind/named.conf'])
-            self.dns_id.execute(["echo 'file \"/etc/bind/db." +
-                               self.name + "\";' >> /etc/bind/named.conf"])
+            self.dns_id.execute([
+                'echo "allow-transfer {213.186.33.199;};" '
+                '>> /etc/bind/named.conf'])
+            self.dns_id.execute([
+                "echo 'file \"/etc/bind/db." +
+                self.name + "\";' >> /etc/bind/named.conf"])
             self.dns_id.execute(['echo "notify yes;" >> /etc/bind/named.conf'])
             self.dns_id.execute(['echo "};" >> /etc/bind/named.conf'])
             self.dns_id.execute([
@@ -122,7 +126,8 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'bind':
-            self.target.execute(['sed', '-i',
-                               '"/' + self.base_id.name + '\sIN\sCNAME/d"',
-                               self.base_id.domain_id.configfile])
+            self.target.execute([
+                'sed', '-i',
+                '"/' + self.base_id.name + '\sIN\sCNAME/d"',
+                self.base_id.domain_id.configfile])
             self.target.start()

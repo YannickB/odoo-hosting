@@ -43,15 +43,18 @@ _logger = logging.getLogger(__name__)
 
 ssh_connections = {}
 
+
 @job
-def connector_enqueue(session, model_name, record_id, func_name, context, *args, **kargs):
+def connector_enqueue(
+        session, model_name, record_id, func_name, context, *args, **kargs):
 
     context = context.copy()
     context.update(session.env.context.copy())
     with session.change_context(context):
         record = session.env[model_name].browse(record_id)
 
-    job = record.env['queue.job'].search([('uuid', '=', record.env.context['job_uuid'])])
+    job = record.env['queue.job'].search([
+        ('uuid', '=', record.env.context['job_uuid'])])
     job.write({'clouder_trace': False})
     job.env.cr.commit()
 
@@ -67,7 +70,7 @@ def connector_enqueue(session, model_name, record_id, func_name, context, *args,
     # if 'clouder_unlink' in record.env.context:
     #     res = super(ClouderModel, record).unlink()
     record.log('===== END JOB ' + session.env.context['job_uuid'] + ' =====')
-    job.search([('state','=', 'failed')]).write({'state':'pending'})
+    job.search([('state', '=', 'failed')]).write({'state': 'pending'})
     return res
 
 
@@ -187,8 +190,11 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def enqueue(self, func_name):
         session = ConnectorSession(self.env.cr, self.env.uid,
-                           context=self.env.context)
-        job_uuid = connector_enqueue.delay(session, self._name, self.id, func_name, self.env.context, description=(func_name + ' - ' + self.name), max_retries=0)
+                                   context=self.env.context)
+        job_uuid = connector_enqueue.delay(
+            session, self._name, self.id, func_name,
+            self.env.context, description=(func_name + ' - ' + self.name),
+            max_retries=0)
         job_ids = self.env['queue.job'].search([('uuid', '=', job_uuid)])
         job_ids.write({'res_id': self.id})
 
@@ -224,15 +230,14 @@ class ClouderModel(models.AbstractModel):
                 warning = True
             for job in job_ids:
                 job.clouder_trace = (job.clouder_trace or '') +\
-                                    now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
-                                    message + '\n'
+                    now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
+                    message + '\n'
         else:
             warning = True
 
         # if warning:
         #     _logger.info("Can't find job_uuid %s", self.env.context)
         self.env.cr.commit()
-
 
     @api.multi
     def deploy_frame(self):
@@ -304,7 +309,7 @@ class ClouderModel(models.AbstractModel):
         res = super(ClouderModel, self).create(vals)
         res.hook_create()
         if self._autodeploy:
-            if not 'no_enqueue' in self.env.context:
+            if 'no_enqueue' not in self.env.context:
                 res.enqueue('deploy_frame')
             else:
                 res.deploy_frame()
@@ -340,8 +345,8 @@ class ClouderModel(models.AbstractModel):
 
         global ssh_connections
         host_fullname = server.name + \
-                        (port and ('_' + port) or '') + \
-                        (username and ('_' + username) or '')
+            (port and ('_' + port) or '') + \
+            (username and ('_' + username) or '')
         if host_fullname not in ssh_connections\
                 or not ssh_connections[host_fullname]._transport:
 
@@ -368,11 +373,13 @@ class ClouderModel(models.AbstractModel):
                 raise except_orm(
                     _('Data error!'),
                     _("It seems Clouder have no record in the ssh config to "
-                      "connect to your server.\nMake sure there is a '" + self.name + ""
-                      "' record in the ~/.ssh/config of the Clouder system user.\n"
+                      "connect to your server.\nMake sure there is a '"
+                      + self.name + ""
+                      "' record in the ~/.ssh/config of the Clouder "
+                      "system user.\n"
                       "To easily add this record, depending if Clouder try to "
-                      "connect to a server or a container, you can click on the "
-                      "'reinstall' button of the server record or 'reset key' "
+                      "connect to a server or a container, you can click on the"
+                      " 'reinstall' button of the server record or 'reset key' "
                       "button of the container record you try to access."))
 
             # Security with latest version of Paramiko
@@ -384,8 +391,8 @@ class ClouderModel(models.AbstractModel):
             if not isinstance(identityfile, basestring):
                 raise except_orm(
                     _('Data error!'),
-                    _("For unknown reason, it seems the variable identityfile in "
-                      "the connect ssh function is invalid. Please report "
+                    _("For unknown reason, it seems the variable identityfile "
+                      "in the connect ssh function is invalid. Please report "
                       "this message.\n"
                       "Identityfile : " + str(identityfile)
                       + ", type : " + type(identityfile)))
@@ -394,17 +401,18 @@ class ClouderModel(models.AbstractModel):
                      server.name + (port and ' -p ' + str(port) or ''))
 
             try:
-                ssh.connect(server.ip, port=int(port), username=username,
-                        key_filename=os.path.expanduser(identityfile))
+                ssh.connect(
+                    server.ip, port=int(port), username=username,
+                    key_filename=os.path.expanduser(identityfile))
             except Exception as inst:
                 raise except_orm(
                     _('Connect error!'),
                     _("We were not able to connect to your server. Please make "
                       "sure you add the public key in the authorized_keys file "
                       "of your root user on your server.\n"
-                      "If you were trying to connect to a container, a click on "
-                      "the 'reset key' button on the container record may resolve "
-                      "the problem.\n"
+                      "If you were trying to connect to a container, a click on"
+                      " the 'reset key' button on the container record may "
+                      "resolve the problem.\n"
                       "Target : " + server.name + " / " + server.ip + "\n"
                       "Error : " + str(inst)))
             ssh_connections[host_fullname] = ssh
@@ -414,7 +422,8 @@ class ClouderModel(models.AbstractModel):
         return {'ssh': ssh, 'server': server}
 
     @api.multi
-    def execute(self, cmd, stdin_arg=False, path=False, ssh=False, username=False):
+    def execute(self, cmd, stdin_arg=False,
+                path=False, ssh=False, username=False):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -473,7 +482,7 @@ class ClouderModel(models.AbstractModel):
 
         host = self.name
         if self._name == 'clouder.container':
-            #TODO
+            # TODO
             self.insert(0, 'docker exec ' + self.name)
             host = self.server_id.name
 
@@ -511,27 +520,34 @@ class ClouderModel(models.AbstractModel):
         sftp.close()
 
         if tmp_dir:
-            server.execute(['cat', destination, '|', 'docker', 'exec', '-i', self.name, 'sh', '-c', "'cat > " + final_destination + "'"])
+            server.execute([
+                'cat', destination, '|', 'docker', 'exec', '-i',
+                self.name, 'sh', '-c', "'cat > " + final_destination + "'"])
             if username:
-                server.execute(['docker', 'exec', '-i', self.name, 'chown', username, final_destination])
+                server.execute([
+                    'docker', 'exec', '-i', self.name,
+                    'chown', username, final_destination])
             server.execute(['rm', '-rf', tmp_dir])
 
     @api.multi
     def send_dir(self, source, destination, ssh=False, username=False):
         self.log('Send directory ' + source + ' to ' + destination)
-        self.execute(['mkdir','-p',destination])
+        self.execute(['mkdir', '-p', destination])
         for dirpath, dirnames, filenames in os.walk(source):
             self.log('dirpath ' + str(dirpath))
             self.log('dirnames ' + str(dirnames))
             self.log('filenames ' + str(filenames))
             relpath = os.path.relpath(dirpath, source)
             for dirname in dirnames:
-                remote_path = os.path.join(destination, os.path.join(relpath, dirname))
-                self.execute(['mkdir','-p',remote_path])
+                remote_path = os.path.join(
+                    destination, os.path.join(relpath, dirname))
+                self.execute(['mkdir', '-p', remote_path])
             for filename in filenames:
                 local_path = os.path.join(dirpath, filename)
-                remote_filepath = os.path.join(destination, os.path.join(relpath, filename))
-                self.send(local_path, remote_filepath, ssh=ssh, username=username)
+                remote_filepath = os.path.join(
+                    destination, os.path.join(relpath, filename))
+                self.send(
+                    local_path, remote_filepath, ssh=ssh, username=username)
 
     @api.multi
     def execute_local(self, cmd, path=False, shell=False):
@@ -608,9 +624,9 @@ class ClouderModel(models.AbstractModel):
         f.close()
 
     @api.multi
-    def get_o2m_struct(self, list):
-        dict = list[2]
-        return Struct(**dict)
+    def get_o2m_struct(self, l):
+        d = l[2]
+        return Struct(**d)
 
     @api.multi
     def sanitize_o2m(self, key, vals, source_ids, linked_to_source):
@@ -628,14 +644,12 @@ class ClouderModel(models.AbstractModel):
             if linked_to_source:
                 name = source_item.id
 
-            if not source_item.name in res:
+            if source_item.name not in res:
                 source_item.source = source_item
                 res[name] = source_item
             else:
                 res[name].source = source_item
         return res
-
-
 
 
 def generate_random_password(size):

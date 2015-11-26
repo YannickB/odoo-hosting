@@ -80,4 +80,4 @@ class ClouderBase(models.Model):
     price_partner_month = fields.Float('Price partner/month')
     price_user_month = fields.Float('Price partner/month')
     price_user_payer = fields.Selection(
-        [('partner','Partner'),('user','User')], 'Payer for users')
+        [('partner', 'Partner'), ('user', 'User')], 'Payer for users')

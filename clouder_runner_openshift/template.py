@@ -24,6 +24,7 @@ from openerp import models, api, _
 from openerp.exceptions import except_orm
 import re
 
+
 class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'

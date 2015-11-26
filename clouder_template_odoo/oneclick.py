@@ -32,143 +32,144 @@ class ClouderServer(models.Model):
 
     @api.multi
     def oneclick_clouder_deploy(self):
-        self = self.with_context(no_enqueue=True)#, container_ports={'nginx':80,'nginx-ssl':443,'bind':53})
+        self = self.with_context(no_enqueue=True)
+        # TODO
+        # container_ports={'nginx':80,'nginx-ssl':443,'bind':53})
         prefix = self.oneclick_prefix
 
         image_obj = self.env['clouder.image']
         image_version_obj = self.env['clouder.image.version']
 
-        image = image_obj.search([('name','=','img_registry')])
+        image = image_obj.search([('name', '=', 'img_registry')])
         image.build()
 
         container_obj = self.env['clouder.container']
         application_obj = self.env['clouder.application']
 
-        application = application_obj.search([('code','=','registry')])
+        application = application_obj.search([('code', '=', 'registry')])
         registry = container_obj.create({
             'name': prefix + '-registry',
             'server_id': self.id,
             'application_id': application.id,
         })
 
-
-        image = image_obj.search([('name','=','img_base')])
+        image = image_obj.search([('name', '=', 'img_base')])
         if not image.has_version:
-            image = image_obj.search([('name','=','img_base')])
+            image = image_obj.search([('name', '=', 'img_base')])
             image.registry_id = registry.id
             image.build()
-        base = image_version_obj.search([('image_id','=',image.id)])
+        base = image_version_obj.search([('image_id', '=', image.id)])
 
-        image = image_obj.search([('name','=','img_backup_bup')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name','=','img_postfix')])
+        image = image_obj.search([('name', '=', 'img_backup_bup')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name','=','img_bind')])
+        image = image_obj.search([('name', '=', 'img_postfix')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name','=','img_nginx')])
+        image = image_obj.search([('name', '=', 'img_bind')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name','=','img_shinken')])
+        image = image_obj.search([('name', '=', 'img_nginx')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name','=','img_glances')])
+        image = image_obj.search([('name', '=', 'img_shinken')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name','=','img_postgres')])
+        image = image_obj.search([('name', '=', 'img_glances')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name','=','img_odoo_data')])
+        image = image_obj.search([('name', '=', 'img_postgres')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name','=','img_odoo_files8')])
+        image = image_obj.search([('name', '=', 'img_odoo_data')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name','=','img_odoo_exec')])
+        image = image_obj.search([('name', '=', 'img_odoo_files8')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
 
-        application = application_obj.search([('code','=','backup-bup')])
+        image = image_obj.search([('name', '=', 'img_odoo_exec')])
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
+
+        application = application_obj.search([('code', '=', 'backup-bup')])
         container_obj.create({
             'name': prefix + '-backup',
             'server_id': self.id,
             'application_id': application.id,
         })
 
-        application = application_obj.search([('code','=','postfix')])
+        application = application_obj.search([('code', '=', 'postfix')])
         container_obj.create({
             'name': prefix + '-postfix',
             'server_id': self.id,
             'application_id': application.id,
         })
 
-        application = application_obj.search([('code','=','bind')])
+        application = application_obj.search([('code', '=', 'bind')])
         bind = container_obj.create({
             'name': prefix + '-bind',
             'server_id': self.id,
             'application_id': application.id,
         })
 
-        application = application_obj.search([('code','=','proxy')])
+        application = application_obj.search([('code', '=', 'proxy')])
         container_obj.create({
             'name': prefix + '-proxy',
             'server_id': self.id,
             'application_id': application.id,
         })
 
-        application = application_obj.search([('code','=','shinken')])
+        application = application_obj.search([('code', '=', 'shinken')])
         container_obj.create({
             'name': prefix + '-shinken',
             'server_id': self.id,
             'application_id': application.id,
         })
 
-        application = application_obj.search([('code','=','glances')])
+        application = application_obj.search([('code', '=', 'glances')])
         container_obj.create({
             'name': prefix + '-glances',
             'server_id': self.id,
             'application_id': application.id,
         })
 
-        application = application_obj.search([('code','=','postgres')])
+        application = application_obj.search([('code', '=', 'postgres')])
         container_obj.create({
             'name': prefix + '-postgres',
             'server_id': self.id,
             'application_id': application.id,
         })
 
-        application = application_obj.search([('code','=','clouder')])
+        application = application_obj.search([('code', '=', 'clouder')])
         clouder = container_obj.create({
             'name': prefix + '-clouder',
             'server_id': self.id,
@@ -184,7 +185,7 @@ class ClouderServer(models.Model):
         })
 
         base_obj = self.env['clouder.base']
-        application = application_obj.search([('code','=','clouder')])
+        application = application_obj.search([('code', '=', 'clouder')])
         base_obj.create({
             'name': 'clouder',
             'domain_id': domain.id,
@@ -198,7 +199,6 @@ class ClouderServer(models.Model):
 
         clouder.install_subservice()
 
-
     @api.multi
     def oneclick_clouder_purge(self):
 
@@ -207,24 +207,24 @@ class ClouderServer(models.Model):
 
         container_obj = self.env['clouder.container']
 
-        container_obj.search([('name','=', prefix + '-clouder-test')]).unlink()
+        container_obj.search([('name', '=', prefix + '-clouder-test')]).unlink()
 
-        container_obj.search([('name','=',prefix + '-clouder')]).unlink()
+        container_obj.search([('name', '=', prefix + '-clouder')]).unlink()
 
-        self.env['clouder.domain'].search([('name','=','mydomain')]).unlink()
+        self.env['clouder.domain'].search([('name', '=', 'mydomain')]).unlink()
 
-        container_obj.search([('name','=',prefix + '-postgres')]).unlink()
+        container_obj.search([('name', '=', prefix + '-postgres')]).unlink()
 
-        container_obj.search([('name','=',prefix + '-glances')]).unlink()
+        container_obj.search([('name', '=', prefix + '-glances')]).unlink()
 
-        container_obj.search([('name','=',prefix + '-shinken')]).unlink()
+        container_obj.search([('name', '=', prefix + '-shinken')]).unlink()
 
-        container_obj.search([('name','=',prefix + '-proxy')]).unlink()
+        container_obj.search([('name', '=', prefix + '-proxy')]).unlink()
 
-        container_obj.search([('name','=',prefix + '-bind')]).unlink()
+        container_obj.search([('name', '=', prefix + '-bind')]).unlink()
 
-        container_obj.search([('name','=',prefix + '-postfix')]).unlink()
+        container_obj.search([('name', '=', prefix + '-postfix')]).unlink()
 
-        container_obj.search([('name','=',prefix + '-backup')]).unlink()
+        container_obj.search([('name', '=', prefix + '-backup')]).unlink()
 
-        container_obj.search([('name','=',prefix + '-registry')]).unlink()
+        container_obj.search([('name', '=', prefix + '-registry')]).unlink()

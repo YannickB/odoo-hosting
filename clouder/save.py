@@ -149,7 +149,6 @@ class ClouderSave(models.Model):
             repo_name = self.base_fullname
         return repo_name
 
-
     _order = 'create_date desc'
 
     @api.multi
@@ -262,8 +261,9 @@ class ClouderSave(models.Model):
         container = self.container_id
         if self.base_fullname:
             container = container.base_backup_container
-            container.execute(
-                         ['mkdir', '-p', '/base-backup/' + self.name], username='root')
+            container.execute([
+                'mkdir', '-p', '/base-backup/' + self.name],
+                username='root')
 
             container.execute(['chmod', '-R', '777',
                                '/base-backup/' + self.name], username='root')
@@ -274,13 +274,17 @@ class ClouderSave(models.Model):
         container.server_id.execute(['rm', '-rf', directory + '/*'])
         container.server_id.execute(['mkdir', directory])
         if self.base_fullname:
-            container.server_id.execute(['docker', 'cp',
-                               container.name + ':/base-backup/' + self.name,
-                               '/tmp/clouder'])
+            container.server_id.execute([
+                'docker', 'cp',
+                container.name + ':/base-backup/' + self.name,
+                '/tmp/clouder'])
         else:
             for volume in self.container_volumes_comma.split(','):
                 container.server_id.execute(['mkdir', '-p', directory + volume])
-                container.server_id.execute(['docker', 'cp', container.name + ':' + volume, directory + os.path.split(volume)[0]])
+                container.server_id.execute([
+                    'docker', 'cp',
+                    container.name + ':' + volume,
+                    directory + os.path.split(volume)[0]])
 
         container.server_id.execute([
             'echo "' + self.now_date + '" > ' + directory + '/backup-date'])
@@ -291,32 +295,36 @@ class ClouderSave(models.Model):
             name = self.base_id.fullname_
         else:
             name = self.container_id.fullname
-        backup.execute(['rm', '-rf', '/opt/backup/list/' + name], username='backup')
-        backup.execute(['mkdir', '-p', '/opt/backup/list/' + name], username='backup')
+        backup.execute(['rm', '-rf', '/opt/backup/list/' + name],
+                       username='backup')
+        backup.execute(['mkdir', '-p', '/opt/backup/list/' + name],
+                       username='backup')
         backup.execute([
             'echo "' + self.repo_name +
             '" > /opt/backup/list/' + name + '/repo'], username='backup')
 
         backup.send(self.home_directory + '/.ssh/config',
-                  '/home/backup/.ssh/config', username='backup')
+                    '/home/backup/.ssh/config', username='backup')
         backup.send(
-                  self.home_directory + '/.ssh/keys/' +
-                  self.container_id.server_id.name + '.pub',
-                  '/home/backup/.ssh/keys/' +
-                  self.container_id.server_id.name + '.pub', username='backup')
+            self.home_directory + '/.ssh/keys/' +
+            self.container_id.server_id.name + '.pub',
+            '/home/backup/.ssh/keys/' +
+            self.container_id.server_id.name + '.pub', username='backup')
         backup.send(
-                  self.home_directory + '/.ssh/keys/' +
-                  self.container_id.server_id.name,
-                  '/home/backup/.ssh/keys/' +
-                  self.container_id.server_id.name, username='backup')
-        backup.execute(['chmod', '-R', '700', '/home/backup/.ssh'], username='backup')
+            self.home_directory + '/.ssh/keys/' +
+            self.container_id.server_id.name,
+            '/home/backup/.ssh/keys/' +
+            self.container_id.server_id.name, username='backup')
+        backup.execute(['chmod', '-R', '700', '/home/backup/.ssh'],
+                       username='backup')
 
         backup.execute(['rm', '-rf', directory], username='backup')
         backup.execute(['mkdir', '-p', directory], username='backup')
 
         backup.execute([
             'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-            self.container_id.server_id.name + ':' + directory + '/', directory], username='backup')
+            self.container_id.server_id.name + ':' + directory + '/',
+            directory], username='backup')
 
         if backup.backup_method == 'simple':
             backup.execute([
@@ -324,34 +332,40 @@ class ClouderSave(models.Model):
                 self.repo_name + '/' + self.name], username='backup')
             backup.execute([
                 'cp', '-R', directory + '/*',
-                '/opt/backup/simple/' + self.repo_name + '/' + self.name], username='backup')
+                '/opt/backup/simple/' + self.repo_name + '/' + self.name],
+                username='backup')
             backup.execute([
-                'rm', '/opt/backup/simple/' + self.repo_name + '/latest'], username='backup')
+                'rm', '/opt/backup/simple/' + self.repo_name + '/latest'],
+                username='backup')
             backup.execute([
                 'ln', '-s',
                 '/opt/backup/simple/' + self.repo_name + '/' + self.name,
-                '/opt/backup/simple/' + self.repo_name + '/latest'], username='backup')
+                '/opt/backup/simple/' + self.repo_name + '/latest'],
+                username='backup')
 
         if backup.backup_method == 'bup':
             backup.execute(['export BUP_DIR=/opt/backup/bup;',
-                               'bup index ' + directory], username='backup')
+                            'bup index ' + directory],
+                           username='backup')
             backup.execute([
                 'export BUP_DIR=/opt/backup/bup;',
                 'bup save -n ' + self.repo_name + ' -d ' +
-                str(int(self.now_epoch)) + ' --strip ' + directory], username='backup')
+                str(int(self.now_epoch)) + ' --strip ' + directory],
+                username='backup')
 
         backup.execute(['cat', directory + '/backup-date'])
 
         backup.execute(['rm', '-rf', directory + '*'], username='backup')
 
-        # Should we delete the keys directory? More security, but may cause concurency problems
+        # Should we delete the keys directory?
+        # More security, but may cause concurrency problems
         # backup.execute(['rm', '/home/backup/.ssh/keys/*'], username='backup')
 
         container.execute(['rm', '-rf', directory + '*'])
 
         if self.base_fullname:
-            container.execute(
-                         ['rm', '-rf', '/base-backup/' + self.name], username='root')
+            container.execute([
+                'rm', '-rf', '/base-backup/' + self.name], username='root')
         return
 
     @api.multi
@@ -360,20 +374,21 @@ class ClouderSave(models.Model):
         Remove the save from the backup container.
         """
         self.backup_id.execute(['rm', '-rf', '/opt/backup/simple/' +
-                           self.repo_name + '/' + self.name])
+                                self.repo_name + '/' + self.name])
         flag = False
         if self.base_fullname:
             if self.search([('base_fullname', '=', self.repo_name)]) == self:
                 flag = True
         else:
-            if self.search([('container_fullname', '=', self.repo_name)]) == self:
+            if self.search([
+                    ('container_fullname', '=', self.repo_name)]) == self:
                 flag = True
 
         if flag:
             self.backup_id.execute(['rm', '-rf', '/opt/backup/simple/' +
-                               self.repo_name])
+                                    self.repo_name])
             self.backup_id.execute(['git', '--git-dir=/opt/backup/bup',
-                               'branch', '-D', self.repo_name])
+                                    'branch', '-D', self.repo_name])
         return
 
     @api.multi
@@ -509,7 +524,8 @@ class ClouderSave(models.Model):
                 self = self.with_context(forcesave=False)
                 self = self.with_context(nosave=True)
 
-            # container.save(comment='Before restore ' + self.name, no_enqueue=True)
+            container.save(
+                comment='Before restore ' + self.name, no_enqueue=True)
 
             self.restore_action(container)
 
@@ -603,7 +619,8 @@ class ClouderSave(models.Model):
             base_obj.deploy_links()
 
             base.container_id.base_backup_container.execute(
-                         ['rm', '-rf', '/base-backup/restore-' + self.name], username='root')
+                ['rm', '-rf', '/base-backup/restore-' + self.name],
+                username='root')
             res = base
         self.write({'container_restore_to_name': False,
                     'container_restore_to_server_id': False,
@@ -629,15 +646,18 @@ class ClouderSave(models.Model):
 
         backup = self.backup_id
         backup.send(self.home_directory + '/.ssh/config',
-                  '/home/backup/.ssh/config', username='backup')
+                    '/home/backup/.ssh/config', username='backup')
         backup.send(
-                  self.home_directory + '/.ssh/keys/' +
-                  container.server_id.name + '.pub',
-                  '/home/backup/.ssh/keys/' + container.server_id.name + '.pub', username='backup')
+            self.home_directory + '/.ssh/keys/' +
+            container.server_id.name + '.pub',
+            '/home/backup/.ssh/keys/' + container.server_id.name + '.pub',
+            username='backup')
         backup.send(
-                  self.home_directory + '/.ssh/keys/' + container.server_id.name,
-                  '/home/backup/.ssh/keys/' + container.server_id.name, username='backup')
-        backup.execute(['chmod', '-R', '700', '/home/backup/.ssh'], username='backup')
+            self.home_directory + '/.ssh/keys/' + container.server_id.name,
+            '/home/backup/.ssh/keys/' + container.server_id.name,
+            username='backup')
+        backup.execute(['chmod', '-R', '700', '/home/backup/.ssh'],
+                       username='backup')
         backup.execute(['rm', '-rf', directory + '*'], username='backup')
         backup.execute(['mkdir', '-p', directory], username='backup')
 
@@ -652,12 +672,15 @@ class ClouderSave(models.Model):
                 'bup restore -C ' + directory + ' ' + self.repo_name +
                 '/' + self.now_bup], username='backup')
             backup.execute([
-                'mv', directory + '/' + self.now_bup + '/*', directory], username='backup')
-            backup.execute(['rm -rf', directory + '/' + self.now_bup], username='backup')
+                'mv', directory + '/' + self.now_bup + '/*', directory],
+                username='backup')
+            backup.execute(['rm -rf', directory + '/' + self.now_bup],
+                           username='backup')
 
         backup.execute([
             'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-            directory + '/', container.server_id.name + ':' + directory], username='backup')
+            directory + '/', container.server_id.name + ':' + directory],
+            username='backup')
         backup.execute(['rm', '-rf', directory + '*'], username='backup')
         # backup.execute(['rm', '/home/backup/.ssh/keys/*'], username='backup')
 
@@ -666,18 +689,24 @@ class ClouderSave(models.Model):
                 container.execute(['rm', '-rf', volume + '/*'], username='root')
         else:
             container.execute(
-                         ['rm', '-rf', '/base-backup/restore-' + self.name], username='root')
+                ['rm', '-rf', '/base-backup/restore-' + self.name],
+                username='root')
 
         container.server_id.execute(['cat', directory + '/backup-date'])
         container.server_id.execute(['rm', '-rf', directory + '/backup-date'])
         if not self.base_fullname:
-            for item in container.server_id.execute(['ls', directory]).split('\n'):
+            for item in \
+                    container.server_id.execute(['ls', directory]).split('\n'):
                 if item:
-                    container.server_id.execute(['docker', 'cp', directory + '/' + item, container.name + ':/'])
+                    container.server_id.execute([
+                        'docker', 'cp',
+                        directory + '/' + item, container.name + ':/'])
         else:
             container.execute(['mkdir', '/base-backup/'], username='root')
-            container.server_id.execute(['docker', 'cp', directory,
-                               container.name + ':/base-backup'])
+            container.server_id.execute([
+                'docker', 'cp', directory,
+                container.name + ':/base-backup'])
             container.execute(['chmod', '-R', '777',
-                               '/base-backup/restore-' + self.name], username='root')
+                               '/base-backup/restore-' + self.name],
+                              username='root')
         container.server_id.execute(['rm', '-rf', directory + '*'])

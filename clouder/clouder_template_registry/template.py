@@ -71,9 +71,9 @@ class ClouderContainer(models.Model):
                 'echo "' + self.image_id.dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
             server.execute(['sudo', 'docker', 'rmi',
-                               self.image_version_id.fullname])
+                            self.image_version_id.fullname])
             server.execute(['sudo', 'docker', 'build', '-t',
-                               self.image_version_id.fullname, tmp_dir])
+                            self.image_version_id.fullname, tmp_dir])
             server.execute(['rm', '-rf', tmp_dir])
 
         return super(ClouderContainer, self).deploy()
@@ -83,7 +83,6 @@ class ClouderContainer(models.Model):
         Regenerate the ssl certs after the registry deploy.
         """
         if self.application_id.type_id.name == 'registry':
-
 
             certfile = '/etc/ssl/certs/docker-registry.crt'
             keyfile = '/etc/ssl/private/docker-registry.key'

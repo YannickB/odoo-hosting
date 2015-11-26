@@ -59,13 +59,13 @@ class ClouderBaseLink(models.Model):
                 configfile = 'proxy-sslonly.config'
             target = self.target
             target.send(
-                      modules.get_module_path(
-                          'clouder_template_' +
-                          self.base_id.application_id.type_id.name
-                      ) + '/res/' + configfile, self.base_id.nginx_configfile)
-            target.execute(
-                         ['sed', '-i', '"s/BASE/' + self.base_id.name + '/g"',
-                          self.base_id.nginx_configfile])
+                modules.get_module_path(
+                    'clouder_template_' +
+                    self.base_id.application_id.type_id.name
+                ) + '/res/' + configfile, self.base_id.nginx_configfile)
+            target.execute([
+                'sed', '-i', '"s/BASE/' + self.base_id.name + '/g"',
+                self.base_id.nginx_configfile])
             target.execute([
                 'sed', '-i', '"s/DOMAIN/' + self.base_id.domain_id.name +
                 '/g"', self.base_id.nginx_configfile])

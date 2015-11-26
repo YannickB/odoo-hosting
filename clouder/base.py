@@ -77,7 +77,8 @@ class ClouderBase(models.Model):
     application_id = fields.Many2one('clouder.application', 'Application',
                                      required=True)
     domain_id = fields.Many2one('clouder.domain', 'Domain name', required=True)
-    container_id = fields.Many2one('clouder.container', 'Container', required=True)
+    container_id = fields.Many2one(
+        'clouder.container', 'Container', required=True)
     admin_name = fields.Char('Admin name', required=True)
     admin_password = fields.Char(
         'Admin password', required=True,
@@ -235,34 +236,42 @@ class ClouderBase(models.Model):
         the application_id field.
         """
         if 'application_id' in vals and vals['application_id']:
-            application = self.env['clouder.application'].browse(vals['application_id'])
+            application = self.env['clouder.application'].browse(
+                vals['application_id'])
 
-            if not 'admin_name' in vals or not vals['admin_name']:
+            if 'admin_name' not in vals or not vals['admin_name']:
                 vals['admin_name'] = application.admin_name
 
-            if not 'admin_email' in vals or not vals['admin_email']:
+            if 'admin_email' not in vals or not vals['admin_email']:
                 vals['admin_email'] = application.admin_email \
                     and application.admin_email \
                     or self.email_sysadmin
 
             options = []
-            for key, option in self.sanitize_o2m('option', vals, application.type_id.option_ids, True).iteritems():
+            for key, option in self.sanitize_o2m(
+                    'option', vals, application.type_id.option_ids, True
+            ).iteritems():
                 if option.source.type == 'base' and option.source.auto:
-                    if option.source.app_code and option.source.app_code != application.code:
+                    if option.source.app_code and \
+                            option.source.app_code != application.code:
                         continue
-                    options.append((0, 0,
-                                    {'name': option.source.id,
-                                     'value': option.value or option.source.get_default}))
+                    options.append((0, 0, {
+                        'name': option.source.id,
+                        'value': option.value or option.source.get_default}))
             vals['option_ids'] = options
 
             links = []
-            for key, link in self.sanitize_o2m('link', vals, application.link_ids, True).iteritems():
+            for key, link in self.sanitize_o2m(
+                    'link', vals, application.link_ids, True).iteritems():
                 if link.source.base and link.source.auto:
                     next_id = link.next
-                    if not next_id and 'parent_id' in vals and vals['parent_id']:
-                        parent = self.env['clouder.base.child'].browse(vals['parent_id'])
+                    if not next_id and \
+                            'parent_id' in vals and vals['parent_id']:
+                        parent = self.env['clouder.base.child'].browse(
+                            vals['parent_id'])
                         for parent_link in parent.base_id.link_ids:
-                            if link.name.code == parent_link.name.name.code and parent_link.target:
+                            if link.name.code == parent_link.name.name.code \
+                                    and parent_link.target:
                                 next_id = parent_link.target.id
                     context = self.env.context
                     if not next_id and 'base_links' in context:
@@ -272,7 +281,9 @@ class ClouderBase(models.Model):
                     if not next_id:
                         next_id = link.source.next.id
                     if not next_id:
-                        target_ids = self.env['clouder.container'].search([('application_id.code','=',link.source.name.code),('parent_id','=',False)])
+                        target_ids = self.env['clouder.container'].search([
+                            ('application_id.code', '=', link.source.name.code),
+                            ('parent_id', '=', False)])
                         if target_ids:
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link.source.id,
@@ -280,17 +291,20 @@ class ClouderBase(models.Model):
             vals['link_ids'] = links
 
             childs = []
-            for key, child in self.sanitize_o2m('child', vals, application.child_ids, True).iteritems():
+            for key, child in self.sanitize_o2m(
+                    'child', vals, application.child_ids, True).iteritems():
                 if child.required:
-                    childs.append((0, 0, {'name': child.source.id, 'sequence':  child.sequence}))
+                    childs.append((0, 0, {
+                        'name': child.source.id, 'sequence':  child.sequence}))
             vals['child_ids'] = childs
 
-            if not 'backup_ids' in vals or not vals['backup_ids']:
+            if 'backup_ids' not in vals or not vals['backup_ids']:
                 if application.base_backup_ids:
                     vals['backup_ids'] = [(6, 0, [
                         b.id for b in application.base_backup_ids])]
                 else:
-                    backups = self.env['clouder.container'].search([('application_id.type_id.name', '=', 'backup')])
+                    backups = self.env['clouder.container'].search([
+                        ('application_id.type_id.name', '=', 'backup')])
                     if backups:
                         vals['backup_ids'] = [(6, 0, [backups[0].id])]
 
@@ -330,7 +344,7 @@ class ClouderBase(models.Model):
 
         :param vals: The values needed to create the record.
         """
-        if (not 'container_id' in vals) or (not vals['container_id']):
+        if ('container_id' not in vals) or (not vals['container_id']):
             application_obj = self.env['clouder.application']
             domain_obj = self.env['clouder.domain']
             container_obj = self.env['clouder.container']
@@ -409,14 +423,12 @@ class ClouderBase(models.Model):
         """
         Make a new save.
         """
-        save_obj = self.env['clouder.save']
-
         save = False
 
         now = datetime.now()
 
         if 'nosave' in self.env.context \
-                or (self.nosave and not 'forcesave' in self.env.context):
+                or (self.nosave and 'forcesave' not in self.env.context):
             self.log(
                 'This base shall not be saved or the backup '
                 'isnt configured in conf, skipping save base')
@@ -468,10 +480,11 @@ class ClouderBase(models.Model):
         need to be done in another service.
         """
         base_reset_id = self.reset_id and self.reset_id or self
-        if not 'save_comment' in self.env.context:
+        if 'save_comment' not in self.env.context:
             self = self.with_context(save_comment='Reset base')
         self.with_context(forcesave=True)
-        save = base_reset_id.save(comment=self.env.context['save_comment'], no_enqueue=True)
+        save = base_reset_id.save(
+            comment=self.env.context['save_comment'], no_enqueue=True)
         self.with_context(forcesave=False)
         self.with_context(nosave=True)
         vals = {'base_id': self.id, 'base_restore_to_name': self.name,
@@ -563,7 +576,7 @@ class ClouderBase(models.Model):
             self.deploy_build()
 
         elif self.build == 'restore':
-            #TODO restore from a selected save
+            # TODO restore from a selected save
             self.deploy_post_restore()
 
         if self.build != 'none':
@@ -575,7 +588,7 @@ class ClouderBase(models.Model):
 
         self.deploy_post()
 
-        #For shinken
+        # For shinken
         self.save(comment='First save', no_enqueue=True)
 
     @api.multi
@@ -767,7 +780,9 @@ class ClouderBaseChild(models.Model):
         self.purge()
         self.child_id = self.env['clouder.base'].create({
             'name': self.domainname or self.base_id.name + '-' + self.name.code,
-            'domain_id': self.domainname and self.domain_id or self.base_id.domain_id.id,
+            'domain_id':
+                self.domainname and
+                self.domain_id or self.base_id.domain_id.id,
             'parent_id': self.id,
             'application_id': self.name.id,
             'container_id': self.container_id.id

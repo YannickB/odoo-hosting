@@ -30,7 +30,6 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
-
     @api.multi
     def hook_deploy_special_args(self, cmd):
         cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)

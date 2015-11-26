@@ -42,15 +42,15 @@ class ClouderContainer(models.Model):
         for link in self.link_ids:
             if link.name.name.code == 'postfix' and link.target:
                 self.execute(['echo "root=' + self.email_sysadmin +
-                                   '" > /etc/ssmtp/ssmtp.conf'])
+                             '" > /etc/ssmtp/ssmtp.conf'])
                 self.execute(['echo "mailhub=postfix:25" '
-                                   '>> /etc/ssmtp/ssmtp.conf'])
+                             '>> /etc/ssmtp/ssmtp.conf'])
                 self.execute(['echo "rewriteDomain=' + self.fullname +
-                                   '" >> /etc/ssmtp/ssmtp.conf'])
+                              '" >> /etc/ssmtp/ssmtp.conf'])
                 self.execute(['echo "hostname=' + self.fullname +
-                                   '" >> /etc/ssmtp/ssmtp.conf'])
+                             '" >> /etc/ssmtp/ssmtp.conf'])
                 self.execute(['echo "FromLineOverride=YES" >> '
-                                   '/etc/ssmtp/ssmtp.conf'])
+                             '/etc/ssmtp/ssmtp.conf'])
         if self.application_id.type_id.name == 'postfix':
             self.execute([
                 'echo "relayhost = [smtp.mandrillapp.com]" '

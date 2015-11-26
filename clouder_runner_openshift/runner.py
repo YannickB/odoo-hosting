@@ -27,6 +27,7 @@ import time
 import logging
 _logger = logging.getLogger(__name__)
 
+
 class ClouderContainer(models.Model):
     """
     Add methods to manage the docker container specificities.
@@ -44,13 +45,13 @@ class ClouderContainer(models.Model):
 
         if self.server_id.runner_id.application_id.type_id.name == 'openshift':
 
-
             ports_dict = '['
             for port in ports:
-                ports_dict += '{"name": "' +  port.name + '", '
-                ports_dict += '"protocol": "' +  (port.udp and 'UDP' or 'TCP') + '",'
-                ports_dict += '"port": ' +  port.localport + ','
-                ports_dict += '"targetPort": ' +  port.hostport + ','
+                ports_dict += '{"name": "' + port.name + '", '
+                ports_dict += '"protocol": "' + \
+                              (port.udp and 'UDP' or 'TCP') + '",'
+                ports_dict += '"port": ' + port.localport + ','
+                ports_dict += '"targetPort": ' + port.hostport + ','
                 ports_dict += '"nodePort": 0}'
             ports_dict += ']'
                 
@@ -59,10 +60,10 @@ class ClouderContainer(models.Model):
             for volume in volumes:
                 volume_mounts_dict.append(
                     {
-                    'name': volume.name,
-                    'mountPath': volume.localpath,
-                    '??': volume.hostpath,
-                    'readonly': volume.readonly
+                        'name': volume.name,
+                        'mountPath': volume.localpath,
+                        '??': volume.hostpath,
+                        'readonly': volume.readonly
                     }
                 )
                 volumes_dict.append(
@@ -79,22 +80,23 @@ class ClouderContainer(models.Model):
             runner = self.server_id.runner_id
             service_file = '/tmp/config'
             runner.send(modules.get_module_path('clouder_runner_openshift') +
-                      '/res/service.config', service_file)
+                        '/res/service.config', service_file)
             runner.execute(['sed', '-i', '"s/CONTAINER_NAME/' +
-                               self.name + '/g"',
-                               service_file])
+                            self.name + '/g"',
+                            service_file])
             runner.execute(['sed', '-i', '"s/IMAGE_NAME/' +
-                               self.image_version_id.fullpath_localhost.replace('/','\/') + '/g"',
-                               service_file])
+                            self.image_version_id.fullpath_localhost.replace(
+                                '/', '\/') + '/g"',
+                            service_file])
             runner.execute(['sed', '-i', '"s/PORTS/' +
-                               ports_dict.replace('\"', '\\"') + '/g"',
-                               service_file])
+                            ports_dict.replace('\"', '\\"') + '/g"',
+                            service_file])
             runner.execute(['sed', '-i', '"s/VOLUME_MOUNTS/' +
-                               str(volume_mounts_dict) + '/g"',
-                               service_file])
+                            str(volume_mounts_dict) + '/g"',
+                            service_file])
             runner.execute(['sed', '-i', '"s/VOLUMES/' +
-                               str(volumes_dict) + '/g"',
-                               service_file])
+                            str(volumes_dict) + '/g"',
+                            service_file])
             runner.execute(['oc', 'create', '-f', service_file])
             runner.execute(['rm', service_file])
 

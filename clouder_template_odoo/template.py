@@ -45,25 +45,31 @@ class ClouderContainer(models.Model):
             config_file = '/opt/odoo/etc/odoo.conf'
             if self.application_id.code == 'data':
                 self.execute(['sed', '-i', '"s/APPLICATION/' +
-                                   self.application_id.parent_id.fullcode
-                                   .replace('-', '_') + '/g"', config_file])
+                             self.application_id.parent_id.fullcode
+                             .replace('-', '_') + '/g"', config_file])
                 self.execute(['sed', '-i', 's/DB_SERVER/' +
-                                   self.db_server + '/g',
-                                   config_file])
-                self.execute(['sed', '-i',
-                                   's/DB_USER/' + self.db_user + '/g',
-                                   config_file])
-                self.execute(['sed', '-i', 's/DB_PASSWORD/' +
-                                   self.db_password + '/g',
-                                   config_file])
+                             self.db_server + '/g',
+                             config_file])
+                self.execute([
+                    'sed', '-i',
+                    's/DB_USER/' + self.db_user + '/g',
+                    config_file])
+                self.execute([
+                    'sed', '-i', 's/DB_PASSWORD/' +
+                    self.db_password + '/g',
+                    config_file])
             if self.application_id.code == 'exec':
-                addons_path = '/opt/odoo/files/odoo/addons,/opt/odoo/extra-addons,'
-                for extra_dir in self.execute(['ls', '/opt/odoo/files/extra']).split('\n'):
+                addons_path = \
+                    '/opt/odoo/files/odoo/addons,/opt/odoo/extra-addons,'
+                for extra_dir in self.execute(
+                        ['ls', '/opt/odoo/files/extra']).split('\n'):
                     if extra_dir:
-                        addons_path += '/opt/odoo/files/extra/' + extra_dir + ','
-                self.execute(['sed', '-i', '"s/ADDONS_PATH/' +
-                                   addons_path.replace('/', '\/') + '/g"',
-                                   config_file])
+                        addons_path += \
+                            '/opt/odoo/files/extra/' + extra_dir + ','
+                self.execute([
+                    'sed', '-i', '"s/ADDONS_PATH/' +
+                    addons_path.replace('/', '\/') + '/g"',
+                    config_file])
 
 
 class ClouderBase(models.Model):
@@ -75,7 +81,8 @@ class ClouderBase(models.Model):
 
     @property
     def odoo_port(self):
-        return self.container_id.childs['exec'] and self.container_id.childs['exec'].ports['http']['hostport']
+        return self.container_id.childs['exec'] and \
+            self.container_id.childs['exec'].ports['http']['hostport']
 
     @api.multi
     def deploy_database(self):
@@ -86,7 +93,8 @@ class ClouderBase(models.Model):
             self.container_id.execute([
                 'mkdir', '-p',
                 '/opt/odoo/data/filestore/' +
-                self.fullname_], username=self.application_id.type_id.system_user)
+                self.fullname_],
+                username=self.application_id.type_id.system_user)
 
             if self.build == 'build':
 
@@ -102,10 +110,11 @@ class ClouderBase(models.Model):
                     self.fullname_ + "'," + "demo=" + str(self.test) +
                     "," + "lang='" + self.lang + "'," +
                     "user_password='" + self.admin_password + "')")
-                client.create_database(self.container_id.childs['data'].db_password,
-                                       self.fullname_, demo=self.test,
-                                       lang=self.lang,
-                                       user_password=self.admin_password)
+                client.create_database(
+                    self.container_id.childs['data'].db_password,
+                    self.fullname_, demo=self.test,
+                    lang=self.lang,
+                    user_password=self.admin_password)
 
                 return True
         return super(ClouderBase, self).deploy_database()
@@ -253,7 +262,8 @@ class ClouderBase(models.Model):
                     self.container_id.server_id.ip + ":" +
                     self.odoo_port + "," +
                     "db=" + self.fullname_ + "," + "user=" +
-                    self.admin_name + ", password=$$$" + self.admin_password + "$$$)"
+                    self.admin_name + ", password=$$$" +
+                    self.admin_password + "$$$)"
                 )
                 client = erppeek.Client(
                     'http://' + self.container_id.server_id.name +
@@ -312,7 +322,8 @@ class ClouderBase(models.Model):
                 self.container_id.server_id.ip + ":" +
                 self.odoo_port + "," +
                 "db=" + self.fullname_ + "," + "user=" +
-                self.admin_name + ", password=$$$" + self.admin_password + "$$$)"
+                self.admin_name + ", password=$$$" +
+                self.admin_password + "$$$)"
             )
             client = erppeek.Client(
                 'http://' + self.container_id.server_id.ip + ':' +
@@ -450,10 +461,11 @@ class ClouderBaseLink(models.Model):
             except:
                 pass
 
-            self.target.execute(['sed', '-i',
-                               '"/^mydestination =/ s/$/, ' +
-                               self.base_id.fulldomain + '/"',
-                               '/etc/postfix/main.cf'])
+            self.target.execute([
+                'sed', '-i',
+                '"/^mydestination =/ s/$/, ' +
+                self.base_id.fulldomain + '/"',
+                '/etc/postfix/main.cf'])
             self.target.execute([
                 'echo "@' + self.base_id.fulldomain + ' ' +
                 self.base_id.fullname_ +
@@ -484,13 +496,15 @@ class ClouderBaseLink(models.Model):
                 'sed', '-i',
                 '"/^mydestination =/ s/, ' + self.base_id.fulldomain + '//"',
                 '/etc/postfix/main.cf'])
-            self.target.execute(['sed', '-i',
-                               '"/@' + self.base_id.fulldomain + '/d"',
-                               '/etc/postfix/virtual_aliases'])
+            self.target.execute([
+                'sed', '-i',
+                '"/@' + self.base_id.fulldomain + '/d"',
+                '/etc/postfix/virtual_aliases'])
             self.target.execute(['postmap', '/etc/postfix/virtual_aliases'])
-            self.target.execute(['sed', '-i',
-                               '"/d\s' + self.base_id.fullname_ + '/d"',
-                               '/etc/aliases'])
+            self.target.execute([
+                'sed', '-i',
+                '"/d\s' + self.base_id.fullname_ + '/d"',
+                '/etc/aliases'])
             self.target.execute(['newaliases'])
             self.target.execute(['/etc/init.d/postfix', 'reload'])
 
@@ -513,7 +527,8 @@ class ClouderSave(models.Model):
                 'cp', '-R',
                 '/opt/odoo/data/filestore/' +
                 self.base_id.fullname_,
-                '/base-backup/' + self.name + '/filestore'], username=self.base_id.application_id.type_id.system_user)
+                '/base-backup/' + self.name + '/filestore'],
+                username=self.base_id.application_id.type_id.system_user)
         return res
 
     @api.multi
@@ -525,10 +540,12 @@ class ClouderSave(models.Model):
         if self.base_id.application_id.type_id.name == 'odoo':
             base.container_id.base_backup_container.execute([
                 'rm', '-rf',
-                '/opt/odoo/data/filestore/' + self.base_id.fullname_], username=self.base_id.application_id.type_id.system_user)
+                '/opt/odoo/data/filestore/' + self.base_id.fullname_],
+                username=self.base_id.application_id.type_id.system_user)
             base.container_id.base_backup_container.execute([
                 'cp', '-R',
                 '/base-backup/restore-' + self.name + '/filestore',
                 '/opt/odoo/data/filestore/' +
-                self.base_id.fullname_], username=self.base_id.application_id.type_id.system_user)
+                self.base_id.fullname_],
+                username=self.base_id.application_id.type_id.system_user)
         return res

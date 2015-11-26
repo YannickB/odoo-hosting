@@ -54,7 +54,8 @@ class DefaultConfig(object):
 config = DefaultConfig()
 
 
-def send_mail(_from_, to_, subject, text, files=None, server=config.MAIL_SERVER, port=config.MAIL_SERVER_PORT):
+def send_mail(_from_, to_, subject, text, files=None,
+              server=config.MAIL_SERVER, port=config.MAIL_SERVER_PORT):
     assert isinstance(to_, (list, tuple))
 
     if files is None:
@@ -66,19 +67,20 @@ def send_mail(_from_, to_, subject, text, files=None, server=config.MAIL_SERVER,
     msg['Date'] = formatdate(localtime=True)
     msg['Subject'] = subject
 
-    msg.attach( MIMEText(text) )
+    msg.attach(MIMEText(text))
 
     for file_name, file_content in files:
         part = MIMEBase('application', "octet-stream")
-        part.set_payload( file_content )
+        part.set_payload(file_content)
         Encoders.encode_base64(part)
         part.add_header('Content-Disposition', 'attachment; filename="%s"'
-                       % file_name)
+                        % file_name)
         msg.attach(part)
 
     smtp = smtplib.SMTP(server, port=port)
-    smtp.sendmail(_from_, to_, msg.as_string() )
+    smtp.sendmail(_from_, to_, msg.as_string())
     smtp.close()
+
 
 class RPCProxy(object):
     def __init__(self, uid, passwd,
@@ -86,29 +88,34 @@ class RPCProxy(object):
                  port=config.OPENERP_PORT,
                  path='object',
                  dbname=config.OPENERP_DEFAULT_DATABASE):
-        self.rpc = xmlrpclib.ServerProxy('http://%s:%s/xmlrpc/%s' % (host, port, path), allow_none=True)
+        self.rpc = xmlrpclib.ServerProxy(
+            'http://%s:%s/xmlrpc/%s' % (host, port, path), allow_none=True)
         self.user_id = uid
         self.passwd = passwd
         self.dbname = dbname
 
     def __call__(self, *request, **kwargs):
-        return self.rpc.execute(self.dbname, self.user_id, self.passwd, *request, **kwargs)
+        return self.rpc.execute(
+            self.dbname, self.user_id, self.passwd, *request, **kwargs)
+
 
 class EmailParser(object):
-    def __init__(self, uid, password, dbname, host, port, model=False, email_default=False):
+    def __init__(self, uid, password, dbname,
+                 host, port, model=False, email_default=False):
         self.rpc = RPCProxy(uid, password, host=host, port=port, dbname=dbname)
         if model:
             try:
                 self.model_id = int(model)
                 self.model = str(model)
             except:
-                self.model_id = self.rpc('ir.model', 'search', [('model', '=', model)])[0]
+                self.model_id = self.rpc(
+                    'ir.model', 'search', [('model', '=', model)])[0]
                 self.model = str(model)
             self.email_default = email_default
 
-
     def parse(self, message, custom_values=None, save_original=None):
-        # pass message as bytes because we don't know its encoding until we parse its headers
+        # pass message as bytes because we don't
+        # know its encoding until we parse its headers
         # and hence can't convert it to utf-8 for transport
         return self.rpc('mail.thread',
                         'message_process',
@@ -117,9 +124,12 @@ class EmailParser(object):
                         custom_values or {},
                         save_original or False)
 
+
 def configure_parser():
-    parser = optparse.OptionParser(usage='usage: %prog [options]', version='%prog v1.1')
-    group = optparse.OptionGroup(parser, "Note",
+    parser = optparse.OptionParser(
+        usage='usage: %prog [options]', version='%prog v1.1')
+    group = optparse.OptionGroup(
+        parser, "Note",
         "This program parse a mail from standard input and communicate "
         "with the Odoo server for case management in the CRM module.")
     parser.add_option_group(group)
@@ -144,15 +154,18 @@ def configure_parser():
     parser.add_option("--port", dest="port",
                       help="Odoo Server XML-RPC port number",
                       default=config.OPENERP_PORT)
-    parser.add_option("--custom-values", dest="custom_values",
-                      help="Dictionary of extra values to pass when creating records",
-                      default=None)
-    parser.add_option("-s", dest="save_original",
-                      action="store_true",
-                      help="Keep a full copy of the email source attached to each message",
-                      default=False)
+    parser.add_option(
+        "--custom-values", dest="custom_values",
+        help="Dictionary of extra values to pass when creating records",
+        default=None)
+    parser.add_option(
+        "-s", dest="save_original",
+        action="store_true",
+        help="Keep a full copy of the email source attached to each message",
+        default=False)
 
     return parser
+
 
 def main():
     """
@@ -167,17 +180,18 @@ def main():
                                options.host,
                                options.port,
                                model=options.model,
-                               email_default= options.default)
+                               email_default=options.default)
     msg_txt = sys.stdin.read()
     custom_values = {}
     try:
-        custom_values = dict(eval(options.custom_values or "{}" ))
+        custom_values = dict(eval(options.custom_values or "{}"))
     except:
         import traceback
         traceback.print_exc()
 
     try:
-        email_parser.parse(msg_txt, custom_values, options.save_original or False)
+        email_parser.parse(
+            msg_txt, custom_values, options.save_original or False)
     except Exception:
         msg = '\n'.join([
             'parameters',
@@ -188,13 +202,16 @@ def main():
             '%s' % (cgitb.text(sys.exc_info())),
         ])
 
-        subject = '[Odoo]:ERROR: Mailgateway - %s' % time.strftime('%Y-%m-%d %H:%M:%S')
+        subject = '[Odoo]:ERROR: Mailgateway - %s' % time.strftime(
+            '%Y-%m-%d %H:%M:%S')
         send_mail(
             config.MAIL_ERROR,
             config.MAIL_ADMINS,
             subject, msg, files=[('message.txt', msg_txt)]
         )
-        sys.stderr.write("Failed to deliver email to Odoo Server, sending error notification to %s\n" % config.MAIL_ADMINS)
+        sys.stderr.write(
+            "Failed to deliver email to Odoo Server, "
+            "sending error notification to %s\n" % config.MAIL_ADMINS)
 
 if __name__ == '__main__':
     main()

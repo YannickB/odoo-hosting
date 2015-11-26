@@ -43,7 +43,7 @@ class ClouderContainer(models.Model):
             application = self.env['clouder.application'].browse(
                 vals['application_id'])
             if application.type_id.name == 'openldap':
-                if not 'option_ids' in vals:
+                if 'option_ids' not in vals:
                     vals['options_ids'] = []
 
                 password_option = self.env.ref(
