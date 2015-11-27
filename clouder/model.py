@@ -638,7 +638,8 @@ class ClouderModel(models.AbstractModel):
                 if isinstance(item, (list, tuple)):
                     item = self.get_o2m_struct(item)
                 item.source = False
-                res[item.name] = item
+                name = getattr(item.name, 'id', False) and item.name.id or item.name
+                res[name] = item
         for source_item in source_ids:
             name = source_item.name
             if linked_to_source:

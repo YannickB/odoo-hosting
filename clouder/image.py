@@ -58,7 +58,7 @@ class ClouderImage(models.Model):
     ]
 
     @property
-    def has_versions(self):
+    def has_version(self):
         for version in self.version_ids:
             if not version.check_priority():
                 return True
@@ -156,7 +156,7 @@ class ClouderImageVersion(models.Model):
     name = fields.Char('Version', required=True)
     parent_id = fields.Many2one('clouder.image.version', 'Parent version')
     registry_id = fields.Many2one(
-        'clouder.container', 'Registry', required=True, ondelete="cascade")
+        'clouder.container', 'Registry', ondelete="cascade")
     container_ids = fields.One2many(
         'clouder.container', 'image_version_id', 'Containers')
     child_ids = fields.One2many(

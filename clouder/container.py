@@ -486,7 +486,7 @@ class ClouderContainer(models.Model):
                         continue
                     options.append((0, 0, {
                         'name': option.source.id,
-                        'value': option.value or option.source.get_default}))
+                        'value': getattr(option, 'value', False) or option.source.get_default}))
             vals['option_ids'] = options
 
             links = []
@@ -565,6 +565,12 @@ class ClouderContainer(models.Model):
             'child_ids': self.child_ids,
             }
         vals = self.onchange_application_id_vals(vals)
+        self.env['clouder.container.option'].search(
+            [('container_id', '=', self.id)]).unlink()
+        self.env['clouder.container.link'].search(
+            [('container_id', '=', self.id)]).unlink()
+        self.env['clouder.container.child'].search(
+            [('container_id', '=', self.id)]).unlink()
         for key, value in vals.iteritems():
             setattr(self, key, value)
 
@@ -573,6 +579,9 @@ class ClouderContainer(models.Model):
         """
         Update the ports and volumes when we change the image_id field.
         """
+
+        server = getattr(self, 'server_id', False) \
+                 or self.env['clouder.server'].browse(vals['server_id'])
 
         if 'image_id' in vals and vals['image_id']:
             image = self.env['clouder.image'].browse(vals['image_id'])
@@ -587,18 +596,38 @@ class ClouderContainer(models.Model):
                     vals['image_version_id'] = image.version_ids[0].id
 
             ports = []
+            nextport = server.start_port
             for key, port in self.sanitize_o2m(
                     'port', vals, image.port_ids, False).iteritems():
+                if not getattr(port, 'hostport', False):
+                    port.hostport = False
                 context = self.env.context
-                hostport = getattr(port, 'hostport', False)
                 if 'container_ports' in context:
                     name = port.name
-                    if not hostport and name in context['container_ports']:
-                        hostport = context['container_ports'][name]
+                    if not port.hostport and name in context['container_ports']:
+                        port.hostport = context['container_ports'][name]
+                if not port.hostport:
+                    while not port.hostport \
+                            and nextport != server.end_port:
+                        port_ids = self.env['clouder.container.port'].search(
+                            [('hostport', '=', nextport),
+                             ('container_id.server_id', '=', server.id)])
+                        if not port_ids and not server.execute([
+                                'netstat', '-an', '|', 'grep', str(nextport)]):
+                            port.hostport = nextport
+                        nextport += 1
+                if not port.hostport:
+                    raise except_orm(
+                        _('Data error!'),
+                        _("We were not able to assign an hostport to the "
+                          "localport " + port.localport + ".\n"
+                          "If you don't want to assign one manually, make sure you"
+                          " fill the port range in the server configuration, and "
+                          "that all ports in that range are not already used."))
                 if port.expose != 'none':
                     ports.append(((0, 0, {
                         'name': port.name, 'localport': port.localport,
-                        'hostport': hostport,
+                        'hostport': port.hostport,
                         'expose': port.expose, 'udp': port.udp})))
             vals['port_ids'] = ports
 
@@ -609,9 +638,9 @@ class ClouderContainer(models.Model):
                 if 'parent_id' in vals and vals['parent_id']:
                     parent = self.env['clouder.container.child'].browse(
                         vals['parent_id'])
-                    if volume.from_code in parent.container_id.childs:
-                        from_id = \
-                            parent.container_id.childs[volume.from_code].id
+                    if volume.source.from_code in parent.container_id.childs:
+                        from_id = parent.container_id.childs[
+                            volume.source.from_code].id
                 volumes.append(((0, 0, {
                     'name': volume.name, 'from_id': from_id,
                     'hostpath': volume.hostpath,
@@ -630,6 +659,10 @@ class ClouderContainer(models.Model):
             'parent_id': self.parent_id.id
             }
         vals = self.onchange_image_id_vals(vals)
+        self.env['clouder.container.port'].search(
+            [('container_id', '=', self.id)]).unlink()
+        self.env['clouder.container.volume'].search(
+            [('container_id', '=', self.id)]).unlink()
         for key, value in vals.iteritems():
             setattr(self, key, value)
 
@@ -804,6 +837,7 @@ class ClouderContainer(models.Model):
         """
         Deploy the container in the server.
         """
+        self = self.with_context(no_enqueue=True)
         super(ClouderContainer, self).deploy()
 
         if self.child_ids:
@@ -813,26 +847,7 @@ class ClouderContainer(models.Model):
 
         ports = []
         volumes = []
-        nextport = self.server_id.start_port
         for port in self.port_ids:
-            if not port.hostport:
-                while not port.hostport \
-                        and nextport != self.server_id.end_port:
-                    port_ids = self.env['clouder.container.port'].search(
-                        [('hostport', '=', nextport),
-                         ('container_id.server_id', '=', self.server_id.id)])
-                    if not port_ids and not self.server_id.execute([
-                            'netstat', '-an', '|', 'grep', str(nextport)]):
-                        port.hostport = nextport
-                    nextport += 1
-            if not port.hostport:
-                raise except_orm(
-                    _('Data error!'),
-                    _("We were not able to assign an hostport to the "
-                      "localport " + port.localport + ".\n"
-                      "If you don't want to assign one manually, make sure you"
-                      " fill the port range in the server configuration, and "
-                      "that all ports in that range are not already used."))
             ports.append(port)
         for volume in self.volume_ids:
             volumes.append(volume)
@@ -1128,7 +1143,7 @@ class ClouderContainerChild(models.Model):
             'name': self.container_id.name + '-' + self.name.code,
             'parent_id': self.id,
             'application_id': self.name.id,
-            'server_id': self.server_id.id
+            'server_id': self.server_id.id or self.container_id.server_id.id
         })
         if self.save_id:
             self.save_id.container_id = self.child_id

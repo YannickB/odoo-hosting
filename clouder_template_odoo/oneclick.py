@@ -40,11 +40,11 @@ class ClouderServer(models.Model):
         image_obj = self.env['clouder.image']
         image_version_obj = self.env['clouder.image.version']
 
-        image = image_obj.search([('name', '=', 'img_registry')])
-        image.build()
-
         container_obj = self.env['clouder.container']
         application_obj = self.env['clouder.application']
+
+        image = image_obj.search([('name', '=', 'img_registry')])
+        image.build()
 
         application = application_obj.search([('code', '=', 'registry')])
         registry = container_obj.create({
@@ -108,7 +108,7 @@ class ClouderServer(models.Model):
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name', '=', 'img_odoo_files8')])
+        image = image_obj.search([('name', '=', 'img_odoo_clouder_files8')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id

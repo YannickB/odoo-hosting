@@ -80,16 +80,16 @@ RUN ln -s /etc/nginx/sites-available/docker-registry /etc/nginx/sites-enabled/do
 
 
 
-RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "[program:docker-registry]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=docker-registry" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=/etc/init.d/nginx start" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "[program:docker-registry]" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "command=docker-registry" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
+#RUN echo "command=/etc/init.d/nginx start" >> /etc/supervisor/conf.d/supervisord.conf
 
-CMD ["/usr/bin/supervisord"]
+#CMD ["/usr/bin/supervisord"]
 
 EXPOSE 22 5000
 VOLUME /docker-registry

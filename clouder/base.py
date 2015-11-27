@@ -257,7 +257,7 @@ class ClouderBase(models.Model):
                         continue
                     options.append((0, 0, {
                         'name': option.source.id,
-                        'value': option.value or option.source.get_default}))
+                        'value': getattr(option, 'value', False) or option.source.get_default}))
             vals['option_ids'] = options
 
             links = []
@@ -293,7 +293,7 @@ class ClouderBase(models.Model):
             childs = []
             for key, child in self.sanitize_o2m(
                     'child', vals, application.child_ids, True).iteritems():
-                if child.required:
+                if child.source.required and child.source.base:
                     childs.append((0, 0, {
                         'name': child.source.id, 'sequence':  child.sequence}))
             vals['child_ids'] = childs
@@ -329,6 +329,12 @@ class ClouderBase(models.Model):
             'child_ids': self.child_ids,
             }
         vals = self.onchange_application_id_vals(vals)
+        self.env['clouder.container.option'].search(
+            [('container_id', '=', self.id)]).unlink()
+        self.env['clouder.container.link'].search(
+            [('container_id', '=', self.id)]).unlink()
+        self.env['clouder.container.child'].search(
+            [('container_id', '=', self.id)]).unlink()
         for key, value in vals.iteritems():
             setattr(self, key, value)
 

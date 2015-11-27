@@ -97,7 +97,6 @@ class ClouderBase(models.Model):
                 username=self.application_id.type_id.system_user)
 
             if self.build == 'build':
-
                 self.log("client = erppeek.Client('http://" +
                          self.container_id.server_id.ip + ":" +
                          self.odoo_port + "')")
