@@ -321,14 +321,14 @@
             </field>
         </record>
 
-        <record id="action_clouder_save_save_form" model="ir.actions.act_window">
+        <record id="action_clouder_save_form" model="ir.actions.act_window">
             <field name="name">Saves</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">clouder.save</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_clouder_save_save_form" id="menu_action_clouder_save_save_form" parent="menu_clouder_clouder"/>
+        <menuitem action="action_clouder_save_form" id="menu_action_clouder_save_form" parent="menu_clouder_clouder"/>
 
         <record id="view_clouder_save_form" model="ir.ui.view">
             <field name="name">clouder.save.form</field>
