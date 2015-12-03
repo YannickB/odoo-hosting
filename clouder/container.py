@@ -475,6 +475,15 @@ class ClouderContainer(models.Model):
                 vals['application_id'])
             if 'server_id' not in vals or not vals['server_id']:
                 vals['server_id'] = application.next_server_id.id
+            if not vals['server_id']:
+                servers = self.env['clouder.server'].search([])[0]
+                if servers:
+                    vals['server_id'] = servers[0].id
+                else:
+                    raise except_orm(
+                        _('Data error!'),
+                        _("You need to create a server before "
+                          "create any container."))
 
             options = []
             for key, option in self.sanitize_o2m(
@@ -556,7 +565,6 @@ class ClouderContainer(models.Model):
     @api.multi
     @api.onchange('application_id')
     def onchange_application_id(self):
-        # TODO replace with self.read
         vals = {
             'application_id': self.application_id.id,
             'server_id': self.server_id.id,
@@ -581,7 +589,10 @@ class ClouderContainer(models.Model):
         """
 
         server = getattr(self, 'server_id', False) \
-                 or self.env['clouder.server'].browse(vals['server_id'])
+            or 'server_id' in vals \
+            and self.env['clouder.server'].browse(vals['server_id'])
+        if not server:
+            return vals
 
         if 'image_id' in vals and vals['image_id']:
             image = self.env['clouder.image'].browse(vals['image_id'])
