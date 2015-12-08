@@ -260,13 +260,13 @@ class ClouderImageVersion(models.Model):
             'echo "' + dockerfile.replace('"', '\\"') +
             '" >> ' + tmp_dir + '/Dockerfile'])
         self.execute(ssh,
-                     ['sudo', 'docker', 'build', '-t', self.fullname, tmp_dir])
-        self.execute(ssh, ['sudo', 'docker', 'tag', self.fullname,
+                     ['docker', 'build', '-t', self.fullname, tmp_dir])
+        self.execute(ssh, ['docker', 'tag', self.fullname,
                            self.fullpath_localhost])
         self.execute(ssh,
-                     ['sudo', 'docker', 'push', self.fullpath_localhost])
-        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullname])
-        self.execute(ssh, ['sudo', 'docker', 'rmi', self.fullpath_localhost])
+                     ['docker', 'push', self.fullpath_localhost])
+        self.execute(ssh, ['docker', 'rmi', self.fullname])
+        self.execute(ssh, ['docker', 'rmi', self.fullpath_localhost])
         self.execute(ssh, ['rm', '-rf', tmp_dir])
         ssh.close()
         return
