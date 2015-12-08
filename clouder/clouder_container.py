@@ -630,7 +630,7 @@ class ClouderContainer(models.Model):
 
         ssh = self.connect(self.server_id.name)
 
-        cmd = ['sudo', 'docker', 'run', '-d', '--restart=always']
+        cmd = ['docker', 'run', '-d', '--restart=always']
         nextport = self.server_id.start_port
         for port in self.port_ids:
             if not port.hostport:
@@ -720,7 +720,7 @@ class ClouderContainer(models.Model):
 
         ssh = self.connect(self.server_id.name)
         self.stop()
-        self.execute(ssh, ['sudo', 'docker', 'rm', self.name])
+        self.execute(ssh, ['docker', 'rm', self.name])
         self.execute(ssh, ['rm', '-rf', '/opt/keys/' + self.fullname])
         ssh.close()
 
