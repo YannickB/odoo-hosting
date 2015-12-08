@@ -61,9 +61,9 @@ class ClouderContainer(models.Model):
             self.execute(ssh, [
                 'echo "' + self.image_id.dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
-            self.execute(ssh, ['sudo', 'docker', 'rmi',
+            self.execute(ssh, ['docker', 'rmi',
                                self.image_version_id.fullname])
-            self.execute(ssh, ['sudo', 'docker', 'build', '-t',
+            self.execute(ssh, ['docker', 'build', '-t',
                                self.image_version_id.fullname, tmp_dir])
             self.execute(ssh, ['rm', '-rf', tmp_dir])
 
