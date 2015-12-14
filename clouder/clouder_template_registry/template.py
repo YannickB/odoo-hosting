@@ -70,9 +70,9 @@ class ClouderContainer(models.Model):
             server.execute([
                 'echo "' + self.image_id.dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
-            server.execute(['sudo', 'docker', 'rmi',
+            server.execute(['docker', 'rmi',
                             self.image_version_id.fullname])
-            server.execute(['sudo', 'docker', 'build', '-t',
+            server.execute(['docker', 'build', '-t',
                             self.image_version_id.fullname, tmp_dir])
             server.execute(['rm', '-rf', tmp_dir])
 

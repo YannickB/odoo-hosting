@@ -62,14 +62,14 @@ class ClouderImageVersion(models.Model):
                 'echo "' + dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
             server.execute(
-                ['sudo', 'docker', 'build', '-t', self.fullname, tmp_dir])
-            server.execute(['sudo', 'docker', 'tag', self.fullname,
+                ['docker', 'build', '-t', self.fullname, tmp_dir])
+            server.execute(['docker', 'tag', self.fullname,
                             self.fullpath_localhost])
             server.execute(
-                ['sudo', 'docker', 'push', self.fullpath_localhost])
+                ['docker', 'push', self.fullpath_localhost])
             # TODO
-            # server.execute(['sudo', 'docker', 'rmi', self.fullname])
-            # server.execute(['sudo', 'docker', 'rmi', self.fullpath_localhost])
+            # server.execute(['docker', 'rmi', self.fullname])
+            # server.execute(['docker', 'rmi', self.fullpath_localhost])
             server.execute(['rm', '-rf', tmp_dir])
         return res
 
@@ -138,7 +138,7 @@ class ClouderContainer(models.Model):
                 self.server_id.runner_id.application_id.type_id.name \
                 == 'docker':
 
-            cmd = ['sudo', 'docker', 'run', '-d', '-t', '--restart=always']
+            cmd = ['docker', 'run', '-d', '-t', '--restart=always']
             for port in ports:
                 udp = ''
                 if port.udp:
@@ -182,7 +182,7 @@ class ClouderContainer(models.Model):
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
-            self.server_id.execute(['sudo', 'docker', 'rm', self.name])
+            self.server_id.execute(['docker', 'rm', self.name])
 
         return res
 
