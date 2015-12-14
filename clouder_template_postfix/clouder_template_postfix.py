@@ -73,7 +73,7 @@ class ClouderContainer(models.Model):
                 'echo "mynetworks = 127.0.0.0/8 172.17.0.0/16" '
                 '>> /etc/postfix/main.cf'])
             self.execute(ssh, [
-                'echo "'self.options['smtp_relayhost']['value'] + ' ' +
+                'echo ' + self.options['smtp_relayhost']['value'] + ' ' +
                 self.options['smtp_username']['value'] + ':' +
                 self.options['smtp_key']['value'] +
                 '" > /etc/postfix/sasl_passwd'])
