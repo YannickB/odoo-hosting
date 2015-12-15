@@ -35,6 +35,7 @@ import errno
 import random
 import re
 import time
+import select
 
 from os.path import expanduser
 
@@ -459,15 +460,64 @@ class ClouderModel(models.AbstractModel):
         self.log('host : ' + server.name)
         self.log('command : ' + ' '.join(cmd))
         cmd = [c.replace('$$$', '') for c in cmd]
-        stdin, stdout, stderr = ssh.exec_command(' '.join(cmd))
+
+        transport = ssh.get_transport()
+        channel = transport.open_session()
+        channel.exec_command(' '.join(cmd))
+
+        # Pushing additional input
         if stdin_arg:
-            for arg in stdin_arg:
+            chnl_stdin = channel.makefile('wb', -1)
+            for arg in chnl_stdin:
                 self.log('command : ' + arg)
-                stdin.write(arg)
-                stdin.flush()
-        stdout_read = stdout.read()
-        self.log('stdout : ' + stdout_read)
-        self.log('stderr : ' + stderr.read())
+                chnl_stdin.write(arg)
+                chnl_stdin.flush()
+
+        # Reading outputs
+        stdout_read = ''
+        chnl_out = ''
+        chnl_err = ''
+        chnl_buffer_size = 1024
+        # As long as the command is running
+        while not channel.exit_status_ready():
+            rl, _, _ = select.select([channel], [], [], 0.0)
+            if len(rl) > 0:
+                # Polling and printing stdout
+                if channel.recv_ready():
+                    chnl_out += channel.recv(chnl_buffer_size)
+                    stdout_read += chnl_out
+                    chnl_pending_out = chnl_out.split('\n')
+                    chnl_out = chnl_pending_out[-1]
+                    for output_to_print in chnl_pending_out[:-1]:
+                        self.log('stdout : {0}'.format(output_to_print))
+                # Polling and printing stderr
+                if channel.recv_stderr_ready():
+                    chnl_err += channel.recv_stderr(chnl_buffer_size)
+                    chnl_pending_err = chnl_err.split('\n')
+                    chnl_err = chnl_pending_err[-1]
+                    for err_to_print in chnl_pending_err[:-1]:
+                        self.log('stderr : {0}'.format(err_to_print))
+
+        # Polling last outputs if any:
+        rl, _, _ = select.select([channel], [], [], 0.0)
+        if len(rl) > 0:
+            # Polling and printing stdout
+            if channel.recv_ready():
+                chnl_out += channel.recv(chnl_buffer_size)
+                stdout_read += chnl_out
+                chnl_pending_out = chnl_out.split('\n')
+                for output_to_print in chnl_pending_out:
+                    # The last one MAY be empty
+                    if output_to_print:
+                        self.log('stdout : {0}'.format(output_to_print))
+            # Polling and printing stderr
+            if channel.recv_stderr_ready():
+                chnl_err += channel.recv_stderr(chnl_buffer_size)
+                chnl_pending_err = chnl_err.split('\n')
+                for err_to_print in chnl_pending_err:
+                    # The last one MAY be empty
+                    if err_to_print:
+                        self.log('stderr : {0}'.format(err_to_print))
         return stdout_read
 
     @api.multi
@@ -566,10 +616,10 @@ class ClouderModel(models.AbstractModel):
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, shell=shell)
         out = ''
-        for line in proc.stdout:
+        for line in iter(proc.stdout.readline, b''):
             out += line
-            line = 'stdout : ' + line
-            self.log(line)
+            self.log("stdout : {0}".format(line))
+
         os.chdir(cwd)
         return out
 
