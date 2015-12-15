@@ -7,20 +7,26 @@
             <field name="name">postfix</field>
             <field name="system_user">postfix</field>
         </record>
-        <record id="apptype_postfix_option_mailchimp_username" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_postfix"/>
-            <field name="name">mailchimp_username</field>
-            <field name="type">container</field>
-            <field name="auto" eval="True"/>
-        </record>
-        <record id="apptype_postfix_option_mailchimp_apikey" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_postfix"/>
-            <field name="name">mailchimp_apikey</field>
-            <field name="type">container</field>
-            <field name="auto" eval="True"/>
-        </record>
+         <record id="apptype_postfix_smtp_relayhost" model="clouder.application.type.option">
+             <field name="apptype_id" ref="apptype_postfix"/>
+             <field name="name">smtp_relayhost</field>
+             <field name="type">container</field>
+             <field name="auto" eval="True"/>
+         </record>
+         <record id="apptype_postfix_smtp_username" model="clouder.application.type.option">
+             <field name="apptype_id" ref="apptype_postfix"/>
+             <field name="name">smtp_username</field>
+             <field name="type">container</field>
+             <field name="auto" eval="True"/>
+         </record>
+         <record id="apptype_postfix_smtp_key" model="clouder.application.type.option">
+             <field name="apptype_id" ref="apptype_postfix"/>
+             <field name="name">smtp_key</field>
+             <field name="type">container</field>
+             <field name="auto" eval="True"/>
+         </record>
 
-
+        
         <record id="image_postfix" model="clouder.image">
             <field name="name">img_postfix</field>
             <field name="current_version">1</field>
