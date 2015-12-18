@@ -7,6 +7,13 @@
             <field name="name">bind</field>
             <field name="system_user">bind</field>
         </record>
+        
+        <record id="apptype_bind_option1" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_bind"/>
+            <field name="name">Slave_IP</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+        </record>
 
         <record id="image_bind" model="clouder.image">
             <field name="name">img_bind</field>
