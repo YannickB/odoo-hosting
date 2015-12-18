@@ -58,7 +58,7 @@ class ClouderDomain(models.Model):
             self.execute(ssh, [
                 "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
             self.execute(ssh, ['echo "type master;" >> /etc/bind/named.conf'])
-            self.execute(ssh, ['echo "allow-transfer {213.186.33.199;};" '
+            self.execute(ssh, ['echo "allow-transfer { '+ self.options['Slave_IP']['value'] +';};" '
                                '>> /etc/bind/named.conf'])
             self.execute(ssh, ["echo 'file \"/etc/bind/db." +
                                self.name + "\";' >> /etc/bind/named.conf"])
