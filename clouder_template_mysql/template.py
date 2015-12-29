@@ -32,6 +32,13 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
+    @api.multi
+    def hook_deploy_source(self):
+        res = super(ClouderContainer, self).hook_deploy_source()
+        if self.application_id.type_id.name == 'mysql':
+            res = " -e MYSQL_ROOT_PASSWORD={0} ".format(self.options['root_password']['value']) + res
+        return res
+
     @property
     def db_user(self):
         """
