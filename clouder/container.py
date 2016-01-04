@@ -503,7 +503,7 @@ class ClouderContainer(models.Model):
                     'link', vals, application.link_ids, True).iteritems():
                 if link.source.container and \
                         link.source.auto or link.source.make_link:
-                    next_id = link.next
+                    next_id = getattr(link, 'next', False)
                     if not next_id and \
                             'parent_id' in vals and vals['parent_id']:
                         parent = self.env['clouder.container.child'].browse(

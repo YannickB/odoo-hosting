@@ -695,7 +695,7 @@ class ClouderModel(models.AbstractModel):
             if linked_to_source:
                 name = source_item.id
 
-            if source_item.name not in res:
+            if name not in res:
                 source_item.source = source_item
                 res[name] = source_item
             else:
