@@ -60,7 +60,8 @@ class ClouderDomain(models.Model):
                 "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
             self.dns_id.execute(['echo "type master;" >> /etc/bind/named.conf'])
             self.dns_id.execute([
-                'echo "allow-transfer {213.186.33.199;};" '
+                'echo "allow-transfer { '+
+                self.options['slave_ip']['value'] + ';};" '
                 '>> /etc/bind/named.conf'])
             self.dns_id.execute([
                 "echo 'file \"/etc/bind/db." +
