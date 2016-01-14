@@ -248,16 +248,32 @@ class ClouderBase(models.Model):
                     or self.email_sysadmin
 
             options = []
-            for key, option in self.sanitize_o2m(
-                    'option', vals, application.type_id.option_ids, True
-            ).iteritems():
-                if option.source.type == 'base' and option.source.auto:
-                    if option.source.app_code and \
-                            option.source.app_code != application.code:
-                        continue
-                    options.append((0, 0, {
-                        'name': option.source.id,
-                        'value': getattr(option, 'value', False) or option.source.get_default}))
+            # Getting sources for new options
+            option_sources = {x.id: x for x in application.type_id.option_ids}
+            sources_to_add = option_sources.keys()
+            # Checking old options
+            if 'option_ids' in vals:
+                for option in vals['option_ids']:
+                    # Keeping the option if there is a match with the sources
+                    if getattr(option, 'name') and option.name.id in option_sources:
+                        option.source = option_sources[option.name.id]
+
+                        # Updating the default value if there is no current one set
+                        options.append((0, 0, {
+                            'name': option.source.id,
+                            'value': getattr(option, 'value', False) or option.source.get_default}))
+
+                        # Removing the source id from those to add later
+                        sources_to_add.remove(option.name.id)
+
+            # Adding missing option from sources
+            for def_opt_key in sources_to_add:
+                options.append((0, 0, {
+                        'name': option_sources[def_opt_key].id,
+                        'value': option_sources[def_opt_key].get_default
+                }))
+
+            # Replacing old options
             vals['option_ids'] = options
 
             links = []

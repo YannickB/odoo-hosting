@@ -486,21 +486,58 @@ class ClouderContainer(models.Model):
                           "create any container."))
 
             options = []
-            for key, option in self.sanitize_o2m(
-                    'option', vals, application.type_id.option_ids, True
-            ).iteritems():
-                if option.source.type == 'container' and option.source.auto:
-                    if option.source.app_code and \
-                            option.source.app_code != application.code:
-                        continue
-                    options.append((0, 0, {
-                        'name': option.source.id,
-                        'value': getattr(option, 'value', False) or option.source.get_default}))
+            # Getting sources for new options
+            option_sources = {x.id: x for x in application.type_id.option_ids}
+            sources_to_add = option_sources.keys()
+            # Checking old options
+            if 'option_ids' in vals:
+                for option in vals['option_ids']:
+                    # Keeping the option if there is a match with the sources
+                    if getattr(option, 'name') and option.name.id in option_sources:
+                        option.source = option_sources[option.name.id]
+
+                        # Updating the default value if there is no current one set
+                        options.append((0, 0, {
+                            'name': option.source.id,
+                            'value': getattr(option, 'value', False) or option.source.get_default
+                        }))
+
+                        # Removing the source id from those to add later
+                        sources_to_add.remove(option.name.id)
+
+            # Adding remaining options from sources
+            for def_opt_key in sources_to_add:
+                options.append((0, 0, {
+                        'name': option_sources[def_opt_key].id,
+                        'value': option_sources[def_opt_key].get_default
+                }))
+
+            # Replacing old options
             vals['option_ids'] = options
 
+            # Getting sources for new links
+            link_sources = {x.id: x for x in application.link_ids}
+            sources_to_add = link_sources.keys()
+            links_to_process = []
+            # Checking old links
+            if 'link_ids' in vals:
+                for link in vals['link_ids']:
+                    # Keeping the link if there is a match with the sources
+                    if getattr(link, 'name') and link.name.id in link_sources:
+                        link.source = link_sources[link.name.id]
+                        links_to_process.append(link)
+
+                        # Remove used link from sources
+                        sources_to_add.remove(link.name.id)
+
+            # Adding links from source
+            for def_key_link in sources_to_add:
+                link_sources[def_key_link].source = link_sources[def_key_link]
+                links_to_process.append(link_sources[def_key_link])
+
+            # Running algorithm to determine new links
             links = []
-            for key, link in self.sanitize_o2m(
-                    'link', vals, application.link_ids, True).iteritems():
+            for link in links_to_process:
                 if link.source.container and \
                         link.source.auto or link.source.make_link:
                     next_id = getattr(link, 'next', False)
@@ -527,18 +564,46 @@ class ClouderContainer(models.Model):
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link.source.id,
                                          'target': next_id}))
+            # Replacing old links
             vals['link_ids'] = links
 
             childs = []
-            for key, child in self.sanitize_o2m(
-                    'child', vals, application.child_ids, True).iteritems():
+            # Getting source for childs
+            child_sources = {x.id: x for x in application.child_ids}
+            sources_to_add = child_sources.keys()
+
+            # Checking for old childs
+            if 'child_ids' in vals:
+                for child in vals['child_ids']:
+                    if getattr(child, 'name') and child.name.id in child_sources:
+                        child.source = child_sources[child.name.id]
+                        if child.required:
+                            childs.append((0, 0, {
+                                'name': child.source.id,
+                                'sequence':  child.sequence,
+                                'server_id':
+                                    getattr(child, 'server_id', False) and
+                                    child.server_id.id or
+                                    child.source.next_server_id.id
+                            }))
+
+                        # Removing from sources
+                        sources_to_add.remove(child.name.id)
+
+            # Adding remaining childs from source
+            for def_child_key in sources_to_add:
+                child = child_sources[def_child_key]
                 if child.required:
                     childs.append((0, 0, {
-                        'name': child.source.id, 'sequence':  child.sequence,
+                        'name': child.id,
+                        'sequence': child.sequence,
                         'server_id':
-                            getattr(child, 'server_id', False)
-                            and child.server_id.id
-                            or child.source.next_server_id.id}))
+                            getattr(child, 'server_id', False) and
+                            child.server_id.id or
+                            child.next_server_id.id
+                    }))
+
+            # Replacing old childs
             vals['child_ids'] = childs
 
             if 'image_id' not in vals or not vals['image_id']:
@@ -608,8 +673,27 @@ class ClouderContainer(models.Model):
 
             ports = []
             nextport = server.start_port
-            for key, port in self.sanitize_o2m(
-                    'port', vals, image.port_ids, False).iteritems():
+            # Getting sources for new port
+            port_sources = {x.name: x for x in image.port_ids}
+            sources_to_add = port_sources.keys()
+            ports_to_process = []
+            # Checking old ports
+            if 'port_ids' in vals:
+                for port in vals['port_ids']:
+                    # Keeping the port if there is a match with the sources
+                    if port.name in port_sources:
+                        port.source = port_sources[port.name]
+                        ports_to_process.append(port)
+
+                        # Remove used port from sources
+                        sources_to_add.remove(port.name)
+
+            # Adding ports from source
+            for def_key_port in sources_to_add:
+                port_sources[def_key_port].source = port_sources[def_key_port]
+                ports_to_process.append(port_sources[def_key_port])
+
+            for port in ports_to_process:
                 if not getattr(port, 'hostport', False):
                     port.hostport = False
                 context = self.env.context
@@ -643,8 +727,27 @@ class ClouderContainer(models.Model):
             vals['port_ids'] = ports
 
             volumes = []
-            for key, volume in self.sanitize_o2m(
-                    'volume', vals, image.volume_ids, False).iteritems():
+            # Getting sources for new volume
+            volume_sources = {x.name: x for x in image.volume_ids}
+            sources_to_add = volume_sources.keys()
+            volumes_to_process = []
+            # Checking old volumes
+            if 'volume_ids' in vals:
+                for volume in vals['volume_ids']:
+                    # Keeping the volume if there is a match with the sources
+                    if volume.name in volume_sources:
+                        volume.source = volume_sources[volume.name]
+                        volumes_to_process.append(volume)
+
+                        # Remove used volume from sources
+                        sources_to_add.remove(volume.name)
+
+            # Adding remaining volumes from source
+            for def_key_volume in sources_to_add:
+                volume_sources[def_key_volume].source = volume_sources[def_key_volume]
+                volumes_to_process.append(volume_sources[def_key_volume])
+
+            for volume in volumes_to_process:
                 from_id = False
                 if 'parent_id' in vals and vals['parent_id']:
                     parent = self.env['clouder.container.child'].browse(
