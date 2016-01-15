@@ -254,17 +254,31 @@ class ClouderBase(models.Model):
             # Checking old options
             if 'option_ids' in vals:
                 for option in vals['option_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(option, tuple):
+                        option = {
+                            'name': option[2].get('name', False),
+                            'value': option[2].get('value', False)
+                        }
+                        # This case means we do not have an odoo recordset and need to load the link manually
+                        if isinstance(option['name'], int):
+                            option['name'] = self.env['clouder.application.type.option'].browse(option['name'])
+                    else:
+                        option = {
+                            'name': getattr(option, 'name', False),
+                            'value': getattr(option, 'value', False)
+                        }
                     # Keeping the option if there is a match with the sources
-                    if getattr(option, 'name') and option.name.id in option_sources:
-                        option.source = option_sources[option.name.id]
+                    if option['name'] and option['name'].id in option_sources:
+                        option['source'] = option_sources[option['name'].id]
 
                         # Updating the default value if there is no current one set
                         options.append((0, 0, {
-                            'name': option.source.id,
-                            'value': getattr(option, 'value', False) or option.source.get_default}))
+                            'name': option['source'].id,
+                            'value': option['value'] or option['source'].get_default}))
 
                         # Removing the source id from those to add later
-                        sources_to_add.remove(option.name.id)
+                        sources_to_add.remove(option['name'].id)
 
             # Adding missing option from sources
             for def_opt_key in sources_to_add:
@@ -276,42 +290,120 @@ class ClouderBase(models.Model):
             # Replacing old options
             vals['option_ids'] = options
 
+            link_sources = {x.id: x for x in application.link_ids}
+            sources_to_add = link_sources.keys()
+            links_to_process = []
+            # Checking old links
+            if 'link_ids' in vals:
+                for link in vals['link_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(link, tuple):
+                        link = {
+                            'name': link[2].get('name', False),
+                            'next': link[2].get('next', False)
+                        }
+                        # This case means we do not have an odoo recordset and need to load the link manually
+                        if isinstance(link['name'], int):
+                            link['name'] = self.env['clouder.application.link'].browse(link['name'])
+                    else:
+                        link = {
+                            'name': getattr(link, 'name', False),
+                            'next': getattr(link, 'next', False)
+                        }
+                    # Keeping the link if there is a match with the sources
+                    if link['name'] and link['name'].id in link_sources:
+                        link['source'] = link_sources[link['name'].id]
+                        links_to_process.append(link)
+
+                        # Remove used link from sources
+                        sources_to_add.remove(link['name'].id)
+
+            # Adding links from source
+            for def_key_link in sources_to_add:
+                link = {
+                    'name': getattr(link_sources[def_key_link], 'name', False),
+                    'next': getattr(link_sources[def_key_link], 'next', False),
+                    'source': link_sources[def_key_link]
+                }
+                links_to_process.append(link)
+
+            # Running algorithm to determine new links
             links = []
-            for key, link in self.sanitize_o2m(
-                    'link', vals, application.link_ids, True).iteritems():
-                if link.source.base and link.source.auto:
-                    next_id = link.next
+            for link in links_to_process:
+                if link['source'].base and link['source'].auto:
+                    next_id = link['next']
                     if not next_id and \
                             'parent_id' in vals and vals['parent_id']:
                         parent = self.env['clouder.base.child'].browse(
                             vals['parent_id'])
                         for parent_link in parent.base_id.link_ids:
-                            if link.name.code == parent_link.name.name.code \
+                            if link['name'].code == parent_link.name.name.code \
                                     and parent_link.target:
                                 next_id = parent_link.target.id
                     context = self.env.context
                     if not next_id and 'base_links' in context:
-                        fullcode = link.source.name.fullcode
+                        fullcode = link['source'].name.fullcode
                         if fullcode in context['base_links']:
                             next_id = context['base_links'][fullcode]
                     if not next_id:
-                        next_id = link.source.next.id
+                        next_id = link['source'].next.id
                     if not next_id:
                         target_ids = self.env['clouder.container'].search([
-                            ('application_id.code', '=', link.source.name.code),
+                            ('application_id.code', '=', link['source'].name.code),
                             ('parent_id', '=', False)])
                         if target_ids:
                             next_id = target_ids[0].id
-                    links.append((0, 0, {'name': link.source.id,
+                    links.append((0, 0, {'name': link['source'].id,
                                          'target': next_id}))
+            # Replacing old links
             vals['link_ids'] = links
 
             childs = []
-            for key, child in self.sanitize_o2m(
-                    'child', vals, application.child_ids, True).iteritems():
-                if child.source.required and child.source.base:
+            # Getting source for childs
+            child_sources = {x.id: x for x in application.child_ids}
+            sources_to_add = child_sources.keys()
+            childs_to_process = []
+
+            # Checking for old childs
+            if 'child_ids' in vals:
+                for child in vals['child_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(child, tuple):
+                        child = {
+                            'name': child[2].get('name', False),
+                            'sequence': child[2].get('sequence', False)
+                        }
+                        # This case means we do not have an odoo recordset and need to load the link manually
+                        if isinstance(child['name'], int):
+                            child['name'] = self.env['clouder.application'].browse(child['name'])
+                    else:
+                        child = {
+                            'name': getattr(child, 'name', False),
+                            'sequence': getattr(child, 'sequence', False)
+                        }
+                    if child['name'] and child['name'].id in child_sources:
+                        child['source'] = child_sources[child['name'].id]
+                        childs_to_process.append(child)
+
+                        # Removing from sources
+                        sources_to_add.remove(child['name'].id)
+
+            # Adding remaining childs from source
+            for def_child_key in sources_to_add:
+                child = {
+                    'name': getattr(child_sources[def_child_key], 'name', False),
+                    'sequence': getattr(child_sources[def_child_key], 'sequence', False),
+                    'source': child_sources[def_child_key]
+                }
+                childs_to_process.append(child)
+
+            # Processing new childs
+            for child in childs_to_process:
+                if child['source'].required and child['source'].base:
                     childs.append((0, 0, {
-                        'name': child.source.id, 'sequence':  child.sequence}))
+                        'name': child['source'].id, 'sequence':  child['sequence']}))
+
+            # Replacing old childs
             vals['child_ids'] = childs
 
             if 'backup_ids' not in vals or not vals['backup_ids']:

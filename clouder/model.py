@@ -74,12 +74,6 @@ def connector_enqueue(
     job.search([('state', '=', 'failed')]).write({'state': 'pending'})
     return res
 
-
-class Struct:
-    def __init__(self, **entries):
-        self.__dict__.update(entries)
-
-
 class QueueJob(models.Model):
 
     _inherit = 'queue.job'
@@ -672,35 +666,6 @@ class ClouderModel(models.AbstractModel):
         f = open(localfile, 'a')
         f.write(value)
         f.close()
-
-    @api.multi
-    def get_o2m_struct(self, l):
-        d = l[2]
-        return Struct(**d)
-
-    @api.multi
-    def sanitize_o2m(self, key, vals, source_ids, linked_to_source):
-        if not key + '_ids' in vals:
-            vals[key + '_ids'] = []
-        res = {}
-        if key + '_ids' in vals:
-            for item in vals[key + '_ids']:
-                if isinstance(item, (list, tuple)):
-                    item = self.get_o2m_struct(item)
-                item.source = False
-                name = getattr(item.name, 'id', False) and item.name.id or item.name
-                res[name] = item
-        for source_item in source_ids:
-            name = source_item.name
-            if linked_to_source:
-                name = source_item.id
-
-            if name not in res:
-                source_item.source = source_item
-                res[name] = source_item
-            else:
-                res[name].source = source_item
-        return res
 
 
 def generate_random_password(size):
