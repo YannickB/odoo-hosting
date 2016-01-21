@@ -61,7 +61,7 @@ class ClouderDomain(models.Model):
             self.dns_id.execute(['echo "type master;" >> /etc/bind/named.conf'])
 
             # Configure this only if the option is set
-            if self.dns_id.options['slave_ip']:
+            if self.dns_id.options['slave_ip']['value']:
                 self.dns_id.execute([
                     'echo "allow-transfer { '+
                     self.dns_id.options['slave_ip']['value'] + ';};" '
