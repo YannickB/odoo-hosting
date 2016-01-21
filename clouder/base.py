@@ -272,20 +272,27 @@ class ClouderBase(models.Model):
                     if option['name'] and option['name'].id in option_sources:
                         option['source'] = option_sources[option['name'].id]
 
-                        # Updating the default value if there is no current one set
-                        options.append((0, 0, {
-                            'name': option['source'].id,
-                            'value': option['value'] or option['source'].get_default}))
+                        if option['source'].type == 'base' and option['source'].auto and \
+                                not (option['source'].app_code and option['source'].app_code != application.code):
+                            # Updating the default value if there is no current one set
+                            options.append((0, 0, {
+                                'name': option['source'].id,
+                                'value': option['value'] or option['source'].get_default}))
 
-                        # Removing the source id from those to add later
-                        sources_to_add.remove(option['name'].id)
+                            # Removing the source id from those to add later
+                            sources_to_add.remove(option['name'].id)
 
             # Adding missing option from sources
             for def_opt_key in sources_to_add:
-                options.append((0, 0, {
-                        'name': option_sources[def_opt_key].id,
-                        'value': option_sources[def_opt_key].get_default
-                }))
+                if option_sources[def_opt_key].type == 'base' and option_sources[def_opt_key].auto and \
+                        not (
+                                    option_sources[def_opt_key].app_code and
+                                    option_sources[def_opt_key].app_code != application.code
+                        ):
+                    options.append((0, 0, {
+                            'name': option_sources[def_opt_key].id,
+                            'value': option_sources[def_opt_key].get_default
+                    }))
 
             # Replacing old options
             vals['option_ids'] = options

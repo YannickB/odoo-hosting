@@ -510,21 +510,28 @@ class ClouderContainer(models.Model):
                     if option['name'] and option['name'].id in option_sources:
                         option['source'] = option_sources[option['name'].id]
 
-                        # Updating the default value if there is no current one set
-                        options.append((0, 0, {
-                            'name': option['source'].id,
-                            'value': option['value'] or option['source'].get_default
-                        }))
+                        if option['source'].type == 'container' and option['source'].auto and \
+                                not (option['source'].app_code and option['source'].app_code != application.code):
+                            # Updating the default value if there is no current one set
+                            options.append((0, 0, {
+                                'name': option['source'].id,
+                                'value': option['value'] or option['source'].get_default
+                            }))
 
-                        # Removing the source id from those to add later
-                        sources_to_add.remove(option['name'].id)
+                            # Removing the source id from those to add later
+                            sources_to_add.remove(option['name'].id)
 
             # Adding remaining options from sources
             for def_opt_key in sources_to_add:
-                options.append((0, 0, {
-                        'name': option_sources[def_opt_key].id,
-                        'value': option_sources[def_opt_key].get_default
-                }))
+                if option_sources[def_opt_key].type == 'container' and option_sources[def_opt_key].auto and \
+                        not (
+                                    option_sources[def_opt_key].app_code and
+                                    option_sources[def_opt_key].app_code != application.code
+                        ):
+                    options.append((0, 0, {
+                            'name': option_sources[def_opt_key].id,
+                            'value': option_sources[def_opt_key].get_default
+                    }))
 
             # Replacing old options
             vals['option_ids'] = options
@@ -571,7 +578,7 @@ class ClouderContainer(models.Model):
             links = []
             for link in links_to_process:
                 if link['source'].container and \
-                        link.source.auto or link['source'].make_link:
+                        link['source'].auto or link['source'].make_link:
                     next_id = link['next']
                     if not next_id and \
                             'parent_id' in vals and vals['parent_id']:
@@ -811,7 +818,7 @@ class ClouderContainer(models.Model):
             if 'volume_ids' in vals:
                 for volume in vals['volume_ids']:
                     # Standardizing for possible odoo x2m input
-                    if isinstance(child, tuple):
+                    if isinstance(volume, tuple):
                         volume = {
                             'name': volume[2].get('name', False),
                             'hostpath': volume[2].get('hostpath', False),
@@ -842,7 +849,8 @@ class ClouderContainer(models.Model):
                     'hostpath': getattr(volume_sources[def_key_volume], 'hostpath', False),
                     'user': getattr(volume_sources[def_key_volume], 'user', False),
                     'readonly': getattr(volume_sources[def_key_volume], 'readonly', False),
-                    'nosave': getattr(volume_sources[def_key_volume], 'nosave', False)
+                    'nosave': getattr(volume_sources[def_key_volume], 'nosave', False),
+                    'source': volume_sources[def_key_volume]
                 }
                 volumes_to_process.append(volume)
 
