@@ -486,59 +486,183 @@ class ClouderContainer(models.Model):
                           "create any container."))
 
             options = []
-            for key, option in self.sanitize_o2m(
-                    'option', vals, application.type_id.option_ids, True
-            ).iteritems():
-                if option.source.type == 'container' and option.source.auto:
-                    if option.source.app_code and \
-                            option.source.app_code != application.code:
-                        continue
+            # Getting sources for new options
+            option_sources = {x.id: x for x in application.type_id.option_ids}
+            sources_to_add = option_sources.keys()
+            # Checking old options
+            if 'option_ids' in vals:
+                for option in vals['option_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(option, tuple):
+                        option = {
+                            'name': option[2].get('name', False),
+                            'value': option[2].get('value', False)
+                        }
+                        # This case means we do not have an odoo recordset and need to load the link manually
+                        if isinstance(option['name'], int):
+                            option['name'] = self.env['clouder.application.type.option'].browse(option['name'])
+                    else:
+                        option = {
+                            'name': getattr(option, 'name', False),
+                            'value': getattr(option, 'value', False)
+                        }
+                    # Keeping the option if there is a match with the sources
+                    if option['name'] and option['name'].id in option_sources:
+                        option['source'] = option_sources[option['name'].id]
+
+                        if option['source'].type == 'container' and option['source'].auto and \
+                                not (option['source'].app_code and option['source'].app_code != application.code):
+                            # Updating the default value if there is no current one set
+                            options.append((0, 0, {
+                                'name': option['source'].id,
+                                'value': option['value'] or option['source'].get_default
+                            }))
+
+                            # Removing the source id from those to add later
+                            sources_to_add.remove(option['name'].id)
+
+            # Adding remaining options from sources
+            for def_opt_key in sources_to_add:
+                if option_sources[def_opt_key].type == 'container' and option_sources[def_opt_key].auto and \
+                        not (
+                                    option_sources[def_opt_key].app_code and
+                                    option_sources[def_opt_key].app_code != application.code
+                        ):
                     options.append((0, 0, {
-                        'name': option.source.id,
-                        'value': getattr(option, 'value', False) or option.source.get_default}))
+                            'name': option_sources[def_opt_key].id,
+                            'value': option_sources[def_opt_key].get_default
+                    }))
+
+            # Replacing old options
             vals['option_ids'] = options
 
+            # Getting sources for new links
+            link_sources = {x.id: x for x in application.link_ids}
+            sources_to_add = link_sources.keys()
+            links_to_process = []
+            # Checking old links
+            if 'link_ids' in vals:
+                for link in vals['link_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(link, tuple):
+                        link = {
+                            'name': link[2].get('name', False),
+                            'next': link[2].get('next', False)
+                        }
+                        # This case means we do not have an odoo recordset and need to load the link manually
+                        if isinstance(link['name'], int):
+                            link['name'] = self.env['clouder.application.link'].browse(link['name'])
+                    else:
+                        link = {
+                            'name': getattr(link, 'name', False),
+                            'next': getattr(link, 'next', False)
+                        }
+                    # Keeping the link if there is a match with the sources
+                    if link['name'] and link['name'].id in link_sources:
+                        link['source'] = link_sources[link['name'].id]
+                        links_to_process.append(link)
+
+                        # Remove used link from sources
+                        sources_to_add.remove(link['name'].id)
+
+            # Adding links from source
+            for def_key_link in sources_to_add:
+                link = {
+                    'name': getattr(link_sources[def_key_link], 'name', False),
+                    'next': getattr(link_sources[def_key_link], 'next', False),
+                    'source': link_sources[def_key_link]
+                }
+                links_to_process.append(link)
+
+            # Running algorithm to determine new links
             links = []
-            for key, link in self.sanitize_o2m(
-                    'link', vals, application.link_ids, True).iteritems():
-                if link.source.container and \
-                        link.source.auto or link.source.make_link:
-                    next_id = link.next
+            for link in links_to_process:
+                if link['source'].container and \
+                        link['source'].auto or link['source'].make_link:
+                    next_id = link['next']
                     if not next_id and \
                             'parent_id' in vals and vals['parent_id']:
                         parent = self.env['clouder.container.child'].browse(
                             vals['parent_id'])
                         for parent_link in parent.container_id.link_ids:
-                            if link.name.code == parent_link.name.name.code \
+                            if link['name'].code == parent_link.name.name.code \
                                     and parent_link.target:
                                 next_id = parent_link.target.id
                     context = self.env.context
                     if not next_id and 'container_links' in context:
-                        fullcode = link.source.name.fullcode
+                        fullcode = link['source'].name.fullcode
                         if fullcode in context['container_links']:
                             next_id = context['container_links'][fullcode]
                     if not next_id:
-                        next_id = link.source.next.id
+                        next_id = link['source'].next.id
                     if not next_id:
                         target_ids = self.search([
-                            ('application_id.code', '=', link.source.name.code),
+                            ('application_id.code', '=', link['source'].name.code),
                             ('parent_id', '=', False)])
                         if target_ids:
                             next_id = target_ids[0].id
-                    links.append((0, 0, {'name': link.source.id,
+                    links.append((0, 0, {'name': link['source'].id,
                                          'target': next_id}))
+            # Replacing old links
             vals['link_ids'] = links
 
             childs = []
-            for key, child in self.sanitize_o2m(
-                    'child', vals, application.child_ids, True).iteritems():
+            # Getting source for childs
+            child_sources = {x.id: x for x in application.child_ids}
+            sources_to_add = child_sources.keys()
+
+            # Checking for old childs
+            if 'child_ids' in vals:
+                for child in vals['child_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(child, tuple):
+                        child = {
+                            'name': child[2].get('name', False),
+                            'sequence': child[2].get('sequence', False),
+                            'required': child[2].get('required', False),
+                            'server_id': child[2].get('server_id', False)
+                        }
+                        # This case means we do not have an odoo recordset and need to load links manually
+                        if isinstance(child['name'], int):
+                            child['name'] = self.env['clouder.application'].browse(child['name'])
+                        if isinstance(child['server_id'], int):
+                            child['server_id'] = self.env['clouder.server'].browse(child['server_id'])
+                    else:
+                        child = {
+                            'name': getattr(child, 'name', False),
+                            'sequence': getattr(child, 'sequence', False),
+                            'required': getattr(child, 'required', False),
+                            'server_id': getattr(child, 'server_id', False)
+                        }
+                    if child['name'] and child['name'].id in child_sources:
+                        child['source'] = child_sources[child['name'].id]
+                        if child['required']:
+                            childs.append((0, 0, {
+                                'name': child['source'].id,
+                                'sequence':  child['sequence'],
+                                'server_id':
+                                    child['server_id'] and
+                                    child['server_id'].id or
+                                    child['source'].next_server_id.id
+                            }))
+
+                        # Removing from sources
+                        sources_to_add.remove(child['name'].id)
+
+            # Adding remaining childs from source
+            for def_child_key in sources_to_add:
+                child = child_sources[def_child_key]
                 if child.required:
                     childs.append((0, 0, {
-                        'name': child.source.id, 'sequence':  child.sequence,
+                        'name': child.id,
+                        'sequence': child.sequence,
                         'server_id':
-                            getattr(child, 'server_id', False)
-                            and child.server_id.id
-                            or child.source.next_server_id.id}))
+                            getattr(child, 'server_id', False) and
+                            child.server_id.id or
+                            child.next_server_id.id
+                    }))
+
+            # Replacing old childs
             vals['child_ids'] = childs
 
             if 'image_id' not in vals or not vals['image_id']:
@@ -608,55 +732,143 @@ class ClouderContainer(models.Model):
 
             ports = []
             nextport = server.start_port
-            for key, port in self.sanitize_o2m(
-                    'port', vals, image.port_ids, False).iteritems():
+            # Getting sources for new port
+            port_sources = {x.name: x for x in image.port_ids}
+            sources_to_add = port_sources.keys()
+            ports_to_process = []
+            # Checking old ports
+            if 'port_ids' in vals:
+                for port in vals['port_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(port, tuple):
+                        port = {
+                            'name': port[2].get('name', False),
+                            'hostport': port[2].get('hostport', False),
+                            'localport': port[2].get('localport', False),
+                            'expose': port[2].get('expose', False),
+                            'udp': port[2].get('udp', False)
+                        }
+                    else:
+                        port = {
+                            'name': getattr(port, 'name', False),
+                            'hostport': getattr(port, 'hostport', False),
+                            'localport': getattr(port, 'localport', False),
+                            'expose': getattr(port, 'expose', False),
+                            'udp': getattr(port, 'udp', False)
+                        }
+                    # Keeping the port if there is a match with the sources
+                    if port['name'] in port_sources:
+                        port['source'] = port_sources[port['name']]
+                        ports_to_process.append(port)
+
+                        # Remove used port from sources
+                        sources_to_add.remove(port['name'])
+
+            # Adding ports from source
+            for def_key_port in sources_to_add:
+                port = {
+                    'name': getattr(port_sources[def_key_port], 'name', False),
+                    'hostport': getattr(port_sources[def_key_port], 'hostport', False),
+                    'localport': getattr(port_sources[def_key_port], 'localport', False),
+                    'expose': getattr(port_sources[def_key_port], 'expose', False),
+                    'udp': getattr(port_sources[def_key_port], 'udp', False),
+                    'source': port_sources[def_key_port]
+                }
+                ports_to_process.append(port)
+
+            for port in ports_to_process:
                 if not getattr(port, 'hostport', False):
-                    port.hostport = False
+                    port['hostport'] = False
                 context = self.env.context
                 if 'container_ports' in context:
-                    name = port.name
-                    if not port.hostport and name in context['container_ports']:
-                        port.hostport = context['container_ports'][name]
-                if not port.hostport:
-                    while not port.hostport \
+                    name = port['name']
+                    if not port['hostport'] and name in context['container_ports']:
+                        port['hostport'] = context['container_ports'][name]
+                if not port['hostport']:
+                    while not port['hostport'] \
                             and nextport != server.end_port:
                         port_ids = self.env['clouder.container.port'].search(
                             [('hostport', '=', nextport),
                              ('container_id.server_id', '=', server.id)])
                         if not port_ids and not server.execute([
                                 'netstat', '-an', '|', 'grep', str(nextport)]):
-                            port.hostport = nextport
+                            port['hostport'] = nextport
                         nextport += 1
-                if not port.hostport:
+                if not port['hostport']:
                     raise except_orm(
                         _('Data error!'),
                         _("We were not able to assign an hostport to the "
-                          "localport " + port.localport + ".\n"
+                          "localport " + port['localport'] + ".\n"
                           "If you don't want to assign one manually, make sure you"
                           " fill the port range in the server configuration, and "
                           "that all ports in that range are not already used."))
-                if port.expose != 'none':
+                if port['expose'] != 'none':
                     ports.append(((0, 0, {
-                        'name': port.name, 'localport': port.localport,
-                        'hostport': port.hostport,
-                        'expose': port.expose, 'udp': port.udp})))
+                        'name': port['name'], 'localport': port['localport'],
+                        'hostport': port['hostport'],
+                        'expose': port['expose'], 'udp': port['udp']})))
             vals['port_ids'] = ports
 
             volumes = []
-            for key, volume in self.sanitize_o2m(
-                    'volume', vals, image.volume_ids, False).iteritems():
+            # Getting sources for new volume
+            volume_sources = {x.name: x for x in image.volume_ids}
+            sources_to_add = volume_sources.keys()
+            volumes_to_process = []
+            # Checking old volumes
+            if 'volume_ids' in vals:
+                for volume in vals['volume_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(volume, tuple):
+                        volume = {
+                            'name': volume[2].get('name', False),
+                            'hostpath': volume[2].get('hostpath', False),
+                            'user': volume[2].get('user', False),
+                            'readonly': volume[2].get('readonly', False),
+                            'nosave': volume[2].get('nosave', False)
+                        }
+                    else:
+                        volume = {
+                            'name': getattr(volume, 'name', False),
+                            'hostpath': getattr(volume, 'hostpath', False),
+                            'user': getattr(volume, 'user', False),
+                            'readonly': getattr(volume, 'readonly', False),
+                            'nosave': getattr(volume, 'nosave', False)
+                        }
+                    # Keeping the volume if there is a match with the sources
+                    if volume['name'] in volume_sources:
+                        volume['source'] = volume_sources[volume['name']]
+                        volumes_to_process.append(volume)
+
+                        # Remove used volume from sources
+                        sources_to_add.remove(volume['name'])
+
+            # Adding remaining volumes from source
+            for def_key_volume in sources_to_add:
+                volume = {
+                    'name': getattr(volume_sources[def_key_volume], 'name', False),
+                    'hostpath': getattr(volume_sources[def_key_volume], 'hostpath', False),
+                    'user': getattr(volume_sources[def_key_volume], 'user', False),
+                    'readonly': getattr(volume_sources[def_key_volume], 'readonly', False),
+                    'nosave': getattr(volume_sources[def_key_volume], 'nosave', False),
+                    'source': volume_sources[def_key_volume]
+                }
+                volumes_to_process.append(volume)
+
+            for volume in volumes_to_process:
                 from_id = False
                 if 'parent_id' in vals and vals['parent_id']:
                     parent = self.env['clouder.container.child'].browse(
                         vals['parent_id'])
-                    if volume.source.from_code in parent.container_id.childs:
-                        from_id = parent.container_id.childs[
-                            volume.source.from_code].id
+                    if volume['source'].from_code in parent.container_id.childs:
+                        from_id = parent.container_id.childs[volume['source'].from_code].id
                 volumes.append(((0, 0, {
-                    'name': volume.name, 'from_id': from_id,
-                    'hostpath': volume.hostpath,
-                    'user': volume.user, 'readonly': volume.readonly,
-                    'nosave': volume.nosave})))
+                    'name': volume['name'],
+                    'from_id': from_id,
+                    'hostpath': volume['hostpath'],
+                    'user': volume['user'],
+                    'readonly': volume['readonly'],
+                    'nosave': volume['nosave']
+                })))
             vals['volume_ids'] = volumes
         return vals
 
