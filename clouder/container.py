@@ -493,7 +493,7 @@ class ClouderContainer(models.Model):
             if 'option_ids' in vals:
                 for option in vals['option_ids']:
                     # Standardizing for possible odoo x2m input
-                    if isinstance(option, tuple):
+                    if isinstance(option, (list, tuple)):
                         option = {
                             'name': option[2].get('name', False),
                             'value': option[2].get('value', False)
@@ -544,7 +544,7 @@ class ClouderContainer(models.Model):
             if 'link_ids' in vals:
                 for link in vals['link_ids']:
                     # Standardizing for possible odoo x2m input
-                    if isinstance(link, tuple):
+                    if isinstance(link, (list, tuple)):
                         link = {
                             'name': link[2].get('name', False),
                             'next': link[2].get('next', False)
@@ -615,7 +615,7 @@ class ClouderContainer(models.Model):
             if 'child_ids' in vals:
                 for child in vals['child_ids']:
                     # Standardizing for possible odoo x2m input
-                    if isinstance(child, tuple):
+                    if isinstance(child, (list, tuple)):
                         child = {
                             'name': child[2].get('name', False),
                             'sequence': child[2].get('sequence', False),
@@ -740,7 +740,7 @@ class ClouderContainer(models.Model):
             if 'port_ids' in vals:
                 for port in vals['port_ids']:
                     # Standardizing for possible odoo x2m input
-                    if isinstance(port, tuple):
+                    if isinstance(port, (list, tuple)):
                         port = {
                             'name': port[2].get('name', False),
                             'hostport': port[2].get('hostport', False),
@@ -818,7 +818,7 @@ class ClouderContainer(models.Model):
             if 'volume_ids' in vals:
                 for volume in vals['volume_ids']:
                     # Standardizing for possible odoo x2m input
-                    if isinstance(volume, tuple):
+                    if isinstance(volume, (list, tuple)):
                         volume = {
                             'name': volume[2].get('name', False),
                             'hostpath': volume[2].get('hostpath', False),
