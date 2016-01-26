@@ -52,9 +52,19 @@ class ClouderContainer(models.Model):
                 self.execute(['echo "FromLineOverride=YES" >> '
                              '/etc/ssmtp/ssmtp.conf'])
         if self.application_id.type_id.name == 'postfix':
-            self.execute([
-                'echo "relayhost = ' + self.options['smtp_relayhost']['value']
-                + '" >> /etc/postfix/main.cf'])
+
+            # Adding boolean flag to see if all SMTP options are set
+            smtp_options = False
+            if self.options['smtp_relayhost']['value'] and \
+                self.options['smtp_username']['value'] and \
+                self.options['smtp_apikey']['value']:
+                smtp_options = True
+
+            if smtp_options:
+                self.execute([
+                    'echo "relayhost = ' + self.options['smtp_relayhost']['value']
+                    + '" >> /etc/postfix/main.cf'])
+
             self.execute([
                 'echo "smtp_sasl_auth_enable = yes" >> /etc/postfix/main.cf'])
             self.execute([
@@ -67,11 +77,14 @@ class ClouderContainer(models.Model):
             self.execute([
                 'echo "mynetworks = 127.0.0.0/8 172.17.0.0/16" '
                 '>> /etc/postfix/main.cf'])
-            self.execute([
-                'echo ' + self.options['smtp_relayhost']['value'] + ' ' +
-                (self.options['smtp_username']['value'] or '') + ':' +
-                (self.options['smtp_apikey']['value'] or '') +
-                '" > /etc/postfix/sasl_passwd'])
+
+            if smtp_options:
+                self.execute([
+                    'echo ' + self.options['smtp_relayhost']['value'] + ' ' +
+                    (self.options['smtp_username']['value'] or '') + ':' +
+                    (self.options['smtp_apikey']['value'] or '') +
+                    '" > /etc/postfix/sasl_passwd'])
+
             self.execute(['postmap /etc/postfix/sasl_passwd'])
 
             self.send(modules.get_module_path('clouder_template_postfix') +
