@@ -88,7 +88,7 @@ class ClouderContainer(models.Model):
             self.execute([
                 'mysql',
                 '--user=root',
-                '--password=\'aaaaa\'',
+                '--password=\''+password+'\'',
                 '-e',
                 '"GRANT ALL PRIVILEGES ON *.* TO \'root\'@\'%\' IDENTIFIED BY \''+password+'\'"'
             ])
