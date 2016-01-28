@@ -53,7 +53,8 @@ class ClouderContainer(models.Model):
     @api.multi
     def deploy_post(self):
         """
-        Update the root password after deployment.
+        Updates the root password after deployment.
+        Updates auth methods to allow network connections
         """
         super(ClouderContainer, self).deploy_post()
 
@@ -61,9 +62,7 @@ class ClouderContainer(models.Model):
 
             self.start()
 
-            ssh = self.connect(self.fullname)
-            self.execute(ssh, ['sed', '-i', '"/bind-address/d"',
-                               '/etc/mysql/my.cnf'])
+            self.execute(['sed', '-i', '"/bind-address/d"', '/etc/mysql/my.cnf'])
             if self.options['root_password']['value']:
                 password = self.options['root_password']['value']
             else:
@@ -83,8 +82,16 @@ class ClouderContainer(models.Model):
                         option_obj.create({'container_id': self,
                                            'name': type_options[0],
                                            'value': password})
-            self.execute(ssh,
-                         ['mysqladmin', '-u', 'root', 'password', password])
+            self.execute(['mysqladmin', '-u', 'root', 'password', password])
+
+            # Granting network permissions
+            self.execute([
+                'mysql',
+                '--user=root',
+                '--password=\'aaaaa\'',
+                '-e',
+                '"GRANT ALL PRIVILEGES ON *.* TO \'root\'@\'%\' IDENTIFIED BY \''+password+'\'"'
+            ])
 
 
 class ClouderContainerLink(models.Model):
