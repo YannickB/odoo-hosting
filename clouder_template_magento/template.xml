@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="oneclick_magento" model="clouder.oneclick">
+            <field name="name">Magento</field>
+            <field name="function">oneclick_magento</field>
+        </record>
+
+        <record id="apptype_magento" model="clouder.application.type">
+            <field name="name">magento</field>
+            <field name="system_user">magento</field>
+        </record>
+        <record id="apptype_magento_option_db_password" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="required" eval="True"/>
+        </record>
+        <record id="apptype_magento_option_locale" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">locale</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="default">en_US</field>
+            <field name="required" eval="True"/>
+        </record>
+        <record id="apptype_magento_option_timezone" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">timezone</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="default">America/Chicago</field>
+            <field name="required" eval="True"/>
+        </record>
+        <record id="apptype_magento_option_currency" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">currency</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="default">USD</field>
+            <!--TODO: Re-add when an automated default value has been implemented
+            <field name="required" eval="True"/>
+            -->
+        </record>
+        <record id="apptype_magento_option_admin_firstname" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">admin_firstname</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="default">Magento</field>
+            <!--TODO: Re-add when an automated default value has been implemented
+            <field name="required" eval="True"/>
+            -->
+        </record>
+        <record id="apptype_magento_option_admin_lastname" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">admin_lastname</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="default">User</field>
+            <!--TODO: Re-add when an automated default value has been implemented
+            <field name="required" eval="True"/>
+            -->
+        </record>
+        <record id="apptype_magento_option_admin_email" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">admin_email</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <!--TODO: Re-add when an automated default value has been implemented
+            <field name="required" eval="True"/>
+            -->
+        </record>
+        <record id="apptype_magento_option_admin_user" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">admin_user</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="default">admin</field>
+            <!--TODO: Re-add when an automated default value has been implemented
+            <field name="required" eval="True"/>
+            -->
+        </record>
+        <record id="apptype_magento_option_admin_password" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">admin_password</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <!--TODO: Re-add when an automated default value has been implemented
+            <field name="required" eval="True"/>
+            -->
+        </record>
+        <record id="apptype_magento_option_use_rewrites" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_magento"/>
+            <field name="name">use_rewrites</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="default">1</field>
+            <!--TODO: Re-add when an automated default value has been implemented
+            <field name="required" eval="True"/>
+            -->
+        </record>
+
+        <record id="image_magento_data" model="clouder.image">
+            <field name="name">img_magento_data</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
+RUN usermod -u 1000 www-data
+
+# Create saved folders
+RUN mkdir -p /opt/magento/exec/var/log
+RUN mkdir -p /opt/magento/exec/app/etc
+RUN mkdir -p /opt/magento/exec/app/code/local
+RUN mkdir -p /etc/apache2/sites-enabled
+
+# Adding configuration files
+RUN mkdir -p /opt/magento/config
+ADD sources/config.xml /opt/magento/config/config.xml
+ADD sources/magento.conf /etc/apache2/sites-enabled/magento.conf
+
+# Switching rights
+RUN chown -R www-data:www-data /opt/magento
+
+]]></field>
+        </record>
+        <record id="image_magento_data_volume_logs" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_data"/>
+            <field name="name">/opt/magento/exec/var/log</field>
+        </record>
+        <record id="image_magento_data_volume_config" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_data"/>
+            <field name="name">/opt/magento/exec/app/etc</field>
+        </record>
+        <record id="image_magento_data_volume_local_modules" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_data"/>
+            <field name="name">/opt/magento/exec/app/code/local</field>
+        </record>
+        <record id="image_magento_data_volume_config" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_data"/>
+            <field name="name">/opt/magento/config</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_magento_data_volume_sites_enabled" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_data"/>
+            <field name="name">/etc/apache2/sites-enabled</field>
+        </record>
+
+        <record id="image_magento_files1_9" model="clouder.image">
+            <field name="name">img_magento_files1_9</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="current_version">1.9.2.3</field>
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
+# Prepare system
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install wget
+
+# Download and unpack Magento
+RUN cd /tmp && wget https://github.com/OpenMage/magento-mirror/archive/magento-1.9.tar.gz
+RUN cd /tmp && tar -zxvf magento-1.9.tar.gz
+RUN mkdir -p /opt/magento
+RUN mv /tmp/magento-mirror-magento-1.9 /opt/magento/files
+RUN cd /tmp && rm -f magento-*tar.gz
+]]></field>
+        </record>
+        <record id="image_magento_files1_9_volume_files" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_files1_9"/>
+            <field name="name">/opt/magento/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+
+        <record id="image_magento_exec" model="clouder.image">
+            <field name="name">img_magento_exec</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
+# Install required system packages
+RUN apt-get update && apt-get install -yq libxml2-dev apache2 php5 php5-mhash php5-mcrypt php5-curl php5-cli php5-mysql php5-gd php5-intl php5-xsl
+
+# Update user www-data to use magento
+RUN usermod -u 1000 www-data
+
+# Create directory structure for volumes
+RUN mkdir -p /opt/magento/exec/var/log
+RUN mkdir -p /opt/magento/exec/app/etc
+RUN mkdir -p /opt/magento/exec/app/code/local
+RUN chown -R www-data:www-data /opt/magento/
+
+# Make a symlink for magento files
+RUN ln -s /opt/magento/exec /var/www/htdocs
+RUN chown -h www-data:www-data /var/www/htdocs
+
+# Add dummy magento config file for the a2ensite command
+RUN touch /etc/apache2/sites-available/magento.conf
+
+# Finish configuring Apache/PHP
+RUN php5enmod mcrypt
+RUN a2enmod rewrite
+RUN a2ensite magento.conf
+RUN a2dissite 000-default.conf
+
+# Stop apache to trigger restart when the command running the container is launched
+RUN /etc/init.d/apache2 stop
+
+# Removing dummy config file now the site is enabled
+RUN rm -f /etc/apache2/sites-available/magento.conf
+
+
+# Launch apache in foreground
+CMD apache2ctl -DFOREGROUND
+]]></field>
+        </record>
+        <record id="image_magento_exec_volume_logs" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/magento/exec/var/log</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_magento_exec_volume_config" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/magento/exec/app/etc</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_magento_exec_volume_local_modules" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/magento/exec/app/code/local</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_magento_exec_volume_sites_enabled" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/etc/apache2/sites-enabled</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_magento_exec_volume_files" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_exec"/>
+            <field name="from_code">files</field>
+            <field name="name">/opt/magento/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_magento_exec_port_web" model="clouder.image.port">
+            <field name="image_id" ref="image_magento_exec"/>
+            <field name="name">web</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+
+        <record id="image_magento_ssh" model="clouder.image">
+            <field name="name">img_magento_ssh</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
+RUN touch /tmp/magento-ssh
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install openssh-server
+USER root
+]]></field>
+        </record>
+
+        <record id="image_magento_ssh_port_ssh" model="clouder.image.port">
+            <field name="image_id" ref="image_magento_ssh"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+
+
+        <record id="app_magento" model="clouder.application">
+            <field name="name">Magento</field>
+            <field name="code">magento</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="default_image_id" ref="image_magento_data"/>
+            <field name="base" eval="True"/>
+            <field name="current_version">8.0</field>
+        </record>
+        <record id="app_magento_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="app_magento"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_magento_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_magento"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_magento_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="app_magento"/>
+            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="service" eval="True"/>
+        </record>
+        <record id="app_magento_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_magento"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_magento_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="app_magento"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_magento_link_piwik" model="clouder.application.link">
+            <field name="application_id" ref="app_magento"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+            <field name="base" eval="True"/>
+        </record>
+
+        <record id="app_magento_data" model="clouder.application">
+            <field name="name">Magento Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="parent_id" ref="app_magento"/>
+            <field name="default_image_id" ref="image_magento_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
+        </record>
+        <record id="app_magento_data_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_data"/>
+            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+            <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+
+        <record id="app_magento_files" model="clouder.application">
+            <field name="name">Magento Files</field>
+            <field name="code">files</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="parent_id" ref="app_magento"/>
+            <field name="default_image_id" ref="image_magento_files1_9"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+        </record>
+
+        <record id="app_magento_exec" model="clouder.application">
+            <field name="name">Magento Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="parent_id" ref="app_magento"/>
+            <field name="default_image_id" ref="image_magento_exec"/>
+            <field name="sequence">3</field>
+            <field name="required" eval="True"/>
+        </record>
+        <record id="app_magento_exec_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_exec"/>
+            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+
+        <record id="app_magento_ssh" model="clouder.application">
+            <field name="name">Magento SSH</field>
+            <field name="code">ssh</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="parent_id" ref="app_magento"/>
+            <field name="default_image_id" ref="image_magento_ssh"/>
+            <field name="sequence">4</field>
+        </record>
+
+
+
+<!-- TODO: see what is needed for magento image with odoo-link module
+     TODO²: this belongs in a separate module
+        <record id="image_magento_odoo_files8" model="clouder.image">
+            <field name="name">img_magento_odoo_files8</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_base"/>
+            <field name="dockerfile"><![CDATA[
+# INSERT IMAGE HERE
+]]></field>
+        </record>
+        <record id="image_magento_odoo_files8_volume_files" model="clouder.image.volume">
+            <field name="image_id" ref="image_magento_odoo_files8"/>
+            <field name="name">/opt/magento/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        
+        <record id="app_magento_odoo" model="clouder.application">
+            <field name="name">Clouder</field>
+            <field name="code">clouder</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="default_image_id" ref="image_magento_data"/>
+            <field name="base" eval="True"/>
+            <field name="current_version">8.0</field>
+        </record>
+        <record id="app_magento_odoo_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_odoo"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_magento_odoo_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_odoo"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_magento_odoo_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_odoo"/>
+            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="service" eval="True"/>
+        </record>
+        <record id="app_magento_odoo_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_odoo"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_magento_odoo_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_odoo"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_magento_odoo_link_piwik" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_odoo"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+            <field name="base" eval="True"/>
+        </record>
+
+        <record id="app_magento_odoo_data" model="clouder.application">
+            <field name="name">Clouder Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="parent_id" ref="app_magento_odoo"/>
+            <field name="default_image_id" ref="image_magento_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
+        </record>
+        <record id="app_magento_odoo_data_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_odoo_data"/>
+            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+            <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+
+        <record id="app_magento_odoo_files" model="clouder.application">
+            <field name="name">Clouder Files</field>
+            <field name="code">files</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="parent_id" ref="app_magento_odoo"/>
+            <field name="default_image_id" ref="image_magento_odoo_files8"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+        </record>
+
+        <record id="app_magento_odoo_exec" model="clouder.application">
+            <field name="name">Clouder Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="parent_id" ref="app_magento_odoo"/>
+            <field name="default_image_id" ref="image_magento_exec"/>
+            <field name="sequence">3</field>
+            <field name="required" eval="True"/>
+        </record>
+        <record id="app_magento_odoo_exec_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="app_magento_odoo_exec"/>
+            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+
+        <record id="app_magento_odoo_ssh" model="clouder.application">
+            <field name="name">Clouder SSH</field>
+            <field name="code">ssh</field>
+            <field name="type_id" ref="apptype_magento"/>
+            <field name="parent_id" ref="app_magento_odoo"/>
+            <field name="default_image_id" ref="image_magento_ssh"/>
+            <field name="sequence">4</field>
+        </record>
+        -->
+    </data>
+</openerp>
