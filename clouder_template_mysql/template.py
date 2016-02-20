@@ -46,7 +46,7 @@ class ClouderContainer(models.Model):
         """
         db_user = super(ClouderContainer, self).db_user
         if self.db_type == 'mysql':
-            db_user = self.container_id.name[:10] + '_' + self.name[:4]
+            db_user = self.name[:14]
             db_user = db_user.replace('-', '_')
         return db_user
 
