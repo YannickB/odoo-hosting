@@ -32,6 +32,13 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
+    @api.multi
+    def hook_deploy_source(self):
+        res = super(ClouderContainer, self).hook_deploy_source()
+        if self.application_id.type_id.name == 'mysql':
+            res = " -e MYSQL_ROOT_PASSWORD={0} ".format(self.options['root_password']['value']) + res
+        return res
+
     @property
     def db_user(self):
         """
@@ -39,14 +46,15 @@ class ClouderContainer(models.Model):
         """
         db_user = super(ClouderContainer, self).db_user
         if self.db_type == 'mysql':
-            db_user = self.container_id.name[:10] + '_' + self.name[:4]
+            db_user = self.name[:14]
             db_user = db_user.replace('-', '_')
         return db_user
 
     @api.multi
     def deploy_post(self):
         """
-        Update the root password after deployment.
+        Updates the root password after deployment.
+        Updates auth methods to allow network connections
         """
         super(ClouderContainer, self).deploy_post()
 
@@ -54,9 +62,7 @@ class ClouderContainer(models.Model):
 
             self.start()
 
-            ssh = self.connect(self.fullname)
-            self.execute(ssh, ['sed', '-i', '"/bind-address/d"',
-                               '/etc/mysql/my.cnf'])
+            self.execute(['sed', '-i', '"/bind-address/d"', '/etc/mysql/my.cnf'])
             if self.options['root_password']['value']:
                 password = self.options['root_password']['value']
             else:
@@ -76,8 +82,16 @@ class ClouderContainer(models.Model):
                         option_obj.create({'container_id': self,
                                            'name': type_options[0],
                                            'value': password})
-            self.execute(ssh,
-                         ['mysqladmin', '-u', 'root', 'password', password])
+            self.execute(['mysqladmin', '-u', 'root', 'password', password])
+
+            # Granting network permissions
+            self.execute([
+                'mysql',
+                '--user=root',
+                '--password=\''+password+'\'',
+                '-e',
+                '"GRANT ALL PRIVILEGES ON *.* TO \'root\'@\'%\' IDENTIFIED BY \''+password+'\'"'
+            ])
 
 
 class ClouderContainerLink(models.Model):
