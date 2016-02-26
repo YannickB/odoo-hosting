@@ -344,7 +344,7 @@ class ClouderBase(models.Model):
                         parent = self.env['clouder.base.child'].browse(
                             vals['parent_id'])
                         for parent_link in parent.base_id.link_ids:
-                            if link['name'].code == parent_link.name.name.code \
+                            if link['source'].name.code == parent_link.name.name.code \
                                     and parent_link.target:
                                 next_id = parent_link.target.id
                     context = self.env.context
