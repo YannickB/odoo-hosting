@@ -26,21 +26,8 @@
 
         <record id="image_mysql" model="clouder.image">
             <field name="name">img_mysql</field>
-            <field name="current_version">1</field>
-            <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[
-
-#RUN echo "mysql-server mysql-server/root_password password root" | debconf-set-selections
-#RUN echo "mysql-server mysql-server/root_password_again password root" | debconf-set-selections
-
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install mysql-server
-
-RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "[program:mysql]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=mysqld_safe" >> /etc/supervisor/conf.d/supervisord.conf
-
-USER root
-]]></field>
+            <field name="current_version">5.6</field>
+            <field name="parent_from">mysql:5.6</field>
         </record>
         <record id="image_mysql_volume_etc" model="clouder.image.volume">
             <field name="image_id" ref="image_mysql"/>
