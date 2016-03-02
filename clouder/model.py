@@ -21,16 +21,17 @@
 ##############################################################################
 
 
-from openerp import models, fields, api, _
+from openerp import models, fields, api, _, tools
 from openerp.exceptions import except_orm
 from openerp.addons.connector.session import ConnectorSession
-from openerp.addons.connector.queue.job import job
+from openerp.addons.connector.queue.job import job, whitelist_unpickle_global, _UNPICKLE_WHITELIST
 
 from datetime import datetime, timedelta
 import subprocess
 import paramiko
 import os.path
 import string
+import copy_reg
 import errno
 import random
 import re
@@ -73,6 +74,12 @@ def connector_enqueue(
     record.log('===== END JOB ' + session.env.context['job_uuid'] + ' =====')
     job.search([('state', '=', 'failed')]).write({'state': 'pending'})
     return res
+
+#Add function in connector whitelist
+whitelist_unpickle_global(copy_reg._reconstructor)
+whitelist_unpickle_global(tools.misc.frozendict)
+whitelist_unpickle_global(dict)
+whitelist_unpickle_global(connector_enqueue)
 
 class QueueJob(models.Model):
 
@@ -566,11 +573,12 @@ class ClouderModel(models.AbstractModel):
         if tmp_dir:
             server.execute([
                 'cat', destination, '|', 'docker', 'exec', '-i',
+                username and ('-u ' + username) or '',
                 self.name, 'sh', '-c', "'cat > " + final_destination + "'"])
-            if username:
-                server.execute([
-                    'docker', 'exec', '-i', self.name,
-                    'chown', username, final_destination])
+#            if username:
+#                server.execute([
+#                    'docker', 'exec', '-i', self.name,
+#                    'chown', username, final_destination])
             server.execute(['rm', '-rf', tmp_dir])
 
     @api.multi
