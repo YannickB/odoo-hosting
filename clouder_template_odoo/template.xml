@@ -143,6 +143,7 @@ ADD sources/pip-checksums.txt /opt/sources/pip-checksums.txt
 # these are python dependencies for odoo and "apps" as precompiled wheel packages
 
 RUN pip install --upgrade --force-reinstall -r /opt/sources/pip-checksums.txt
+RUN pip install paramiko
 
 # must unzip this package to make it visible as an odoo external dependency
 RUN easy_install -UZ py3o.template==0.9.5
@@ -392,7 +393,7 @@ RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install 
 
 RUN git clone http://github.com/odoo/odoo.git /opt/odoo/files/odoo -b 8.0
 RUN git clone http://github.com/OCA/connector.git /opt/odoo/files/extra/connector -b 8.0
-RUN git clone http://github.com/clouder-community/clouder.git /opt/odoo/files/extra/clouder -b 8.0
+RUN git clone http://github.com/clouder-community/clouder.git /opt/odoo/files/extra/clouder -b 8.1
 
 
 ]]></field>
@@ -453,6 +454,11 @@ RUN git clone http://github.com/clouder-community/clouder.git /opt/odoo/files/ex
             <field name="application_id" ref="app_odoo_clouder"/>
             <field name="name" ref="clouder_template_piwik.app_piwik"/>
             <field name="base" eval="True"/>
+        </record>
+        <record id="app_odoo_clouder_option_install_modules" model="clouder.application.option">
+            <field name="application_id" ref="app_odoo_clouder"/>
+            <field name="name" ref="apptype_odoo_option_install_modules"/>
+            <field name="value">clouder</field>
         </record>
 
         <record id="app_odoo_clouder_data" model="clouder.application">

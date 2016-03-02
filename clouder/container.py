@@ -363,7 +363,7 @@ class ClouderContainer(models.Model):
         fullname = self.fullname
         if self.parent_id and not self.child_ids:
             fullname = self.parent_id.container_id.fullname
-        db_user = fullname.replace('-', '_')
+        db_user = fullname.replace('-', '_').replace('.', '_')
         return db_user
 
     @property

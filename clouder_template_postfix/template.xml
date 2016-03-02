@@ -34,7 +34,7 @@
             <field name="dockerfile"><![CDATA[
 # Install Postfix.
 run echo "postfix postfix/main_mailer_type string Internet site" > preseed.txt
-run echo "postfix postfix/mailname string mail.yolo-consulting.net" >> preseed.txt
+run echo "postfix postfix/mailname string mail.clouder.at" >> preseed.txt
 # Use Mailbox format.
 run debconf-set-selections preseed.txt
 
@@ -42,6 +42,7 @@ RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install s
 
 RUN touch /etc/postfix/virtual_aliases
 RUN echo "virtual_alias_maps = hash:/etc/postfix/virtual_aliases" >> /etc/postfix/main.cf
+RUN echo "myorigin = </etc/mailname" >> /etc/postfix/main.cf
 RUN postmap /etc/postfix/virtual_aliases
 RUN mkdir /etc/aliases-dir
 RUN mv /etc/aliases /etc/aliases-dir/aliases
