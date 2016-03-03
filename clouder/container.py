@@ -585,7 +585,7 @@ class ClouderContainer(models.Model):
                         parent = self.env['clouder.container.child'].browse(
                             vals['parent_id'])
                         for parent_link in parent.container_id.link_ids:
-                            if link['name'].code == parent_link.name.name.code \
+                            if link['source'].name.code == parent_link.name.name.code \
                                     and parent_link.target:
                                 next_id = parent_link.target.id
                     context = self.env.context
@@ -636,7 +636,7 @@ class ClouderContainer(models.Model):
                         }
                     if child['name'] and child['name'].id in child_sources:
                         child['source'] = child_sources[child['name'].id]
-                        if child['required']:
+                        if child['source'].required:
                             childs.append((0, 0, {
                                 'name': child['source'].id,
                                 'sequence':  child['sequence'],
