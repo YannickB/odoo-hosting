@@ -902,6 +902,7 @@ class ClouderBaseChild(models.Model):
                 self.domainname and
                 self.domain_id or self.base_id.domain_id.id,
             'parent_id': self.id,
+            'environment_id': self.base_id.environment_id.id,
             'application_id': self.name.id,
             'container_id': self.container_id.id
         })

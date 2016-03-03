@@ -258,6 +258,13 @@ class ClouderContainer(models.Model):
                 self.ports_string += port.name + ' : ' + port.hostport
             first = False
 
+    def _get_name(self):
+        """
+        Return the name of the container
+        """
+        self.name = self.environment_id.prefix + '-' + self.suffix
+
+    name = fields.Char('Name', compute='_get_name', required=False)
     environment_id = fields.Many2one('clouder.environment', 'Environment',
                                      required=True)
     suffix = fields.Char('Suffix', required=True)
@@ -291,13 +298,6 @@ class ClouderContainer(models.Model):
         'clouder.container', 'clouder_container_backup_rel',
         'container_id', 'backup_id', 'Backup containers')
     public = fields.Boolean('Public?')
-
-    @property
-    def name(self):
-        """
-        Property returning the name of the container.
-        """
-        return self.environment_id.prefix + '-' + self.suffix
 
     @property
     def fullname(self):
@@ -1145,7 +1145,8 @@ class ClouderContainer(models.Model):
         self = self.with_context(no_enqueue=True)
 
         subservice_name = self.name + '-' + self.subservice_name
-        containers = self.search([('name', '=', subservice_name),
+        containers = self.search([('suffix', '=', subservice_name),
+                                  ('environment_id', '=', self.environment_id.id),
                                   ('server_id', '=', self.server_id.id)])
         containers.unlink()
 
@@ -1154,7 +1155,8 @@ class ClouderContainer(models.Model):
             links[link.name.name.fullcode] = link.target.id
         self = self.with_context(container_links=links)
         container_vals = {
-            'name': subservice_name,
+            'environment_id': self.environment_id.id,
+            'suffix': subservice_name,
             'server_id': self.server_id.id,
             'application_id': self.application_id.id,
             'image_version_id': self.image_version_id.id
@@ -1364,7 +1366,8 @@ class ClouderContainerChild(models.Model):
         self = self.with_context(autocreate=True)
         self.purge()
         self.child_id = self.env['clouder.container'].create({
-            'name': self.container_id.suffix + '-' + self.name.code,
+            'environment_id': self.container_id.environment_id.id,
+            'suffix': self.container_id.suffix + '-' + self.name.code,
             'parent_id': self.id,
             'application_id': self.name.id,
             'server_id': self.server_id.id or self.container_id.server_id.id

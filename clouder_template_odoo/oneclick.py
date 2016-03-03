@@ -35,7 +35,6 @@ class ClouderServer(models.Model):
         self = self.with_context(no_enqueue=True)
         # TODO
         # container_ports={'nginx':80,'nginx-ssl':443,'bind':53})
-        prefix = self.oneclick_prefix
 
         image_obj = self.env['clouder.image']
         image_version_obj = self.env['clouder.image.version']
@@ -48,7 +47,7 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'registry')])
         registry = container_obj.create({
-            'name': 'registry',
+            'suffix': 'registry',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
@@ -123,7 +122,7 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'backup-bup')])
         container_obj.create({
-            'name': 'backup',
+            'suffix': 'backup',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
@@ -131,7 +130,7 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'postfix')])
         container_obj.create({
-            'name': 'postfix',
+            'suffix': 'postfix',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
@@ -139,7 +138,7 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'bind')])
         bind = container_obj.create({
-            'name': 'bind',
+            'suffix': 'bind',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
@@ -147,7 +146,7 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'proxy')])
         container_obj.create({
-            'name': 'proxy',
+            'suffix': 'proxy',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
@@ -155,7 +154,7 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'shinken')])
         container_obj.create({
-            'name': 'shinken',
+            'suffix': 'shinken',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
@@ -163,7 +162,7 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'glances')])
         container_obj.create({
-            'name': 'glances',
+            'suffix': 'glances',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
@@ -171,7 +170,7 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'postgres')])
         container_obj.create({
-            'name': 'postgres',
+            'suffix': 'postgres',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
@@ -179,7 +178,7 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'clouder')])
         clouder = container_obj.create({
-            'name': 'clouder',
+            'suffix': 'clouder',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
@@ -207,44 +206,43 @@ class ClouderServer(models.Model):
             'test': True
         })
 
-        clouder.install_subservice()
+#        clouder.install_subservice()
 
     @api.multi
     def oneclick_clouder_purge(self):
 
         self = self.with_context(no_enqueue=True)
-        prefix = self.oneclick_prefix
 
         container_obj = self.env['clouder.container']
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'clouder-test')]).unlink()
+                              ('suffix', '=', 'clouder-test')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'clouder')]).unlink()
+                              ('suffix', '=', 'clouder')]).unlink()
 
         self.env['clouder.domain'].search([('name', '=', 'mydomain')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'postgres')]).unlink()
+                              ('suffix', '=', 'postgres')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'glances')]).unlink()
+                              ('suffix', '=', 'glances')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'shinken')]).unlink()
+                              ('suffix', '=', 'shinken')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'proxy')]).unlink()
+                              ('suffix', '=', 'proxy')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'bind')]).unlink()
+                              ('suffix', '=', 'bind')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'postfix')]).unlink()
+                              ('suffix', '=', 'postfix')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'backup')]).unlink()
+                              ('suffix', '=', 'backup')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('name', '=', 'registry')]).unlink()
+                              ('suffix', '=', 'registry')]).unlink()
