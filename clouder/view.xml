@@ -21,6 +21,45 @@
         <menuitem id="menu_clouder_clouder" name="Clouder" parent="menu_clouder" sequence="5"/>
 
 
+
+        <record id="action_clouder_environment_form" model="ir.actions.act_window">
+            <field name="name">Environments</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">clouder.environment</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_clouder_environment_form" id="menu_action_clouder_environment_form" parent="menu_clouder_clouder"/>
+
+        <record id="view_clouder_environment_form" model="ir.ui.view">
+            <field name="name">clouder.environment.form</field>
+            <field name="model">clouder.environment</field>
+            <field name="arch" type="xml">
+                <form string="Base" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="partner_id"/>
+                        <field name="prefix"/>
+                        <newline/>
+                        <field name="user_ids"/>
+                        <field name="container_ids"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+        <record id="view_clouder_environment_tree" model="ir.ui.view">
+            <field name="name">clouder.environment.tree</field>
+            <field name="model">clouder.environment</field>
+            <field name="arch" type="xml">
+                <tree string="Base">
+                        <field name="name"/>
+                        <field name="partner_id"/>
+                        <field name="prefix"/>
+                </tree>
+            </field>
+        </record>
+
+
         <record id="action_clouder_base_form" model="ir.actions.act_window">
             <field name="name">Bases</field>
             <field name="type">ir.actions.act_window</field>
@@ -30,7 +69,6 @@
 
         <menuitem action="action_clouder_base_form" id="menu_action_clouder_base_form" parent="menu_clouder_clouder"/>
 
-
         <record id="view_clouder_base_form" model="ir.ui.view">
             <field name="name">clouder.base.form</field>
             <field name="model">clouder.base</field>
@@ -38,8 +76,9 @@
                 <form string="Base" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <field name="title"/>
                         <field name="domain_id"/>
+                        <field name="environment_id"/>
+                        <field name="title"/>
                         <field name="application_id" domain="[('base','=',True)]"/>
                         <field name="container_id" required="0" domain="[('application_id.base', '=', True)]"/>
                         <field name="admin_name"/>
@@ -62,7 +101,6 @@
                         <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
                         <newline/>
                         <field name="public"/>
-                        <field name="partner_id"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -111,9 +149,6 @@
                             </group>
                             <button name="save" string="Save" type="object"/>
                         </page>
-                        <page string="Invoicing">
-                            <field name="partner_ids" colspan="4"/>
-                        </page>
                     </notebook>
                 </form>
             </field>
@@ -149,13 +184,15 @@
                 <form string="Container" version="7.0">
                     <group col="4">
                         <field name="name"/>
+                        <newline/>
+                        <field name="environment_id"/>
+                        <field name="suffix"/>
                         <field name="application_id"/>
                         <field name="server_id"/>
                         <field name="image_id"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
                         <newline/>
                         <field name="public"/>
-                        <field name="partner_id"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -229,9 +266,6 @@
                             </group>
                             <button name="save" string="Save" type="object"/>
                         </page>
-                        <page string="Invoicing">
-                            <field name="partner_ids" colspan="4"/>
-                        </page>
                     </notebook>
 
 
@@ -280,7 +314,7 @@
                 <form string="Server" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <field name="runner_id" widget="selection"/>
+                        <field name="environment_id"/>
                         <field name="ip" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <field name="ssh_port" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <newline/>
@@ -289,8 +323,8 @@
                         <field name="start_port"/>
                         <field name="end_port"/>
                         <field name="supervision_id"/>
+                        <field name="runner_id" widget="selection"/>
                         <field name="public"/>
-                        <field name="partner_id"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
                     <button name="test_connection" string="Test connection" type="object"/>
@@ -299,7 +333,6 @@
                     <newline/>
                     <group col="4">
                         <field name="oneclick_id" widget="selection"/>
-                        <field name="oneclick_prefix" attrs="{'required': [('oneclick_id','!=',False)], 'invisible': [('oneclick_id','=',False)]}"/>
                         <newline/>
                         <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
                         <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>

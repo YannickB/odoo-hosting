@@ -73,10 +73,12 @@ class ClouderBase(models.Model):
     _inherit = ['clouder.model']
 
     name = fields.Char('Name', required=True)
+    domain_id = fields.Many2one('clouder.domain', 'Domain name', required=True)
+    environment_id = fields.Many2one('clouder.environment', 'Environment',
+                                     required=True)
     title = fields.Char('Title', required=True)
     application_id = fields.Many2one('clouder.application', 'Application',
                                      required=True)
-    domain_id = fields.Many2one('clouder.domain', 'Domain name', required=True)
     container_id = fields.Many2one(
         'clouder.container', 'Container', required=True)
     admin_name = fields.Char('Admin name', required=True)
@@ -119,11 +121,6 @@ class ClouderBase(models.Model):
         'clouder.container', 'clouder_base_backup_rel',
         'base_id', 'backup_id', 'Backup containers', required=True)
     public = fields.Boolean('Public?')
-    partner_id = fields.Many2one(
-        'res.partner', 'Manager',
-        default=lambda self: self.user_partner)
-    partner_ids = fields.Many2many('res.partner', 'clouder_base_partner_rel',
-                                   'base_id', 'partner_id', 'Users')
 
     @property
     def fullname(self):
@@ -905,6 +902,7 @@ class ClouderBaseChild(models.Model):
                 self.domainname and
                 self.domain_id or self.base_id.domain_id.id,
             'parent_id': self.id,
+            'environment_id': self.base_id.environment_id.id,
             'application_id': self.name.id,
             'container_id': self.container_id.id
         })
