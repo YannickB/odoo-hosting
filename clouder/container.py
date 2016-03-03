@@ -258,6 +258,7 @@ class ClouderContainer(models.Model):
                 self.ports_string += port.name + ' : ' + port.hostport
             first = False
 
+    @api.one
     def _get_name(self):
         """
         Return the name of the container
@@ -1144,7 +1145,7 @@ class ClouderContainer(models.Model):
 
         self = self.with_context(no_enqueue=True)
 
-        subservice_name = self.name + '-' + self.subservice_name
+        subservice_name = self.suffix + '-' + self.subservice_name
         containers = self.search([('suffix', '=', subservice_name),
                                   ('environment_id', '=', self.environment_id.id),
                                   ('server_id', '=', self.server_id.id)])

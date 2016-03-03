@@ -413,14 +413,18 @@
                     <group col="4">
                       <separator string="Restore"/>
                       <newline/>
-                      <field name="container_name" attrs="{'invisible':[('base_id','!=',False)]}"/>
+                      <field name="environment"/>
+                      <newline/>
+                      <field name="container_suffix" attrs="{'invisible':[('base_id','!=',False)]}"/>
                       <field name="container_server" attrs="{'invisible':[('base_id','!=',False)]}"/>
-                      <field name="base_container_name" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
+                      <field name="base_container_suffix" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="base_container_server" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
-                      <field name="container_restore_to_name"/>
-                      <field name="container_restore_to_server_id"/>
                       <field name="base_name" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="base_domain" attrs="{'invisible':[('base_id','=',False)]}"/>
+                      <field name="restore_to_environment_id"/>
+                      <newline/>
+                      <field name="container_restore_to_suffix"/>
+                      <field name="container_restore_to_server_id"/>
                       <field name="base_restore_to_name" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="base_restore_to_domain_id" attrs="{'invisible':[('base_id','=',False)]}"/>
                     </group>

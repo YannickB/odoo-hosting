@@ -47,6 +47,8 @@ class ClouderSave(models.Model):
     date_expiration = fields.Date('Expiration Date')
     comment = fields.Text('Comment')
     now_bup = fields.Char('Now bup')
+    environment = fields.Char(
+        'Environment', readonly=True)
     container_id = fields.Many2one('clouder.container', 'Container')
     container_fullname = fields.Char('Container Fullname')
     container_app = fields.Char('Application')
@@ -60,7 +62,7 @@ class ClouderSave(models.Model):
     base_id = fields.Many2one('clouder.base', 'Base')
     base_fullname = fields.Char('Base Fullname')
     base_title = fields.Char('Title')
-    base_container_name = fields.Char('Container')
+    base_container_suffix = fields.Char('Container Name')
     base_container_server = fields.Char('Server')
     base_admin_name = fields.Char('Admin name')
     base_admin_password = fields.Char('Admin passwd')
@@ -74,12 +76,14 @@ class ClouderSave(models.Model):
     base_nosave = fields.Boolean('No save?')
     base_options = fields.Text('Base Options')
     base_links = fields.Text('Base Links')
-    container_name = fields.Char(
-        'Container Name', readonly=True)
+    container_suffix = fields.Char(
+        'Container Suffix', readonly=True)
     container_server = fields.Char(
         'Container Server',
         type='char', readonly=True)
-    container_restore_to_name = fields.Char('Restore to (Name)')
+    restore_to_environment_id = fields.Many2one(
+        'clouder.environment', 'Restore to (Environment)')
+    container_restore_to_suffix = fields.Char('Restore to (Suffix)')
     container_restore_to_server_id = fields.Many2one(
         'clouder.server', 'Restore to (Server)')
     base_name = fields.Char(
@@ -113,12 +117,20 @@ class ClouderSave(models.Model):
             self.base_domain.replace('-', '_').replace('.', '_') + '.dump'
 
     @property
-    def computed_container_restore_to_name(self):
+    def computed_restore_to_environment(self):
         """
-        Property returning the container name which will be restored.
+        Property returning the environment which will be restored.
         """
-        return self.container_restore_to_name or self.base_container_name \
-            or self.repo_id.container_name
+        return self.restore_to_environment_id.prefix \
+            or self.environment
+
+    @property
+    def computed_container_restore_to_suffix(self):
+        """
+        Property returning the container suffix which will be restored.
+        """
+        return self.container_restore_to_suffix or self.base_container_suffix \
+            or self.repo_id.container_suffix
 
     @property
     def computed_container_restore_to_server(self):
@@ -186,8 +198,9 @@ class ClouderSave(models.Model):
                 }
 
             vals.update({
+                'environment': container.environment_id.prefix,
                 'container_fullname': container.fullname,
-                'container_name': container.name,
+                'container_suffix': container.suffix,
                 'container_server': container.server_id.name,
                 'container_volumes_comma': container.volumes_save,
                 'container_app': container.application_id.code,
@@ -211,11 +224,13 @@ class ClouderSave(models.Model):
                 }
 
             vals.update({
+                'environment': base.environment_id.prefix,
                 'base_fullname': base.fullname,
                 'base_name': base.name,
                 'base_domain': base.domain_id.name,
                 'base_title': base.title,
-                'base_container_name': base.container_id.name,
+                'base_container_environment': base.container_id.environment_id.prefix,
+                'base_container_suffix': base.container_id.suffix,
                 'base_container_server':
                 base.container_id.server_id.name,
                 'base_admin_name': base.admin_name,
@@ -416,6 +431,7 @@ class ClouderSave(models.Model):
         """
         container_obj = self.env['clouder.container']
         base_obj = self.env['clouder.base']
+        environment_obj = self.env['clouder.environment']
         server_obj = self.env['clouder.server']
         domain_obj = self.env['clouder.domain']
         application_obj = self.env['clouder.application']
@@ -423,6 +439,14 @@ class ClouderSave(models.Model):
         image_obj = self.env['clouder.image']
         image_version_obj = self.env['clouder.image.version']
 
+        environments = environment_obj.search([
+            ('prefix', '=', self.computed_restore_to_environment)])
+        if not environments:
+                raise except_orm(
+                    _('Error!'),
+                    _("Couldn't find environment " +
+                      self.computed_restore_to_environment +
+                      ", aborting restoration."))
         apps = application_obj.search([('code', '=', self.container_app)])
         if not apps:
             raise except_orm(
@@ -451,9 +475,10 @@ class ClouderSave(models.Model):
                       self.container_img + ", aborting restoration."))
             img_versions = [versions[0]]
 
-        if self.container_restore_to_name or not self.container_id:
+        if self.container_restore_to_suffix or not self.container_id:
             containers = container_obj.search([
-                ('name', '=', self.computed_container_restore_to_name),
+                ('environment_id.prefix', '=', self.computed_restore_to_environment),
+                ('suffix', '=', self.computed_container_restore_to_suffix),
                 ('server_id.name', '=',
                  self.computed_container_restore_to_server)
             ])
@@ -497,11 +522,12 @@ class ClouderSave(models.Model):
                     del link_vals['code']
                     links.append((0, 0, link_vals))
                 container_vals = {
-                    'name': self.computed_container_restore_to_name,
-                    'server_id': servers[0],
-                    'application_id': apps[0],
-                    'image_id': imgs[0],
-                    'image_version_id': img_versions[0],
+                    'environment_id': environments[0].id,
+                    'suffix': self.computed_container_restore_to_suffix,
+                    'server_id': servers[0].id,
+                    'application_id': apps[0].id,
+                    'image_id': imgs[0].id,
+                    'image_version_id': img_versions[0].id,
                     'port_ids': ports,
                     'volume_ids': volumes,
                     'option_ids': options,
@@ -580,6 +606,7 @@ class ClouderSave(models.Model):
                         links.append((0, 0, link_vals))
                     base_vals = {
                         'name': self.computed_base_restore_to_name,
+                        'environment_id': environments[0].id,
                         'container_id': container.id,
                         'application_id': apps[0].id,
                         'domain_id': domains[0].id,
@@ -622,7 +649,8 @@ class ClouderSave(models.Model):
                 ['rm', '-rf', '/base-backup/restore-' + self.name],
                 username='root')
             res = base
-        self.write({'container_restore_to_name': False,
+        self.write({'restore_to_environment_id': False,
+                    'container_restore_to_suffix': False,
                     'container_restore_to_server_id': False,
                     'base_restore_to_name': False,
                     'base_restore_to_domain_id': False})
