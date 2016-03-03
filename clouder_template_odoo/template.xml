@@ -106,6 +106,10 @@ CMD tail -f /opt/odoo/etc/odoo.conf
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git
 
 RUN git clone http://github.com/odoo/odoo.git /opt/odoo/files/odoo -b 8.0
+RUN mkdir /opt/odoo/files/extra
+
+ADD sources/http.patch /tmp/http.patch
+RUN patch /opt/odoo/files/odoo/openerp/http.py < /tmp/http.patch
 
 ]]></field>
         </record>
@@ -395,6 +399,8 @@ RUN git clone http://github.com/odoo/odoo.git /opt/odoo/files/odoo -b 8.0
 RUN git clone http://github.com/OCA/connector.git /opt/odoo/files/extra/connector -b 8.0
 RUN git clone http://github.com/clouder-community/clouder.git /opt/odoo/files/extra/clouder -b 8.1
 
+ADD sources/http.patch /tmp/http.patch
+RUN patch /opt/odoo/files/odoo/openerp/http.py < /tmp/http.patch
 
 ]]></field>
         </record>
