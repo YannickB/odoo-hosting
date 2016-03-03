@@ -118,7 +118,8 @@ class ClouderServer(models.Model):
         return key
 
     name = fields.Char('Domain name', required=True)
-    runner_id = fields.Many2one('clouder.container', 'Runner')
+    environment_id = fields.Many2one('clouder.environment', 'Environment',
+                                     required=True)
     ip = fields.Char('IP')
     ssh_port = fields.Integer('SSH port')
 
@@ -131,12 +132,9 @@ class ClouderServer(models.Model):
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
     public = fields.Boolean('Public?')
-    partner_id = fields.Many2one(
-        'res.partner', 'Manager',
-        default=lambda self: self.user_partner)
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
+    runner_id = fields.Many2one('clouder.container', 'Runner')
     oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
-    oneclick_prefix = fields.Char('Prefix')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, ssh_port)',
@@ -260,7 +258,9 @@ class ClouderContainer(models.Model):
                 self.ports_string += port.name + ' : ' + port.hostport
             first = False
 
-    name = fields.Char('Name', required=True)
+    environment_id = fields.Many2one('clouder.environment', 'Environment',
+                                     required=True)
+    suffix = fields.Char('Suffix', required=True)
     application_id = fields.Many2one('clouder.application',
                                      'Application', required=True)
     image_id = fields.Many2one('clouder.image', 'Image', required=True)
@@ -291,17 +291,18 @@ class ClouderContainer(models.Model):
         'clouder.container', 'clouder_container_backup_rel',
         'container_id', 'backup_id', 'Backup containers')
     public = fields.Boolean('Public?')
-    partner_id = fields.Many2one(
-        'res.partner', 'Manager',
-        default=lambda self: self.user_partner)
-    partner_ids = fields.Many2many(
-        'res.partner', 'clouder_container_partner_rel',
-        'container_id', 'partner_id', 'Users')
+
+    @property
+    def name(self):
+        """
+        Property returning the name of the container.
+        """
+        return self.environment_id.prefix + '-' + self.suffix
 
     @property
     def fullname(self):
         """
-        Property returning the full name of the server.
+        Property returning the full name of the container.
         """
         return self.name + '_' + self.server_id.name
 
@@ -423,7 +424,7 @@ class ClouderContainer(models.Model):
         return childs
 
     _sql_constraints = [
-        ('name_uniq', 'unique(server_id,name)',
+        ('name_uniq', 'unique(server_id,environment_id,name)',
          'Name must be unique per server!'),
     ]
 
@@ -1363,7 +1364,7 @@ class ClouderContainerChild(models.Model):
         self = self.with_context(autocreate=True)
         self.purge()
         self.child_id = self.env['clouder.container'].create({
-            'name': self.container_id.name + '-' + self.name.code,
+            'name': self.container_id.suffix + '-' + self.name.code,
             'parent_id': self.id,
             'application_id': self.name.id,
             'server_id': self.server_id.id or self.container_id.server_id.id

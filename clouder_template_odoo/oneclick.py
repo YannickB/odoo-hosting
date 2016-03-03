@@ -48,7 +48,8 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'registry')])
         registry = container_obj.create({
-            'name': prefix + '-registry',
+            'name': 'registry',
+            'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
         })
@@ -122,56 +123,64 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', 'backup-bup')])
         container_obj.create({
-            'name': prefix + '-backup',
+            'name': 'backup',
+            'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
         })
 
         application = application_obj.search([('code', '=', 'postfix')])
         container_obj.create({
-            'name': prefix + '-postfix',
+            'name': 'postfix',
+            'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
         })
 
         application = application_obj.search([('code', '=', 'bind')])
         bind = container_obj.create({
-            'name': prefix + '-bind',
+            'name': 'bind',
+            'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
         })
 
         application = application_obj.search([('code', '=', 'proxy')])
         container_obj.create({
-            'name': prefix + '-proxy',
+            'name': 'proxy',
+            'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
         })
 
         application = application_obj.search([('code', '=', 'shinken')])
         container_obj.create({
-            'name': prefix + '-shinken',
+            'name': 'shinken',
+            'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
         })
 
         application = application_obj.search([('code', '=', 'glances')])
         container_obj.create({
-            'name': prefix + '-glances',
+            'name': 'glances',
+            'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
         })
 
         application = application_obj.search([('code', '=', 'postgres')])
         container_obj.create({
-            'name': prefix + '-postgres',
+            'name': 'postgres',
+            'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
         })
 
         application = application_obj.search([('code', '=', 'clouder')])
         clouder = container_obj.create({
-            'name': prefix + '-clouder',
+            'name': 'clouder',
+            'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
             'subservice_name': 'test'
@@ -189,6 +198,7 @@ class ClouderServer(models.Model):
         base_obj.create({
             'name': 'clouder',
             'domain_id': domain.id,
+            'environment_id': self.environment_id.id,
             'title': 'My Clouder',
             'application_id': application.id,
             'container_id': clouder.id,
@@ -207,24 +217,34 @@ class ClouderServer(models.Model):
 
         container_obj = self.env['clouder.container']
 
-        container_obj.search([('name', '=', prefix + '-clouder-test')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'clouder-test')]).unlink()
 
-        container_obj.search([('name', '=', prefix + '-clouder')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'clouder')]).unlink()
 
         self.env['clouder.domain'].search([('name', '=', 'mydomain')]).unlink()
 
-        container_obj.search([('name', '=', prefix + '-postgres')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'postgres')]).unlink()
 
-        container_obj.search([('name', '=', prefix + '-glances')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'glances')]).unlink()
 
-        container_obj.search([('name', '=', prefix + '-shinken')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'shinken')]).unlink()
 
-        container_obj.search([('name', '=', prefix + '-proxy')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'proxy')]).unlink()
 
-        container_obj.search([('name', '=', prefix + '-bind')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'bind')]).unlink()
 
-        container_obj.search([('name', '=', prefix + '-postfix')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'postfix')]).unlink()
 
-        container_obj.search([('name', '=', prefix + '-backup')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'backup')]).unlink()
 
-        container_obj.search([('name', '=', prefix + '-registry')]).unlink()
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('name', '=', 'registry')]).unlink()
