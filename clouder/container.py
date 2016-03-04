@@ -234,6 +234,17 @@ class ClouderServer(models.Model):
     def oneclick_purge(self):
         getattr(self, self.oneclick_id.function + '_purge')()
 
+    @api.multi
+    def clean(self):
+        """
+        Clean the server from unused containers / images / volumes.
+        http://blog.yohanliyanage.com/2015/05/docker-clean-up-after-yourself/
+        """
+#        Too risky?
+#        self.execute_local(['docker rm -v $(docker ps -a -q -f status=exited)'])
+        self.execute(['docker', 'rmi $(docker images -f "dangling=true" -q)'])
+        self.execute(['docker', 'run -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker:/var/lib/docker --rm martin/docker-cleanup-volumes'])
+
 
 class ClouderContainer(models.Model):
     """

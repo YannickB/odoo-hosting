@@ -330,6 +330,7 @@
                     <button name="test_connection" string="Test connection" type="object"/>
                     <button name="start_containers" string="Restart Containers" type="object"/>
                     <button name="stop_containers" string="Stop Containers" type="object"/>
+                    <button name="clean" string="Clean disk space" type="object"/>
                     <newline/>
                     <group col="4">
                         <field name="oneclick_id" widget="selection"/>
