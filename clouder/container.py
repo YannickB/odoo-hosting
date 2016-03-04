@@ -401,6 +401,9 @@ class ClouderContainer(models.Model):
         Property returning the ports linked to this container, in a dict.
         """
         ports = {}
+        for child in self.child_ids:
+            if child.child_id:
+                ports.update(child.child_id.ports)
         for port in self.port_ids:
             ports[port.name] = {
                 'id': port.id, 'name': port.name,

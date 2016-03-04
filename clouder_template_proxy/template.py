@@ -76,7 +76,7 @@ class ClouderBaseLink(models.Model):
             if 'http' in self.base_id.container_id.ports:
                 target.execute([
                     'sed', '-i', '"s/PORT/' +
-                    self.base_id.container_ids.ports['http']['hostport'] +
+                    self.base_id.container_id.ports['http']['hostport'] +
                     '/g"', self.base_id.nginx_configfile])
             # self.deploy_prepare_apache(cr, uid, vals, context)
             cert_file = '/etc/ssl/certs/' + self.base_id.name + '.' + \
