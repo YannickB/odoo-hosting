@@ -20,4 +20,28 @@
 #
 ##############################################################################
 
-from __unfinished__.clouder_template_drupal import clouder_template_drupal
+{
+    'name': 'Clouder Template Wordpress',
+    'version': '1.0',
+    'category': 'Clouder',
+    'depends': [
+        'clouder_template_bind',
+        'clouder_template_mysql',
+        'clouder_template_shinken',
+        'clouder_template_postfix',
+        'clouder_template_proxy',
+        'clouder_template_piwik'
+    ],
+    'author': 'Yannick Buron (Clouder)',
+    'license': 'Other OSI approved licence',
+    'website': 'https://github.com/clouder-community/clouder',
+    'description': """
+    Clouder Wordpress
+    """,
+    'demo': [],
+    'data': [
+        'template.xml'
+    ],
+    'installable': True,
+    'application': True,
+}

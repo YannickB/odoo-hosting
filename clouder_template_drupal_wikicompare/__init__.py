@@ -20,18 +20,4 @@
 #
 ##############################################################################
 
-{
-    'name': 'Clouder Template Drupal Wikicompare',
-    'version': '1.0',
-    'category': 'Clouder',
-    'depends': ['clouder_template_postgres',
-                'clouder_template_piwik',
-                'clouder_template_drupal'],
-    'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
-    'website': 'https://github.com/clouder-community/clouder',
-    'demo': [],
-    'data': ['clouder_template_drupal_wikicompare_data.xml'],
-    'installable': True,
-    'application': True,
-}
+import template

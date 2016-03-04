@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_drupal" model="clouder.application.type">
+            <field name="name">drupal</field>
+            <field name="system_user">www-data</field>
+        </record>
+        <record id="apptype_drupal_option_install_modules" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_drupal"/>
+            <field name="name">install_modules</field>
+            <field name="type">application</field>
+        </record>
+        <record id="apptype_drupal_option_test_install_modules" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_drupal"/>
+            <field name="name">test_install_modules</field>
+            <field name="type">application</field>
+        </record>
+        <record id="apptype_drupal_option_theme" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_drupal"/>
+            <field name="name">theme</field>
+            <field name="type">application</field>
+        </record>
+        <record id="apptype_drupal_option_poweruser_group" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_drupal"/>
+            <field name="name">poweruser_group</field>
+            <field name="type">application</field>
+        </record>
+        <record id="apptype_drupal_option_db_password" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_drupal"/>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+        </record>
+
+        <record id="image_drupal" model="clouder.image">
+            <field name="name">img_drupal</field>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_nginx"/>
+            <field name="dockerfile"><![CDATA[
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install php5-pgsql php-apc php5-fpm php5-curl php5-gd php5-intl php-pear php5-imap php5-memcache memcached mc postgresql-client curl git
+
+RUN curl -SL -o /tmp/drush.phar http://files.drush.org/drush.phar 
+RUN mv /tmp/drush.phar /usr/local/bin/drush
+RUN chmod +x /usr/local/bin/drush
+
+USER www-data
+RUN yes | drush init
+
+USER root
+
+# php-fpm config
+RUN sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php5/fpm/php.ini
+RUN sed -i -e "s/;daemonize\s*=\s*yes/daemonize = no/g" /etc/php5/fpm/php-fpm.conf
+RUN find /etc/php5/cli/conf.d/ -name "*.ini" -exec sed -i -re 's/^(\s*)#(.*)/\1;\2/g' {} \;
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:php5-fpm]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/usr/sbin/php5-fpm -c /etc/php5/fpm" >> /etc/supervisor/conf.d/supervisord.conf
+
+RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "[program:memcached]" >> /etc/supervisor/conf.d/supervisord.conf
+RUN echo "command=/usr/bin/memcached -p 11211 -u www-data -m 64 -c 1024 -t 4" >> /etc/supervisor/conf.d/supervisord.conf
+
+
+RUN mkdir /base-backup
+RUN chown -R www-data /base-backup
+VOLUME /base-backup
+]]></field>
+        </record>
+        <record id="image_drupal_volume_www" model="clouder.image.volume">
+            <field name="image_id" ref="image_drupal"/>
+            <field name="name">/var/www</field>
+        </record>
+        <record id="image_drupal_volume_etc" model="clouder.image.volume">
+            <field name="image_id" ref="image_drupal"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_drupal_port_nginx" model="clouder.image.port">
+            <field name="image_id" ref="image_drupal"/>
+            <field name="name">nginx</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+
+
+        <record id="app_drupal" model="clouder.application">
+            <field name="name">Drupal</field>
+            <field name="code">drupal</field>
+            <field name="type_id" ref="apptype_drupal"/>
+            <field name="default_image_id" ref="image_drupal"/>
+            <field name="current_version">8.0</field>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_drupal_option_install_modules" model="clouder.application.option">
+            <field name="application_id" ref="app_drupal"/>
+            <field name="name" ref="apptype_drupal_option_install_modules"/>
+            <field name="value">piwik,admin_menu_toolbar</field>
+        </record>
+        <record id="app_drupal_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_drupal_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_drupal_link_postgres" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
+        <record id="app_drupal_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+        <record id="app_drupal_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_drupal_link_piwik" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+            <field name="base" eval="True"/>
+        </record>
+
+    </data>
+</openerp>
