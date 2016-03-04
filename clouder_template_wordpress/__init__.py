@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-from clouder_template_wordpress import template
+import template

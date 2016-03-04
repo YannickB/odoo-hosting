@@ -27,18 +27,28 @@
             <field name="name">poweruser_group</field>
             <field name="type">application</field>
         </record>
-
+        <record id="apptype_drupal_option_db_password" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_drupal"/>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+        </record>
 
         <record id="image_drupal" model="clouder.image">
             <field name="name">img_drupal</field>
             <field name="current_version">8.0</field>
             <field name="parent_id" ref="clouder.image_nginx"/>
             <field name="dockerfile"><![CDATA[
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install php5-pgsql php-apc php5-fpm php5-curl php5-gd php5-intl php-pear php5-imap php5-memcache memcached mc postgresql-client
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install php5-pgsql php-apc php5-fpm php5-curl php5-gd php5-intl php-pear php5-imap php5-memcache memcached mc postgresql-client curl git
 
-RUN pear channel-discover pear.drush.org
-RUN pear install drush/drush
-RUN chmod -R 777 /usr/share/php/drush/
+RUN curl -SL -o /tmp/drush.phar http://files.drush.org/drush.phar 
+RUN mv /tmp/drush.phar /usr/local/bin/drush
+RUN chmod +x /usr/local/bin/drush
+
+USER www-data
+RUN yes | drush init
+
+USER root
 
 # php-fpm config
 RUN sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php5/fpm/php.ini
@@ -81,10 +91,11 @@ VOLUME /base-backup
             <field name="type_id" ref="apptype_drupal"/>
             <field name="default_image_id" ref="image_drupal"/>
             <field name="current_version">8.0</field>
+            <field name="base" eval="True"/>
         </record>
         <record id="app_drupal_option_install_modules" model="clouder.application.option">
             <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="apptype_drupal_option1"/>
+            <field name="name" ref="apptype_drupal_option_install_modules"/>
             <field name="value">piwik,admin_menu_toolbar</field>
         </record>
         <record id="app_drupal_link_bind" model="clouder.application.link">
@@ -108,7 +119,7 @@ VOLUME /base-backup
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
+            <field name="container" eval="True"/>
         </record>
         <record id="app_drupal_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="app_drupal"/>

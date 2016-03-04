@@ -87,7 +87,7 @@ class ClouderBase(models.Model):
             self.container_id.execute(['/etc/init.d/nginx', 'reload'])
             #
             self.container_id.execute(['drush', '-y', 'si',
-                               '--db-url=' + self.container_id.database_type +
+                               '--db-url=' + self.container_id.db_type +
                                '://' + self.container_id.db_user + ':' +
                                self.container_id.db_password + '@' +
                                self.container_id.db_server + '/' +
@@ -223,10 +223,8 @@ class ClouderBase(models.Model):
         """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'drupal':
-            ssh = self.connect(self.service_id.container_id.fullname)
             self.container_id.execute(['rm', '-rf',
-                               self.service_id.full_localpath +
-                               '/sites/' + self.fulldomain])
+                               '/var/www/sites/' + self.fulldomain])
             self.container_id.execute(['rm', '-rf',
                                '/etc/nginx/sites-enabled/' + self.fullname])
             self.container_id.execute(['rm', '-rf',

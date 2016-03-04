@@ -45,15 +45,15 @@ class ClouderContainer(models.Model):
 
         if self.application_id.type_id.name == 'drupal'\
                 and self.application_id.code == 'wkc':
-            self.container_id.send(modules.get_module_path(
+            self.send(modules.get_module_path(
                 'clouder_template_drupal_wikicompare') +
                 '/res/wikicompare.script',
                 '/var/www/drupal/wikicompare.script', username='www-data')
-            self.container_id.send(modules.get_module_path(
+            self.send(modules.get_module_path(
                 'clouder_template_drupal_wikicompare') +
                 '/res/patch/revisioning_postgres.patch',
                 '/var/www/drupal/revisioning_postgres.patch', username='www-data')
-            self.container_id.execute(['patch', '-p0', '-d', '/var/www/drupal/sites/all/modules/revisioning/', '<',
+            self.execute(['patch', '-p0', '-d', '/var/www/drupal/sites/all/modules/revisioning/', '<',
                                '/var/www/drupal/revisioning_postgres.patch'], username='www-data')
 
 

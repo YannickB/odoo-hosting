@@ -21,12 +21,17 @@ RUN sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php5/fpm/php.ini
 RUN sed -i -e "s/;daemonize\s*=\s*yes/daemonize = no/g" /etc/php5/fpm/php-fpm.conf
 RUN find /etc/php5/cli/conf.d/ -name "*.ini" -exec sed -i -re 's/^(\s*)#(.*)/\1;\2/g' {} \;
 
-USER www-data
-RUN cd /var/www
-RUN wget -q https://wordpress.org/latest.tar.gz latest.tar.gz
-RUN tar -xzf latest.tar.gz
-RUN rm -rf./*.tar.gz
+RUN mkdir -p  /var/www/wordpress\
+    && curl -SL https://wordpress.org/latest.tar.gz \
+    | tar -xJC /tmp
+#ADD https://wordpress.org/latest.tar.gz /tmp/latest.tar.gz
+#RUN mkdir /var/www/wordpress
+#RUN  tar -xvf /tmp/latest.tar.gz -C /var/www/wordpress
+RUN ls /tmp
+#RUN rm -rf /tmp/*.tar.gz
+RUN chown -R www-data:www-data /var/www
 
+USER root
 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "[program:php5-fpm]" >> /etc/supervisor/conf.d/supervisord.conf
 RUN echo "command=/usr/sbin/php5-fpm -c /etc/php5/fpm" >> /etc/supervisor/conf.d/supervisord.conf
@@ -66,6 +71,7 @@ VOLUME /base-backup
             <field name="type_id" ref="apptype_wordpress"/>
             <field name="default_image_id" ref="image_wordpress"/>
             <field name="current_version">8.0</field>
+            <field name="base" eval="True"/>
         </record>
         <record id="app_wordpress_link_bind" model="clouder.application.link">
             <field name="application_id" ref="app_wordpress"/>

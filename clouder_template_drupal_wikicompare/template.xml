@@ -9,6 +9,7 @@
             <field name="type_id" ref="clouder_template_drupal.apptype_drupal"/>
             <field name="default_image_id" ref="clouder_template_drupal.image_drupal"/>
             <field name="current_version">8.0</field>
+            <field name="base" eval="True"/>
         </record>
         <record id="app_drupal_wikicompare_option_install_modules" model="clouder.application.option">
             <field name="application_id" ref="app_drupal_wikicompare"/>
@@ -51,7 +52,7 @@
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
+            <field name="container" eval="True"/>
         </record>
         <record id="app_drupal_wikicompare_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="app_drupal_wikicompare"/>
