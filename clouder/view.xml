@@ -90,7 +90,7 @@
                         <field name="build"/>
                         <field name="lang"/>
                         <field name="ssl_only"/>
-                        <field name="nosave"/>
+                        <field name="autosave"/>
                         <field name="test"/>
                         <field name="reset_each_day"/>
                         <newline/>
@@ -404,7 +404,7 @@
                                 <field name="base_build"/>
                                 <field name="base_test"/>
                                 <field name="base_lang"/>
-                                <field name="base_nosave"/>
+                                <field name="base_autosave"/>
                                 <field name="base_options"/>
                                 <field name="base_links"/>
                             </group>  
@@ -732,15 +732,12 @@
                     <group col="4">
                         <field name="email_sysadmin" required="1"/>
                         <newline/>
-                        <field name="end_reset_keys"/>
                         <field name="end_save_all"/>
                         <field name="end_reset_bases"/>
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
-                    <button name="reset_keys" string="Reset Keys" type="object"/>
                     <button name="save_all" string="Save All" type="object"/>
                     <button name="purge_expired_saves" string="Purge expired Saves" type="object"/>
-                    <button name="purge_expired_logs" string="Purge Expired Logs" type="object"/>
                     <button name="reset_bases" string="Reset Bases" type="object"/>
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
                     <button name="reset_all_jobs" string="Reset Jobs" type="object"/>

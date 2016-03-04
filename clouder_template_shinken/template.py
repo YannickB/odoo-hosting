@@ -212,7 +212,7 @@ class ClouderBaseLink(models.Model):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'shinken':
             config_file = 'base-shinken'
-            if self.base_id.nosave:
+            if not self.base_id.autosave:
                 config_file = 'base-shinken-nosave'
             self.target.send(
                 modules.get_module_path('clouder_template_shinken') +

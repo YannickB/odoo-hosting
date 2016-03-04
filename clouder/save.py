@@ -73,7 +73,7 @@ class ClouderSave(models.Model):
     base_build = fields.Char('Build')
     base_test = fields.Boolean('Test?')
     base_lang = fields.Char('Lang')
-    base_nosave = fields.Boolean('No save?')
+    base_autosave = fields.Boolean('Save?')
     base_options = fields.Text('Base Options')
     base_links = fields.Text('Base Links')
     container_suffix = fields.Char(
@@ -242,7 +242,7 @@ class ClouderSave(models.Model):
                 'base_build': base.build,
                 'base_test': base.test,
                 'base_lang': base.lang,
-                'base_nosave': base.nosave,
+                'base_autosave': base.autosave,
                 'base_options': str(base.options),
                 'base_links': str(base_links),
             })
@@ -620,7 +620,7 @@ class ClouderSave(models.Model):
                         'build': self.base_build,
                         'test': self.base_test,
                         'lang': self.base_lang,
-                        'nosave': self.base_nosave,
+                        'autosave': self.base_autosave,
                         'option_ids': options,
                         'link_ids': links,
                         'backup_ids': [(6, 0, [self.backup_id.id])]

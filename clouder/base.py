@@ -112,7 +112,7 @@ class ClouderBase(models.Model):
     save_expiration = fields.Integer('Days before save expiration')
     date_next_save = fields.Datetime('Next save planned')
     save_comment = fields.Text('Save Comment')
-    nosave = fields.Boolean('No save?')
+    autosave = fields.Boolean('Save?')
     reset_each_day = fields.Boolean('Reset each day?')
     cert_key = fields.Text('Cert Key')
     cert_cert = fields.Text('Cert')
@@ -521,7 +521,7 @@ class ClouderBase(models.Model):
             self.deploy()
             save.restore()
             self.end_log()
-        if 'nosave' in vals or 'ssl_only' in vals:
+        if 'autosave' in vals or 'ssl_only' in vals:
             self.deploy_links()
 
         return res
@@ -546,7 +546,7 @@ class ClouderBase(models.Model):
         now = datetime.now()
 
         if 'nosave' in self.env.context \
-                or (self.nosave and 'forcesave' not in self.env.context):
+                or (not self.autosave and 'forcesave' not in self.env.context):
             self.log(
                 'This base shall not be saved or the backup '
                 'isnt configured in conf, skipping save base')

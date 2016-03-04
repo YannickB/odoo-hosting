@@ -959,7 +959,7 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).write(vals)
         # if flag:
         #     self.reinstall()
-        if 'nosave' in vals:
+        if 'autosave' in vals:
             self.deploy_links()
         return res
 
