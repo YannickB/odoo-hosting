@@ -55,31 +55,46 @@ class ClouderContainerLink(models.Model):
         """
         Upload the whole backups to a distant container.
         """
-        # TODO
-        # if self.name.name.code == 'backup-upl' \
-        #         and self.container_id.application_id.type_id.name == 'backup':
-        #     directory = '/opt/upload/' + self.container_id.fullname
-        #     self.target.execute(['mkdir', '-p', directory])
-        #
-        #     container = self.container_id
-        #     container.send(self.home_directory + '/.ssh/config',
-        #               '/home/backup/.ssh/config', username='backup')
-        #     container.send(self.home_directory + '/.ssh/keys/' +
-        #               self.target.fullname + '.pub',
-        #               '/home/backup/.ssh/keys/' +
-        #               self.target.fullname + '.pub', username='backup')
-        #     container.send(self.home_directory + '/.ssh/keys/' +
-        #               self.target.fullname,
-        #               '/home/backup/.ssh/keys/' +
-        # self.target.fullname, username='backup')
-        #     container.execute(['chmod', '-R', '700',
-        # '/home/backup/.ssh'], username='backup')
-        #     container.execute([
-        #         'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-        #         '/opt/backup/', self.target.fullname + ':' + directory],
-        #  username='backup')
-        #     container.self.execute(['rm', '/home/backup/.ssh/keys/*'],
-        # username='backup')
+        if self.name.name.code == 'backup-upl' \
+                and self.container_id.application_id.type_id.name == 'backup':
+            filegz = self.container_id.fullname + '.tar.gz'
+            file_destination = '/opt/upload/' + filegz
+            tmp_file = '/tmp/backup-upload/' + filegz
+       
+            container = self.container_id
+            container.execute(['mkdir', '-p', '/tmp/backup-upload'])
+            container.execute(['tar', 'czf', tmp_file, '-C /opt/backup', '.'])
+
+            container.send(self.home_directory + '/.ssh/config',
+                      '/home/backup/.ssh/config', username='backup')
+            container.send(self.home_directory + '/.ssh/keys/' +
+                      self.target.server_id.name + '.pub',
+                      '/home/backup/.ssh/keys/' +
+                      self.target.server_id.name + '.pub', username='backup')
+            container.send(self.home_directory + '/.ssh/keys/' +
+                      self.target.server_id.name,
+                      '/home/backup/.ssh/keys/' +
+                      self.target.server_id.name, username='backup')
+            container.execute(['chmod', '-R', '700',
+                               '/home/backup/.ssh'], username='backup')
+
+            self.target.server_id.execute(['mkdir', '-p', '/tmp/backup-upload'])
+            container.execute([
+                'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
+                tmp_file, self.target.server_id.name + ':' + tmp_file],
+                username='backup')
+            container.execute(['rm', tmp_file])
+            self.target.server_id.execute([
+                'docker', 'cp',
+                 tmp_file, self.target.name + ':' + file_destination])
+            self.target.server_id.execute(['rm', tmp_file])
+
+#            container.self.execute(['rm', '/home/backup/.ssh/keys/*'],
+#                                   username='backup')
+            
+            if self.target.options['protocol']['value'] == 'ftp':
+                self.target.execute(['lftp', 'ftp://' + self.target.options['login']['value'] + ':' + self.target.options['password']['value'] + '@' + self.target.options['host']['value'], '-e', '"rm ' + filegz + '; quit"'])
+                self.target.execute(['lftp', 'ftp://' + self.target.options['login']['value'] + ':' + self.target.options['password']['value'] + '@' + self.target.options['host']['value'], '-e', '"put ' + file_destination + '; quit"'])
 
         return super(ClouderContainerLink, self).deploy_link()
 
@@ -90,7 +105,7 @@ class ClouderContainerLink(models.Model):
         """
         if self.name.name.code == 'backup-upl' \
                 and self.container_id.application_id.type_id.name == 'backup':
-            directory = '/opt/upload/' + self.container_id.fullname
+            directory = '/opt/upload/' + self.container_id.name
             self.target.execute(['rm', '-rf', directory])
         return super(ClouderContainerLink, self).purge_link()
 

@@ -430,16 +430,16 @@ class ClouderContainer(models.Model):
     ]
 
     @api.one
-    @api.constrains('name')
+    @api.constrains('suffix')
     def _validate_data(self):
         """
         Check that the container name does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d-]*$", self.name):
+        if not re.match("^[\w\d-]*$", self.suffix):
             raise except_orm(
                 _('Data error!'),
-                _("Name can only contains letters, digits and dash"))
+                _("Suffix can only contains letters, digits and dash"))
 
     @api.one
     @api.constrains('application_id')

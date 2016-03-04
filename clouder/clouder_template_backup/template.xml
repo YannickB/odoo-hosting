@@ -4,9 +4,33 @@
 
 
         <record id="apptype_backup_upload" model="clouder.application.type">
-            <field name="name">backup_upload</field>
+            <field name="name">backup-upload</field>
             <field name="system_user">backup</field>
             <field name="role_ids" eval="[(6, 0, [ref('role_no_backup')])]"/>
+        </record>
+        <record id="apptype_backup_upload_option_protocol" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_backup_upload"/>
+            <field name="name">protocol</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="apptype_backup_upload_option_host" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_backup_upload"/>
+            <field name="name">host</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="apptype_backup_upload_option_login" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_backup_upload"/>
+            <field name="name">login</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="apptype_backup_upload_option_password" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_backup_upload"/>
+            <field name="name">password</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
         </record>
 
         <record id="image_backup_upload" model="clouder.image">
@@ -14,6 +38,8 @@
             <field name="current_version">1</field>
             <field name="parent_id" ref="image_base"/>
             <field name="dockerfile"><![CDATA[
+RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install lftp
+
 RUN mkdir /opt/upload
 ]]></field>
         </record>
