@@ -23,6 +23,27 @@
 from openerp import models, api, modules
 
 
+class ClouderContainer(models.Model):
+    """
+    Add methods to manage the wordpress specificities.
+    """
+
+    _inherit = 'clouder.container'
+
+    @api.multi
+    def deploy_post(self):
+        super(ClouderContainer, self).deploy_post()
+
+        if self.application_id.type_id.name == 'wordpress':
+            self.execute(
+                         ['wget', '-q', 'https://wordpress.org/latest.tar.gz',
+                          'latest.tar.gz'], path='/var/www/', username='www-data')
+            self.execute(['tar', '-xzf', 'latest.tar.gz'],
+                         path='/var/www', username='www-data')
+            self.execute(['rm', '-rf', './*.tar.gz'],
+                         path='/var/www', username='www-data')
+
+
 class ClouderBase(models.Model):
     """
     Add methods to manage the shinken specificities.
@@ -37,21 +58,20 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'wordpress':
-            ssh = self.connect(self.service_id.container_id.fullname)
+
             config_file = '/etc/nginx/sites-available/' + self.fullname
-            self.send(ssh,
+            self.container_id.send(
                       modules.get_module_path('clouder_template_wordpress') +
                       '/res/nginx.config', config_file)
-            self.execute(ssh, ['sed', '-i', '"s/BASE/' + self.name + '/g"',
+            self.container_id.execute(['sed', '-i', '"s/BASE/' + self.name + '/g"',
                                config_file])
-            self.execute(ssh, ['sed', '-i',
+            self.container_id.execute(['sed', '-i',
                                '"s/DOMAIN/' + self.domain_id.name + '/g"',
                                config_file])
-            self.execute(ssh, ['ln', '-s',
+            self.container_id.execute(['ln', '-s',
                                '/etc/nginx/sites-available/' + self.fullname,
                                '/etc/nginx/sites-enabled/' + self.fullname])
-            self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close()
+            self.container_id.execute(['/etc/init.d/nginx', 'reload'])
 
         return res
 
@@ -62,10 +82,8 @@ class ClouderBase(models.Model):
         """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'wordpress':
-            ssh = self.connect(self.service_id.container_id.fullname)
-            self.execute(ssh, ['rm', '-rf',
+            self.container_id.execute(['rm', '-rf',
                                '/etc/nginx/sites-enabled/' + self.fullname])
-            self.execute(ssh, [
+            self.container_id.execute([
                 'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname])
-            self.execute(ssh, ['/etc/init.d/nginx', 'reload'])
-            ssh.close()
+            self.container_id.execute(['/etc/init.d/nginx', 'reload'])
