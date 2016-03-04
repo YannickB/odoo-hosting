@@ -20,5 +20,4 @@
 #
 ##############################################################################
 
-from __unfinished__.clouder_template_drupal_wikicompare import \
-    clouder_template_drupal_wikicompare
+import template

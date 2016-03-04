@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-from __unfinished__.clouder_template_drupal import clouder_template_drupal
+import template

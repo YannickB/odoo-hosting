@@ -24,45 +24,37 @@ from openerp import models, api
 from openerp import modules
 
 
-class ClouderApplicationVersion(models.Model):
+class ClouderContainer(models.Model):
     """
-    Add methods to manage the wikicompare application version specificities.
+    Add methods to manage the postgres specificities.
     """
 
-    _inherit = 'clouder.application.version'
+    _inherit = 'clouder.container'
 
     @api.multi
-    def build_application(self):
-        """
-        Patch some files in the archive.
-        """
-        super(ClouderApplicationVersion, self).build_application()
+    def send_drush_file(self):
+        self.send(
+            modules.get_module_path('clouder_template_drupal_wikicompare') +
+            '/res/drush.make', '/var/www/drush.make',
+            username='www-data')
+
+
+    @api.multi
+    def deploy_post(self):
+        super(ClouderContainer, self).deploy_post()
+
         if self.application_id.type_id.name == 'drupal'\
                 and self.application_id.code == 'wkc':
-            ssh = self.connect(self.archive_id.fullname)
-            self.send(ssh, modules.get_module_path(
+            self.container_id.send(modules.get_module_path(
                 'clouder_template_drupal_wikicompare') +
                 '/res/wikicompare.script',
-                self.full_archivepath + '/wikicompare.script')
-            self.send(ssh, modules.get_module_path(
+                '/var/www/drupal/wikicompare.script', username='www-data')
+            self.container_id.send(modules.get_module_path(
                 'clouder_template_drupal_wikicompare') +
                 '/res/patch/revisioning_postgres.patch',
-                self.full_archivepath + '/revisioning_postgres.patch')
-            self.execute(ssh, ['patch', '-p0', '-d', self.full_archivepath +
-                               '/sites/all/modules/revisioning/', '<',
-                               self.full_archivepath +
-                               '/revisioning_postgres.patch'])
-            ssh.close()
-
-            #
-            # if [[ $name == 'dev' ]]
-            # then
-            # patch -p0 -d $archive_path/$app/${app}-${name}/archive/sites/all/
-            # themes/wikicompare_theme/ < $openerp_path/clouder/clouder/apps/
-            # drupal/patch/dev_zen_rebuild_registry.patch
-            # fi
-
-        return
+                '/var/www/drupal/revisioning_postgres.patch', username='www-data')
+            self.container_id.execute(['patch', '-p0', '-d', '/var/www/drupal/sites/all/modules/revisioning/', '<',
+                               '/var/www/drupal/revisioning_postgres.patch'], username='www-data')
 
 
 class ClouderBase(models.Model):
@@ -80,22 +72,15 @@ class ClouderBase(models.Model):
         res = super(ClouderBase, self).deploy_test()
         if self.application_id.type_id.name == 'drupal' \
                 and self.application_id.code == 'wkc':
-            ssh = self.connect(
-                self.service_id.container_id.fullname,
-                username=self.application_id.type_id.system_user)
-            self.execute(ssh, ['drush', 'vset', '--yes', '--exact',
+            self.container_id.execute(['drush', 'vset', '--yes', '--exact',
                                'wikicompare_test_platform', '1'],
-                         path=self.service_id.full_localpath_files +
-                         '/sites/' + self.fulldomain)
+                         path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
             if self.poweruser_name and self.poweruser_email:
-                self.execute(ssh, ['drush',
-                                   self.service_id.full_localpath_files +
-                                   '/wikicompare.script',
+                self.container_id.execute(['drush',
+                                   '/var/www/drupal/wikicompare.script',
                                    '--user=' + self.poweruser_name,
                                    'deploy_demo'],
-                             path=self.service_id.full_localpath_files +
-                             '/sites/' + self.fulldomain)
-            ssh.close()
+                             path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
         return res
 
 

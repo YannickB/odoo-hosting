@@ -21,15 +21,15 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Drupal',
+    'name': 'Clouder Template Drupal Wikicompare',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['clouder_template_postgres', 'clouder_template_piwik'],
+    'depends': ['clouder_template_drupal'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
-    'data': ['clouder_template_drupal_data.xml'],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }
