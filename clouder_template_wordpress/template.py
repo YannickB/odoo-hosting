@@ -23,36 +23,6 @@
 from openerp import models, api, modules
 
 
-class ClouderApplicationVersion(models.Model):
-    """
-    Add methods to manage the wordpress specificities.
-    """
-
-    _inherit = 'clouder.application.version'
-
-    @api.multi
-    def build_application(self):
-        """
-        Get the archive from official website.
-        """
-        super(ClouderApplicationVersion, self).build_application()
-        if self.application_id.type_id.name == 'wordpress':
-            ssh = self.connect(self.archive_id.fullname)
-            self.execute(ssh,
-                         ['wget', '-q', 'https://wordpress.org/latest.tar.gz',
-                          'latest.tar.gz'], path=self.full_archivepath)
-            self.execute(ssh, ['tar', '-xzf', 'latest.tar.gz'],
-                         path=self.full_archivepath)
-            self.execute(ssh, ['mv', 'wordpress/*', './'],
-                         path=self.full_archivepath)
-            self.execute(ssh, ['rm', '-rf', './*.tar.gz'],
-                         path=self.full_archivepath)
-            self.execute(ssh, ['rm', '-rf', 'wordpress/'],
-                         path=self.full_archivepath)
-            ssh.close()
-        return
-
-
 class ClouderBase(models.Model):
     """
     Add methods to manage the shinken specificities.
@@ -77,10 +47,6 @@ class ClouderBase(models.Model):
             self.execute(ssh, ['sed', '-i',
                                '"s/DOMAIN/' + self.domain_id.name + '/g"',
                                config_file])
-            self.execute(ssh, ['sed', '-i',
-                               '"s/PATH/' +
-                               self.service_id.full_localpath_files
-                               .replace('/', '\/') + '/g"', config_file])
             self.execute(ssh, ['ln', '-s',
                                '/etc/nginx/sites-available/' + self.fullname,
                                '/etc/nginx/sites-enabled/' + self.fullname])

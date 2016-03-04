@@ -20,21 +20,4 @@
 #
 ##############################################################################
 
-{
-    'name': 'Clouder Template Wordpress',
-    'version': '1.0',
-    'category': 'Clouder',
-    'depends': ['clouder'],
-    'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
-    'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder Wordpress
-    """,
-    'demo': [],
-    'data': [
-        'clouder_template_wordpress_data.xml'
-    ],
-    'installable': True,
-    'application': True,
-}
+from clouder_template_wordpress import template
