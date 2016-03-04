@@ -102,6 +102,11 @@ class ClouderContainer(models.Model):
                 '/usr/local/shinken/etc/services/clouder.cfg',
                 username='shinken')
             self.execute([
+                'sed', '-i', '"s/SHINKENDOMAIN/' +
+                self.options['domain']['value'] + '/g"',
+                '/usr/local/shinken/etc/services/clouder.cfg'],
+                username='shinken')
+            self.execute([
                 'sed', '-i', '"s/SYSADMIN_MAIL/' +
                 self.email_sysadmin + '/g"',
                 '/usr/local/shinken/etc/services/clouder.cfg'],
