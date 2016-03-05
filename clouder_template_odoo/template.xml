@@ -348,6 +348,13 @@ USER root
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
+        <record id="app_odoo_data_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_data"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
 
         <record id="app_odoo_files" model="clouder.application">
             <field name="name">Odoo Files</field>
@@ -484,6 +491,13 @@ RUN patch /opt/odoo/files/odoo/openerp/http.py < /tmp/http.patch
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
+        </record>
+        <record id="app_odoo_clouder_data_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_clouder_data"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
         </record>
 
         <record id="app_odoo_clouder_files" model="clouder.application">
