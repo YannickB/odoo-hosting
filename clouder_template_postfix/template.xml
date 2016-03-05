@@ -46,6 +46,8 @@ run debconf-set-selections preseed.txt
 
 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor postfix mailutils libsasl2-2 ca-certificates libsasl2-modules supervisor
 
+RUN sed -i '/myorigin =/d' /etc/postfix/main.cf
+RUN echo "myorigin = </etc/mailname" >> /etc/postfix/main.cf
 RUN touch /etc/postfix/virtual_aliases
 RUN echo "virtual_alias_maps = hash:/etc/postfix/virtual_aliases" >> /etc/postfix/main.cf
 RUN postmap /etc/postfix/virtual_aliases
