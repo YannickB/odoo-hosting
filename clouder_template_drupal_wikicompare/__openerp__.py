@@ -20,4 +20,16 @@
 #
 ##############################################################################
 
-from __unfinished__.clouder_template_wordpress import clouder_template_wordpress
+{
+    'name': 'Clouder Template Drupal Wikicompare',
+    'version': '1.0',
+    'category': 'Clouder',
+    'depends': ['clouder_template_drupal'],
+    'author': 'Yannick Buron (Clouder)',
+    'license': 'Other OSI approved licence',
+    'website': 'https://github.com/clouder-community/clouder',
+    'demo': [],
+    'data': ['template.xml'],
+    'installable': True,
+    'application': True,
+}

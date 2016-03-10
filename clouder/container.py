@@ -234,6 +234,17 @@ class ClouderServer(models.Model):
     def oneclick_purge(self):
         getattr(self, self.oneclick_id.function + '_purge')()
 
+    @api.multi
+    def clean(self):
+        """
+        Clean the server from unused containers / images / volumes.
+        http://blog.yohanliyanage.com/2015/05/docker-clean-up-after-yourself/
+        """
+#        Too risky?
+#        self.execute_local(['docker rm -v $(docker ps -a -q -f status=exited)'])
+        self.execute(['docker', 'rmi $(docker images -f "dangling=true" -q)'])
+        self.execute(['docker', 'run -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker:/var/lib/docker --rm martin/docker-cleanup-volumes'])
+
 
 class ClouderContainer(models.Model):
     """
@@ -258,6 +269,7 @@ class ClouderContainer(models.Model):
                 self.ports_string += port.name + ' : ' + port.hostport
             first = False
 
+    @api.one
     def _get_name(self):
         """
         Return the name of the container
@@ -389,6 +401,9 @@ class ClouderContainer(models.Model):
         Property returning the ports linked to this container, in a dict.
         """
         ports = {}
+        for child in self.child_ids:
+            if child.child_id:
+                ports.update(child.child_id.ports)
         for port in self.port_ids:
             ports[port.name] = {
                 'id': port.id, 'name': port.name,
@@ -429,16 +444,16 @@ class ClouderContainer(models.Model):
     ]
 
     @api.one
-    @api.constrains('name')
+    @api.constrains('suffix')
     def _validate_data(self):
         """
         Check that the container name does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d-]*$", self.name):
+        if not re.match("^[\w\d-]*$", self.suffix):
             raise except_orm(
                 _('Data error!'),
-                _("Name can only contains letters, digits and dash"))
+                _("Suffix can only contains letters, digits and dash"))
 
     @api.one
     @api.constrains('application_id')
@@ -958,7 +973,7 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).write(vals)
         # if flag:
         #     self.reinstall()
-        if 'nosave' in vals:
+        if 'autosave' in vals:
             self.deploy_links()
         return res
 
@@ -1144,7 +1159,7 @@ class ClouderContainer(models.Model):
 
         self = self.with_context(no_enqueue=True)
 
-        subservice_name = self.name + '-' + self.subservice_name
+        subservice_name = self.suffix + '-' + self.subservice_name
         containers = self.search([('suffix', '=', subservice_name),
                                   ('environment_id', '=', self.environment_id.id),
                                   ('server_id', '=', self.server_id.id)])

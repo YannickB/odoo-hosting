@@ -78,7 +78,7 @@ class ClouderApplicationType(models.Model):
         Check that the application type name does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d_]*$", self.name) \
+        if not re.match("^[\w\d-]*$", self.name) \
                 or not re.match("^[\w\d-]*$", self.system_user):
             raise except_orm(_('Data error!'), _(
                 "Name and system_user can only contains letters, "
@@ -340,6 +340,7 @@ class ClouderApplicationLink(models.Model):
         ('name_uniq', 'unique(application_id,name)',
          'Links must be unique per application!'),
     ]
+
 
 class ClouderApplicationMetadata(models.Model):
     """

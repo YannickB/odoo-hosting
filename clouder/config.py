@@ -82,19 +82,6 @@ class ClouderConfigSettings(models.Model):
                 "digits, underscore, - and @"))
 
     @api.multi
-    def reset_keys(self):
-        """
-        Reset all keys for all containers managed by the clouder.
-        """
-        containers = self.env['clouder.container'].search([])
-        for container in containers:
-            container.deploy_key()
-
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.env.ref('clouder.clouder_settings').end_reset_keys = now
-        self.env.cr.commit()
-
-    @api.multi
     def save_all(self):
         """
         Execute some maintenance on backup containers, and force a save
@@ -105,28 +92,23 @@ class ClouderConfigSettings(models.Model):
         backups = self.env['clouder.container'].search(
             [('application_id.type_id.name', '=', 'backup')])
         for backup in backups:
-            ssh = backup.connect(backup.fullname,
-                                 username='backup')
-            backup.execute(ssh,
-                           ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
-                            '-r'])
+            backup.execute(['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
+                            '-r'], username="backup")
             # http://stackoverflow.com/questions/1904860/
             #     how-to-remove-unreferenced-blobs-from-my-git-repo
             # https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
             # https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
-            backup.execute(ssh, ['git', 'gc', '--prune=now'],
-                           path='/opt/backup/bup')
-            backup.execute(ssh,
-                           ['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
-                            '-g'])
-            ssh.close()
+            backup.execute(['git', 'gc', '--prune=now'],
+                           path='/opt/backup/bup', username="backup")
+            backup.execute(['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
+                            '-g'], username="backup")
 
         containers = self.env['clouder.container'].search(
-            [('nosave', '=', False)])
+            [('autosave', '=', True)])
         for container in containers:
             container.save()
 
-        bases = self.env['clouder.base'].search([('nosave', '=', False)])
+        bases = self.env['clouder.base'].search([('autosave', '=', True)])
         for base in bases:
             base.save()
 
@@ -145,20 +127,9 @@ class ClouderConfigSettings(models.Model):
         """
         Purge all expired saves.
         """
-        self.env['clouder.save.repository'].search(
-            [('date_expiration', '!=', False),
-             ('date_expiration', '<', self.now_date)]).unlink()
         self.env['clouder.save'].search([
             ('date_expiration', '!=', False),
             ('date_expiration', '<', self.now_date)]).unlink()
-
-    @api.multi
-    def purge_expired_logs(self):
-        """
-        Purge all expired logs.
-        """
-        self.env['clouder.log'].search([('expiration_date', '!=', False), (
-            'expiration_date', '<', self.now_date)]).unlink()
 
     @api.multi
     def launch_next_saves(self):
@@ -167,12 +138,14 @@ class ClouderConfigSettings(models.Model):
         """
         self = self.with_context(save_comment='Auto save')
         containers = self.env['clouder.container'].search([
+            ('autosave', '=', True),
             ('date_next_save', '!=', False),
             ('date_next_save', '<',
              self.now_date + ' ' + self.now_hour_regular)])
         for container in containers:
             container.save()
         bases = self.env['clouder.base'].search([
+            ('autosave', '=', True),
             ('date_next_save', '!=', False),
             ('date_next_save', '<',
              self.now_date + ' ' + self.now_hour_regular)])
@@ -201,9 +174,7 @@ class ClouderConfigSettings(models.Model):
         """
         Call all actions which shall be executed daily.
         """
-        self.reset_keys()
         self.purge_expired_saves()
-        self.purge_expired_logs()
         self.save_all()
         self.reset_bases()
         return True

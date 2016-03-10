@@ -6,14 +6,12 @@
         <record id="apptype_wordpress" model="clouder.application.type">
             <field name="name">wordpress</field>
             <field name="system_user">www-data</field>
-            <field name="localpath">/opt/versions</field>
-            <field name="localpath_services">/var/www</field>
         </record>
-        <record id="apptype_wordpress_option5" model="clouder.application.type.option">
+        <record id="apptype_wordpress_option_db_password" model="clouder.application.type.option">
             <field name="apptype_id" ref="apptype_wordpress"/>
-            <field name="name">port</field>
-            <field name="type">service</field>
-            <field name="default">nginx</field>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
         </record>
 
 
@@ -46,30 +44,17 @@ RUN chown -R www-data /base-backup
 VOLUME /base-backup
 ]]></field>
         </record>
-        <record id="image_wordpress_volume1" model="clouder.image.volume">
-            <field name="image_id" ref="image_wordpress"/>
-            <field name="name">/opt/versions</field>
-            <field name="hostpath">/opt/services</field>
-            <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_wordpress_volume2" model="clouder.image.volume">
+        <record id="image_wordpress_volume_www" model="clouder.image.volume">
             <field name="image_id" ref="image_wordpress"/>
             <field name="name">/var/www</field>
         </record>
-        <record id="image_wordpress_volume3" model="clouder.image.volume">
+        <record id="image_wordpress_volume_etc" model="clouder.image.volume">
             <field name="image_id" ref="image_wordpress"/>
             <field name="name">/etc/nginx</field>
         </record>
-        <record id="image_wordpress_port1" model="clouder.image.port">
+        <record id="image_wordpress_port_http" model="clouder.image.port">
             <field name="image_id" ref="image_wordpress"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_wordpress_port2" model="clouder.image.port">
-            <field name="image_id" ref="image_wordpress"/>
-            <field name="name">nginx</field>
+            <field name="name">http</field>
             <field name="localport">80</field>
             <field name="expose">internet</field>
         </record>
@@ -81,23 +66,16 @@ VOLUME /base-backup
             <field name="type_id" ref="apptype_wordpress"/>
             <field name="default_image_id" ref="image_wordpress"/>
             <field name="current_version">8.0</field>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
-            <field name="base_time_between_save">9999</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-            <field name="base_save_expiration">5</field>
+            <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_link1" model="clouder.application.link">
+        <record id="app_wordpress_link_bind" model="clouder.application.link">
             <field name="application_id" ref="app_wordpress"/>
             <field name="name" ref="clouder_template_bind.app_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_link2" model="clouder.application.link">
+        <record id="app_wordpress_link_shinken" model="clouder.application.link">
             <field name="application_id" ref="app_wordpress"/>
             <field name="name" ref="clouder_template_shinken.app_shinken"/>
             <field name="required" eval="True"/>
@@ -105,15 +83,15 @@ VOLUME /base-backup
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_link3" model="clouder.application.link">
+        <record id="app_wordpress_link_mysql" model="clouder.application.link">
             <field name="application_id" ref="app_wordpress"/>
             <field name="name" ref="clouder_template_mysql.app_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
+            <field name="container" eval="True"/>
         </record>
-        <record id="app_wordpress_link4" model="clouder.application.link">
+        <record id="app_wordpress_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="app_wordpress"/>
             <field name="name" ref="clouder_template_postfix.app_postfix"/>
             <field name="required" eval="True"/>
@@ -121,14 +99,14 @@ VOLUME /base-backup
             <field name="make_link" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_link5" model="clouder.application.link">
+        <record id="app_wordpress_link_proxy" model="clouder.application.link">
             <field name="application_id" ref="app_wordpress"/>
             <field name="name" ref="clouder_template_proxy.app_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_lin6" model="clouder.application.link">
+        <record id="app_wordpress_link_piwik" model="clouder.application.link">
             <field name="application_id" ref="app_wordpress"/>
             <field name="name" ref="clouder_template_piwik.app_piwik"/>
             <field name="base" eval="True"/>

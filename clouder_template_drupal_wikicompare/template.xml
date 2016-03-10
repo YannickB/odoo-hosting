@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="app_drupal_wikicompare" model="clouder.application">
+            <field name="name">Wikicompare</field>
+            <field name="code">wkc</field>
+            <field name="type_id" ref="clouder_template_drupal.apptype_drupal"/>
+            <field name="default_image_id" ref="clouder_template_drupal.image_drupal"/>
+            <field name="current_version">8.0</field>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_drupal_wikicompare_option_install_modules" model="clouder.application.option">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_drupal.apptype_drupal_option_install_modules"/>
+            <field name="value">piwik,admin_menu_toolbar,wikicompare,wikicompare_profiles,wikicompare_translation,wikicompare_inherit_product</field>
+        </record>
+        <record id="app_drupal_wikicompare_option_test_install_modules" model="clouder.application.option">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_drupal.apptype_drupal_option_test_install_modules"/>
+            <field name="value">wikicompare_generate_demo</field>
+        </record>
+        <record id="app_drupal_wikicompare_option_theme" model="clouder.application.option">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_drupal.apptype_drupal_option_theme"/>
+            <field name="value">wikicompare_theme</field>
+        </record>
+        <record id="app_drupal_wikicompare_option_poweruser_group" model="clouder.application.option">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_drupal.apptype_drupal_option_poweruser_group"/>
+            <field name="value">wikicompare_admin</field>
+        </record>
+        <record id="app_drupal_wikicompare_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_drupal_wikicompare_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_drupal_wikicompare_link_postgres" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
+        <record id="app_drupal_wikicompare_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+        <record id="app_drupal_wikicompare_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_drupal_wikicompare_link_piwik" model="clouder.application.link">
+            <field name="application_id" ref="app_drupal_wikicompare"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+            <field name="base" eval="True"/>
+        </record>
+
+    </data>
+</openerp>
