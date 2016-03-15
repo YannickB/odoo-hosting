@@ -149,6 +149,14 @@
                             </group>
                             <button name="save" string="Save" type="object"/>
                         </page>
+                        <page string="Metadata">
+                            <field name="metadata_ids" colspan="4">
+                                <tree string="Metadata" readonly="1">
+                                    <field name="name"/>
+                                    <field name="value_data"/>
+                                </tree>
+                            </field>
+                        </page>
                     </notebook>
                 </form>
             </field>
@@ -265,6 +273,14 @@
                                 <field name="save_comment"/>
                             </group>
                             <button name="save" string="Save" type="object"/>
+                        </page>
+                        <page string="Metadata">
+                            <field name="metadata_ids" colspan="4">
+                                <tree string="Metadata" readonly="1">
+                                    <field name="name"/>
+                                    <field name="value_data"/>
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
 
@@ -608,6 +624,15 @@
                                 <field name="container_save_expiration"/>
                                 <field name="base_save_expiration"/>
                             </group>
+                        </page>
+                        <page string="Metadata">
+                            <field name="metadata_ids" colspan="4">
+                                <tree string="Metadata" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="clouder_type"/>
+                                    <field name="value_type"/>
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
                 </form>

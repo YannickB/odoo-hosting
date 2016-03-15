@@ -144,6 +144,7 @@ class ClouderApplication(models.Model):
                                'Links')
     link_target_ids = fields.One2many('clouder.application.link', 'name',
                                       'Links Targets')
+    metadata_ids = fields.One2many('clouder.application.metadata', 'application_id', 'Metadata')
     parent_id = fields.Many2one('clouder.application', 'Parent')
     required = fields.Boolean('Required?')
     sequence = fields.Integer('Sequence')
@@ -349,50 +350,20 @@ class ClouderApplicationMetadata(models.Model):
 
     _name = 'clouder.application.metadata'
 
-    application_id = fields.Many2one('clouder.application', 'Application',
-                                     ondelete="cascade", required=True)
+    application_id = fields.Many2one('clouder.application', 'Application', ondelete="cascade", required=True)
     name = fields.Char('Name', required=True, size=64)
-    value_data = fields.Text('Value', required=True)
-    type = fields.Selection(
+    clouder_type = fields.Selection(
+        [
+            ('container', 'Container'),
+            ('base', 'Base')
+        ], 'Type', required=True)
+    value_type = fields.Selection(
         [
             ('int', 'Integer'),
             ('float', 'Float'),
             ('char', 'Char')
-        ], 'Type', required=True)
-    relation = fields.Char('object', size=64)
+        ], 'Data Type', required=True)
 
     _sql_constraints = [
-        ('name_uniq', 'unique(application_id,name)',
-         'Metadata must be unique per application!'),
+        ('name_uniq', 'unique(application_id,name, clouder_type)', 'Metadata must be unique per application!'),
     ]
-
-    @property
-    def value(self):
-        if self.type == 'int':
-            return int(self.value_data)
-        elif self.type == 'float':
-            return float(self.value_data)
-        # Defaults to char
-        return self.value_data
-
-    @api.one
-    @api.constrains('type', 'relation', 'value_data')
-    def _check_object(self):
-        """
-        Checks if the data can be loaded properly
-        """
-        # In every case: call the value property to see if the metadata can be loaded properly
-        try:
-            self.value
-        except Exception as e:
-            # Logging error for reference
-            _logger.error(
-                "Application Metadata error!\n" +
-                "Invalid value for type {0}: \n\t{0}\n".format(self.value_data) +
-                "Exception raised:\n\tType: {0}\n\tMessage: {1}".format(type(e).__name__, e.message)
-            )
-            # User display
-            raise except_orm(
-                _('Application Metadata error!'),
-                _("Invalid value for type {0}: \n\t{0}".format(self.value_data))
-            )

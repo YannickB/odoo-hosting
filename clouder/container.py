@@ -301,6 +301,7 @@ class ClouderContainer(models.Model):
                                'container_id', 'Links')
     base_ids = fields.One2many('clouder.base',
                                'container_id', 'Bases')
+    metadata_ids = fields.One2many('clouder.container.metadata', 'container_id', 'Metadata')
     parent_id = fields.Many2one('clouder.container.child', 'Parent')
     child_ids = fields.One2many('clouder.container.child',
                                 'container_id', 'Childs')
@@ -1394,3 +1395,59 @@ class ClouderContainerChild(models.Model):
     @api.multi
     def purge(self):
         self.child_id and self.child_id.unlink()
+
+
+class ClouderContainerMetadata(models.Model):
+    """
+    Defines an object to store metadata linked to an application
+    """
+
+    _name = 'clouder.container.metadata'
+
+    name = fields.Many2one('clouder.application.metadata', 'Application', ondelete="cascade", required=True)
+    container_id = fields.Many2one('clouder.container', 'Container', ondelete="cascade", required=True)
+    value_data = fields.Text('Value', required=True)
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(name, container_id)', 'Metadata must be unique per container!'),
+    ]
+
+    @property
+    def value(self):
+        if self.name.value_type == 'int':
+            return int(self.value_data)
+        elif self.name.value_type == 'float':
+            return float(self.value_data)
+        # Defaults to char
+        return str(self.value_data)
+
+    @api.one
+    @api.constrains('name')
+    def _check_metadata_type(self):
+        """
+        Checks that the metadata is intended for containers
+        """
+        # TODO:
+        pass
+
+    @api.one
+    @api.constrains('name', 'value_data')
+    def _check_object(self):
+        """
+        Checks if the data can be loaded properly
+        """
+        # In every case: call the value property to see if the metadata can be loaded properly
+        try:
+            self.value
+        except Exception as e:
+            # Logging error for reference
+            _logger.error(
+                "Application Metadata error!\n" +
+                "Invalid value for type {0}: \n\t{1}\n".format(self.name.value_type, self.value_data) +
+                "Exception raised:\n\tType: {0}\n\tMessage: {1}".format(type(e).__name__, e.message)
+            )
+            # User display
+            raise except_orm(
+                _('Application Metadata error!'),
+                _("Invalid value for type {0}: \n\t{1}".format(self.name.value_type, self.value_data))
+            )
