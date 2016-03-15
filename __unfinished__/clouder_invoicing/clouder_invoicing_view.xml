@@ -30,7 +30,7 @@
             <field name="arch" type="xml">
                 <page string="Save" position="after">
                     <page string="Invoicing">
-                        <group string="Pricing grid">
+                        <group string="Pricing">
                             <field name="pricegrid_ids">
                                 <tree>
                                     <field name="threshold"/>
@@ -38,6 +38,7 @@
                                     <field name="type"/>
                                 </tree>
                             </field>
+                            <field name="invoicing_period"/>
                         </group>
                     </page>
                 </page>
@@ -52,7 +53,7 @@
             <field name="arch" type="xml">
                 <page string="Save" position="after">
                     <page string="Invoicing">
-                        <group string="Pricing grid">
+                        <group string="Pricing">
                             <field name="pricegrid_ids">
                                 <tree>
                                     <field name="threshold"/>
@@ -60,6 +61,7 @@
                                     <field name="type"/>
                                 </tree>
                             </field>
+                            <field name="invoicing_period"/>
                         </group>
                     </page>
                 </page>

@@ -30,6 +30,7 @@ class ClouderInvoicingPricegridLine(models.Model):
     """
     _name = 'clouder.invoicing.pricegrid.line'
 
+    invoicing_unit = fields.Many2one('clouder.application.metadata', 'Invoicing Unit')
     threshold = fields.Integer('Threshold', required=True)
     price = fields.Float('Price', required=True)
     type = fields.Selection(
@@ -80,6 +81,13 @@ class ClouderInvoicingPricegridLine(models.Model):
         """
         return self.link._name
 
+    @property
+    def invoicing_unit_value(self):
+        """
+        Returns the value from the invoicing unit metadata
+        """
+        return self.invoicing_unit.value
+
 
 class ClouderApplication(models.Model):
     """
@@ -93,14 +101,6 @@ class ClouderApplication(models.Model):
         'Pricegrids'
     )
 
-    @api.multi
-    def generate_grids(self):
-        """
-        Use application-defined metadata to compute the price grid
-        """
-        # TODO:
-        pass
-
 
 class ClouderContainer(models.Model):
     """
@@ -113,6 +113,7 @@ class ClouderContainer(models.Model):
         'link_container',
         'Pricegrids'
     )
+    invoicing_period = fields.Integer('Invoicing Period (days)', required=True)
 
     @api.multi
     def create_invoice(self, price_from_master=None):
@@ -135,3 +136,4 @@ class ClouderBase(models.Model):
         'link_base',
         'Pricegrids'
     )
+    invoicing_period = fields.Integer('Invoicing Period (days)', required=True)
