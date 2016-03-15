@@ -20,23 +20,26 @@
 #
 ##############################################################################
 
-from openerp import models, fields
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 
 
-class ClouderInvoicingPriceGridLine(models.Model):
+class ClouderInvoicingPricegridLine(models.Model):
     """
-    Defines a price grid line
+    Defines a pricegrid line
     """
     _name = 'clouder.invoicing.pricegrid.line'
 
     threshold = fields.Integer('Threshold', required=True)
     price = fields.Float('Price', required=True)
-    type = fields.Selection('Type',
+    type = fields.Selection(
+        'Type',
         [
             ('fixed', 'Fixed Price'),
             ('mult', 'Value Multiplier')
         ],
-        required=True)
+        required=True
+    )
     link_application = fields.Many2one('clouder.application', 'Application')
     link_container = fields.Many2one('clouder.container', 'Container')
     link_base = fields.Many2one('clouder.base', 'Base')
@@ -45,18 +48,29 @@ class ClouderInvoicingPriceGridLine(models.Model):
     @api.constrains('link_application', 'link_container', 'link_base')
     def _check_links(self):
         """
-        Checks that one and only one of the three links is defined
+        Checks that at least one - and only one - of the three links is defined
         """
-        # TODO:
-        pass
+        # At least one should be defined
+        if not self.link:
+            raise except_orm(
+                    _('Link error!'),
+                    _("You cannot define a pricegrid line without linking it to a base or container or application.")
+                )
+        # No more than one should be defined
+        if (self.link_base and self.link_application or
+                self.link_base and self.link_container or
+                self.link_application and self.link_container):
+            raise except_orm(
+                    _('Link error!'),
+                    _("Pricegrid links to application/container/base are exclusive to one another.")
+                )
 
     @property
     def link(self):
         """
         Returns the link defined
         """
-        # TODO:
-        pass
+        return self.link_application or self.link_container or self.link_base or False
 
     @property
     def link_type(self):
@@ -64,8 +78,7 @@ class ClouderInvoicingPriceGridLine(models.Model):
         Returns a string that gives the type of the link
             Example: "clouder.base"
         """
-        # TODO:
-        pass
+        return self.link._name
 
 
 class ClouderApplication(models.Model):

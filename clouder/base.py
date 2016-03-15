@@ -27,6 +27,9 @@ import re
 from datetime import datetime, timedelta
 import model
 
+import logging
+_logger = logging.getLogger(__name__)
+
 
 class ClouderDomain(models.Model):
     """
@@ -128,8 +131,8 @@ class ClouderBase(models.Model):
         """
         Property returning the full name of the base.
         """
-        return (self.application_id.fullcode + '-' + self.name + '-'
-                + self.domain_id.name).replace('.', '-')
+        return (self.application_id.fullcode + '-' + self.name + '-' +
+                self.domain_id.name).replace('.', '-')
 
     @property
     def fullname_(self):
@@ -770,9 +773,9 @@ class ClouderBaseOption(models.Model):
         if self.name.required and not self.value:
             raise except_orm(
                 _('Data error!'),
-                _("You need to specify a value for the option "
-                  + self.name.name + " for the base "
-                  + self.base_id.name + ".")
+                _("You need to specify a value for the option " +
+                  self.name.name + " for the base " +
+                  self.base_id.name + ".")
             )
 
 
@@ -810,9 +813,9 @@ class ClouderBaseLink(models.Model):
         if self.name.required and not self.target:
             raise except_orm(
                 _('Data error!'),
-                _("You need to specify a link to "
-                  + self.name.name.name + " for the base "
-                  + self.base_id.name)
+                _("You need to specify a link to " +
+                  self.name.name.name + " for the base " +
+                  self.base_id.name)
             )
 
     @api.multi
@@ -947,8 +950,11 @@ class ClouderBaseMetadata(models.Model):
         """
         Checks that the metadata is intended for containers
         """
-        # TODO:
-        pass
+        if self.name.clouder_type != 'base':
+            raise except_orm(
+                _('Container Metadata error!'),
+                _("This metadata is intended for {0} only.".format(self.name.clouder_type))
+            )
 
     @api.one
     @api.constrains('name', 'value_data')

@@ -1427,8 +1427,11 @@ class ClouderContainerMetadata(models.Model):
         """
         Checks that the metadata is intended for containers
         """
-        # TODO:
-        pass
+        if self.name.clouder_type != 'container':
+            raise except_orm(
+                _('Container Metadata error!'),
+                _("This metadata is intended for {0} only.".format(self.name.clouder_type))
+            )
 
     @api.one
     @api.constrains('name', 'value_data')
