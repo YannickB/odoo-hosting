@@ -23,6 +23,17 @@
 from openerp import models, fields
 
 
+class ClouderInvoicingConnection(models.Model):
+    """
+    Defines a connection to another clouder for invoicing purposes
+    """
+    _name = 'clouder.invoicing.connection'
+
+    host = fields.Char('Clouder Invoicing Master Host', size=64, required=False)
+    login = fields.Char('Clouder Invoicing Master Login', size=32, required=False)
+    password = fields.Char('Clouder Invoicing Master Password', size=32, password=True, required=False)
+
+
 class ClouderContainer(models.Model):
     """
     Defines invoicing settings for clouder child containers

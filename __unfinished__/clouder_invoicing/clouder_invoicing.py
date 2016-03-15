@@ -68,37 +68,6 @@ class ClouderInvoicingPriceGridLine(models.Model):
         pass
 
 
-class ClouderInvoicingConnection(models.Model):
-    """
-    Defines a connection to another clouder for invoicing purposes
-    """
-
-    _name = 'clouder.invoicing.connection'
-
-    host = fields.Char('Clouder Invoicing Master Host', size=64, required=False)
-    login = fields.Char('Clouder Invoicing Master Login', size=32, required=False)
-    password = fields.Char('Clouder Invoicing Master Password', size=32, password=True, required=False)
-
-
-class ClouderInvoicingSettings(models.TransientModel):
-    """
-    Defines invoicing settings for clouder
-    """
-    _inherit = 'res.config.settings'
-    _name = 'clouder.invoicing.settings'
-
-    connection_id = fields.Many2one('clouder.invoicing.connection', 'Master Clouder Connection Info')
-    master_enabled = fields.Boolean('Invoicing Master connection enabled?')
-
-    @api.depends('master_enabled', 'connection_id')
-    def _check_enabled(self):
-        """
-        Checks if a connection_id is defined is master_enabled is set to true
-        """
-        # TODO:
-        pass
-
-
 class ClouderApplication(models.Model):
     """
     Defines invoicing settings for an application
