@@ -28,8 +28,6 @@ import re, json
 
 import model
 
-import logger
-_logger = logging.getLogger(__name__)
 
 
 class ClouderApplicationRole(models.Model):
@@ -357,6 +355,8 @@ class ClouderApplicationMetadata(models.Model):
             ('container', 'Container'),
             ('base', 'Base')
         ], 'Type', required=True)
+    is_function = fields.Boolean('Function', help="Is the value computed by a function?", required=True, default=False)
+    default_value = fields.Text('Default Value')
     value_type = fields.Selection(
         [
             ('int', 'Integer'),
@@ -367,3 +367,4 @@ class ClouderApplicationMetadata(models.Model):
     _sql_constraints = [
         ('name_uniq', 'unique(application_id,name, clouder_type)', 'Metadata must be unique per application!'),
     ]
+

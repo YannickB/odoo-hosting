@@ -682,6 +682,54 @@ class ClouderContainer(models.Model):
             # Replacing old childs
             vals['child_ids'] = childs
 
+            # Getting metadata
+            metadata_vals = []
+            metadata_sources = {x.id: x for x in application.metadata_ids}
+            sources_to_add = metadata_sources.keys()
+            metadata_to_process = []
+            if 'metadata_ids' in vals:
+                for metadata in vals['metadata_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(metadata, (list, tuple)):
+                        metadata = {
+                            'name': metadata[2].get('name', False),
+                            'value_data': metadata[2].get('value_data', False)
+                        }
+                        # This case means we do not have an odoo recordset and need to load the link manually
+                        if isinstance(metadata['name'], int):
+                            metadata['name'] = self.env['clouder.application'].browse(metadata['name'])
+                    else:
+                        metadata = {
+                            'name': getattr(metadata, 'name', False),
+                            'value_data': getattr(metadata, 'value_data', False)
+                        }
+                    # Processing metadata and adding to list
+                    if metadata['name'] and metadata['name'].id in metadata_sources:
+                        metadata['source'] = metadata_sources[metadata['name'].id]
+                        metadata['value_data'] = metadata['value_data'] or metadata['source'].default_value
+                        metadata_to_process.append(metadata)
+
+                        # Removing from sources
+                        sources_to_add.remove(metadata['name'].id)
+
+            # Adding remaining metadata from source
+            for metadata_key in sources_to_add:
+                metadata = {
+                    'name': getattr(metadata_sources[metadata_key], 'name', False),
+                    'value_data': metadata_sources[metadata_key].default_value,
+                    'source': metadata_sources[metadata_key]
+                }
+                metadata_to_process.append(metadata)
+
+            # Processing new metadata
+            for metadata in metadata_to_process:
+                if metadata['source'].clouder_type == 'container':
+                    metadata_vals.append((0, 0, {
+                        'name': metadata['source'].id, 'sequence':  metadata['sequence']}))
+
+            # Replacing old metadata
+            vals['metadata_ids'] = metadata_vals
+
             if 'image_id' not in vals or not vals['image_id']:
                 vals['image_id'] = application.default_image_id.id
 
@@ -1406,7 +1454,7 @@ class ClouderContainerMetadata(models.Model):
 
     name = fields.Many2one('clouder.application.metadata', 'Application', ondelete="cascade", required=True)
     container_id = fields.Many2one('clouder.container', 'Container', ondelete="cascade", required=True)
-    value_data = fields.Text('Value', required=True)
+    value_data = fields.Text('Value')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, container_id)', 'Metadata must be unique per container!'),
@@ -1414,12 +1462,25 @@ class ClouderContainerMetadata(models.Model):
 
     @property
     def value(self):
+        """
+        Property that returns the value formatted by type
+        """
+        # Computing the function if needed
+        val_to_convert = self.value_data
+        if self.name.is_function:
+            val_to_convert = "{0}".format(getattr(self.container_id, self.name.function)())
+
+        # Empty value
+        if not val_to_convert:
+            return False
+
+        # value_type cases
         if self.name.value_type == 'int':
-            return int(self.value_data)
+            return int(val_to_convert)
         elif self.name.value_type == 'float':
-            return float(self.value_data)
+            return float(val_to_convert)
         # Defaults to char
-        return str(self.value_data)
+        return str(val_to_convert)
 
     @api.one
     @api.constrains('name')

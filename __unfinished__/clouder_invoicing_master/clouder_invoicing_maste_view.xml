@@ -1,26 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
-        <!-- Container Invoicing -->
-        <record id="view_clouder_container_form_invoicing_master" model="ir.ui.view">
-            <field name="name">clouder.container.form.invoicing</field>
-            <field name="inherit_id" ref="clouder_invoicing.view_clouder_container_form_invoicing"/>
-            <field name="model">clouder.container</field>
-            <field name="arch" type="xml">
-                <page string="Invoicing" position="inside">
-                    <group string="Connection Settings">
-                        <field name="connection_id">
-                            <form>
-                                <group cols="2">
-                                    <field name="host"/>
-                                    <field name="login"/>
-                                    <field name="password"/>
-                                </group>
-                            </form>
-                        </field>
-                    </group>
-                </page>
-            </field>
-        </record>
     </data>
 </openerp>
