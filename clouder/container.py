@@ -725,7 +725,7 @@ class ClouderContainer(models.Model):
             for metadata in metadata_to_process:
                 if metadata['source'].clouder_type == 'container':
                     metadata_vals.append((0, 0, {
-                        'name': metadata['source'].id, 'sequence':  metadata['sequence']}))
+                        'name': metadata['source'].id, 'value_data':  metadata['value_data']}))
 
             # Replacing old metadata
             vals['metadata_ids'] = metadata_vals
@@ -760,6 +760,7 @@ class ClouderContainer(models.Model):
             'option_ids': self.option_ids,
             'link_ids': self.link_ids,
             'child_ids': self.child_ids,
+            'metadata_ids': self.metadata_ids
             }
         vals = self.onchange_application_id_vals(vals)
         self.env['clouder.container.option'].search(
