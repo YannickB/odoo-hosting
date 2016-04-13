@@ -976,7 +976,7 @@ class ClouderBaseMetadata(models.Model):
 
     _name = 'clouder.base.metadata'
 
-    name = fields.Many2one('clouder.application.metadata', 'Application', ondelete="cascade", required=True)
+    name = fields.Many2one('clouder.application.metadata', 'Application Metadata', ondelete="cascade", required=True)
     base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade", required=True)
     value_data = fields.Text('Value')
 

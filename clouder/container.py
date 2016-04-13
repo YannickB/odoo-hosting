@@ -1453,7 +1453,7 @@ class ClouderContainerMetadata(models.Model):
 
     _name = 'clouder.container.metadata'
 
-    name = fields.Many2one('clouder.application.metadata', 'Application', ondelete="cascade", required=True)
+    name = fields.Many2one('clouder.application.metadata', 'Application Metadata', ondelete="cascade", required=True)
     container_id = fields.Many2one('clouder.container', 'Container', ondelete="cascade", required=True)
     value_data = fields.Text('Value')
 
