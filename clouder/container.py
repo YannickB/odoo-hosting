@@ -1471,7 +1471,7 @@ class ClouderContainerMetadata(models.Model):
         if self.name.is_function:
             val_to_convert = "{0}".format(getattr(self.container_id, self.name.func_name)())
             # If it is a function, the text version should be updated for display
-            self.value_data = val_to_convert
+            self.with_context(skip_check=True).write({'value_data': val_to_convert})
 
         # Empty value
         if not val_to_convert:
@@ -1487,13 +1487,13 @@ class ClouderContainerMetadata(models.Model):
 
     @api.one
     @api.constrains('name')
-    def _check_metadata_type(self):
+    def _check_clouder_type(self):
         """
         Checks that the metadata is intended for containers
         """
-        if self.name.clouder_type != 'container':
+        if self.name.clouder_type != 'base':
             raise except_orm(
-                _('Container Metadata error!'),
+                _('Base Metadata error!'),
                 _("This metadata is intended for {0} only.".format(self.name.clouder_type))
             )
 
@@ -1503,24 +1503,19 @@ class ClouderContainerMetadata(models.Model):
         """
         Checks if the data can be loaded properly
         """
-        # In every case: call the value property to see if the metadata can be loaded properly
+        if 'skip_check' in self.env.context and self.env.context['skip_check']:
+            return
+        # call the value property to see if the metadata can be loaded properly
         try:
             self.value
         except Exception as e:
             # Logging error for reference
             _logger.error(
-                "Container Metadata error!\n" +
-                "Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data) +
-                "Exception raised while checking value:\n\tType: '{0}'\n\tMessage: {1}".format(
-                    type(e).__name__,
-                    e.message
-                )
+                "Base Metadata error!\n" +
+                "Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data)
             )
             # User display
             raise except_orm(
-                _('Container Metadata error!'),
-                _("Exception raised while checking value:\nType: '{0}'\nMessage: {1}".format(
-                    type(e).__name__,
-                    e.message
-                ))
+                _('Base Metadata error!'),
+                _("Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data))
             )
