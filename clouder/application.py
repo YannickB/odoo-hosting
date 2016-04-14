@@ -356,7 +356,7 @@ class ClouderApplicationMetadata(models.Model):
             ('base', 'Base')
         ], 'Type', required=True)
     is_function = fields.Boolean('Function', help="Is the value computed by a function?", required=True, default=False)
-    func_name = fields.char('Function Name')
+    func_name = fields.Char('Function Name', size=64)
     default_value = fields.Text('Default Value')
     value_type = fields.Selection(
         [
