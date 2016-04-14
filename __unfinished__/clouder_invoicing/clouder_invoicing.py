@@ -244,12 +244,6 @@ class ClouderContainer(models.Model):
                 })
         return results
 
-    # ####### TEST METHOD TO BE REMOVED ####### #
-    @api.one
-    def test_metadata_invoice(self):
-        return 16
-    # #######      END TEST METHOD      ####### #
-
 
 class ClouderBase(models.Model):
     """
@@ -294,6 +288,12 @@ class ClouderBase(models.Model):
         ).days()
 
         return days_diff >= days_needed
+    
+    # ####### TEST METHOD TO BE REMOVED ####### #
+    @api.one
+    def test_metadata_invoice(self):
+        return 16
+    # #######      END TEST METHOD      ####### #
 
 
 class AccountInvoice(models.Model):

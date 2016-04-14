@@ -1485,17 +1485,6 @@ class ClouderContainerMetadata(models.Model):
         # Defaults to char
         return str(val_to_convert)
 
-    @api.model
-    def create(self):
-        """
-        Override create to force the function to compute if defined
-        """
-        res = super.create(ClouderContainerMetadata, self)
-        if res.name.is_function:
-            res.value
-
-        return res
-
     @api.one
     @api.constrains('name')
     def _check_metadata_type(self):
@@ -1520,12 +1509,18 @@ class ClouderContainerMetadata(models.Model):
         except Exception as e:
             # Logging error for reference
             _logger.error(
-                "Application Metadata error!\n" +
-                "Invalid value for type {0}: \n\t{1}\n".format(self.name.value_type, self.value_data) +
-                "Exception raised:\n\tType: {0}\n\tMessage: {1}".format(type(e).__name__, e.message)
+                "Container Metadata error!\n" +
+                "Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data) +
+                "Exception raised while checking value:\n\tType: '{0}'\n\tMessage: {1}".format(
+                    type(e).__name__,
+                    e.message
+                )
             )
             # User display
             raise except_orm(
-                _('Application Metadata error!'),
-                _("Invalid value for type {0}: \n\t{1}".format(self.name.value_type, self.value_data))
+                _('Container Metadata error!'),
+                _("Exception raised while checking value:\nType: '{0}'\nMessage: {1}".format(
+                    type(e).__name__,
+                    e.message
+                ))
             )

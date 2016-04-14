@@ -1016,7 +1016,7 @@ class ClouderBaseMetadata(models.Model):
         """
         if self.name.clouder_type != 'base':
             raise except_orm(
-                _('Container Metadata error!'),
+                _('Base Metadata error!'),
                 _("This metadata is intended for {0} only.".format(self.name.clouder_type))
             )
 
@@ -1032,12 +1032,18 @@ class ClouderBaseMetadata(models.Model):
         except Exception as e:
             # Logging error for reference
             _logger.error(
-                "Application Metadata error!\n" +
-                "Invalid value for type {0}: \n\t{1}\n".format(self.name.value_type, self.value_data) +
-                "Exception raised:\n\tType: {0}\n\tMessage: {1}".format(type(e).__name__, e.message)
+                "Base Metadata error!\n" +
+                "Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data) +
+                "Exception raised while checking value:\n\tType: '{0}'\n\tMessage: {1}".format(
+                    type(e).__name__,
+                    e.message
+                )
             )
             # User display
             raise except_orm(
-                _('Application Metadata error!'),
-                _("Invalid value for type {0}: \n\t{1}".format(self.name.value_type, self.value_data))
+                _('Base Metadata error!'),
+                _("Exception raised while checking value:\nType: '{0}'\nMessage: {1}".format(
+                    type(e).__name__,
+                    e.message
+                ))
             )
