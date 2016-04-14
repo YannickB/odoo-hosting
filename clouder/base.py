@@ -992,7 +992,9 @@ class ClouderBaseMetadata(models.Model):
         # Computing the function if needed
         val_to_convert = self.value_data
         if self.name.is_function:
-            val_to_convert = "{0}".format(getattr(self.base_id, self.name.default_value)())
+            val_to_convert = "{0}".format(getattr(self.base_id, self.name.func_name)())
+            # If it is a function, the text version should be updated for display
+            self.value_data = val_to_convert
 
         # Empty value
         if not val_to_convert:
