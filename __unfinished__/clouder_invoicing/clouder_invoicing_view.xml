@@ -10,7 +10,7 @@
                 <page string="Save" position="after">
                     <page string="Invoicing">
                         <group string="Pricing grid">
-                            <field name="pricegrid_ids">
+                            <field name="pricegrid_ids" editable="bottom">
                                 <tree>
                                     <field name="threshold"/>
                                     <field name="price"/>
@@ -31,7 +31,7 @@
                 <page string="Save" position="after">
                     <page string="Invoicing">
                         <group string="Pricing">
-                            <field name="pricegrid_ids">
+                            <field name="pricegrid_ids" editable="bottom">
                                 <tree>
                                     <field name="threshold"/>
                                     <field name="price"/>
@@ -54,7 +54,7 @@
                 <page string="Save" position="after">
                     <page string="Invoicing">
                         <group string="Pricing">
-                            <field name="pricegrid_ids">
+                            <field name="pricegrid_ids" editable="bottom">
                                 <tree>
                                     <field name="threshold"/>
                                     <field name="price"/>
