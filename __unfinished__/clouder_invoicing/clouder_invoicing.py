@@ -34,7 +34,7 @@ class ClouderInvoicingPricegridLine(models.Model):
     """
     _name = 'clouder.invoicing.pricegrid.line'
 
-    application_metadata = fields.Many2one('clouder.application.metadata', 'Invoicing Unit')
+    application_metadata = fields.Many2one('clouder.application.metadata', 'Invoicing Unit', required=True)
     threshold = fields.Integer('Threshold', required=True)
     price = fields.Float('Price', required=True)
     type = fields.Selection(
@@ -58,7 +58,7 @@ class ClouderInvoicingPricegridLine(models.Model):
         # At least one should be defined
         if not self.link:
             raise except_orm(
-                _('Link error!'),
+                _('Pricegrid error!'),
                 _("You cannot define a pricegrid line without linking it to a base or container or application.")
             )
         # No more than one should be defined
@@ -66,7 +66,7 @@ class ClouderInvoicingPricegridLine(models.Model):
                 self.link_base and self.link_container or
                 self.link_application and self.link_container):
             raise except_orm(
-                _('Link error!'),
+                _('Pricegrid error!'),
                 _("Pricegrid links to application/container/base are exclusive to one another.")
             )
 
@@ -75,7 +75,7 @@ class ClouderInvoicingPricegridLine(models.Model):
         """
         Returns the link defined
         """
-        return self.link_application or self.link_container or self.link_base or False
+        return self.link_application or self.link_container or self.link_base
 
     @property
     def link_type(self):
@@ -200,6 +200,47 @@ class ClouderContainer(models.Model):
     )
     last_invoiced = fields.Date('Last Invoiced', required=True, default=_compute_last_invoiced_default)
 
+    @api.multi
+    def get_default_pricegrids(self, vals):
+        """
+        Get default pricegrids from application
+        """
+        if vals['application_id']:
+            application = self.env['clouder.application'].search(vals['application_id'])[0]
+            pricegrids = []
+
+            # Adding default pricegrids from application
+            for app_pricegrid in application.pricegrid_ids:
+                pricegrids.append((0, 0, {
+                        'application_metadata': app_pricegrid.application_metadata,
+                        'threshold': app_pricegrid.threshold,
+                        'price': app_pricegrid.price,
+                        'type': app_pricegrid.type
+                }))
+        vals['pricegrid_ids'] = pricegrids
+
+        return vals
+
+    @api.onchange('application_id')
+    def onchange_application_id_pricegrids(self):
+        """
+        Reset pricegrids to default when changing application
+        """
+        # Getting default pricegrids
+        vals = {'application_id': self.application_id}
+        vals = self.get_default_pricegrids(vals)
+
+        # Replacing old pricegrids
+        self.pricegrid_ids = vals['pricegrid_ids']
+
+    @api.model
+    def create(self, vals):
+        """
+        Override create to add default pricegrids from application
+        """
+        vals = self.get_default_pricegrids(vals)
+        return super(ClouderContainer, self).create(vals)
+
     @api.one
     def should_invoice(self):
         """
@@ -269,6 +310,47 @@ class ClouderBase(models.Model):
              "Set to nothing to disable invoicing for this container."
     )
     last_invoiced = fields.Date('Last Invoiced', required=True, default=_compute_last_invoiced_default)
+
+    @api.multi
+    def get_default_pricegrids(self, vals):
+        """
+        Get default pricegrids from container
+        """
+        if vals['container_id']:
+            container = self.env['clouder.container'].search(vals['container_id'])[0]
+            pricegrids = []
+
+            # Adding default pricegrids from application
+            for cont_pricegrid in container.pricegrid_ids:
+                pricegrids.append((0, 0, {
+                        'application_metadata': cont_pricegrid.application_metadata,
+                        'threshold': cont_pricegrid.threshold,
+                        'price': cont_pricegrid.price,
+                        'type': cont_pricegrid.type
+                }))
+        vals['pricegrid_ids'] = pricegrids
+
+        return vals
+
+    @api.onchange('container_id')
+    def onchange_container_id_pricegrids(self):
+        """
+        Reset pricegrids to default when changing application
+        """
+        # Getting default pricegrids
+        vals = {'container_id': self.container_ids}
+        vals = self.get_default_pricegrids(vals)
+
+        # Replacing old pricegrids
+        self.pricegrid_ids = vals['pricegrid_ids']
+
+    @api.model
+    def create(self, vals):
+        """
+        Override create to add default pricegrids from container
+        """
+        vals = self.get_default_pricegrids(vals)
+        return super(ClouderBase, self).create(vals)
 
     @api.one
     def should_invoice(self):
