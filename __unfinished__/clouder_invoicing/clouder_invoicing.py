@@ -206,7 +206,7 @@ class ClouderContainer(models.Model):
         Get default pricegrids from application
         """
         if vals['application_id']:
-            application = self.env['clouder.application'].search(vals['application_id'])[0]
+            application = self.env['clouder.application'].browse([vals['application_id']])[0]
             pricegrids = []
 
             # Adding default pricegrids from application
@@ -317,7 +317,7 @@ class ClouderBase(models.Model):
         Get default pricegrids from container
         """
         if vals['container_id']:
-            container = self.env['clouder.container'].search(vals['container_id'])[0]
+            container = self.env['clouder.container'].browse([vals['container_id']])[0]
             pricegrids = []
 
             # Adding default pricegrids from application
