@@ -217,7 +217,7 @@ class ClouderContainer(models.Model):
                         'price': app_pricegrid.price,
                         'type': app_pricegrid.type
                 }))
-        vals['pricegrid_ids'] = pricegrids
+            vals['pricegrid_ids'] = pricegrids
 
         return vals
 
@@ -328,7 +328,7 @@ class ClouderBase(models.Model):
                         'price': cont_pricegrid.price,
                         'type': cont_pricegrid.type
                 }))
-        vals['pricegrid_ids'] = pricegrids
+            vals['pricegrid_ids'] = pricegrids
 
         return vals
 
