@@ -231,7 +231,8 @@ class ClouderContainer(models.Model):
         vals = self.get_default_pricegrids(vals)
 
         # Replacing old pricegrids
-        self.pricegrid_ids = vals['pricegrid_ids']
+        if 'pricegrid_ids' in vals:
+            self.pricegrid_ids = vals['pricegrid_ids']
 
     @api.model
     def create(self, vals):
@@ -342,7 +343,8 @@ class ClouderBase(models.Model):
         vals = self.get_default_pricegrids(vals)
 
         # Replacing old pricegrids
-        self.pricegrid_ids = vals['pricegrid_ids']
+        if 'pricegrid_ids' in vals:
+            self.pricegrid_ids = vals['pricegrid_ids']
 
     @api.model
     def create(self, vals):
