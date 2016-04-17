@@ -227,7 +227,7 @@ class ClouderContainer(models.Model):
         Reset pricegrids to default when changing application
         """
         # Getting default pricegrids
-        vals = {'application_id': self.application_id}
+        vals = {'application_id': self.application_id.id}
         vals = self.get_default_pricegrids(vals)
 
         # Replacing old pricegrids
@@ -339,7 +339,7 @@ class ClouderBase(models.Model):
         Reset pricegrids to default when changing application
         """
         # Getting default pricegrids
-        vals = {'container_id': self.container_ids}
+        vals = {'container_id': self.container_id.id}
         vals = self.get_default_pricegrids(vals)
 
         # Replacing old pricegrids
