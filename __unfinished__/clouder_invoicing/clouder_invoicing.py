@@ -212,10 +212,10 @@ class ClouderContainer(models.Model):
             # Adding default pricegrids from application
             for app_pricegrid in application.pricegrid_ids:
                 pricegrids.append((0, 0, {
-                        'application_metadata': app_pricegrid.application_metadata.id,
-                        'threshold': app_pricegrid.threshold,
-                        'price': app_pricegrid.price,
-                        'type': app_pricegrid.type
+                    'application_metadata': app_pricegrid.application_metadata.id,
+                    'threshold': app_pricegrid.threshold,
+                    'price': app_pricegrid.price,
+                    'type': app_pricegrid.type
                 }))
             vals['pricegrid_ids'] = pricegrids
 
@@ -324,10 +324,10 @@ class ClouderBase(models.Model):
             # Adding default pricegrids from application
             for cont_pricegrid in container.pricegrid_ids:
                 pricegrids.append((0, 0, {
-                        'application_metadata': cont_pricegrid.application_metadata.id,
-                        'threshold': cont_pricegrid.threshold,
-                        'price': cont_pricegrid.price,
-                        'type': cont_pricegrid.type
+                    'application_metadata': cont_pricegrid.application_metadata.id,
+                    'threshold': cont_pricegrid.threshold,
+                    'price': cont_pricegrid.price,
+                    'type': cont_pricegrid.type
                 }))
             vals['pricegrid_ids'] = pricegrids
 

@@ -36,6 +36,7 @@
                                     <field name="threshold"/>
                                     <field name="price"/>
                                     <field name="type"/>
+                                    <field name="application_metadata" invisible="1"/>
                                 </tree>
                             </field>
                             <field name="invoicing_period"/>
@@ -59,6 +60,7 @@
                                     <field name="threshold"/>
                                     <field name="price"/>
                                     <field name="type"/>
+                                    <field name="application_metadata" invisible="1"/>
                                 </tree>
                             </field>
                             <field name="invoicing_period"/>
