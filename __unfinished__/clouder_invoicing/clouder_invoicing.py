@@ -380,8 +380,7 @@ class AccountInvoice(models.Model):
     """
     _inherit = "account.invoice"
 
-    @api.depends('last_invoiced')
-
+    @api.model
     def clouder_invoicing(self):
         """
         Invoice containers
