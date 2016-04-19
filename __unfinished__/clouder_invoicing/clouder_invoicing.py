@@ -257,7 +257,7 @@ class ClouderContainer(models.Model):
             (
                 fields.Date.from_string(self.last_invoiced) + relativedelta(months=1)
             ) - today
-        ).days()
+        ).days
 
         return days_diff >= days_needed
 
@@ -369,7 +369,7 @@ class ClouderBase(models.Model):
             (
                 fields.Date.from_string(self.last_invoiced) + relativedelta(months=1)
             ) - today
-        ).days()
+        ).days
 
         return days_diff >= days_needed
 
