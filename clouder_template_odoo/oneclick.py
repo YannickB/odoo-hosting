@@ -53,6 +53,7 @@ class ClouderServer(models.Model):
             'application_id': application.id,
         })
 
+
         image = image_obj.search([('name', '=', 'img_base')])
         if not image.has_version:
             image = image_obj.search([('name', '=', 'img_base')])
@@ -61,6 +62,12 @@ class ClouderServer(models.Model):
         base = image_version_obj.search([('image_id', '=', image.id)])
 
         image = image_obj.search([('name', '=', 'img_backup_bup')])
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = base.id
+            image.build()
+
+        image = image_obj.search([('name', '=', 'img_spamassassin')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id
@@ -135,6 +142,14 @@ class ClouderServer(models.Model):
             'application_id': application.id,
         })
 
+        application = application_obj.search([('code', '=', 'spamassassin')])
+        container_obj.create({
+            'suffix': 'spamassassin',
+            'environment_id': self.environment_id.id,
+            'server_id': self.id,
+            'application_id': application.id,
+        })
+
         application = application_obj.search([('code', '=', 'postfix')])
         container_obj.create({
             'suffix': 'postfix',
@@ -160,7 +175,7 @@ class ClouderServer(models.Model):
         })
 
         application = application_obj.search([('code', '=', 'shinken')])
-        container_obj.create({
+        shinken = container_obj.create({
             'suffix': 'shinken',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
@@ -194,12 +209,24 @@ class ClouderServer(models.Model):
 
         domain_obj = self.env['clouder.domain']
         domain = domain_obj.create({
-            'name': 'mydomain',
-            'organisation': 'My Company',
+            'name': self.oneclick_domain,
+            'organisation': self.oneclick_domain,
             'dns_id': bind.id
         })
 
         base_obj = self.env['clouder.base']
+        application = application_obj.search([('code', '=', 'shinken')])
+        base_obj.create({
+            'name': 'shinken',
+            'domain_id': domain.id,
+            'environment_id': self.environment_id.id,
+            'title': 'Shinken',
+            'application_id': application.id,
+            'container_id': shinken.id,
+            'admin_name': 'admin',
+            'admin_password': 'admin',
+        })
+
         application = application_obj.search([('code', '=', 'clouder')])
         base_obj.create({
             'name': 'clouder',
@@ -228,7 +255,7 @@ class ClouderServer(models.Model):
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'clouder')]).unlink()
 
-        self.env['clouder.domain'].search([('name', '=', 'mydomain')]).unlink()
+        self.env['clouder.domain'].search([('name', '=', self.oneclick_domain)]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'postgres')]).unlink()
@@ -247,6 +274,9 @@ class ClouderServer(models.Model):
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'postfix')]).unlink()
+
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('suffix', '=', 'spamassassin')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'backup')]).unlink()

@@ -135,6 +135,7 @@ class ClouderServer(models.Model):
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
     runner_id = fields.Many2one('clouder.container', 'Runner')
     oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
+    oneclick_domain = fields.Char('Domain')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, ssh_port)',
@@ -439,7 +440,7 @@ class ClouderContainer(models.Model):
         return childs
 
     _sql_constraints = [
-        ('name_uniq', 'unique(server_id,environment_id,name)',
+        ('name_uniq', 'unique(server_id,environment_id,suffix)',
          'Name must be unique per server!'),
     ]
 

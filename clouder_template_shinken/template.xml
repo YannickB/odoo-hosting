@@ -85,6 +85,18 @@ CMD ["/usr/bin/supervisord"]
             <field name="container" eval="True"/>
             <field name="auto" eval="True"/>
         </record>
+        <record id="app_bind_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="clouder_template_bind.app_bind"/>
+            <field name="name" ref="app_shinken"/>
+            <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="app_proxy_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="clouder_template_proxy.app_proxy"/>
+            <field name="name" ref="app_shinken"/>
+            <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
+        </record>
 
     </data>
 </openerp>

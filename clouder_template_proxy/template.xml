@@ -56,12 +56,6 @@ RUN git clone https://github.com/letsencrypt/letsencrypt /opt/letsencrypt
 
 ]]></field>
         </record>
-        <record id="app_proxy_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_proxy"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="container" eval="True"/>
-            <field name="auto" eval="True"/>
-        </record>
 
 
     </data>
