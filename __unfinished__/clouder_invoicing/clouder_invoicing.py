@@ -121,17 +121,16 @@ class ClouderInvoicingPricegridLine(models.Model):
                         _('Pricegrid invoice_amount error!'),
                         _("This function should only be called from recordsets linked to the same container/base.")
                     )
-        # Key for hash: pgl.invoicing_unit_metadata.id
         # Grouping lines by invoicing unit
         invoicing_data = {}
         for pgl in self:
-            if pgl.invoicing_unit_metadata.id not in invoicing_data:
-                invoicing_data[pgl.invoicing_unit_metadata.id] = []
-            invoicing_data[pgl.invoicing_unit_metadata.id].append(pgl)
+            if pgl.application_metadata.id not in invoicing_data:
+                invoicing_data[pgl.application_metadata.id] = []
+            invoicing_data[pgl.application_metadata.id].append(pgl)
 
         # Sorting resulting lists by threshold
-        for k, v in invoicing_data:
-            invoicing_data[k] = v.sort(key=lambda x: x.threshold)
+        for k in invoicing_data:
+            invoicing_data[k].sort(key=lambda x: x.threshold)
 
         # Computing final value*
         amount = 0.0
@@ -273,12 +272,12 @@ class ClouderContainer(models.Model):
             if container.base_ids:
                 # Invoicing per base
                 for base in container.base_ids:
-                    if base.should_invoice():
+                    if base.should_invoice() and base.pricegrid_ids:
                         results['invoice_base_data'].append({
                             'id': base.id,
                             'amount': base.pricegrid_ids.invoice_amount
                         })
-            elif container.should_invoice():
+            elif container.should_invoice() and container.pricegrid_ids:
                 # Invoicing per container
                 results['invoice_container_data'].append({
                     'id': container.id,
@@ -411,7 +410,7 @@ class AccountInvoice(models.Model):
             # Updating date for base
             b_ids = base_env.search([('id', '=', base_data['id'])])
             b_ids.write({'last_invoiced': fields.Date.today()})
-            b_ids.container.update_invoice_data()
+            b_ids.container_id.update_invoice_data()
 
     def create_clouder_supplier_invoice(self, amount):
         """
