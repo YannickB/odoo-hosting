@@ -137,8 +137,13 @@ class ClouderInvoicingPricegridLine(models.Model):
         for lines in invoicing_data.values():
             compare_unit = lines[0].invoicing_unit
             index = 0
+
+            # No amount to add if the first threshold is above current compare value
+            if lines[index].threshold > compare_unit:
+                continue
+
             # Searching for the right line
-            while index < len(lines) and compare_unit <= lines[index].threshold:
+            while (index+1) < len(lines) and compare_unit <= lines[index+1].threshold:
                 index += 1
 
             # Computing and adding price
