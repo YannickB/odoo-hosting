@@ -355,7 +355,7 @@ class ClouderContainer(models.Model):
         """
         Property returning the database type connected to the service.
         """
-        db_type = self.database.application_id.type_id.name
+        db_type = self.database and self.database.application_id.type_id.name
         return db_type
 
     @property
@@ -973,7 +973,7 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).write(vals)
         # if flag:
         #     self.reinstall()
-        if 'autosave' in vals:
+        if 'autosave' in vals and self.autosave != vals['autosave']:
             self.deploy_links()
         return res
 
@@ -1304,6 +1304,7 @@ class ClouderContainerLink(models.Model):
         Hook which can be called by submodules to execute commands when we
         deploy a link.
         """
+        self.purge_link()
         self.deployed = True
         return
 
@@ -1336,7 +1337,6 @@ class ClouderContainerLink(models.Model):
         """
         Control and call the hook to deploy the link.
         """
-        self.purge_()
         self.control() and self.deploy_link()
 
     @api.multi

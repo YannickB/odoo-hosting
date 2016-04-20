@@ -53,6 +53,7 @@ class ClouderConfigSettings(models.Model):
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')
     end_reset_bases = fields.Datetime('Last Reset Bases ended at')
+    end_certs_renewal = fields.Datetime('Last Certs Renewal ended at')
 
     @property
     def now_date(self):
@@ -170,6 +171,20 @@ class ClouderConfigSettings(models.Model):
         self.env.cr.commit()
 
     @api.multi
+    def certs_renewal(self):
+        """
+        Reset all bases marked for reset.
+        """
+        bases = self.env['clouder.base'].search(
+            [('cert_renewal_date', '!=', False),('cert_renewal_date', '<=', self.new_date)])
+        for base in bases:
+            base.renew_cert()
+
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.env.ref('clouder.clouder_settings').end_certs_renewal = now
+        self.env.cr.commit()
+
+    @api.multi
     def cron_daily(self):
         """
         Call all actions which shall be executed daily.
@@ -177,6 +192,7 @@ class ClouderConfigSettings(models.Model):
         self.purge_expired_saves()
         self.save_all()
         self.reset_bases()
+        self.certs_renewal()
         return True
 
     @api.multi

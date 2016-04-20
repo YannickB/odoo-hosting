@@ -478,7 +478,7 @@ class ClouderModel(models.AbstractModel):
         stdout_read = ''
         chnl_out = ''
         chnl_err = ''
-        chnl_buffer_size = 1024
+        chnl_buffer_size = 4096
         # As long as the command is running
         while not channel.exit_status_ready():
             rl, _, _ = select.select([channel], [], [], 0.0)

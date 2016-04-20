@@ -83,6 +83,13 @@ class ClouderServer(models.Model):
             image.registry_id = registry.id
             image.parent_version_id = base.id
             image.build()
+        nginx = image_version_obj.search([('image_id', '=', image.id)])
+
+        image = image_obj.search([('name', '=', 'img_proxy')])
+        if not image.has_version:
+            image.registry_id = registry.id
+            image.parent_version_id = nginx.id
+            image.build()
 
         image = image_obj.search([('name', '=', 'img_shinken')])
         if not image.has_version:

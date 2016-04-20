@@ -307,7 +307,7 @@ USER root
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
+            <field name="container" eval="True"/>
         </record>
         <record id="app_odoo_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
@@ -382,6 +382,13 @@ USER root
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
+        <record id="app_odoo_exec_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_exec"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
 
         <record id="app_odoo_ssh" model="clouder.application">
             <field name="name">Odoo SSH</field>
@@ -446,7 +453,7 @@ RUN patch /opt/odoo/files/odoo/openerp/http.py < /tmp/http.patch
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
+            <field name="container" eval="True"/>
         </record>
         <record id="app_odoo_clouder_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder"/>
@@ -522,6 +529,13 @@ RUN patch /opt/odoo/files/odoo/openerp/http.py < /tmp/http.patch
         <record id="app_odoo_clouder_exec_link_postgres" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder_exec"/>
             <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+        <record id="app_odoo_clouder_exec_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_clouder_exec"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>

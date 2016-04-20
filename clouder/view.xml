@@ -97,6 +97,10 @@
                         <field name="cert_key"/>
                         <field name="cert_cert"/>
                         <newline/>
+                        <button name="generate_cert" string="Generate Certs" type="object" attrs="{'invisible': ['|','|',('cert_key','!=',False),('cert_cert','!=',False),('cert_renewal_date','!=',False)]}"/>
+                        <field name="cert_renewal_date" attrs="{'invisible': [('cert_renewal_date','=',False)]}"/>
+                        <button name="renew_cert" string="Renewal Certs" type="object" attrs="{'invisible': [('cert_renewal_date','=',False)]}"/>
+                        <newline/>
                         <field name="parent_id"/>
                         <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
                         <newline/>
@@ -735,11 +739,13 @@
                         <newline/>
                         <field name="end_save_all"/>
                         <field name="end_reset_bases"/>
+                        <field name="end_certs_renewal"/>
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
                     <button name="save_all" string="Save All" type="object"/>
                     <button name="purge_expired_saves" string="Purge expired Saves" type="object"/>
                     <button name="reset_bases" string="Reset Bases" type="object"/>
+                    <button name="certs_renewal" string="Certs Renewal" type="object"/>
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
                     <button name="reset_all_jobs" string="Reset Jobs" type="object"/>
                 </form>

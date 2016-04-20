@@ -432,33 +432,30 @@ class ClouderBaseLink(models.Model):
         if self.name.name.code == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
 
-            try:
-                self.log("client = erppeek.Client('http://" +
-                         self.base_id.container_id.server_id.ip +
-                         ":" +
-                         self.base_id.odoo_port
-                         + "," + "db=" + self.base_id.fullname_ + "," +
-                         "user=" + self.base_id.admin_name + ", password=$$$" +
-                         self.base_id.admin_password + "$$$)")
-                client = erppeek.Client(
-                    'http://' +
-                    self.base_id.container_id.server_id.ip + ':' +
-                    self.base_id.odoo_port,
-                    db=self.base_id.fullname_,
-                    user=self.base_id.admin_name, password=self.admin_password)
-                self.log("server_id = client.model('ir.model.data')"
-                         ".get_object_reference('base', "
-                         "'ir_mail_server_localhost0')[1]")
-                server_id = client.model('ir.model.data')\
-                    .get_object_reference('base',
-                                          'ir_mail_server_localhost0')[1]
-                self.log("client.model('ir.mail_server').write([" +
-                         str(server_id) +
-                         "], {'name': 'postfix', 'smtp_host': 'postfix'})")
-                client.model('ir.mail_server').write(
-                    [server_id], {'name': 'postfix', 'smtp_host': 'postfix'})
-            except:
-                pass
+            self.log("client = erppeek.Client('http://" +
+                     self.base_id.container_id.server_id.ip +
+                     ":" +
+                     self.base_id.odoo_port
+                     + "," + "db=" + self.base_id.fullname_ + "," +
+                     "user=" + self.base_id.admin_name + ", password=$$$" +
+                     self.base_id.admin_password + "$$$)")
+            client = erppeek.Client(
+                 'http://' +
+                self.base_id.container_id.server_id.ip + ':' +
+                self.base_id.odoo_port,
+                db=self.base_id.fullname_,
+                user=self.base_id.admin_name, password=self.base_id.admin_password)
+            self.log("server_id = client.model('ir.model.data')"
+                     ".get_object_reference('base', "
+                     "'ir_mail_server_localhost0')[1]")
+            server_id = client.model('ir.model.data')\
+                .get_object_reference('base',
+                                      'ir_mail_server_localhost0')[1]
+            self.log("client.model('ir.mail_server').write([" +
+                     str(server_id) +
+                     "], {'name': 'postfix', 'smtp_host': 'postfix'})")
+            client.model('ir.mail_server').write(
+                [server_id], {'name': 'postfix', 'smtp_host': 'postfix'})
 
             self.target.execute([
                 'sed', '-i',

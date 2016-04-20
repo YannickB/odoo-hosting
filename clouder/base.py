@@ -116,6 +116,7 @@ class ClouderBase(models.Model):
     reset_each_day = fields.Boolean('Reset each day?')
     cert_key = fields.Text('Cert Key')
     cert_cert = fields.Text('Cert')
+    cert_renewal_date = fields.Date('Cert renewal date')
     reset_id = fields.Many2one('clouder.base', 'Reset with this base')
     backup_ids = fields.Many2many(
         'clouder.container', 'clouder_base_backup_rel',
@@ -521,7 +522,7 @@ class ClouderBase(models.Model):
             self.deploy()
             save.restore()
             self.end_log()
-        if 'autosave' in vals or 'ssl_only' in vals:
+        if 'autosave' in vals and self.autosave != vals['autosave'] or 'ssl_only' in vals and self.ssl_only != vals['ssl_only']:
             self.deploy_links()
 
         return res
@@ -740,6 +741,19 @@ class ClouderBase(models.Model):
         """
         return
 
+    @api.multi
+    def generate_cert(self):
+        """
+        Generate a new certificate
+        """
+        return True
+
+    @api.multi
+    def renew_cert(self):
+        """
+        Renew a certificate
+        """
+        return True
 
 class ClouderBaseOption(models.Model):
     """
@@ -820,6 +834,7 @@ class ClouderBaseLink(models.Model):
         Hook which can be called by submodules to execute commands when we
         deploy a link.
         """
+        self.purge_link()
         self.deployed = True
         return
 
@@ -850,7 +865,6 @@ class ClouderBaseLink(models.Model):
         """
         Control and call the hook to deploy the link.
         """
-        self.purge_()
         self.control() and self.deploy_link()
 
     @api.multi
