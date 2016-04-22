@@ -127,8 +127,8 @@ class ClouderInvoicingPricegridLine(models.Model):
             if pgl.application_metadata.id not in invoicing_data:
                 invoicing_data[pgl.application_metadata.id] = {}
             if pgl.type not in invoicing_data[pgl.application_metadata.id]:
-                invoicing_data[pgl.application_metadata.id][plg.type] = []
-            invoicing_data[pgl.application_metadata.id][plg.type].append(pgl)
+                invoicing_data[pgl.application_metadata.id][pgl.type] = []
+            invoicing_data[pgl.application_metadata.id][pgl.type].append(pgl)
 
         # Sorting resulting lists by threshold
         for k, v in invoicing_data.iteritems():
