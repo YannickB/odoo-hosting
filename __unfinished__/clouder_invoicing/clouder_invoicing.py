@@ -138,7 +138,7 @@ class ClouderInvoicingPricegridLine(models.Model):
         # Computing final value*
         amount = 0.0
         for tables in invoicing_data.values():
-            for lines in tables:
+            for k, lines in tables.iteritems():
                 compare_unit = lines[0].invoicing_unit
                 index = 0
 
@@ -147,7 +147,7 @@ class ClouderInvoicingPricegridLine(models.Model):
                     continue
 
                 # Searching for the right line
-                while (index+1) < len(lines) and compare_unit <= lines[index+1].threshold:
+                while (index+1) < len(lines) and lines[index+1].threshold <= compare_unit:
                     index += 1
 
                 # Computing and adding price
