@@ -125,44 +125,48 @@ class ClouderInvoicingPricegridLine(models.Model):
         invoicing_data = {}
         for pgl in self:
             if pgl.application_metadata.id not in invoicing_data:
-                invoicing_data[pgl.application_metadata.id] = []
-            invoicing_data[pgl.application_metadata.id].append(pgl)
+                invoicing_data[pgl.application_metadata.id] = {}
+            if pgl.type not in invoicing_data[pgl.application_metadata.id]:
+                invoicing_data[pgl.application_metadata.id][plg.type] = []
+            invoicing_data[pgl.application_metadata.id][plg.type].append(pgl)
 
         # Sorting resulting lists by threshold
-        for k in invoicing_data:
-            invoicing_data[k].sort(key=lambda x: x.threshold)
+        for k, v in invoicing_data.iteritems():
+            for table in v:
+                v[table].sort(key=lambda x: x.threshold)
 
         # Computing final value*
         amount = 0.0
-        for lines in invoicing_data.values():
-            compare_unit = lines[0].invoicing_unit
-            index = 0
+        for tables in invoicing_data.values():
+            for lines in tables:
+                compare_unit = lines[0].invoicing_unit
+                index = 0
 
-            # No amount to add if the first threshold is above current compare value
-            if lines[index].threshold > compare_unit:
-                continue
+                # No amount to add if the first threshold is above current compare value
+                if lines[index].threshold > compare_unit:
+                    continue
 
-            # Searching for the right line
-            while (index+1) < len(lines) and compare_unit <= lines[index+1].threshold:
-                index += 1
+                # Searching for the right line
+                while (index+1) < len(lines) and compare_unit <= lines[index+1].threshold:
+                    index += 1
 
-            # Computing and adding price
-            if lines[index].type == 'fixed':
-                amount += lines[index].price
-            elif lines[index].type == 'mult':
-                amount += lines[index].price * compare_unit
-            else:
-                # Preventing future possible errors
-                raise except_orm(
-                    _('Pricegrid invoice_amount error!'),
-                    _(
-                        "Unknown type '{0}' in pricegrid line for {1} '{2}'.".format(
-                            lines[index].type,
-                            lines[index].link_type,
-                            lines[index].link.name
+                # Computing and adding price
+                if lines[index].type == 'fixed':
+                    amount += lines[index].price
+                elif lines[index].type == 'mult':
+                    amount += lines[index].price * compare_unit
+                else:
+                    # Preventing possible future type errors
+                    raise except_orm(
+                        _('Pricegrid invoice_amount error!'),
+                        _(
+                            "Unknown type '{0}' in pricegrid line for {1} '{2}'.".format(
+                                lines[index].type,
+                                lines[index].link_type,
+                                lines[index].link.name
+                            )
                         )
                     )
-                )
         return amount
 
 
@@ -280,13 +284,13 @@ class ClouderContainer(models.Model):
                     if base.should_invoice() and base.pricegrid_ids:
                         results['invoice_base_data'].append({
                             'id': base.id,
-                            'amount': base.pricegrid_ids.invoice_amount
+                            'amount': base.pricegrid_ids.invoice_amount()
                         })
             elif container.should_invoice() and container.pricegrid_ids:
                 # Invoicing per container
                 results['invoice_container_data'].append({
                     'id': container.id,
-                    'amount': container.pricegrid_ids.invoice_amount
+                    'amount': container.pricegrid_ids.invoice_amount()
                 })
         return results
 
@@ -415,7 +419,6 @@ class AccountInvoice(models.Model):
             # Updating date for base
             b_ids = base_env.search([('id', '=', base_data['id'])])
             b_ids.write({'last_invoiced': fields.Date.today()})
-            b_ids.container_id.update_invoice_data()
 
     def create_clouder_supplier_invoice(self, amount):
         """
