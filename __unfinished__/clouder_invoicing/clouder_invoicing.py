@@ -250,11 +250,12 @@ class ClouderContainer(models.Model):
         vals = self.get_default_pricegrids(vals)
         return super(ClouderContainer, self).create(vals)
 
-    @api.one
+    @api.multi
     def should_invoice(self):
         """
         Returns a boolean telling if the container should be invoiced or not
         """
+        self.ensure_one()
         if not self.invoicing_period:
             return False
 
@@ -263,8 +264,8 @@ class ClouderContainer(models.Model):
         days_diff = (today - fields.Date.from_string(self.last_invoiced)).days
         days_needed = (
             (
-                fields.Date.from_string(self.last_invoiced) + relativedelta(months=1)
-            ) - today
+                fields.Date.from_string(self.last_invoiced) + relativedelta(months=self.invoicing_period)
+            ) - fields.Date.from_string(self.last_invoiced)
         ).days
 
         return days_diff >= days_needed
@@ -362,11 +363,12 @@ class ClouderBase(models.Model):
         vals = self.get_default_pricegrids(vals)
         return super(ClouderBase, self).create(vals)
 
-    @api.one
+    @api.multi
     def should_invoice(self):
         """
         Returns a boolean telling if the container should be invoiced or not
         """
+        self.ensure_one()
         if not self.invoicing_period:
             return False
 
@@ -375,8 +377,8 @@ class ClouderBase(models.Model):
         days_diff = (today - fields.Date.from_string(self.last_invoiced)).days
         days_needed = (
             (
-                fields.Date.from_string(self.last_invoiced) + relativedelta(months=1)
-            ) - today
+                fields.Date.from_string(self.last_invoiced) + relativedelta(months=self.invoicing_period)
+            ) - fields.Date.from_string(self.last_invoiced)
         ).days
 
         return days_diff >= days_needed
