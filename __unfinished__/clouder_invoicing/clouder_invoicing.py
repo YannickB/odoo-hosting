@@ -391,15 +391,9 @@ class AccountInvoice(models.Model):
     _inherit = "account.invoice"
 
     @api.model
-    def clouder_invoicing(self):
-        """
-        Invoice containers
-        """
+    def invoice_containers(self, containers):
         container_env = self.env['clouder.container']
         base_env = self.env['clouder.base']
-
-        # Getting all containers
-        containers = container_env.search([])
 
         # Gathering invoice data from containers
         invoice_data = containers.get_invoicing_data()
@@ -410,7 +404,7 @@ class AccountInvoice(models.Model):
             _logger.info('\nINVOICING CONTAINER {0} FOR {1}\n'.format(container_data['id'], container_data['amount']))
 
             # Updating date for container
-            c_ids = container_data.search([('id', '=', container_data['id'])])
+            c_ids = container_env.search([('id', '=', container_data['id'])])
             c_ids.write({'last_invoiced': fields.Date.today()})
 
         # Processing bases
@@ -421,6 +415,16 @@ class AccountInvoice(models.Model):
             # Updating date for base
             b_ids = base_env.search([('id', '=', base_data['id'])])
             b_ids.write({'last_invoiced': fields.Date.today()})
+
+    @api.model
+    def clouder_invoicing(self):
+        """
+        Invoice containers
+        """
+        # Getting all containers
+        containers = self.env['clouder.container'].search([])
+        self.invoice_containers(containers)
+
 
     def create_clouder_supplier_invoice(self, amount):
         """
