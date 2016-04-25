@@ -79,9 +79,9 @@ class AccountInvoice(models.Model):
         ]
 
         # Invoicing all non-clouder containers
-        containers = self.env['clouder.container'].search(['application_id', 'not in', clouder_app_ids])
+        containers = self.env['clouder.container'].search([('application_id', 'not in', clouder_app_ids)])
         self.invoice_containers(containers)
 
         # Invoicing all clouder containers
-        clouder_containers = self.env['clouder.container'].search(['application_id', 'in', clouder_app_ids])
+        clouder_containers = self.env['clouder.container'].search([('application_id', 'in', clouder_app_ids)])
         self.invoice_master_clouder_containers(clouder_containers)
