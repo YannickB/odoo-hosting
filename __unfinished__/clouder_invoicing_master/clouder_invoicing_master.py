@@ -21,7 +21,11 @@
 ##############################################################################
 
 import xmlrpclib
-from openerp import models, fields
+from openerp import models, fields, api
+import logging
+
+_logger = logging.getLogger(__name__)
+
 
 class AccountInvoice(models.Model):
     """
@@ -54,7 +58,7 @@ class AccountInvoice(models.Model):
             _logger.info('\nINVOICING BASE {0} FOR {1}\n'.format(base_data['id'], base_data['amount']))
 
             # Updating date for base
-            base = base_env.search([('id', '=', base_data['id'])])[0]
+            base = self.env['clouder.base'].search([('id', '=', base_data['id'])])[0]
             base.write({'last_invoiced': fields.Date.today()})
 
             # Making a supplier invoice in child clouder instance
