@@ -31,6 +31,7 @@ class AccountInvoice(models.Model):
     """
     Overrides clouder_invoicing definitions to add functionnality
     """
+    _inherit = "account.invoice"
 
     @api.model
     def invoice_clouder_child(self, base, amount):
