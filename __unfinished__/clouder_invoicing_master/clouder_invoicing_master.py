@@ -70,10 +70,13 @@ class AccountInvoice(models.Model):
         """
         Invoice containers
         """
-        clouder_app_ids = self.env['clouder.application'].search([
-            ('type_id', '=', self.env.ref('').id)
-        ])
-        clouder_app_ids = [x.id for x in clouder_app_ids]
+        clouder_app_ids = [
+            self.env.ref('clouder_template_odoo.app_odoo_clouder').id,
+            self.env.ref('clouder_template_odoo.app_odoo_clouder_data').id,
+            self.env.ref('clouder_template_odoo.app_odoo_clouder_files').id,
+            self.env.ref('clouder_template_odoo.app_odoo_clouder_exec').id,
+            self.env.ref('clouder_template_odoo.app_odoo_clouder_ssh').id
+        ]
 
         # Invoicing all non-clouder containers
         containers = self.env['clouder.container'].search(['application_id', 'not in', clouder_app_ids])

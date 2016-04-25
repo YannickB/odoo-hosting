@@ -24,7 +24,7 @@
     'name': 'Clouder Invoicing Master',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['base', 'clouder_invoicing'],
+    'depends': ['base', 'clouder_template_odoo', 'clouder_invoicing'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
