@@ -13,7 +13,7 @@
 
         <record id="group_clouder_user" model="res.groups">
             <field name="name">Clouder / User</field>
-            <field name="implied_ids" eval="[(6, 0, [ref('base.group_user'), ref('base.group_public')])]"/>
+            <field name="implied_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
             <field name="category_id" ref="module_category_clouder"/>
         </record>
 
