@@ -425,10 +425,13 @@ class AccountInvoice(models.Model):
         containers = self.env['clouder.container'].search([])
         self.invoice_containers(containers)
 
-
+    @api.model
     def create_clouder_supplier_invoice(self, amount):
         """
         Creates a supplier invoice from the master clouder with the given amount
         """
         # TODO: create a real invoice
         _logger.info('\nINVOICING FROM MASTER FOR {0}\n'.format(amount))
+
+        # TODO: return invoice ID or -1 if it fails
+        return 0

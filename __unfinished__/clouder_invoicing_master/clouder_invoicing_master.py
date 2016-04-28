@@ -35,17 +35,25 @@ class AccountInvoice(models.Model):
 
     @api.model
     def invoice_clouder_child(self, base, amount):
-        # TODO: debug
+        """
+        Request creation of a supplier invoice in the child clouder
+        :param base - the child clouder base
+        :param amount - the amount of the invoice
+        """
         url = "http://{0}:{1}".format(base.container_id.server_id.ip, base.odoo_port)
         conn = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
-        uid = conn.authenticate(base.fullname, base.admin_name, base.admin_password, {})
-        conn.execute_kw(
-            base.fullname,
+        dbname = base.fullname.replace('-', '_')
+        uid = conn.authenticate(dbname, base.admin_name, base.admin_password, {})
+        model = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(url))
+
+        return model.execute_kw(
+            dbname,
             uid,
             base.admin_password,
             'account_invoice',
             'create_clouder_supplier_invoice',
-            [amount]
+            [amount],
+            {}
         )
 
     @api.model
