@@ -50,7 +50,7 @@ class AccountInvoice(models.Model):
             dbname,
             uid,
             base.admin_password,
-            'account_invoice',
+            'account.invoice',
             'create_clouder_supplier_invoice',
             [amount],
             {}
