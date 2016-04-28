@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
+        <!-- Adding auto-install of clouder_invoicing on child clouders -->
+        <record id="clouder_template_odoo.app_odoo_clouder_option_install_modules" model="clouder.application.option">
+            <field name="value">clouder, clouder_invoicing</field>
+        </record>
     </data>
 </openerp>
