@@ -29,7 +29,7 @@
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
-    Clouder
+    Adds invoicing capabilities to clouder container/bases
     """,
     'demo': [],
     'data': [

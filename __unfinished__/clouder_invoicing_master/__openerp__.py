@@ -29,7 +29,7 @@
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
-    Clouder
+    Pilots sub-clouder instances and invoicing
     """,
     'demo': [],
     'data': [
