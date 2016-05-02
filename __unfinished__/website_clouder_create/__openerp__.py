@@ -34,6 +34,7 @@
     'demo': [],
     'data': [
         'template.xml',
+        'website_clouder_create_view.xml'
     ],
     'installable': True,
     'application': True,
