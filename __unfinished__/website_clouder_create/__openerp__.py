@@ -24,7 +24,7 @@
     'name': 'Website Clouder Create',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['base', 'clouder'],
+    'depends': ['base', 'clouder', 'website'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',

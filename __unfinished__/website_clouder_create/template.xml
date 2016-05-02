@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
+        <!-- TODO: make user-friendly error display -->
         <template id="create_form">
             <t t-call="website.layout">
                 <t t-set="additional_title">Shop - Checkout</t>
                 <div id="wrap">
-                    <div class="container oe_website_sale">
+                    <div class="container">
                         <h1>TEST</h1>
                         <form action="/instance/new/validate" method="post">
                             <div class="row">
@@ -13,46 +14,51 @@
                                     <div class="row">
                                         <div t-attf-class="form-group #{error.get('name') and 'has-error' or ''} col-lg-6">
                                             <label class="control-label" for="contact_name">Your Name</label>
-                                            <input type="text" name="name" class="form-control" t-att-value="checkout.get('name')"/>
+                                            <input type="text" name="name" class="form-control" t-att-value="form_data.get('name')"/>
                                         </div>
                                         <div t-attf-class="form-group #{error.get('street') and 'has-error' or ''} col-lg-6">
                                             <label class="control-label" for="street" style="font-weight: normal">Company Name</label>
-                                            <input type="text" name="street" class="form-control" t-att-value="checkout.get('street')"/>
+                                            <input type="text" name="street" class="form-control" t-att-value="form_data.get('street')"/>
                                         </div>
                                         <div t-attf-class="form-group #{error.get('email') and 'has-error' or ''} col-lg-6">
                                             <label class="control-label" for="contact_name">Email</label>
-                                            <input type="email" name="email" class="form-control" t-att-value="checkout.get('email')"/>
+                                            <input type="email" name="email" class="form-control" t-att-value="form_data.get('email')"/>
                                         </div>
                                         <div t-attf-class="form-group #{error.get('phone') and 'has-error' or ''} col-lg-6">
                                             <label class="control-label" for="phone">Phone</label>
-                                            <input type="tel" name="phone" class="form-control" t-att-value="checkout.get('phone')"/>
+                                            <input type="tel" name="phone" class="form-control" t-att-value="form_data.get('phone')"/>
                                         </div>
-                                        <div t-attf-class="form-group #{error.get('country_id') and 'has-error' or ''} col-lg-6">
+                                        <!--<div t-attf-class="form-group #{error.get('country_id') and 'has-error' or ''} col-lg-6">
                                             <label class="control-label" for="country_id">Country</label>
                                             <select name="country_id" class="form-control">
                                                 <option value="">Country...</option>
                                                 <t t-foreach="countries or []" t-as="country">
-                                                    <option t-att-value="country.id" t-att-selected="country.id == checkout.get('country_id')"><t t-esc="country.name"/></option>
+                                                    <option t-att-value="country.id" t-att-selected="country.id == form_data.get('country_id')"><t t-esc="country.name"/></option>
                                                 </t>
                                             </select>
-                                        </div>
-                                        <div t-attf-class="form-group #{error.get('state_id') and 'has-error' or ''} col-lg-6">
-                                            <label class="control-label" for="state_id" style="font-weight: normal">State / Province</label>
-                                            <select name="state_id" class="form-control">
-                                                <option value="">select...</option>
-                                                    <t t-foreach="states or []" t-as="state">
-                                                <option t-att-value="state.id" style="display:none;" t-att-data-country_id="state.country_id.id" t-att-selected="state.id == checkout.get('state_id')"><t t-esc="state.name"/></option>
-                                            </t>
-                                            </select>
-                                        </div>
-                                        <div class="clearfix"/>
+                                        </div>-->
                                     </div>
                                     <div class="clearfix">
-                                        <a class="btn btn-default btn-primary pull-right mb32 a-submit">Confirm <span class="fa fa-long-arrow-right"/></a>
+                                        <input class="btn btn-default btn-primary pull-right mb32" type="submit">Confirm <span class="fa fa-long-arrow-right"/></input>
                                     </div>
                                 </div>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </t>
+        </template>
+
+        <template id="create_validation">
+            <t t-call="website.layout">
+                <t t-set="additional_title">Shop - Checkout</t>
+                <div id="wrap">
+                    <div class="container">
+                        <h1>TEST</h1>
+                        <p>Test result page.
+
+                        Function returned: <t t-esc="res"/>
+                        </p>
                     </div>
                 </div>
             </t>
