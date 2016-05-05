@@ -151,27 +151,40 @@ class ClouderServer(models.Model):
         })
 
         application = application_obj.search([('code', '=', 'postfix')])
+        ports = []
+        if self.oneclick_ports:
+            ports = [(0,0,{'name':'postfix', 'localport': 25, 'hostport': 25, 'expose': 'internet'})]
         container_obj.create({
             'suffix': 'postfix',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
+            'port_ids': ports
         })
 
         application = application_obj.search([('code', '=', 'bind')])
+        ports = []
+        if self.oneclick_ports:
+            ports = [(0,0,{'name':'bind', 'localport': 53, 'hostport': 53, 'expose': 'internet', 'udp': True})]
         bind = container_obj.create({
             'suffix': 'bind',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
+            'port_ids': ports
         })
 
         application = application_obj.search([('code', '=', 'proxy')])
+        ports = []
+        if self.oneclick_ports:
+            ports = [(0,0,{'name':'nginx', 'localport': 80, 'hostport': 80, 'expose': 'internet'}),
+                     (0,0,{'name':'nginx-ssl', 'localport': 443, 'hostport': 443, 'expose': 'internet'})]
         container_obj.create({
             'suffix': 'proxy',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
+            'port_ids': ports
         })
 
         application = application_obj.search([('code', '=', 'shinken')])
@@ -244,7 +257,6 @@ class ClouderServer(models.Model):
 
     @api.multi
     def oneclick_clouder_purge(self):
-
         self = self.with_context(no_enqueue=True)
 
         container_obj = self.env['clouder.container']

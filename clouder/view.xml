@@ -340,6 +340,7 @@
                         <field name="oneclick_id" widget="selection"/>
                         <newline/>
                         <field name="oneclick_domain" attrs="{'invisible': [('oneclick_id','=',False)], 'required': [('oneclick_id','!=',False)]}"/>
+                        <field name="oneclick_ports" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
                         <newline/>
                         <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
                         <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>

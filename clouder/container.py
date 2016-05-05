@@ -136,6 +136,7 @@ class ClouderServer(models.Model):
     runner_id = fields.Many2one('clouder.container', 'Runner')
     oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
     oneclick_domain = fields.Char('Domain')
+    oneclick_ports = fields.Boolean('Assign critical ports?')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, ssh_port)',
