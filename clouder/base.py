@@ -124,12 +124,20 @@ class ClouderBase(models.Model):
     public = fields.Boolean('Public?')
 
     @property
+    def is_root(self):
+        """
+        Property returning is this base is the root of the domain or not.
+        """
+        if self.name == 'www':
+            return True
+        return False
+
+    @property
     def fullname(self):
         """
         Property returning the full name of the base.
         """
-        return (self.application_id.fullcode + '-' + self.name + '-'
-                + self.domain_id.name).replace('.', '-')
+        return self.application_id.fullcode + '-' + self.fulldomain.replace('.', '-')
 
     @property
     def fullname_(self):
@@ -144,6 +152,8 @@ class ClouderBase(models.Model):
         """
         Property returning the full url of the base.
         """
+        if self.is_root:
+            return self.domain_id.name
         return self.name + '.' + self.domain_id.name
 
     @property

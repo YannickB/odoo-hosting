@@ -63,14 +63,20 @@ class ClouderBase(models.Model):
             proxy.execute([
                 'sed', '-i', '"s/BASE/' + self.name + '/g"',
                 self.nginx_configfile])
+            domain = self.fulldomain
+            if self.is_root:
+                domain = domain + ' ' + self.name + '.' + self.fulldomain
             proxy.execute([
-                'sed', '-i', '"s/DOMAIN/' + self.domain_id.name +
+                'sed', '-i', '"s/DOMAIN/' + domain +
                 '/g"', self.nginx_configfile])
             proxy.execute([
                 'sed', '-i', '"s/REPO/' + self.fullname +
                 '/g"', self.nginx_configfile])
             proxy.execute(['/etc/init.d/nginx', 'reload'])
-            proxy.execute(['/opt/letsencrypt/letsencrypt-auto certonly --webroot -w ' + webroot + ' -d ' + self.fulldomain])
+            domain = self.fulldomain
+            if self.is_root:
+                domain = domain + ' -d ' + self.name + '.' + self.fulldomain
+            proxy.execute(['/opt/letsencrypt/letsencrypt-auto certonly --webroot -w ' + webroot + ' -d ' + domain])
             key = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/privkey.pem'])
             cert = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'])
             self.write({'cert_key': key, 'cert_cert': cert, 'cert_renewal_date': (datetime.now() + timedelta(days=45)).strftime("%Y-%m-%d")})
@@ -128,11 +134,18 @@ class ClouderBaseLink(models.Model):
                     'clouder_template_' +
                     self.base_id.application_id.type_id.name
                 ) + '/res/' + configfile, self.base_id.nginx_configfile)
+            if self.base_id.is_root:
+                target.send(
+                    modules.get_module_path(
+                        'clouder_template_proxy'
+                    ) + '/res/proxy-root.config', self.base_id.nginx_configfile + '-root')
+                target.execute(['cat', self.base_id.nginx_configfile + '-root', '>>',  self.base_id.nginx_configfile])
+                target.execute(['rm', self.base_id.nginx_configfile + '-root'])
             target.execute([
                 'sed', '-i', '"s/BASE/' + self.base_id.name + '/g"',
                 self.base_id.nginx_configfile])
             target.execute([
-                'sed', '-i', '"s/DOMAIN/' + self.base_id.domain_id.name +
+                'sed', '-i', '"s/DOMAIN/' + self.base_id.fulldomain +
                 '/g"', self.base_id.nginx_configfile])
             target.execute([
                 'sed', '-i', '"s/SERVER/' +
@@ -144,10 +157,8 @@ class ClouderBaseLink(models.Model):
                     self.base_id.container_id.ports['http']['hostport'] +
                     '/g"', self.base_id.nginx_configfile])
             # self.deploy_prepare_apache(cr, uid, vals, context)
-            cert_file = '/etc/ssl/certs/' + self.base_id.name + '.' + \
-                        self.base_id.domain_id.name + '.crt'
-            key_file = '/etc/ssl/private/' + self.base_id.name + '.' +\
-                       self.base_id.domain_id.name + '.key'
+            cert_file = '/etc/ssl/certs/' + self.base_id.fulldomain + '.crt'
+            key_file = '/etc/ssl/private/' + self.base_id.fulldomain + '.key'
             if self.base_id.cert_cert and self.base_id.cert_key:
                 target.execute([
                     'echo', '"' + self.base_id.cert_cert + '"', '>', cert_file
@@ -170,6 +181,7 @@ class ClouderBaseLink(models.Model):
                     self.base_id.domain_id.organisation +
                     '/CN=' + self.base_id.name +
                     '.' + self.base_id.domain_id.name + '"'])
+
             target.execute([
                 'ln', '-s', self.base_id.nginx_configfile,
                 '/etc/nginx/sites-enabled/' + self.base_id.fullname])
@@ -188,9 +200,7 @@ class ClouderBaseLink(models.Model):
                 '/etc/nginx/sites-enabled/' + self.base_id.fullname])
             target.execute(['rm', self.base_id.nginx_configfile])
             target.execute([
-                'rm', '/etc/ssl/certs/' + self.base_id.name +
-                '.' + self.base_id.domain_id.name + '.*'])
+                'rm', '/etc/ssl/certs/' + self.base_id.fulldomain + '.*'])
             target.execute([
-                'rm', '/etc/ssl/private/' + self.base_id.name +
-                '.' + self.base_id.domain_id.name + '.*'])
+                'rm', '/etc/ssl/private/' + self.base_id.fulldomain + '.*'])
             target.execute(['/etc/init.d/nginx', 'reload'])

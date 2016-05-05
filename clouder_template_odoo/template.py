@@ -90,7 +90,7 @@ class ClouderBase(models.Model):
         Create the database with odoo functions.
         """
         if self.application_id.type_id.name == 'odoo':
-            self.container_id.execute([
+            self.container_id.base_backup_container.execute([
                 'mkdir', '-p',
                 '/opt/odoo/data/filestore/' +
                 self.fullname_],
@@ -410,7 +410,7 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'odoo':
-            self.container_id.execute([
+            self.container_id.base_backup_container.execute([
                 'rm', '-rf',
                 '/opt/odoo/data/filestore/' + self.fullname_])
         return res

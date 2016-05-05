@@ -109,21 +109,35 @@ class ClouderBaseLink(models.Model):
     _inherit = 'clouder.base.link'
 
     @api.multi
+    def deploy_bind_config(self, name):
+        proxy_link = self.search([('base_id', '=', self.base_id.id), (
+            'name.application_id.code', '=', 'proxy')])
+        self.target.execute([
+            'echo "' + name + ' IN A ' +
+            (proxy_link and proxy_link[0].target.server_id.ip
+             or self.base_id.container_id.server_id.ip) +
+            '" >> ' + self.base_id.domain_id.configfile])
+        self.base_id.domain_id.refresh_serial()
+
+    @api.multi
+    def purge_bind_config(self, name):
+        self.target.execute([
+            'sed', '-i',
+            '"/' + name + '\sIN\sA/d"',
+            self.base_id.domain_id.configfile])
+        self.base_id.domain_id.refresh_serial()
+
+    @api.multi
     def deploy_link(self):
         """
-        Add a new CNAME record when we create a new base, and MX if the
+        Add a new A record when we create a new base, and MX if the
         base has a postfix link.
         """
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'bind':
-            proxy_link = self.search([('base_id', '=', self.base_id.id), (
-                'name.application_id.code', '=', 'proxy')])
-            self.target.execute([
-                'echo "' + self.base_id.name + ' IN A ' +
-                (proxy_link and proxy_link[0].target.server_id.ip
-                 or self.base_id.container_id.server_id.ip) +
-                '" >> ' + self.base_id.domain_id.configfile])
-            self.base_id.domain_id.refresh_serial()
+            if self.base_id.is_root:
+                self.deploy_bind_config('@')
+            self.deploy_bind_config(self.base_id.name)
 
     @api.multi
     def purge_link(self):
@@ -132,8 +146,6 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'bind':
-            self.target.execute([
-                'sed', '-i',
-                '"/' + self.base_id.name + '\sIN\sA/d"',
-                self.base_id.domain_id.configfile])
-            self.base_id.domain_id.refresh_serial()
+            if self.base_id.is_root:
+                self.purge_bind_config('@')
+            self.purge_bind_config(self.base_id.name)

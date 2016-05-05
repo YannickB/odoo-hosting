@@ -118,6 +118,48 @@ class ClouderBaseLink(models.Model):
     _inherit = 'clouder.base.link'
 
     @api.multi
+    def deploy_bind_postfix_config(self, dns_link, key, name):
+        dns_link.purge_bind_config(name)
+        dns_link.deploy_bind_config(name)
+        base = self.base_id
+        dns = dns_link.target
+        dns.execute([
+            'echo "' + name + ' IN MX 1 ' +
+            base.name +
+            ' ; mx:' + base.fulldomain + '" >> ' +
+            base.domain_id.configfile])
+        smtp_relayhost = ''
+        if self.target.options['smtp_relayhost']['value']:
+            smtp_relayhost = ' a:' + self.target.options['smtp_relayhost']['value'] + ' '
+        dns.execute([
+            'echo \'' + name + ' IN TXT "v=spf1 a mx ptr mx:' + base.fulldomain + ' ip4:10.0.0.0/8 ip4:127.0.0.0/8 ip4:' + self.target.server_id.ip + smtp_relayhost + ' ~all"\' >> ' + base.domain_id.configfile])
+        dns.execute([
+            'echo \'' + name + ' IN SPF "v=spf1 a mx ptr mx:' + base.fulldomain + ' ip4:10.0.0.0/8 ip4:127.0.0.0/8 ip4:' + self.target.server_id.ip + smtp_relayhost + ' ~all"\' >> ' + base.domain_id.configfile])
+        dns.execute([
+            'echo \'' + key.replace('(','').replace(')','').replace('"\n','').replace('"p','p').replace('\n','').replace('_domainkey','_domainkey.' + name) + '\' >> ' + base.domain_id.configfile])
+        base.domain_id.refresh_serial()
+
+    @api.multi
+    def purge_bind_postfix_config(self, dns_link, name):
+        dns_link.purge_bind_config(name)
+        base = self.base_id
+        dns = dns_link.target
+        dns.execute([
+            'sed', '-i',
+            '"/mail._domainkey.' + name + '/d"',
+        base.domain_id.configfile])
+        dns.execute([
+            'sed', '-i',
+            '"/' + base.name + ' for ' + base.domain_id.name + '/d"',
+            base.domain_id.configfile])
+        dns.execute([
+            'sed', '-i',
+            '"/mx:' + base.fulldomain + '/d"',
+            base.domain_id.configfile])
+        base.domain_id.refresh_serial()
+
+
+    @api.multi
     def deploy_link(self):
         """
         Deploy the configuration file to watch the base.
@@ -129,8 +171,6 @@ class ClouderBaseLink(models.Model):
                 ('base_id', '=', self.base_id.id),
                 ('name.name.code', '=', 'bind')])
             if dns_link and dns_link.target:
-                dns_link.purge_link()
-                dns_link.deploy_link()
                 base = self.base_id
                 self.target.execute([
                     'mkdir -p /opt/opendkim/keys/' + base.fullname])
@@ -140,6 +180,7 @@ class ClouderBaseLink(models.Model):
                     'chown opendkim:opendkim /opt/opendkim/keys/' + base.fullname + '/mail.private'])
                 self.target.execute([
                     'echo "' + 'mail._domainkey.' + base.fulldomain + ' ' + base.fulldomain+ ':mail:' + '/opt/opendkim/keys/'  + base.fullname + '/mail.private #' + base.fullname + '" >> /opt/opendkim/KeyTable'])
+
                 self.target.execute([
                     'echo "' + base.fulldomain + ' mail._domainkey.' + base.fulldomain + ' #' + base.fullname + '" >> /opt/opendkim/SigningTable'])
                 self.target.execute([
@@ -150,23 +191,11 @@ class ClouderBaseLink(models.Model):
                 self.target.execute(
                     ['/etc/init.d/opendkim', 'start'])
 
-                dns = dns_link.target
-                dns.execute([
-                    'echo "' + base.name + ' IN MX 1 ' +
-                    base.name +
-                    ' ; mx:' + base.fulldomain + '" >> ' +
-                    base.domain_id.configfile])
-                smtp_relayhost = ''
-                if self.target.options['smtp_relayhost']['value']:
-                    smtp_relayhost = ' a:' + self.target.options['smtp_relayhost']['value'] + ' '
-                dns.execute([
-                    'echo \'' + base.name + ' IN TXT "v=spf1 a mx ptr mx:' + base.fulldomain + ' ip4:10.0.0.0/8 ip4:127.0.0.0/8 ip4:' + self.target.server_id.ip + smtp_relayhost + ' ~all"\' >> ' + base.domain_id.configfile])
-                dns.execute([
-                    'echo \'' + base.name + ' IN SPF "v=spf1 a mx ptr mx:' + base.fulldomain + ' ip4:10.0.0.0/8 ip4:127.0.0.0/8 ip4:' + self.target.server_id.ip + smtp_relayhost + ' ~all"\' >> ' + base.domain_id.configfile])
                 key = self.target.execute(['cat', '/opt/opendkim/keys/'  + base.fullname + '/mail.txt'])
-                dns.execute([
-                    'echo \'' + key.replace('(','').replace(')','').replace('"\n','').replace('"p','p').replace('\n','').replace('_domainkey','_domainkey.' + base.name) + '\' >> ' + base.domain_id.configfile])
-                base.domain_id.refresh_serial()
+
+                if self.base_id.is_root:
+                    self.deploy_bind_postfix_config(dns_link, key, '@')
+                self.deploy_bind_postfix_config(dns_link, key, self.base_id.name)
 
     @api.multi
     def purge_link(self):
@@ -189,17 +218,6 @@ class ClouderBaseLink(models.Model):
                 self.target.execute(
                     ['/etc/init.d/opendkim', 'start'])
 
-                dns = dns_link.target
-                dns.execute([
-                    'sed', '-i',
-                    '"/mail._domainkey.' + base.name + '/d"',
-                    base.domain_id.configfile])
-                dns.execute([
-                    'sed', '-i',
-                    '"/' + base.name + ' for ' + base.domain_id.name + '/d"',
-                    base.domain_id.configfile])
-                dns.execute([
-                    'sed', '-i',
-                    '"/mx:' + base.fulldomain + '/d"',
-                    base.domain_id.configfile])
-                base.domain_id.refresh_serial()
+                if self.base_id.is_root:
+                    self.purge_bind_postfix_config(dns_link, '@')
+                self.purge_bind_postfix_config(dns_link, self.base_id.name)

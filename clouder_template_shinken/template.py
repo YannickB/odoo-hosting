@@ -282,7 +282,7 @@ class ClouderBaseLink(models.Model):
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute([
                 'sed', '-i',
-                '"s/DOMAIN/' + self.base_id.domain_id.name + '/g"',
+                '"s/DOMAIN/' + self.base_id.fulldomain + '/g"',
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute(
                 ['/usr/local/shinken/bin/init.d/shinken', 'reload'],
