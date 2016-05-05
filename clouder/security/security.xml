@@ -60,7 +60,7 @@
         <record id="clouder_container_user_read_rule" model="ir.rule">
             <field name="name">clouder container user read</field>
             <field name="model_id" ref="model_clouder_container"/>
-            <field name="domain_force">['|', ('public','=',True), ('partner_ids', 'in', user.partner_id.id)]</field>
+            <field name="domain_force">['|', ('public','=',True), ('environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_user')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -71,7 +71,7 @@
         <record id="clouder_base_user_read_rule" model="ir.rule">
             <field name="name">clouder base user read</field>
             <field name="model_id" ref="model_clouder_base"/>
-            <field name="domain_force">['|', ('public','=',True), ('partner_ids', 'in', user.partner_id.id)]</field>
+            <field name="domain_force">['|', ('public','=',True), ('container_id.environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_user')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -82,7 +82,7 @@
         <record id="clouder_container_deployer_write_rule" model="ir.rule">
             <field name="name">clouder container deployer write</field>
             <field name="model_id" ref="model_clouder_container"/>
-            <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_deployer')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -93,7 +93,7 @@
         <record id="clouder_container_volume_deployer_write_rule" model="ir.rule">
             <field name="name">clouder container volume deployer write</field>
             <field name="model_id" ref="model_clouder_container_volume"/>
-            <field name="domain_force">[('container_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('container_id.environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_deployer')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -104,7 +104,7 @@
         <record id="clouder_container_port_deployer_write_rule" model="ir.rule">
             <field name="name">clouder container port deployer write</field>
             <field name="model_id" ref="model_clouder_container_port"/>
-            <field name="domain_force">[('container_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('container_id.environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_deployer')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -115,7 +115,7 @@
         <record id="clouder_container_option_deployer_write_rule" model="ir.rule">
             <field name="name">clouder container option deployer write</field>
             <field name="model_id" ref="model_clouder_container_option"/>
-            <field name="domain_force">[('container_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('container_id.environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_deployer')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -126,7 +126,7 @@
         <record id="clouder_container_link_deployer_write_rule" model="ir.rule">
             <field name="name">clouder container link deployer write</field>
             <field name="model_id" ref="model_clouder_container_link"/>
-            <field name="domain_force">[('container_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('container_id.environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_deployer')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -137,7 +137,7 @@
         <record id="clouder_base_deployer_write_rule" model="ir.rule">
             <field name="name">clouder base deployer write</field>
             <field name="model_id" ref="model_clouder_base"/>
-            <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('container_id.environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_deployer')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -149,7 +149,7 @@
         <record id="clouder_base_option_deployer_write_rule" model="ir.rule">
             <field name="name">clouder base option deployer write</field>
             <field name="model_id" ref="model_clouder_base_option"/>
-            <field name="domain_force">[('base_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('base_id.container_id.environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_deployer')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -160,14 +160,14 @@
         <record id="clouder_base_link_deployer_write_rule" model="ir.rule">
             <field name="name">clouder base link deployer write</field>
             <field name="model_id" ref="model_clouder_base_link"/>
-            <field name="domain_force">[('base_id.partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[('base_id.container_id.environment_id.user_ids', 'in', user.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_deployer')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
             <field name="perm_create" eval="True"/>
             <field name="perm_unlink" eval="True"/>
         </record>
-
+<!--
         <record id="clouder_application_appmanager_write_rule" model="ir.rule">
             <field name="name">clouder application appmanager write</field>
             <field name="model_id" ref="model_clouder_application"/>
@@ -266,12 +266,12 @@
             <field name="perm_create" eval="True"/>
             <field name="perm_unlink" eval="True"/>
         </record>
-
+-->
 
         <record id="clouder_container_administrator_write_rule" model="ir.rule">
             <field name="name">clouder container administrator write</field>
             <field name="model_id" ref="model_clouder_container"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -282,7 +282,7 @@
         <record id="clouder_container_option_administrator_write_rule" model="ir.rule">
             <field name="name">clouder container option administrator write</field>
             <field name="model_id" ref="model_clouder_container_option"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -293,7 +293,7 @@
         <record id="clouder_container_link_administrator_write_rule" model="ir.rule">
             <field name="name">clouder container link administrator write</field>
             <field name="model_id" ref="model_clouder_container_link"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -304,7 +304,7 @@
         <record id="clouder_base_administrator_write_rule" model="ir.rule">
             <field name="name">clouder base administrator write</field>
             <field name="model_id" ref="model_clouder_base"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -316,7 +316,7 @@
         <record id="clouder_base_option_administrator_write_rule" model="ir.rule">
             <field name="name">clouder base option administrator write</field>
             <field name="model_id" ref="model_clouder_base_option"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -327,7 +327,7 @@
         <record id="clouder_base_link_administrator_write_rule" model="ir.rule">
             <field name="name">clouder base link administrator write</field>
             <field name="model_id" ref="model_clouder_base_link"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -338,7 +338,7 @@
         <record id="clouder_application_administrator_write_rule" model="ir.rule">
             <field name="name">clouder application administrator write</field>
             <field name="model_id" ref="model_clouder_application"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -349,7 +349,7 @@
         <record id="clouder_application_option_administrator_write_rule" model="ir.rule">
             <field name="name">clouder application option administrator write</field>
             <field name="model_id" ref="model_clouder_application_option"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -360,7 +360,7 @@
         <record id="clouder_application_link_administrator_write_rule" model="ir.rule">
             <field name="name">clouder application link administrator write</field>
             <field name="model_id" ref="model_clouder_application_link"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -371,7 +371,7 @@
         <record id="clouder_image_administrator_write_rule" model="ir.rule">
             <field name="name">clouder image administrator write</field>
             <field name="model_id" ref="model_clouder_image"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -382,7 +382,7 @@
         <record id="clouder_image_volume_administrator_write_rule" model="ir.rule">
             <field name="name">clouder image volume administrator write</field>
             <field name="model_id" ref="model_clouder_image_volume"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -393,7 +393,7 @@
         <record id="clouder_image_port_administrator_write_rule" model="ir.rule">
             <field name="name">clouder image port administrator write</field>
             <field name="model_id" ref="model_clouder_image_port"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -404,7 +404,7 @@
         <record id="clouder_image_version_administrator_write_rule" model="ir.rule">
             <field name="name">clouder image administrator write</field>
             <field name="model_id" ref="model_clouder_image_version"/>
-            <field name="domain_force">[('1', '=', '1')]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -415,7 +415,7 @@
         <record id="clouder_domain_administrator_write_rule" model="ir.rule">
             <field name="name">clouder domain administrator write</field>
             <field name="model_id" ref="model_clouder_domain"/>
-            <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
@@ -426,7 +426,7 @@
         <record id="clouder_server_administrator_write_rule" model="ir.rule">
             <field name="name">clouder server administrator write</field>
             <field name="model_id" ref="model_clouder_server"/>
-            <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
+            <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
