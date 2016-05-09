@@ -62,10 +62,10 @@ class ClouderServer(models.Model):
                 _('Data error!'),
                 _("You need to specify the sysadmin email in configuration"))
 
-        self.execute_local(['mkdir', '/tmp/key_' + self.env.uid])
+        self.execute_local(['mkdir', '/tmp/key_' + str(self.env.uid)])
         self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
                             self.email_sysadmin, '-f',
-                            '/tmp/key_' + self.env.uid + '/key', '-N', ''])
+                            '/tmp/key_' + str(self.env.uid) + '/key', '-N', ''])
         return True
 
     @api.multi
@@ -73,7 +73,7 @@ class ClouderServer(models.Model):
         """
         Destroy the key after once we don't need it anymore.
         """
-        self.execute_local(['rm', '-rf', '/tmp/key_' + self.env.uid])
+        self.execute_local(['rm', '-rf', '/tmp/key_' + str(self.env.uid)])
         return True
 
     @api.multi
@@ -83,14 +83,13 @@ class ClouderServer(models.Model):
         we can easily add to the server to connect it.
         """
         self = self.env['clouder.server']
-        self.env.uid = str(self.env.uid)
 
         destroy = True
-        if not self.local_dir_exist('/tmp/key_' + self.env.uid):
+        if not self.local_dir_exist('/tmp/key_' + str(self.env.uid)):
             self._create_key()
             destroy = False
 
-        key = self.execute_local(['cat', '/tmp/key_' + self.env.uid + '/key'])
+        key = self.execute_local(['cat', '/tmp/key_' + str(self.env.uid) + '/key'])
 
         if destroy:
             self._destroy_key()
@@ -103,15 +102,14 @@ class ClouderServer(models.Model):
         we can easily add to the server to connect it.
         """
         self = self.env['clouder.server']
-        self.env.uid = str(self.env.uid)
 
         destroy = True
-        if not self.local_dir_exist('/tmp/key_' + self.env.uid):
+        if not self.local_dir_exist('/tmp/key_' + str(self.env.uid)):
             self._create_key()
             destroy = False
 
         key = self.execute_local(['cat',
-                                  '/tmp/key_' + self.env.uid + '/key.pub'])
+                                  '/tmp/key_' + str(self.env.uid) + '/key.pub'])
 
         if destroy:
             self._destroy_key()

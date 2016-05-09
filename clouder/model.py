@@ -296,9 +296,9 @@ class ClouderModel(models.AbstractModel):
         """
         if self._autodeploy:
             if 'no_enqueue' not in self.env.context:
-                res.enqueue('deploy_frame')
+                self.enqueue('deploy_frame')
             else:
-                res.deploy_frame()
+                self.deploy_frame()
 
     @api.multi
     def hook_create(self):

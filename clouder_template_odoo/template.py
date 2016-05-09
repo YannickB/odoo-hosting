@@ -70,6 +70,9 @@ class ClouderContainer(models.Model):
                     'sed', '-i', '"s/ADDONS_PATH/' +
                     addons_path.replace('/', '\/') + '/g"',
                     config_file])
+            if self.application_id.code == 'ssh':                
+                self.execute(['mkdir /root/.ssh'])
+                self.execute(['echo "' + self.options['ssh_publickey']['value'] + '" > /root/.ssh/authorized_keys'])
 
 
 class ClouderBase(models.Model):

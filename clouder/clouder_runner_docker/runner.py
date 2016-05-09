@@ -62,11 +62,11 @@ class ClouderImageVersion(models.Model):
                 'echo "' + dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
             server.execute(
-                ['docker', 'build', '-t', self.fullname, tmp_dir])
+                ['docker', 'build', '--pull', '--no-cache', '-t', self.fullname, tmp_dir])
             server.execute(['docker', 'tag', self.fullname,
-                            self.fullpath_localhost])
+                            self.fullpath])
             server.execute(
-                ['docker', 'push', self.fullpath_localhost])
+                ['docker', 'push', self.fullpath])
             # TODO
             # server.execute(['docker', 'rmi', self.fullname])
             # server.execute(['docker', 'rmi', self.fullpath_localhost])
@@ -108,7 +108,7 @@ class ClouderContainer(models.Model):
             return res
         else:
             if self.server_id == self.image_version_id.registry_id.server_id:
-                return self.image_version_id.fullpath_localhost
+                return self.image_version_id.fullpath
             else:
                 folder = '/etc/docker/certs.d/' +\
                          self.image_version_id.registry_address
