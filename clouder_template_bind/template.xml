@@ -18,13 +18,9 @@
         <record id="image_bind" model="clouder.image">
             <field name="name">img_bind</field>
             <field name="current_version">1</field>
-            <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install bind9
-
-USER root
-CMD /usr/sbin/named -u bind -g
-]]></field>
+            <field name="parent_from">clouder/clouder-bind</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
         <record id="image_bind_volume_bind" model="clouder.image.volume">
             <field name="image_id" ref="image_bind"/>

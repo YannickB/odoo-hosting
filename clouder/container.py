@@ -159,6 +159,12 @@ class ClouderServer(models.Model):
                 _('Data error!'),
                 _("IP can only contains digits, dots and :"))
 
+    @api.model
+    def create(self, vals):
+        self = self.with_context(no_enqueue=True)
+        res = super(ClouderServer, self).create(vals)
+        return res
+
     @api.multi
     def start_containers(self):
         """

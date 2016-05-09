@@ -294,7 +294,11 @@ class ClouderModel(models.AbstractModel):
         """"
         Action which purge then redeploy a record.
         """
-        self.enqueue('deploy_frame')
+        if self._autodeploy:
+            if 'no_enqueue' not in self.env.context:
+                res.enqueue('deploy_frame')
+            else:
+                res.deploy_frame()
 
     @api.multi
     def hook_create(self):
@@ -310,11 +314,7 @@ class ClouderModel(models.AbstractModel):
         """
         res = super(ClouderModel, self).create(vals)
         res.hook_create()
-        if self._autodeploy:
-            if 'no_enqueue' not in self.env.context:
-                res.enqueue('deploy_frame')
-            else:
-                res.deploy_frame()
+        res.reinstall()
         return res
 
     @api.one

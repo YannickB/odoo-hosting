@@ -45,7 +45,7 @@
 
 
         <!-- Rules -->
-
+<!--
         <record id="clouder_application_user_read_rule" model="ir.rule">
             <field name="name">clouder application user read</field>
             <field name="model_id" ref="model_clouder_application"/>
@@ -56,7 +56,7 @@
             <field name="perm_create" eval="False"/>
             <field name="perm_unlink" eval="False"/>
         </record>
-
+-->
         <record id="clouder_container_user_read_rule" model="ir.rule">
             <field name="name">clouder container user read</field>
             <field name="model_id" ref="model_clouder_container"/>

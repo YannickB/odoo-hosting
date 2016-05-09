@@ -11,13 +11,9 @@
         <record id="image_proxy" model="clouder.image">
             <field name="name">img_proxy</field>
             <field name="current_version">1</field>
-            <field name="parent_id" ref="clouder.image_nginx"/>
-            <field name="dockerfile"><![CDATA[
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git bc
-
-RUN git clone https://github.com/letsencrypt/letsencrypt /opt/letsencrypt
-
-]]></field>
+            <field name="parent_from">clouder/clouder-proxy</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
         <record id="image_proxy_volume_etc_nginx" model="clouder.image.volume">
             <field name="image_id" ref="image_proxy"/>
@@ -49,12 +45,6 @@ RUN git clone https://github.com/letsencrypt/letsencrypt /opt/letsencrypt
             <field name="code">proxy</field>
             <field name="type_id" ref="apptype_proxy"/>
             <field name="default_image_id" ref="image_proxy"/>
-            <field name="dockerfile"><![CDATA[
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git bc
-
-RUN git clone https://github.com/letsencrypt/letsencrypt /opt/letsencrypt
-
-]]></field>
         </record>
 
 

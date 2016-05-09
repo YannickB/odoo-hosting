@@ -40,6 +40,7 @@ class ClouderServer(models.Model):
         image_version_obj = self.env['clouder.image.version']
 
         container_obj = self.env['clouder.container']
+        port_obj = self.env['clouder.container.port']
         application_obj = self.env['clouder.application']
 
         image = image_obj.search([('name', '=', 'img_registry')])
@@ -154,13 +155,16 @@ class ClouderServer(models.Model):
         ports = []
         if self.oneclick_ports:
             ports = [(0,0,{'name':'postfix', 'localport': 25, 'hostport': 25, 'expose': 'internet'})]
-        container_obj.create({
+        postfix = container_obj.create({
             'suffix': 'postfix',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
-            'port_ids': ports
+#            'port_ids': ports
         })
+        port = port_obj.search([('container_id', '=', postfix.id),('name','=','postfix')])
+        port.write({'hostport': 25})
+        postfix.reinstall()
 
         application = application_obj.search([('code', '=', 'bind')])
         ports = []
@@ -171,21 +175,31 @@ class ClouderServer(models.Model):
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
-            'port_ids': ports
+#            'port_ids': ports
         })
+        port = port_obj.search([('container_id', '=', bind.id),('name','=','bind')])
+        port.write({'hostport': 53})
+        bind.reinstall()
+
 
         application = application_obj.search([('code', '=', 'proxy')])
         ports = []
         if self.oneclick_ports:
             ports = [(0,0,{'name':'nginx', 'localport': 80, 'hostport': 80, 'expose': 'internet'}),
                      (0,0,{'name':'nginx-ssl', 'localport': 443, 'hostport': 443, 'expose': 'internet'})]
-        container_obj.create({
+        proxy = container_obj.create({
             'suffix': 'proxy',
             'environment_id': self.environment_id.id,
             'server_id': self.id,
             'application_id': application.id,
-            'port_ids': ports
+#            'port_ids': ports
         })
+        port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx')])
+        port.write({'hostport': 80})
+        port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx-ssl')])
+        port.write({'hostport': 443})
+        proxy.reinstall()
+
 
         application = application_obj.search([('code', '=', 'shinken')])
         shinken = container_obj.create({

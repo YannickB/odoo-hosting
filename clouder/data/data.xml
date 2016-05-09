@@ -20,55 +20,16 @@
         <record id="image_base" model="clouder.image">
             <field name="name">img_base</field>
             <field name="current_version">1.0</field>
-            <field name="parent_from">ubuntu-debootstrap:trusty</field>
-            <field name="dockerfile"><![CDATA[
-
-# generate a locale and ensure it on system users
-RUN locale-gen en_US.UTF-8 && update-locale && echo 'LANG="en_US.UTF-8"' > /etc/default/locale
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
-
-# add some system packages
-RUN apt-get update && apt-get -y -q install \
-	sudo less \
-	net-tools \
-	--no-install-recommends
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y vim ssmtp mailutils wget patch rsync ca-certificates
-
-#/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix container.
-#Be cautious to any application which also use it.
-RUN rm /usr/bin/mail
-RUN ln -s /usr/sbin/ssmtp /usr/bin/mail
-#RUN echo "" > /etc/ssmtp/ssmtp.conf
-]]></field>
+            <field name="parent_from">clouder/clouder-base</field>
+            <field name="dockerfile"/>
         </record>
 
         <record id="image_nginx" model="clouder.image">
             <field name="name">img_nginx</field>
             <field name="current_version">1</field>
-            <field name="parent_id" ref="image_base"/>
-            <field name="dockerfile"><![CDATA[
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor nginx openssl
-
-# nginx config
-RUN sed -i -e"s/keepalive_timeout\s*65/keepalive_timeout 2/" /etc/nginx/nginx.conf
-RUN echo "daemon off;" >> /etc/nginx/nginx.conf
-
-RUN chsh -s /bin/bash www-data
-RUN mkdir /var/www
-RUN chown www-data:www-data /var/www/
-
-RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=/etc/init.d/nginx start" >> /etc/supervisor/conf.d/supervisord.conf
-
-USER root
-CMD ["/usr/bin/supervisord"]
-]]></field>
+            <field name="parent_from">clouder/clouder-nginx</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
         <record id="image_nginx_volume_etc_nginx" model="clouder.image.volume">
             <field name="image_id" ref="image_nginx"/>

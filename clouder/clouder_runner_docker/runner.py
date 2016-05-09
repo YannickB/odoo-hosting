@@ -144,7 +144,7 @@ class ClouderContainer(models.Model):
                 if port.udp:
                     udp = '/udp'
                 cmd.extend(
-                    ['-p', str(port.hostport) + ':' + port.localport + udp])
+                    ['-p', self.server_id.ip + ':' + str(port.hostport) + ':' + port.localport + udp])
             volumes_from = {}
             for volume in volumes:
                 if volume.hostpath:
