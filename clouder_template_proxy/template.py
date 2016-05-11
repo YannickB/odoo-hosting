@@ -149,7 +149,7 @@ class ClouderBaseLink(models.Model):
                 '/g"', self.base_id.nginx_configfile])
             target.execute([
                 'sed', '-i', '"s/SERVER/' +
-                self.base_id.container_id.server_id.name + '/g"',
+                self.base_id.container_id.server_id.ip + '/g"',
                 self.base_id.nginx_configfile])
             if 'http' in self.base_id.container_id.ports:
                 target.execute([
