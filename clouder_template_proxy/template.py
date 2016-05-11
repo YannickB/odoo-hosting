@@ -76,7 +76,7 @@ class ClouderBase(models.Model):
             domain = self.fulldomain
             if self.is_root:
                 domain = domain + ' -d ' + self.name + '.' + self.fulldomain
-            proxy.execute(['/opt/letsencrypt/letsencrypt-auto certonly --webroot -w ' + webroot + ' -d ' + domain])
+            proxy.execute(['/opt/letsencrypt/letsencrypt-auto certonly --webroot -w ' + webroot + ' -d ' + domain + ' -m ' + proxy.email_sysadmin])
             key = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/privkey.pem'])
             cert = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'])
             self.write({'cert_key': key, 'cert_cert': cert, 'cert_renewal_date': (datetime.now() + timedelta(days=45)).strftime("%Y-%m-%d")})
