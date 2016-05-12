@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, http, SUPERUSER_ID _
+from openerp import models, fields, api, http, SUPERUSER_ID, _
 from openerp.http import request
 
 import logging
@@ -129,7 +129,7 @@ class WebsiteClouderCreate(http.Controller):
 
         return request.render("website_clouder_create.create_validation", {'res': res})
 
-    def instance_form_save(self, checkout):
+    def instance_form_save(self, data):
         cr, uid, context, registry = request.cr, request.uid, request.context, request.registry
 
         orm_partner = registry.get('res.partner')
@@ -140,8 +140,7 @@ class WebsiteClouderCreate(http.Controller):
         partner_info = {'customer': True}
         if partner_lang:
             partner_info['lang'] = partner_lang
-        partner_info.update(self.parse_partner_fields(checkout))
-        del partner_info['application_id']
+        partner_info.update(self.parse_partner_fields(data))
 
         # set partner_id
         partner_id = None
@@ -162,17 +161,16 @@ class WebsiteClouderCreate(http.Controller):
 
     def parse_partner_fields(self, data):
         # set mandatory and optional fields
-        all_fields = self.partner_mandatory_fields + \
-                     self.partner_optionnal_fields + \
-                     self.other_mandatory_fields
+        partner_fields = self.partner_mandatory_fields + \
+                     self.partner_optionnal_fields
 
         # set data
         if isinstance(data, dict):
             query = dict((field_name, data[field_name])
-                for field_name in all_fields if field_name in data)
+                for field_name in partner_fields if field_name in data)
         else:
             query = dict((field_name, getattr(data, field_name))
-                for field_name in all_fields if getattr(data, field_name))
+                for field_name in partner_fields if getattr(data, field_name))
             if data.parent_id:
                 query['street'] = data.parent_id.name
 
@@ -180,8 +178,6 @@ class WebsiteClouderCreate(http.Controller):
             query['state_id'] = int(query['state_id'])
         if query.get('country_id'):
             query['country_id'] = int(query['country_id'])
-        if query.get('application_id'):
-            query['application_id'] = int(query['application_id'])
 
         return query
 
@@ -207,15 +203,22 @@ class WebsiteClouderCreate(http.Controller):
         form_data = {}
         if not data:
             if request.uid != request.website.user_id.id:
-                form_data.update( self.parse_partner_fields(partner) )
+                form_data.update(self.parse_partner_fields(partner))
+                form_data['application_id'] = ''
         else:
             form_data = self.parse_partner_fields(data)
+            form_data['application_id'] = data.get('application_id', '')
 
         # Default search by user country
         if not form_data.get('country_id'):
             country_code = request.session['geoip'].get('country_code')
             if country_code:
-                country_ids = request.registry.get('res.country').search(cr, uid, [('code', '=', country_code)], context=context)
+                country_ids = request.registry.get('res.country').search(
+                    cr,
+                    uid,
+                    [('code', '=', country_code)],
+                    context=context
+                )
                 if country_ids:
                     form_data['country_id'] = country_ids[0]
 
