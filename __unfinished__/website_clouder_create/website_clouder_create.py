@@ -190,15 +190,15 @@ class WebsiteClouderCreate(http.Controller):
         orm_user = registry.get('res.users')
         orm_country = registry.get('res.country')
         state_orm = registry.get('res.country.state')
+        app_orm = registry.get('clouder.application')
 
         country_ids = orm_country.search(cr, SUPERUSER_ID, [], context=context)
         countries = orm_country.browse(cr, SUPERUSER_ID, country_ids, context)
         states_ids = state_orm.search(cr, SUPERUSER_ID, [], context=context)
         states = state_orm.browse(cr, SUPERUSER_ID, states_ids, context)
         partner = orm_user.browse(cr, SUPERUSER_ID, request.uid, context).partner_id
-        applications = request.env['clouder.application'].search(
-            [('web_create_type', '!=', 'disabled')]
-        )
+        application_ids = app_orm.search(cr, SUPERUSER_ID, [('web_create_type', '!=', 'disabled')], context=context)
+        applications = app_orm.browse(cr, SUPERUSER_ID, application_ids, context=context)
 
         form_data = {}
         if not data:
