@@ -33,8 +33,8 @@
     """,
     'demo': [],
     'data': [
-        'template.xml',
-        'website_clouder_create_view.xml'
+        'website_clouder_create_view.xml',
+        'web_src/templates.xml'
     ],
     'installable': True,
     'application': True,

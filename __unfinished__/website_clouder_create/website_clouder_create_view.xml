@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
-        <record id="view_clouder_application_form_invoicing" model="ir.ui.view">
+        <record id="view_clouder_application_form_web_create" model="ir.ui.view">
             <field name="name">clouder.application.form.invoicing</field>
             <field name="inherit_id" ref="clouder.view_clouder_application_form"/>
             <field name="model">clouder.application</field>
