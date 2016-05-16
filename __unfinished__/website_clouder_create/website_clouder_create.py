@@ -157,7 +157,7 @@ class WebsiteClouderCreate(http.Controller):
         if data:
             application_id = data.get('application_id', '')
             if application_id:
-                application_name = app_orm.browse(cr, SUPERUSER_ID, application_id, context=context)['name']
+                application_name = app_orm.browse(cr, SUPERUSER_ID, int(application_id), context=context)['name']
             domain = data.get('domain', '')
 
 

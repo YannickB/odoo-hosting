@@ -13,7 +13,7 @@
             <t t-call="website.layout">
                 <t t-set="additional_title">Application Options</t>
                 <div id="wrap">
-                    <div class="container">
+                    <div class="container oe_website_clouder_instance">
                         <h1>Application Request</h1>
                         <form action="/instance/new/contact_info" method="post">
                             <div class="row">
@@ -35,7 +35,7 @@
                                         </div>
                                     </div>
                                     <div class="clearfix">
-                                        <input class="btn btn-default btn-primary pull-right mb32" type="submit">Next <span class="fa fa-long-arrow-right"/></input>
+                                        <a class="btn btn-default btn-primary pull-right mb32 a-submit">Next <span class="fa fa-long-arrow-right"/></a>
                                     </div>
                                 </div>
                             </div>
@@ -105,7 +105,7 @@
                                         </div>
                                     </div>
                                     <div class="clearfix">
-                                        <input class="btn btn-default btn-primary pull-right mb32" type="submit">Confirm <span class="fa fa-long-arrow-right"/></input>
+                                        <a class="btn btn-default btn-primary pull-right mb32 a-submit">Confirm <span class="fa fa-long-arrow-right"/></a>
                                     </div>
                                 </div>
                             </div>
@@ -125,7 +125,7 @@
                         <h1>Request Successful</h1>
                         <div class="row">
                             <div class="col-md-8 oe_cart">
-                                <p>Your request for an instance of [<t t-esc="app_name"/>] on the domain [<t t-esc="domain_name"/>] has been registered.</p>
+                                <p>Your request for an instance of [<b><t t-esc="app_name"/></b>] on the domain [<b><t t-esc="domain_name"/></b>] has been registered.</p>
                                 <p>Thank you for your interest in Clouder.</p>
                                 <div class="clearfix"/>
                                 <p><b>TEST PART TO BE REMOVED</b></p>
