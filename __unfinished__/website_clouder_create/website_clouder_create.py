@@ -121,7 +121,7 @@ class WebsiteClouderCreate(http.Controller):
         """
         # set mandatory and optional fields
         partner_fields = self.partner_mandatory_fields + \
-                     self.partner_optionnal_fields
+            self.partner_optionnal_fields
 
         # set data
         if isinstance(data, dict):
@@ -162,7 +162,8 @@ class WebsiteClouderCreate(http.Controller):
             'form_data': {
                 'application_id': application_id,
                 'domain': domain
-            }
+            },
+            'error': {}
         }
 
         return values
@@ -235,7 +236,7 @@ class WebsiteClouderCreate(http.Controller):
         return error
 
     @http.route(['/instance/new'], type='http', auth="public", website=True)
-    def display_new_form(self, **post):
+    def display_app_form(self, **post):
         """
         Displays the web form to create a new instance
         """
@@ -244,7 +245,7 @@ class WebsiteClouderCreate(http.Controller):
         return request.render("website_clouder_create.create_app_form", values)
 
     @http.route(['/instance/new/contact_info'], type='http', auth="public", website=True)
-    def display_new_form(self, **post):
+    def display_partner_form(self, **post):
         """
         Displays the web form to create a new instance
         """
