@@ -28,24 +28,6 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderContainer(models.Model):
-    """
-    Adds the creation function to the container
-    """
-
-    _inherit = 'clouder.container'
-
-    def create_instance(self, data):
-        """
-        Creates a clouder container or base using provided data
-        """
-        # TODO: implement
-        _logger.info("\n\nCREATE INSTANCE DATA: {0}\n\n".format(data))
-
-        # TODO: return newly created model
-        return 0
-
-
 class ClouderApplication(models.Model):
     """
     Adds information for web-creation on applications
@@ -63,6 +45,17 @@ class ClouderApplication(models.Model):
         default='disabled'
     )
 
+    def create_instance_from_request(self, data):
+        """
+        Creates a clouder container or base using provided data
+        """
+        # TODO: implement
+        _logger.info("\n\nCREATE INSTANCE DATA: {0}\n\n".format(data))
+
+        # TODO: return newly created model
+        return 0
+
+
 
 class WebsiteClouderCreate(http.Controller):
     """
@@ -75,61 +68,24 @@ class WebsiteClouderCreate(http.Controller):
         "email",
         "street2",
         "city",
-        "country_id",
+        "country_id"
     ]
-
-    other_mandatory_fields = [
-        'application_id'
-    ]
-
     partner_optionnal_fields = [
         "street",
         "zip",
         "state_id"
     ]
 
-    def create_form_validate(self, data):
+    app_mandatory_fields = [
+        'application_id',
+        'domain_name'
+    ]
+
+    def instance_partner_save(self, data):
         """
-        Checks that the necessary values are filled correctly
+        Saves the contact form data into a partner and returns the partner_id
+            If an account was made, the corresponding partner is updated
         """
-        # Validation
-        error = dict()
-        for field_name in self.partner_mandatory_fields + self.other_mandatory_fields:
-            if not data.get(field_name):
-                error[field_name] = 'missing'
-        return error
-
-    @http.route(['/instance/new'], type='http', auth="public", website=True)
-    def display_new_form(self, **post):
-        """
-        Displays the web form to create a new instance
-        """
-        values = self.form_values()
-
-        return request.render("website_clouder_create.create_form", values)
-
-    @http.route('/instance/new/validate', type='http', auth="public", website=True)
-    def instance_new_form_validate(self, **post):
-        """
-        Validates data and launches the instance creation process
-        """
-        # Check that the form is correct
-        values = self.form_values(post)
-        values['error'] = self.create_form_validate(values['form_data'])
-        # Return to the first form on error
-        if values['error']:
-            return request.render("website_clouder_create.create_form", values)
-
-        # Create partner
-        values['partner_id'] = self.instance_form_save(values['form_data'])
-
-        res = request.env['clouder.container'].create_instance({
-            # TODO: fill in required vals
-        })
-
-        return request.render("website_clouder_create.create_validation", {'res': res})
-
-    def instance_form_save(self, data):
         cr, uid, context, registry = request.cr, request.uid, request.context, request.registry
 
         orm_partner = registry.get('res.partner')
@@ -160,6 +116,9 @@ class WebsiteClouderCreate(http.Controller):
         return partner_id
 
     def parse_partner_fields(self, data):
+        """
+        Parses partner fields from form data
+        """
         # set mandatory and optional fields
         partner_fields = self.partner_mandatory_fields + \
                      self.partner_optionnal_fields
@@ -181,7 +140,34 @@ class WebsiteClouderCreate(http.Controller):
 
         return query
 
-    def form_values(self, data=None):
+    def application_form_values(self, data=None):
+        """
+        Parses the values used in the form
+        If data is not provided, creates default values for the form
+        """
+        cr, uid, context, registry = request.cr, request.uid, request.context, request.registry
+        app_orm = registry.get('clouder.application')
+        application_ids = app_orm.search(cr, SUPERUSER_ID, [('web_create_type', '!=', 'disabled')], context=context)
+        applications = app_orm.browse(cr, SUPERUSER_ID, application_ids, context=context)
+
+        application_id = ''
+        domain = ''
+
+        if data:
+            application_id = data.get('application_id', '')
+            domain = data.get('domain', '')
+
+        values = {
+            'applications': applications,
+            'form_data': {
+                'application_id': application_id,
+                'domain': domain
+            }
+        }
+
+        return values
+
+    def partner_form_values(self, data=None):
         """
         Parses the values used in the form
         If data is not provided, creates default values for the form
@@ -190,24 +176,19 @@ class WebsiteClouderCreate(http.Controller):
         orm_user = registry.get('res.users')
         orm_country = registry.get('res.country')
         state_orm = registry.get('res.country.state')
-        app_orm = registry.get('clouder.application')
 
         country_ids = orm_country.search(cr, SUPERUSER_ID, [], context=context)
         countries = orm_country.browse(cr, SUPERUSER_ID, country_ids, context)
         states_ids = state_orm.search(cr, SUPERUSER_ID, [], context=context)
         states = state_orm.browse(cr, SUPERUSER_ID, states_ids, context)
         partner = orm_user.browse(cr, SUPERUSER_ID, request.uid, context).partner_id
-        application_ids = app_orm.search(cr, SUPERUSER_ID, [('web_create_type', '!=', 'disabled')], context=context)
-        applications = app_orm.browse(cr, SUPERUSER_ID, application_ids, context=context)
 
         form_data = {}
         if not data:
             if request.uid != request.website.user_id.id:
                 form_data.update(self.parse_partner_fields(partner))
-                form_data['application_id'] = ''
         else:
             form_data = self.parse_partner_fields(data)
-            form_data['application_id'] = data.get('application_id', '')
 
         # Default search by user country
         if not form_data.get('country_id'):
@@ -226,8 +207,76 @@ class WebsiteClouderCreate(http.Controller):
             'countries': countries,
             'states': states,
             'form_data': form_data,
-            'applications': applications,
             'error': {}
         }
 
         return values
+
+    def application_form_validate(self, data):
+        """
+        Checks that the necessary values are filled correctly
+        """
+        # Validation
+        error = dict()
+        for field_name in self.app_mandatory_fields:
+            if not data.get(field_name):
+                error[field_name] = 'missing'
+        return error
+
+    def partner_form_validate(self, data):
+        """
+        Checks that the necessary values are filled correctly
+        """
+        # Validation
+        error = dict()
+        for field_name in self.partner_mandatory_fields + self.other_mandatory_fields:
+            if not data.get(field_name):
+                error[field_name] = 'missing'
+        return error
+
+    @http.route(['/instance/new'], type='http', auth="public", website=True)
+    def display_new_form(self, **post):
+        """
+        Displays the web form to create a new instance
+        """
+        values = self.application_form_values()
+
+        return request.render("website_clouder_create.create_app_form", values)
+
+    @http.route(['/instance/new/contact_info'], type='http', auth="public", website=True)
+    def display_new_form(self, **post):
+        """
+        Displays the web form to create a new instance
+        """
+        # Check the returned values
+        app_values = self.application_form_values(post)
+        app_values['error'] = self.application_form_validate(app_values['form_data'])
+        # Return to the first form on error
+        if app_values['error']:
+            return request.render("website_clouder_create.create_app_form", app_values)
+
+        # Updating context
+        rq = request.with_context(clouder_first_form_values=app_values['form_data'])
+        values = self.partner_form_values()
+
+        return rq.render("website_clouder_create.create_partner_form", values)
+
+    @http.route('/instance/new/validate', type='http', auth="public", website=True)
+    def instance_new_form_validate(self, **post):
+        """
+        Validates data and launches the instance creation process
+        """
+        # Check that the form is correct
+        values = self.partner_form_values(post)
+        values['error'] = self.partner_form_validate(values['form_data'])
+        # Return to the first form on error
+        if values['error']:
+            return request.render("website_clouder_create.create_partner_form", values)
+
+        # Create partner
+        values['partner_id'] = self.instance_partner_save(values['form_data'])
+
+        # TODO: fill in required vals
+        res = request.env['clouder.application'].create_instance_from_request(values)
+
+        return request.render("website_clouder_create.create_validation", {'res': res})
