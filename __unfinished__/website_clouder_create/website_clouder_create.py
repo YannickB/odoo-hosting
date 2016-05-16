@@ -156,8 +156,8 @@ class WebsiteClouderCreate(http.Controller):
 
         if data:
             application_id = data.get('application_id', '')
-            application_name = application_id.name
-            application_id = application_id.id
+            if application_id:
+                application_name = app_orm.browse(cr, SUPERUSER_ID, application_id, context=context)['name']
             domain = data.get('domain', '')
 
 
@@ -246,7 +246,6 @@ class WebsiteClouderCreate(http.Controller):
         Displays the web form to create a new instance
         """
         values = self.application_form_values()
-
         return request.render("website_clouder_create.create_app_form", values)
 
     @http.route(['/instance/new/contact_info'], type='http', auth="public", website=True)
@@ -262,7 +261,7 @@ class WebsiteClouderCreate(http.Controller):
             return request.render("website_clouder_create.create_app_form", app_values)
 
         # Updating context
-        request.context = request.context.update({'clouder_first_form_values': app_values['form_data']})
+        request.session['first_form_values'] = app_values['form_data']
         values = self.partner_form_values()
 
         return request.render("website_clouder_create.create_partner_form", values)
@@ -287,8 +286,8 @@ class WebsiteClouderCreate(http.Controller):
 
         final_vals = {
             'res': res,
-            'app_name': request.context['clouder_first_form_values']['application_name'],
-            'domain_name': request.context['clouder_first_form_values']['domain']
+            'app_name': request.session['first_form_values']['application_name'],
+            'domain_name': request.session['first_form_values']['domain']
         }
 
         return request.render("website_clouder_create.create_validation", final_vals)

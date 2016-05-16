@@ -4,7 +4,7 @@
         <!-- Adding custom js files in header -->
         <template id="assets_frontend" inherit_id="website.assets_frontend">
             <xpath expr="." position="inside">
-                <script type="text/javascript" src="/website_clouder_create/web_src/instance_new.js"></script>
+                <script type="text/javascript" src="/website_clouder_create/static/src/js/instance_new.js"></script>
             </xpath>
         </template>
 
@@ -125,7 +125,7 @@
                         <h1>Request Successful</h1>
                         <div class="row">
                             <div class="col-md-8 oe_cart">
-                                <p>Your request for <t t-esc="app_name"/> on the domain <t t-esc="domain_name"/> has been registered.</p>
+                                <p>Your request for an instance of [<t t-esc="app_name"/>] on the domain [<t t-esc="domain_name"/>] has been registered.</p>
                                 <p>Thank you for your interest in Clouder.</p>
                                 <div class="clearfix"/>
                                 <p><b>TEST PART TO BE REMOVED</b></p>
