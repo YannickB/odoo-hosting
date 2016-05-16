@@ -78,7 +78,7 @@ class WebsiteClouderCreate(http.Controller):
 
     app_mandatory_fields = [
         'application_id',
-        'domain_name'
+        'domain'
     ]
 
     def instance_partner_save(self, data):
@@ -151,17 +151,22 @@ class WebsiteClouderCreate(http.Controller):
         applications = app_orm.browse(cr, SUPERUSER_ID, application_ids, context=context)
 
         application_id = ''
+        application_name = ''
         domain = ''
 
         if data:
             application_id = data.get('application_id', '')
+            application_name = application_id.name
+            application_id = application_id.id
             domain = data.get('domain', '')
+
 
         values = {
             'applications': applications,
             'form_data': {
                 'application_id': application_id,
-                'domain': domain
+                'domain': domain,
+                'application_name': application_name
             },
             'error': {}
         }
@@ -230,7 +235,7 @@ class WebsiteClouderCreate(http.Controller):
         """
         # Validation
         error = dict()
-        for field_name in self.partner_mandatory_fields + self.other_mandatory_fields:
+        for field_name in self.partner_mandatory_fields:
             if not data.get(field_name):
                 error[field_name] = 'missing'
         return error
@@ -257,10 +262,10 @@ class WebsiteClouderCreate(http.Controller):
             return request.render("website_clouder_create.create_app_form", app_values)
 
         # Updating context
-        rq = request.with_context(clouder_first_form_values=app_values['form_data'])
+        request.context = request.context.update({'clouder_first_form_values': app_values['form_data']})
         values = self.partner_form_values()
 
-        return rq.render("website_clouder_create.create_partner_form", values)
+        return request.render("website_clouder_create.create_partner_form", values)
 
     @http.route('/instance/new/validate', type='http', auth="public", website=True)
     def instance_new_form_validate(self, **post):
@@ -280,4 +285,10 @@ class WebsiteClouderCreate(http.Controller):
         # TODO: fill in required vals
         res = request.env['clouder.application'].create_instance_from_request(values)
 
-        return request.render("website_clouder_create.create_validation", {'res': res})
+        final_vals = {
+            'res': res,
+            'app_name': request.context['clouder_first_form_values']['application_name'],
+            'domain_name': request.context['clouder_first_form_values']['domain']
+        }
+
+        return request.render("website_clouder_create.create_validation", final_vals)
