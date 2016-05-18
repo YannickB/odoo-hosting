@@ -40,11 +40,11 @@ class ClouderBase(models.Model):
         return '/etc/nginx/sites-available/' + self.fullname
 
     @api.multi
-    def generate_cert(self):
+    def generate_cert_exec(self):
         """
         Generate a new certificate
         """
-        res = super(ClouderBase, self).generate_cert()
+        res = super(ClouderBase, self).generate_cert_exec()
         link_obj = self.env['clouder.base.link']
         proxy_links = link_obj.search([('base_id','=',self.id),('name.name.type_id.name','=','proxy'),('target','!=',False)])
         if proxy_links:
@@ -90,8 +90,8 @@ class ClouderBase(models.Model):
         return res
 
     @api.multi
-    def renew_cert(self):
-        res = super(ClouderBase, self).renew_cert()
+    def renew_cert_exec(self):
+        res = super(ClouderBase, self).renew_cert_exec()
         link_obj = self.env['clouder.base.link']
         proxy_links = link_obj.search([('base_id','=',self.id),('name.name.type_id.name','=','proxy'),('target','!=',False)])
         if proxy_links:

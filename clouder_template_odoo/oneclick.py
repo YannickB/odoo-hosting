@@ -281,8 +281,6 @@ class ClouderServer(models.Model):
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'clouder')]).unlink()
 
-        self.env['clouder.domain'].search([('name', '=', self.oneclick_domain)]).unlink()
-
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'postgres')]).unlink()
 
@@ -291,6 +289,8 @@ class ClouderServer(models.Model):
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'shinken')]).unlink()
+
+        self.env['clouder.domain'].search([('name', '=', self.oneclick_domain)]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'proxy')]).unlink()

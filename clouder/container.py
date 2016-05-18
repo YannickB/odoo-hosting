@@ -157,14 +157,19 @@ class ClouderServer(models.Model):
                 _('Data error!'),
                 _("IP can only contains digits, dots and :"))
 
-    @api.model
-    def create(self, vals):
-        self = self.with_context(no_enqueue=True)
-        res = super(ClouderServer, self).create(vals)
-        return res
+    @api.multi
+    def do(self, name, action, where=False):
+        if action == 'deploy_frame':
+            self = self.with_context(no_enqueue=True)
+        return super(ClouderServer, self).do(name, action, where=where)
 
     @api.multi
     def start_containers(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('start_containers', 'start_containers_exec')
+
+    @api.multi
+    def start_containers_exec(self):
         """
         Restart all containers of the server.
         """
@@ -175,6 +180,11 @@ class ClouderServer(models.Model):
 
     @api.multi
     def stop_containers(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('stop_containers', 'stop_containers_exec')
+
+    @api.multi
+    def stop_containers_exec(self):
         """
         Stop all container of the server.
         """
@@ -233,21 +243,34 @@ class ClouderServer(models.Model):
 
     @api.multi
     def oneclick_deploy(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('oneclick_deploy ' + self.oneclick_id.function, 'oneclick_deploy_exec') 
+
+    @api.multi
+    def oneclick_deploy_exec(self):
         getattr(self, self.oneclick_id.function + '_purge')()
         getattr(self, self.oneclick_id.function + '_deploy')()
 
     @api.multi
     def oneclick_purge(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('oneclick_purge ' + self.oneclick_id.function, 'oneclick_purge_exec')
+
+    @api.multi
+    def oneclick_purge_exec(self):
         getattr(self, self.oneclick_id.function + '_purge')()
 
     @api.multi
     def clean(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('clean', 'clean_exec')
+
+    @api.multi
+    def clean_exec(self):
         """
         Clean the server from unused containers / images / volumes.
         http://blog.yohanliyanage.com/2015/05/docker-clean-up-after-yourself/
         """
-#        Too risky?
-#        self.execute_local(['docker rm -v $(docker ps -a -q -f status=exited)'])
         self.execute(['docker', 'rmi $(docker images -f "dangling=true" -q)'])
         self.execute(['docker', 'run -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker:/var/lib/docker --rm martin/docker-cleanup-volumes'])
 
@@ -993,7 +1016,8 @@ class ClouderContainer(models.Model):
         self.env['clouder.save'].search([('backup_id', '=', self.id)]).unlink()
         self.env['clouder.image.version'].search(
             [('registry_id', '=', self.id)]).unlink()
-        save = self.save(comment='Before unlink', no_enqueue=True)
+        self = self.with_context(save_comment='Before unlink')
+        save = self.save_exec(no_enqueue=True)
         if self.parent_id:
             self.parent_id.save_id = save
         return super(ClouderContainer, self).unlink()
@@ -1005,14 +1029,16 @@ class ClouderContainer(models.Model):
         """
         if 'save_comment' not in self.env.context:
             self = self.with_context(save_comment='Before reinstall')
-        self = self.with_context(forcesave=True)
-        self.save(no_enqueue=True)
-        self = self.with_context(forcesave=False)
+        self.save_exec(no_enqueue=True, forcesave=True)
         self = self.with_context(nosave=True)
         super(ClouderContainer, self).reinstall()
 
     @api.multi
-    def save(self, comment=False, no_enqueue=False):
+    def save(self):
+        self.do('save', 'save_exec')
+
+    @api.multi
+    def save_exec(self, no_enqueue=False, forcesave=False):
         """
         Create a new container save.
         """
@@ -1020,15 +1046,18 @@ class ClouderContainer(models.Model):
         save = False
         now = datetime.now()
 
+        if forcesave:
+            self = self.with_context(forcesave=True)
+
+        if no_enqueue:
+            self = self.with_context(no_enqueue=True)
+
         if 'nosave' in self.env.context \
                 or (not self.autosave and 'forcesave' not in self.env.context):
             self.log('This base container not be saved '
                      'or the backup isnt configured in conf, '
                      'skipping save container')
             return
-
-        if no_enqueue:
-            self = self.with_context(no_enqueue=True)
 
         for backup_server in self.backup_ids:
             save_vals = {
@@ -1039,7 +1068,7 @@ class ClouderContainer(models.Model):
                     days=self.save_expiration
                     or self.application_id.container_save_expiration
                 )).strftime("%Y-%m-%d"),
-                'comment': comment or 'Manual',
+                'comment': 'save_comment' in self.env.context and self.env.context['save_comment'] or self.save_comment or 'Manual',
                 #            ''save_comment' in self.env.context
                 # and self.env.context['save_comment']
                 # or self.save_comment or 'Manual',
@@ -1087,7 +1116,7 @@ class ClouderContainer(models.Model):
 
         if self.child_ids:
             for child in self.child_ids:
-                child.deploy()
+                child.create_child_exec()
             return
 
         ports = []
@@ -1106,7 +1135,8 @@ class ClouderContainer(models.Model):
         self.start()
 
         # For shinken
-        self.save(comment='First save', no_enqueue=True)
+        self = self.with_context(save_comment='First save')
+        self.save_exec(no_enqueue=True)
 
         self.deploy_links()
 
@@ -1130,7 +1160,7 @@ class ClouderContainer(models.Model):
             [('container_id', '=', self.id)], order='sequence DESC')
         if childs:
             for child in childs:
-                child.purge()
+                child.delete_child_exec()
         else:
             self.stop()
             self.hook_purge()
@@ -1140,22 +1170,36 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def stop(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('stop', 'stop_exec')
+
+    @api.multi
+    def stop_exec(self):
         """
         Stop the container.
         """
-
         return
 
     @api.multi
     def start(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('start', 'start_exec')
+
+    @api.multi
+    def start_exec(self):
         """
         Restart the container.
         """
-        self.stop()
+        self.stop_exec()
         return
 
     @api.multi
     def install_subservice(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('install_subservice ' + self.suffix + '-' + self.subservice_name, 'install_subservice_exec')
+
+    @api.multi
+    def install_subservice_exec(self):
         """
         Create a subservice and duplicate the bases
         linked to the parent service.
@@ -1186,8 +1230,8 @@ class ClouderContainer(models.Model):
         for base in self.base_ids:
             subbase_name = self.subservice_name + '-' + base.name
             self = self.with_context(
-                save_comment='Duplicate base into ' + subbase_name)
-            base.reset_base(subbase_name, container=subservice)
+                save_comment='Duplicate base into ' + subbase_name, reset_base_name=subbase_name, reset_container=subservice)
+            base.reset_base()
         self.sub_service_name = False
 
 
@@ -1340,6 +1384,11 @@ class ClouderContainerLink(models.Model):
 
     @api.multi
     def deploy_(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('deploy_link ' + self.name.name.name, 'deploy_exec', where=self.container_id)
+
+    @api.multi
+    def deploy_exec(self):
         """
         Control and call the hook to deploy the link.
         """
@@ -1347,6 +1396,11 @@ class ClouderContainerLink(models.Model):
 
     @api.multi
     def purge_(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('purge_link ' + self.name.name.name, 'purge_exec', where=self.container_id)
+
+    @api.multi
+    def purge_exec(self):
         """
         Control and call the hook to purge the link.
         """
@@ -1360,6 +1414,8 @@ class ClouderContainerChild(models.Model):
     """
 
     _name = 'clouder.container.child'
+    _inherit = ['clouder.model']
+    _autodeploy = False
 
     container_id = fields.Many2one(
         'clouder.container', 'Container', ondelete="cascade", required=True)
@@ -1383,9 +1439,14 @@ class ClouderContainerChild(models.Model):
                 _("The child container is not correctly linked to the parent"))
 
     @api.multi
-    def deploy(self):
+    def create_child(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('create_child ' + self.name.name, 'create_child_exec', where=self.container_id)
+
+    @api.multi
+    def create_child_exec(self):
         self = self.with_context(autocreate=True)
-        self.purge()
+        self.delete_child_exec()
         self.child_id = self.env['clouder.container'].create({
             'environment_id': self.container_id.environment_id.id,
             'suffix': self.container_id.suffix + '-' + self.name.code,
@@ -1398,5 +1459,10 @@ class ClouderContainerChild(models.Model):
             self.save_id.restore()
 
     @api.multi
-    def purge(self):
+    def delete_child(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('delete_child ' + self.name.name, 'delete_child_exec', where=self.container_id)
+
+    @api.multi
+    def delete_child_exec(self):
         self.child_id and self.child_id.unlink()
