@@ -48,7 +48,7 @@ ssh_connections = {}
 
 @job
 def connector_enqueue(
-        session, model_name, record_id, func_name, context, *args, **kargs):
+        session, model_name, record_id, func_name, action, job_id, context, *args, **kargs):
 
     context = context.copy()
     context.update(session.env.context.copy())
@@ -57,7 +57,8 @@ def connector_enqueue(
 
     job = record.env['queue.job'].search([
         ('uuid', '=', record.env.context['job_uuid'])])
-    job.write({'clouder_trace': False})
+    clouder_jobs = record.env['clouder.job'].search([('job_id','=',job.id)])
+    clouder_jobs.write({'log': False})
     job.env.cr.commit()
 
     priority = record.control_priority()
@@ -68,7 +69,7 @@ def connector_enqueue(
             _('Priority error!'),
             _("Waiting for another job to finish"))
 
-    res = getattr(record, func_name)(*args, **kargs)
+    res = getattr(record, func_name)(action, job_id, *args, **kargs)
     # if 'clouder_unlink' in record.env.context:
     #     res = super(ClouderModel, record).unlink()
     record.log('===== END JOB ' + session.env.context['job_uuid'] + ' =====')
@@ -81,12 +82,35 @@ whitelist_unpickle_global(tools.misc.frozendict)
 whitelist_unpickle_global(dict)
 whitelist_unpickle_global(connector_enqueue)
 
-class QueueJob(models.Model):
 
-    _inherit = 'queue.job'
+class ClouderJob(models.Model):
+    """
+    Define the clouder.job, used to store the log and it needed link to the connector job.
+    """
 
-    clouder_trace = fields.Text('Clouder Trace')
+    _name = 'clouder.job'
+
+    log = fields.Text('Log')
+    name = fields.Char('Description')
+    action = fields.Char('Action')
     res_id = fields.Integer('Res ID')
+    model_name = fields.Char('Model')
+    create_date = fields.Datetime('Created at')
+    create_uid = fields.Many2one('res.users', 'By')
+    start_date = fields.Datetime('Started at')
+    end_date = fields.Datetime('Ended at')
+    job_id = fields.Many2one('queue.job', 'Connector Job')
+    job_state = fields.Selection(
+          [('pending', 'Pending'),
+          ('enqueud', 'Enqueued'),
+          ('started', 'Started'),
+          ('done', 'Done'),
+          ('failed', 'Failed')], 'Job State', related='job_id.state', readonly=True)
+    state = fields.Selection([('started','Started'),('done','Done'),('failed','Failed')], 'State', readonly=True,
+                             required=True,
+                             select=True)
+
+    _order = 'create_date desc'
 
 
 class ClouderModel(models.AbstractModel):
@@ -97,13 +121,12 @@ class ClouderModel(models.AbstractModel):
 
     _name = 'clouder.model'
 
-    _log_expiration_days = 30
     _autodeploy = True
 
     # We create the name field to avoid warning for the constraints
     name = fields.Char('Name', required=True)
     job_ids = fields.One2many(
-        'queue.job', 'res_id',
+        'clouder.job', 'res_id',
         domain=lambda self: [('model_name', '=', self._name)],
         auto_join=True, string='Jobs')
 
@@ -144,6 +167,14 @@ class ClouderModel(models.AbstractModel):
         Property returning the path to the home directory.
         """
         return expanduser("~")
+
+    @property
+    def now(self):
+        """
+        Property returning the actual date.
+        """
+        now = datetime.now()
+        return now.strftime("%Y-%m-%d %H:%M:%S")
 
     @property
     def now_date(self):
@@ -190,17 +221,6 @@ class ClouderModel(models.AbstractModel):
                 _("You need to specify the sysadmin email in configuration"))
 
     @api.multi
-    def enqueue(self, func_name):
-        session = ConnectorSession(self.env.cr, self.env.uid,
-                                   context=self.env.context)
-        job_uuid = connector_enqueue.delay(
-            session, self._name, self.id, func_name,
-            self.env.context, description=(func_name + ' - ' + self.name),
-            max_retries=0)
-        job_ids = self.env['queue.job'].search([('uuid', '=', job_uuid)])
-        job_ids.write({'res_id': self.id})
-
-    @api.multi
     def check_priority(self):
         priority = False
         for job in self.job_ids:
@@ -219,27 +239,71 @@ class ClouderModel(models.AbstractModel):
 
         :param message: The message which will be logged.
         """
+        job_obj = self.env['clouder.job']
         now = datetime.now()
         message = re.sub(r'$$$\w+$$$', '**********', message)
         message = filter(lambda x: x in string.printable, message)
         _logger.info(message)
 
-        warning = False
-        if 'job_uuid' in self.env.context:
-            job_ids = self.env['queue.job'].search(
-                [('uuid', '=', self.env.context['job_uuid'])])
-            if not job_ids:
-                warning = True
-            for job in job_ids:
-                job.clouder_trace = (job.clouder_trace or '') +\
-                    now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
-                    message + '\n'
-        else:
-            warning = True
-
-        # if warning:
-        #     _logger.info("Can't find job_uuid %s", self.env.context)
+        if 'clouder_jobs' in self.env.context:
+            for key, job_id in self.env.context['clouder_jobs'].iteritems():
+                if job_obj.search([('id','=',job_id)]):
+                    job = job_obj.browse(job_id)
+                    if job.state == 'started': 
+                        job.log = (job.log or '') +\
+                            now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
+                            message + '\n'
         self.env.cr.commit()
+
+    @api.multi
+    def do(self, name, action, where=False):
+        where = where or self
+        if not 'clouder_jobs' in self.env.context:
+            self = self.with_context(clouder_jobs={})
+        job_id = False
+        key = where._name + '_' + str(where.id)
+        if key not in self.env.context['clouder_jobs']:
+            job = self.env['clouder.job'].create({'name': name, 'action': action, 'model_name': where._name, 'res_id': where.id, 'state': 'started'})
+            jobs = self.env.context['clouder_jobs']
+            jobs[key] = job.id
+            self = self.with_context(clouder_jobs=jobs)
+            job_id = job.id
+
+        if 'no_enqueue' not in self.env.context:
+            self.enqueue(name, action, job_id)
+        else:
+            getattr(self, 'do_exec')(action, job_id)
+
+    @api.multi
+    def enqueue(self, name, action, clouder_job_id):
+        session = ConnectorSession(self.env.cr, self.env.uid,
+                                   context=self.env.context)
+        job_uuid = connector_enqueue.delay(
+            session, self._name, self.id, 'do_exec', action, clouder_job_id,
+            self.env.context, description=name,
+            max_retries=0)
+        job_id = self.env['queue.job'].search([('uuid', '=', job_uuid)])[0]
+        clouder_job = self.env['clouder.job'].browse(clouder_job_id)
+        clouder_job.write({'job_id': job_id.id})
+
+    @api.multi
+    def do_exec(self, action, job_id):
+
+        if job_id:
+            job = self.env['clouder.job'].browse(job_id)
+            job.write({'start_date': self.now})
+
+        try:
+            getattr(self, action)()
+            if job_id:
+                job.write({'end_date': self.now, 'state':'done'})
+        except:
+            self.log('===================')
+            self.log('FAIL!')
+            self.log('===================')
+            if job_id:
+                job.write({'end_date': self.now, 'state':'failed'})
+            raise
 
     @api.multi
     def deploy_frame(self):
@@ -294,11 +358,7 @@ class ClouderModel(models.AbstractModel):
         """"
         Action which purge then redeploy a record.
         """
-        if self._autodeploy:
-            if 'no_enqueue' not in self.env.context:
-                self.enqueue('deploy_frame')
-            else:
-                self.deploy_frame()
+        self.do('reinstall', 'deploy_frame')
 
     @api.multi
     def hook_create(self):
@@ -313,8 +373,9 @@ class ClouderModel(models.AbstractModel):
         :param vals: The values needed to create the record.
         """
         res = super(ClouderModel, self).create(vals)
-        res.hook_create()
-        res.reinstall()
+        if self._autodeploy:
+            res.hook_create()
+            res.do('create', 'deploy_frame')
         return res
 
     @api.one
@@ -323,11 +384,11 @@ class ClouderModel(models.AbstractModel):
         Override the default unlink function to create log and call purge hook.
         """
         if self._autodeploy:
-            # self = self.with_context(clouder_unlink=True)
             self.purge()
             res = super(ClouderModel, self).unlink()
         else:
             res = super(ClouderModel, self).unlink()
+        self.env['clouder.job'].search([('res_id','=',self.id),('model_name','=',self._name)]).unlink()
         return res
 
     @api.multi

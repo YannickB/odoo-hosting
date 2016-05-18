@@ -2,20 +2,6 @@
 <openerp>
     <data>
 
-        <record id="view_queue_job_form_clouder" model="ir.ui.view">
-            <field name="name">queue.job.form</field>
-            <field name="model">queue.job</field>
-            <field name="inherit_id" ref="connector.view_queue_job_form"/>
-            <field name="arch" type="xml">
-                <group name="result" position="before">
-                    <group name="clouder_trace" string="Clouder Trace" attrs="{'invisible': [('clouder_trace', '=', False)]}">
-                        <field nolabel="1" name="clouder_trace"/>
-                    </group>
-                </group>
-            </field>
-        </record>
-
-
         <menuitem id="menu_clouder" name="Clouder" sequence="40"/>
 
         <menuitem id="menu_clouder_clouder" name="Clouder" parent="menu_clouder" sequence="5"/>
@@ -132,8 +118,8 @@
                                     <field name="container_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
                                     <field name="child_id"/>
                                     <field name="save_id"/>
-                                    <button name="deploy" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
-                                    <button name="purge" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
+                                    <button name="create_child" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
+                                    <button name="delete_child" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
                                 </tree>
                             </field>
                             <button name="compute_childs" string="Compute links between childs" type="object" attrs="{'invisible': [('child_ids', '=', [])]}"/>
@@ -241,8 +227,8 @@
                                     <field name="server_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
                                     <field name="child_id"/>
                                     <field name="save_id"/>
-                                    <button name="deploy" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
-                                    <button name="purge" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
+                                    <button name="create_child" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
+                                    <button name="delete_child" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
@@ -250,7 +236,6 @@
                             <newline/>
                             <button name="start" string="Restart" type="object"/>
                             <button name="stop" string="Stop" type="object"/>
-                            <button name="deploy_key" string="Reset Key" type="object"/>
                             <newline/>
                             <group col="4">
                                     <field name="subservice_name"/>
@@ -455,6 +440,50 @@
             </field>
         </record>
 
+        <record id="view_clouder_job_form" model="ir.ui.view">
+            <field name="name">clouder.job.form</field>
+            <field name="model">clouder.job</field>
+            <field name="arch" type="xml">
+                <form string="Job" version="7.0">
+                    <header>
+                        <field name="state" widget="statusbar" statusbar_visible="started,done,failed"/>
+                    </header>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name='model_name'/>
+                            <field name='start_date'/>
+                            <field name='job_id'/>
+                        </group>
+                        <group>
+                            <field name="action"/>
+                            <field name="res_id"/>
+                            <field name="end_date"/>
+                            <field name="job_state"/>
+                        </group>
+                    </group>
+                    <field name="log" colspan="4" nolabel="1"/>
+                </form>
+            </field>
+        </record>
+        <record id="view_clouder_job_tree" model="ir.ui.view">
+            <field name="name">clouder.job.tree</field>
+            <field name="model">clouder.job</field>
+            <field name="arch" type="xml">
+                <tree string="Job" colors="red:state == 'failed';gray:state == 'done'">
+                    <field name="name"/>
+                    <field name="action"/>
+                    <field name='model_name'/>
+                    <field name="create_date"/>
+                    <field name="create_uid"/>
+                    <field name='start_date'/>
+                    <field name='end_date'/>
+                    <field name="job_id"/>
+                    <field name="job_state"/>
+                    <field name='state'/>
+                </tree>
+            </field>
+        </record>
 
 
         <menuitem id="menu_clouder_configuration" name="Configuration" parent="menu_clouder" sequence="10"/>
@@ -751,6 +780,7 @@
                     <button name="certs_renewal" string="Certs Renewal" type="object"/>
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
                     <button name="reset_all_jobs" string="Reset Jobs" type="object"/>
+                    <field name="job_ids" colspan="4"/>
                 </form>
             </field>
         </record>

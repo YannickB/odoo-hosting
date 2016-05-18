@@ -187,12 +187,12 @@ class ClouderContainer(models.Model):
         return res
 
     @api.multi
-    def stop(self):
+    def stop_exec(self):
         """
         Stop the container.
         """
 
-        res = super(ClouderContainer, self).stop()
+        res = super(ClouderContainer, self).stop_exec()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\
@@ -203,12 +203,12 @@ class ClouderContainer(models.Model):
         return res
 
     @api.multi
-    def start(self):
+    def start_exec(self):
         """
         Restart the container.
         """
 
-        res = super(ClouderContainer, self).start()
+        res = super(ClouderContainer, self).start_exec()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\

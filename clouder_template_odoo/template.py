@@ -21,6 +21,7 @@
 ##############################################################################
 
 from openerp import models, api, modules
+import time
 import erppeek
 
 
@@ -117,7 +118,7 @@ class ClouderBase(models.Model):
                     self.fullname_, demo=self.test,
                     lang=self.lang,
                     user_password=self.admin_password)
-
+                self.container_id.childs['exec'].start_exec()
                 return True
         return super(ClouderBase, self).deploy_database()
 
@@ -427,11 +428,25 @@ class ClouderBaseLink(models.Model):
     _inherit = 'clouder.base.link'
 
     @api.multi
+    def nginx_config_update(self, target):
+        res = super(ClouderBaseLink, self).nginx_config_update(target)
+
+        if self.name.name.code == 'proxy' \
+                and self.base_id.application_id.type_id.name == 'odoo':
+
+            target.execute([
+                'sed', '-i', '"s/LONGPOLLING/' +
+                self.base_id.container_id.ports['longpolling']['hostport'] +
+                '/g"', self.base_id.nginx_configfile])
+
+
+    @api.multi
     def deploy_link(self):
         """
         Configure postfix to redirect incoming mail to odoo.
         """
         super(ClouderBaseLink, self).deploy_link()
+
         if self.name.name.code == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
 
