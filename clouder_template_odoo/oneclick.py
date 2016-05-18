@@ -129,7 +129,7 @@ class ClouderServer(models.Model):
             image.parent_version_id = base.id
             image.build()
 
-        image = image_obj.search([('name', '=', 'img_odoo_exec')])
+        image = image_obj.search([('name', '=', 'img_odoo_clouder_exec')])
         if not image.has_version:
             image.registry_id = registry.id
             image.parent_version_id = base.id

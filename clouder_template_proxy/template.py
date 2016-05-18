@@ -118,6 +118,10 @@ class ClouderBaseLink(models.Model):
     _inherit = 'clouder.base.link'
 
     @api.multi
+    def nginx_config_update(self, target):
+        return
+
+    @api.multi
     def deploy_link(self):
         """
         Configure the proxy to redirect to the application port.
@@ -156,6 +160,7 @@ class ClouderBaseLink(models.Model):
                     'sed', '-i', '"s/PORT/' +
                     self.base_id.container_id.ports['http']['hostport'] +
                     '/g"', self.base_id.nginx_configfile])
+            self.nginx_config_update(target)
             # self.deploy_prepare_apache(cr, uid, vals, context)
             cert_file = '/etc/ssl/certs/' + self.base_id.fulldomain + '.crt'
             key_file = '/etc/ssl/private/' + self.base_id.fulldomain + '.key'

@@ -356,6 +356,61 @@
             <field name="nosave" eval="True"/>
         </record>
 
+        <record id="image_odoo_clouder_exec" model="clouder.image">
+            <field name="name">img_odoo_clouder_exec</field>
+            <field name="type_id" ref="apptype_odoo"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_from">clouder/clouder-odoo-clouder-exec</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+        <record id="image_odoo_clouder_exec_volume_var" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_clouder_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/var</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_clouder_exec_volume_etc" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_clouder_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/etc</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_clouder_exec_volume_extra_addons" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_clouder_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/extra-addons</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_clouder_exec_volume_data" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_clouder_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/odoo/data</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_clouder_exec_volume_home" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_clouder_exec"/>
+            <field name="name">/home/odoo</field>
+        </record>
+        <record id="image_odoo_clouder_exec_volume_files" model="clouder.image.volume">
+            <field name="image_id" ref="image_odoo_clouder_exec"/>
+            <field name="from_code">files</field>
+            <field name="name">/opt/odoo/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_odoo_clouder_exec_port_http" model="clouder.image.port">
+            <field name="image_id" ref="image_odoo_clouder_exec"/>
+            <field name="name">http</field>
+            <field name="localport">8069</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_odoo_clouder_exec_port_longpolling" model="clouder.image.port">
+            <field name="image_id" ref="image_odoo_clouder_exec"/>
+            <field name="name">longpolling</field>
+            <field name="localport">8072</field>
+            <field name="expose">internet</field>
+        </record>
+
         <record id="app_odoo_clouder" model="clouder.application">
             <field name="name">Clouder</field>
             <field name="code">clouder</field>
@@ -454,7 +509,7 @@
             <field name="code">exec</field>
             <field name="type_id" ref="apptype_odoo"/>
             <field name="parent_id" ref="app_odoo_clouder"/>
-            <field name="default_image_id" ref="image_odoo_exec"/>
+            <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
         </record>
