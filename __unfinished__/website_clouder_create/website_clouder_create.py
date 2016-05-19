@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, http, SUPERUSER_ID, _
+from openerp import models, fields, api, http, _
 from openerp.http import request
 
 import logging
