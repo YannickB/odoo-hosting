@@ -21,6 +21,7 @@
 ##############################################################################
 
 from openerp import models, api, modules
+import time
 import erppeek
 
 
@@ -70,6 +71,9 @@ class ClouderContainer(models.Model):
                     'sed', '-i', '"s/ADDONS_PATH/' +
                     addons_path.replace('/', '\/') + '/g"',
                     config_file])
+            if self.application_id.code == 'ssh':                
+                self.execute(['mkdir /root/.ssh'])
+                self.execute(['echo "' + self.options['ssh_publickey']['value'] + '" > /root/.ssh/authorized_keys'])
 
 
 class ClouderBase(models.Model):
@@ -90,7 +94,7 @@ class ClouderBase(models.Model):
         Create the database with odoo functions.
         """
         if self.application_id.type_id.name == 'odoo':
-            self.container_id.execute([
+            self.container_id.base_backup_container.execute([
                 'mkdir', '-p',
                 '/opt/odoo/data/filestore/' +
                 self.fullname_],
@@ -114,7 +118,7 @@ class ClouderBase(models.Model):
                     self.fullname_, demo=self.test,
                     lang=self.lang,
                     user_password=self.admin_password)
-
+                self.container_id.childs['exec'].start_exec()
                 return True
         return super(ClouderBase, self).deploy_database()
 
@@ -410,7 +414,7 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'odoo':
-            self.container_id.execute([
+            self.container_id.base_backup_container.execute([
                 'rm', '-rf',
                 '/opt/odoo/data/filestore/' + self.fullname_])
         return res
@@ -424,41 +428,52 @@ class ClouderBaseLink(models.Model):
     _inherit = 'clouder.base.link'
 
     @api.multi
+    def nginx_config_update(self, target):
+        res = super(ClouderBaseLink, self).nginx_config_update(target)
+
+        if self.name.name.code == 'proxy' \
+                and self.base_id.application_id.type_id.name == 'odoo':
+
+            target.execute([
+                'sed', '-i', '"s/LONGPOLLING/' +
+                self.base_id.container_id.ports['longpolling']['hostport'] +
+                '/g"', self.base_id.nginx_configfile])
+
+
+    @api.multi
     def deploy_link(self):
         """
         Configure postfix to redirect incoming mail to odoo.
         """
         super(ClouderBaseLink, self).deploy_link()
+
         if self.name.name.code == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
 
-            try:
-                self.log("client = erppeek.Client('http://" +
-                         self.base_id.container_id.server_id.ip +
-                         ":" +
-                         self.base_id.odoo_port
-                         + "," + "db=" + self.base_id.fullname_ + "," +
-                         "user=" + self.base_id.admin_name + ", password=$$$" +
-                         self.base_id.admin_password + "$$$)")
-                client = erppeek.Client(
-                    'http://' +
-                    self.base_id.container_id.server_id.ip + ':' +
-                    self.base_id.odoo_port,
-                    db=self.base_id.fullname_,
-                    user=self.base_id.admin_name, password=self.admin_password)
-                self.log("server_id = client.model('ir.model.data')"
-                         ".get_object_reference('base', "
-                         "'ir_mail_server_localhost0')[1]")
-                server_id = client.model('ir.model.data')\
-                    .get_object_reference('base',
-                                          'ir_mail_server_localhost0')[1]
-                self.log("client.model('ir.mail_server').write([" +
-                         str(server_id) +
-                         "], {'name': 'postfix', 'smtp_host': 'postfix'})")
-                client.model('ir.mail_server').write(
-                    [server_id], {'name': 'postfix', 'smtp_host': 'postfix'})
-            except:
-                pass
+            self.log("client = erppeek.Client('http://" +
+                     self.base_id.container_id.server_id.ip +
+                     ":" +
+                     self.base_id.odoo_port
+                     + "," + "db=" + self.base_id.fullname_ + "," +
+                     "user=" + self.base_id.admin_name + ", password=$$$" +
+                     self.base_id.admin_password + "$$$)")
+            client = erppeek.Client(
+                 'http://' +
+                self.base_id.container_id.server_id.ip + ':' +
+                self.base_id.odoo_port,
+                db=self.base_id.fullname_,
+                user=self.base_id.admin_name, password=self.base_id.admin_password)
+            self.log("server_id = client.model('ir.model.data')"
+                     ".get_object_reference('base', "
+                     "'ir_mail_server_localhost0')[1]")
+            server_id = client.model('ir.model.data')\
+                .get_object_reference('base',
+                                      'ir_mail_server_localhost0')[1]
+            self.log("client.model('ir.mail_server').write([" +
+                     str(server_id) +
+                     "], {'name': 'postfix', 'smtp_host': 'postfix'})")
+            client.model('ir.mail_server').write(
+                [server_id], {'name': 'postfix', 'smtp_host': 'postfix'})
 
             self.target.execute([
                 'sed', '-i',

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_bluemind" model="clouder.application.type">
+            <field name="name">bluemind</field>
+            <field name="system_user">www-data</field>
+        </record>
+        <record id="apptype_bluemind_option_domain" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_bluemind"/>
+            <field name="name">domain</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+            <field name="required" eval="True"/>
+        </record>
+
+
+        <record id="image_bluemind" model="clouder.image">
+            <field name="name">img_bluemind</field>
+            <field name="current_version">8.0</field>
+            <field name="parent_id" ref="clouder.image_nginx"/>
+            <field name="dockerfile"><![CDATA[
+
+WORKDIR /tmp
+RUN wget http://pkg.blue-mind.net/download/bluemind-installer-trusty-3.0.30-8761684232.bin bluemind.bin
+RUN chmod +X bluemind.bin
+#RUN sh bluemind-installer-trusty-3.0.30-8761684232.bin
+
+]]></field>
+        </record>
+        <record id="image_bluemind_port_http" model="clouder.image.port">
+            <field name="image_id" ref="image_bluemind"/>
+            <field name="name">http</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+
+
+        <record id="app_bluemind" model="clouder.application">
+            <field name="name">Bluemind</field>
+            <field name="code">bluemind</field>
+            <field name="type_id" ref="apptype_bluemind"/>
+            <field name="default_image_id" ref="image_bluemind"/>
+            <field name="current_version">8.0</field>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_bluemind_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="app_bluemind"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_bluemind_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_bluemind"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_bluemind_link_postgres" model="clouder.application.link">
+            <field name="application_id" ref="app_bluemind"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
+        <record id="app_bluemind_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_bluemind"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_bluemind_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="app_bluemind"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+
+    </data>
+</openerp>

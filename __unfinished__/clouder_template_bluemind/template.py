@@ -20,19 +20,20 @@
 #
 ##############################################################################
 
-{
-    'name': 'Clouder Template Postfix',
-    'version': '1.0',
-    'category': 'Clouder',
-    'depends': ['clouder_template_spamassassin'],
-    'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
-    'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder Template Postfix
-    """,
-    'demo': [],
-    'data': ['template.xml'],
-    'installable': True,
-    'application': True,
-}
+from openerp import models, api, modules
+
+
+class ClouderContainer(models.Model):
+    """
+    Add methods to manage the bluemind container specificities.
+    """
+
+    _inherit = 'clouder.container'
+
+    @api.multi
+    def hook_deploy_special_args(self, cmd):
+        cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)
+        if self.application_id.type_id.name == 'bluemind':
+            cmd.extend(['-h', self.options['domain']['value'].split('.')[0]])
+        return cmd
+

@@ -24,7 +24,7 @@
     'name': 'Clouder Template Shinken',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['clouder_template_postfix'],
+    'depends': ['clouder_template_postfix','clouder_template_proxy','clouder_template_bind'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',

@@ -117,25 +117,9 @@
             <field name="name">img_magento_data</field>
             <field name="type_id" ref="apptype_magento"/>
             <field name="current_version">8.0</field>
-            <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[
-RUN usermod -u 1000 www-data
-
-# Create saved folders
-RUN mkdir -p /opt/magento/exec/var/log
-RUN mkdir -p /opt/magento/exec/app/etc
-RUN mkdir -p /opt/magento/exec/app/code/local
-RUN mkdir -p /etc/apache2/sites-enabled
-
-# Adding configuration files
-RUN mkdir -p /opt/magento/config
-ADD sources/config.xml /opt/magento/config/config.xml
-ADD sources/magento.conf /etc/apache2/sites-enabled/magento.conf
-
-# Switching rights
-RUN chown -R www-data:www-data /opt/magento
-
-]]></field>
+            <field name="parent_from">clouder/clouder-magento-data</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
         <record id="image_magento_data_volume_logs" model="clouder.image.volume">
             <field name="image_id" ref="image_magento_data"/>
@@ -163,18 +147,9 @@ RUN chown -R www-data:www-data /opt/magento
             <field name="name">img_magento_files1_9</field>
             <field name="type_id" ref="apptype_magento"/>
             <field name="current_version">1.9.2.3</field>
-            <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[
-# Prepare system
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install wget
-
-# Download and unpack Magento
-RUN cd /tmp && wget https://github.com/OpenMage/magento-mirror/archive/magento-1.9.tar.gz
-RUN cd /tmp && tar -zxvf magento-1.9.tar.gz
-RUN mkdir -p /opt/magento
-RUN mv /tmp/magento-mirror-magento-1.9 /opt/magento/files
-RUN cd /tmp && rm -f magento-*tar.gz
-]]></field>
+            <field name="parent_from">clouder/clouder-magento_files</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
         <record id="image_magento_files1_9_volume_files" model="clouder.image.volume">
             <field name="image_id" ref="image_magento_files1_9"/>
@@ -186,43 +161,9 @@ RUN cd /tmp && rm -f magento-*tar.gz
             <field name="name">img_magento_exec</field>
             <field name="type_id" ref="apptype_magento"/>
             <field name="current_version">8.0</field>
-            <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[
-# Install required system packages
-RUN apt-get update && apt-get install -yq libxml2-dev apache2 php5 php5-mhash php5-mcrypt php5-curl php5-cli php5-mysql php5-gd php5-intl php5-xsl
-
-# Update user www-data to use magento
-RUN usermod -u 1000 www-data
-
-# Create directory structure for volumes
-RUN mkdir -p /opt/magento/exec/var/log
-RUN mkdir -p /opt/magento/exec/app/etc
-RUN mkdir -p /opt/magento/exec/app/code/local
-RUN chown -R www-data:www-data /opt/magento/
-
-# Make a symlink for magento files
-RUN ln -s /opt/magento/exec /var/www/htdocs
-RUN chown -h www-data:www-data /var/www/htdocs
-
-# Add dummy magento config file for the a2ensite command
-RUN touch /etc/apache2/sites-available/magento.conf
-
-# Finish configuring Apache/PHP
-RUN php5enmod mcrypt
-RUN a2enmod rewrite
-RUN a2ensite magento.conf
-RUN a2dissite 000-default.conf
-
-# Stop apache to trigger restart when the command running the container is launched
-RUN /etc/init.d/apache2 stop
-
-# Removing dummy config file now the site is enabled
-RUN rm -f /etc/apache2/sites-available/magento.conf
-
-
-# Launch apache in foreground
-CMD apache2ctl -DFOREGROUND
-]]></field>
+            <field name="parent_from">clouder/clouder-magento-exec</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
         <record id="image_magento_exec_volume_logs" model="clouder.image.volume">
             <field name="image_id" ref="image_magento_exec"/>
@@ -265,12 +206,9 @@ CMD apache2ctl -DFOREGROUND
             <field name="name">img_magento_ssh</field>
             <field name="type_id" ref="apptype_magento"/>
             <field name="current_version">8.0</field>
-            <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[
-RUN touch /tmp/magento-ssh
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install openssh-server
-USER root
-]]></field>
+            <field name="parent_from">clouder/clouder-magento-ssh</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
 
         <record id="image_magento_ssh_port_ssh" model="clouder.image.port">

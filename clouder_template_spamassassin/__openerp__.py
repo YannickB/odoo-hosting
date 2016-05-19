@@ -21,15 +21,15 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Postfix',
+    'name': 'Clouder Template Spamassassin',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['clouder_template_spamassassin'],
+    'depends': ['clouder'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
-    Clouder Template Postfix
+    Clouder Template Spamassassin
     """,
     'demo': [],
     'data': ['template.xml'],

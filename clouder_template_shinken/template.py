@@ -102,11 +102,6 @@ class ClouderContainer(models.Model):
                 '/usr/local/shinken/etc/services/clouder.cfg',
                 username='shinken')
             self.execute([
-                'sed', '-i', '"s/SHINKENDOMAIN/' +
-                self.options['domain']['value'] + '/g"',
-                '/usr/local/shinken/etc/services/clouder.cfg'],
-                username='shinken')
-            self.execute([
                 'sed', '-i', '"s/SYSADMIN_MAIL/' +
                 self.email_sysadmin + '/g"',
                 '/usr/local/shinken/etc/services/clouder.cfg'],
@@ -129,6 +124,40 @@ class ClouderBase(models.Model):
         Property returning the shinken config file.
         """
         return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
+
+    @api.multi
+    def deploy_post(self):
+        """
+        Update odoo configuration.
+        """
+        res = super(ClouderBase, self).deploy_post()
+        if self.application_id.type_id.name == 'shinken':
+            self.container_id.execute([
+                'sed', '-i', '"s/SHINKENDOMAIN/' +
+                self.fulldomain + '/g"',
+                '/usr/local/shinken/etc/services/clouder.cfg'],
+                username='shinken')
+
+            self.container_id.execute(
+                ['/usr/local/shinken/bin/init.d/shinken', 'reload'],
+                username='shinken')
+        return res
+
+    @api.multi
+    def purge_post(self):
+        """
+        Remove filestore.
+        """
+        res = super(ClouderBase, self).purge_post()
+        if self.application_id.type_id.name == 'shinken':
+            self.container_id.execute([
+                'sed', '-i', '"s/' + self.fulldomain + '/SHINKENDOMAIN/g"',
+                '/usr/local/shinken/etc/services/clouder.cfg'],
+                username='shinken')
+            self.container_id.execute(
+                ['/usr/local/shinken/bin/init.d/shinken', 'reload'],
+                username='shinken')
+        return res
 
 
 class ClouderContainerLink(models.Model):
@@ -253,7 +282,7 @@ class ClouderBaseLink(models.Model):
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute([
                 'sed', '-i',
-                '"s/DOMAIN/' + self.base_id.domain_id.name + '/g"',
+                '"s/DOMAIN/' + self.base_id.fulldomain + '/g"',
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute(
                 ['/usr/local/shinken/bin/init.d/shinken', 'reload'],

@@ -23,7 +23,7 @@
 
 from openerp import models, api
 from openerp import modules
-
+from datetime import datetime
 
 class ClouderDomain(models.Model):
     """
@@ -39,6 +39,17 @@ class ClouderDomain(models.Model):
         in the bind container.
         """
         return'/etc/bind/db.' + self.name
+
+    @api.multi
+    def refresh_serial(self):
+        """
+        Refresh the serial number in the config file
+        """
+        if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
+            self.dns_id.execute([
+                'sed', '-i', '"s/[0-9]* ;serial/' + datetime.now().strftime('%Y%m%d%H') + ' ;serial/g"',
+                self.configfile])
+            self.dns_id.execute(['/etc/init.d/bind9 reload'])
 
     @api.multi
     def deploy(self):
@@ -74,7 +85,7 @@ class ClouderDomain(models.Model):
             self.dns_id.execute(['echo "};" >> /etc/bind/named.conf'])
             self.dns_id.execute([
                 'echo "//END ' + self.name + '" >> /etc/bind/named.conf'])
-            self.dns_id.start()
+            self.refresh_serial()
 
     @api.multi
     def purge(self):
@@ -87,7 +98,7 @@ class ClouderDomain(models.Model):
                 "'/zone\s\"" + self.name + "\"/,/END\s" + self.name + "/d'",
                 '/etc/bind/named.conf'])
             self.dns_id.execute(['rm', self.configfile])
-            self.dns_id.start()
+            self.dns_id.execute(['/etc/init.d/bind9 reload'])
 
 
 class ClouderBaseLink(models.Model):
@@ -98,31 +109,35 @@ class ClouderBaseLink(models.Model):
     _inherit = 'clouder.base.link'
 
     @api.multi
+    def deploy_bind_config(self, name):
+        proxy_link = self.search([('base_id', '=', self.base_id.id), (
+            'name.application_id.code', '=', 'proxy')])
+        self.target.execute([
+            'echo "' + name + ' IN A ' +
+            (proxy_link and proxy_link[0].target.server_id.ip
+             or self.base_id.container_id.server_id.ip) +
+            '" >> ' + self.base_id.domain_id.configfile])
+        self.base_id.domain_id.refresh_serial()
+
+    @api.multi
+    def purge_bind_config(self, name):
+        self.target.execute([
+            'sed', '-i',
+            '"/' + name + '\sIN\sA/d"',
+            self.base_id.domain_id.configfile])
+        self.base_id.domain_id.refresh_serial()
+
+    @api.multi
     def deploy_link(self):
         """
-        Add a new CNAME record when we create a new base, and MX if the
+        Add a new A record when we create a new base, and MX if the
         base has a postfix link.
         """
         super(ClouderBaseLink, self).deploy_link()
         if self.name.name.code == 'bind':
-            proxy_link = self.search([('base_id', '=', self.base_id.id), (
-                'name.application_id.code', '=', 'proxy')])
-            self.target.execute([
-                'echo "' + self.base_id.name + ' IN CNAME ' +
-                (proxy_link and proxy_link[0].target.server_id.name
-                 or self.base_id.container_id.server_id.name) +
-                '." >> ' + self.base_id.domain_id.configfile])
-
-            postfix_link = self.search([
-                ('base_id', '=', self.base_id.id),
-                ('name.name.code', '=', 'postfix')])
-            if postfix_link:
-                self.target.execute([
-                    'echo "IN MX 1 ' +
-                    (postfix_link and postfix_link[0].target.server_id.name) +
-                    '. ;' + self.base_id.name + ' IN CNAME" >> ' +
-                    self.base_id.domain_id.configfile])
-            self.target.start()
+            if self.base_id.is_root:
+                self.deploy_bind_config('@')
+            self.deploy_bind_config(self.base_id.name)
 
     @api.multi
     def purge_link(self):
@@ -131,8 +146,6 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).purge_link()
         if self.name.name.code == 'bind':
-            self.target.execute([
-                'sed', '-i',
-                '"/' + self.base_id.name + '\sIN\sCNAME/d"',
-                self.base_id.domain_id.configfile])
-            self.target.start()
+            if self.base_id.is_root:
+                self.purge_bind_config('@')
+            self.purge_bind_config(self.base_id.name)

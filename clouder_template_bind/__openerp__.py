@@ -24,7 +24,7 @@
     'name': 'Clouder Template Bind',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['clouder', 'clouder_template_shinken'],
+    'depends': ['clouder'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
