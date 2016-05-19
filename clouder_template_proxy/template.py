@@ -79,7 +79,8 @@ class ClouderBase(models.Model):
             proxy.execute(['/opt/letsencrypt/letsencrypt-auto certonly --webroot -w ' + webroot + ' -d ' + domain + ' -m ' + proxy.email_sysadmin + ' --agree-tos'])
             key = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/privkey.pem'])
             cert = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'])
-            self.write({'cert_key': key, 'cert_cert': cert, 'cert_renewal_date': (datetime.now() + timedelta(days=45)).strftime("%Y-%m-%d")})
+            if key:
+                self.write({'cert_key': key, 'cert_cert': cert, 'cert_renewal_date': (datetime.now() + timedelta(days=45)).strftime("%Y-%m-%d")})
             proxy.execute([
                 'rm',
                 '/etc/nginx/sites-enabled/' + self.fullname])
