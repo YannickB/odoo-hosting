@@ -175,7 +175,7 @@ class ClouderImageVersion(models.Model):
         Property returning the address of the registry where is hosted
         the image version.
         """
-        return self.registry_id and self.registry_id.server_id.name + ':' + \
+        return self.registry_id and self.registry_id.server_id.ip + ':' + \
             self.registry_id.ports['registry-ssl']['hostport']
 
     @property
@@ -267,8 +267,11 @@ class ClouderImageVersion(models.Model):
         dockerfile += '\nMAINTAINER ' + self.email_sysadmin + '\n'
 
         dockerfile += self.image_id.dockerfile or ''
+        volumes = ''
         for volume in self.image_id.volume_ids:
-            dockerfile += '\nVOLUME ' + volume.name
+            volumes += volume.name + ' '
+        if volumes:
+            dockerfile += '\nVOLUME ' + volumes
 
         ports = ''
         for port in self.image_id.port_ids:

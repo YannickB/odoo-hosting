@@ -120,6 +120,7 @@ class ClouderBase(models.Model):
     reset_each_day = fields.Boolean('Reset each day?')
     cert_key = fields.Text('Cert Key')
     cert_cert = fields.Text('Cert')
+    cert_renewal_date = fields.Date('Cert renewal date')
     reset_id = fields.Many2one('clouder.base', 'Reset with this base')
     backup_ids = fields.Many2many(
         'clouder.container', 'clouder_base_backup_rel',
@@ -127,12 +128,20 @@ class ClouderBase(models.Model):
     public = fields.Boolean('Public?')
 
     @property
+    def is_root(self):
+        """
+        Property returning is this base is the root of the domain or not.
+        """
+        if self.name == 'www':
+            return True
+        return False
+
+    @property
     def fullname(self):
         """
         Property returning the full name of the base.
         """
-        return (self.application_id.fullcode + '-' + self.name + '-' +
-                self.domain_id.name).replace('.', '-')
+        return self.application_id.fullcode + '-' + self.fulldomain.replace('.', '-')
 
     @property
     def fullname_(self):
@@ -147,6 +156,8 @@ class ClouderBase(models.Model):
         """
         Property returning the full url of the base.
         """
+        if self.is_root:
+            return self.domain_id.name
         return self.name + '.' + self.domain_id.name
 
     @property
@@ -562,9 +573,7 @@ class ClouderBase(models.Model):
         if 'service_id' in vals:
             self = self.with_context(self.create_log('service change'))
             self = self.with_context(save_comment='Before service change')
-            self = self.with_context(forcesave=True)
-            save = self.save()
-            self = self.with_context(forcesave=False)
+            save = self.save_exec(no_enqueue=True, forcesave=True)
             self.purge()
 
         res = super(ClouderBase, self).write(vals)
@@ -574,7 +583,7 @@ class ClouderBase(models.Model):
             self.deploy()
             save.restore()
             self.end_log()
-        if 'autosave' in vals or 'ssl_only' in vals:
+        if 'autosave' in vals and self.autosave != vals['autosave'] or 'ssl_only' in vals and self.ssl_only != vals['ssl_only']:
             self.deploy_links()
 
         return res
@@ -584,19 +593,29 @@ class ClouderBase(models.Model):
         """
         Override unlink method to make a save before we delete a base.
         """
-        # save = self.save(comment='Before unlink')
+        self = self.with_context(save_comment='Before unlink')
+        save = self.save_exec(no_enqueue=True)
         if self.parent_id:
             self.parent_id.save_id = save
         return super(ClouderBase, self).unlink()
 
     @api.multi
-    def save(self, comment=False, no_enqueue=False):
+    def save(self):
+        self.do('save', 'save_exec')
+
+    @api.multi
+    def save_exec(self, no_enqueue=False, forcesave=False):
         """
         Make a new save.
         """
         save = False
-
         now = datetime.now()
+
+        if forcesave:
+            self = self.with_context(forcesave=True)
+
+        if no_enqueue:
+            self = self.with_context(no_enqueue=True)
 
         if 'nosave' in self.env.context \
                 or (not self.autosave and 'forcesave' not in self.env.context):
@@ -617,7 +636,7 @@ class ClouderBase(models.Model):
                     days=self.save_expiration
                     or self.application_id.base_save_expiration)
                 ).strftime("%Y-%m-%d"),
-                'comment': comment or 'Manual',
+                'comment': 'save_comment' in self.env.context and self.env.context['save_comment'] or self.save_comment or 'Manual',
                 'now_bup': self.now_bup,
                 'container_id': self.container_id.id,
                 'base_id': self.id,
@@ -640,7 +659,12 @@ class ClouderBase(models.Model):
         return
 
     @api.multi
-    def reset_base(self, base_name=False, container=False):
+    def reset_base(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('reset_base', 'reset_base_exec')
+
+    @api.multi
+    def reset_base_exec(self):
         """
         Reset the base with the parent base.
 
@@ -650,13 +674,16 @@ class ClouderBase(models.Model):
         :param service_id: Specify the service_id is the reset
         need to be done in another service.
         """
+        base_name = False
+        if reset_base_name in self.env.context:
+            base_name = self.env.context['reset_base_name']
+        container = False
+        if reset_container in self.env.context:
+            container = self.env.context['reset_container']
         base_reset_id = self.reset_id and self.reset_id or self
         if 'save_comment' not in self.env.context:
             self = self.with_context(save_comment='Reset base')
-        self.with_context(forcesave=True)
-        save = base_reset_id.save(
-            comment=self.env.context['save_comment'], no_enqueue=True)
-        self.with_context(forcesave=False)
+        save = base_reset_id.save_exec(no_enqueue=True, forcesave=True)
         self.with_context(nosave=True)
         vals = {'base_id': self.id, 'base_restore_to_name': self.name,
                 'base_restore_to_domain_id': self.domain_id.id,
@@ -737,7 +764,7 @@ class ClouderBase(models.Model):
 
         if self.child_ids:
             for child in self.child_ids:
-                child.deploy()
+                child.create_child_exec()
             return
 
         self.deploy_database()
@@ -760,7 +787,8 @@ class ClouderBase(models.Model):
         self.deploy_post()
 
         # For shinken
-        self.save(comment='First save', no_enqueue=True)
+        self = self.with_context(save_comment='First save')
+        self.save_exec(no_enqueue=True)
 
     @api.multi
     def purge_post(self):
@@ -793,6 +821,31 @@ class ClouderBase(models.Model):
         """
         return
 
+    @api.multi
+    def generate_cert(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('generate_cert', 'generate_cert_exec')
+
+
+    @api.multi
+    def generate_cert_exec(self):
+        """
+        Generate a new certificate
+        """
+        return True
+
+    @api.multi
+    def renew_cert(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('renew_cert', 'renew_cert')
+
+
+    @api.multi
+    def renew_cert_exec(self):
+        """
+        Renew a certificate
+        """
+        return True
 
 class ClouderBaseOption(models.Model):
     """
@@ -873,6 +926,7 @@ class ClouderBaseLink(models.Model):
         Hook which can be called by submodules to execute commands when we
         deploy a link.
         """
+        self.purge_link()
         self.deployed = True
         return
 
@@ -900,14 +954,23 @@ class ClouderBaseLink(models.Model):
 
     @api.multi
     def deploy_(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('deploy_link ' + self.name.name.name, 'deploy_exec', where=self.base_id)
+
+    @api.multi
+    def deploy_exec(self):
         """
         Control and call the hook to deploy the link.
         """
-        self.purge_()
         self.control() and self.deploy_link()
 
     @api.multi
     def purge_(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('purge_link ' + self.name.name.name, 'purge_exec', where=self.base_id)
+
+    @api.multi
+    def purge_exec(self):
         """
         Control and call the hook to purge the link.
         """
@@ -921,6 +984,8 @@ class ClouderBaseChild(models.Model):
     """
 
     _name = 'clouder.base.child'
+    _inherit = ['clouder.model']
+    _autodeploy = False
 
     base_id = fields.Many2one(
         'clouder.base', 'Base', ondelete="cascade", required=True)
@@ -946,9 +1011,14 @@ class ClouderBaseChild(models.Model):
                 _("The child container is not correctly linked to the parent"))
 
     @api.multi
-    def deploy(self):
+    def create_child(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('create_child ' + self.name.name, 'create_child_exec', where=self.base_id)
+
+    @api.multi
+    def create_child_exec(self):
         self = self.with_context(autocreate=True)
-        self.purge()
+        self.delete_child_exec()
         self.child_id = self.env['clouder.base'].create({
             'name': self.domainname or self.base_id.name + '-' + self.name.code,
             'domain_id':
@@ -965,7 +1035,11 @@ class ClouderBaseChild(models.Model):
             self.save_id.restore()
 
     @api.multi
-    def purge(self):
+    def delete_child(self):
+        self.do('delete_child ' + self.name.name, 'delete_child_exec', where=self.base_id)
+
+    @api.multi
+    def delete_child_exec(self):
         self.child_id and self.child_id.unlink()
 
 

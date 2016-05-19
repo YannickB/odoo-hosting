@@ -8,17 +8,43 @@
             <field name="system_user">www-data</field>
         </record>
 
+        <record id="image_proxy" model="clouder.image">
+            <field name="name">img_proxy</field>
+            <field name="current_version">1</field>
+            <field name="parent_from">clouder/clouder-proxy</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+        <record id="image_proxy_volume_etc_nginx" model="clouder.image.volume">
+            <field name="image_id" ref="image_proxy"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_proxy_volume_www" model="clouder.image.volume">
+            <field name="image_id" ref="image_proxy"/>
+            <field name="name">/var/www</field>
+        </record>
+        <record id="image_proxy_volume_etc_ssl" model="clouder.image.volume">
+            <field name="image_id" ref="image_proxy"/>
+            <field name="name">/etc/ssl</field>
+        </record>
+        <record id="image_proxy_port_nginx" model="clouder.image.port">
+            <field name="image_id" ref="image_proxy"/>
+            <field name="name">nginx</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_proxy_port_nginx_ssl" model="clouder.image.port">
+            <field name="image_id" ref="image_proxy"/>
+            <field name="name">nginx-ssl</field>
+            <field name="localport">443</field>
+            <field name="expose">internet</field>
+        </record>
+
         <record id="app_proxy" model="clouder.application">
             <field name="name">Proxy</field>
             <field name="code">proxy</field>
             <field name="type_id" ref="apptype_proxy"/>
-            <field name="default_image_id" ref="clouder.image_nginx"/>
-        </record>
-        <record id="app_proxy_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_proxy"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="container" eval="True"/>
-            <field name="auto" eval="True"/>
+            <field name="default_image_id" ref="image_proxy"/>
         </record>
 
 

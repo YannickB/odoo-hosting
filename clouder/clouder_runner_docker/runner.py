@@ -62,11 +62,11 @@ class ClouderImageVersion(models.Model):
                 'echo "' + dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
             server.execute(
-                ['docker', 'build', '-t', self.fullname, tmp_dir])
+                ['docker', 'build', '--pull', '--no-cache', '-t', self.fullname, tmp_dir])
             server.execute(['docker', 'tag', self.fullname,
-                            self.fullpath_localhost])
+                            self.fullpath])
             server.execute(
-                ['docker', 'push', self.fullpath_localhost])
+                ['docker', 'push', self.fullpath])
             # TODO
             # server.execute(['docker', 'rmi', self.fullname])
             # server.execute(['docker', 'rmi', self.fullpath_localhost])
@@ -108,7 +108,7 @@ class ClouderContainer(models.Model):
             return res
         else:
             if self.server_id == self.image_version_id.registry_id.server_id:
-                return self.image_version_id.fullpath_localhost
+                return self.image_version_id.fullpath
             else:
                 folder = '/etc/docker/certs.d/' +\
                          self.image_version_id.registry_address
@@ -140,11 +140,11 @@ class ClouderContainer(models.Model):
 
             cmd = ['docker', 'run', '-d', '-t', '--restart=always']
             for port in ports:
-                udp = ''
-                if port.udp:
-                    udp = '/udp'
                 cmd.extend(
-                    ['-p', str(port.hostport) + ':' + port.localport + udp])
+                    ['-p', 
+                     (self.server_id.public_ip and self.server_id.ip + ':' or '') \
+                     + str(port.hostport) + ':' + port.localport \
+                     + (port.udp and '/udp' or '')])
             volumes_from = {}
             for volume in volumes:
                 if volume.hostpath:
@@ -187,12 +187,12 @@ class ClouderContainer(models.Model):
         return res
 
     @api.multi
-    def stop(self):
+    def stop_exec(self):
         """
         Stop the container.
         """
 
-        res = super(ClouderContainer, self).stop()
+        res = super(ClouderContainer, self).stop_exec()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\
@@ -203,12 +203,12 @@ class ClouderContainer(models.Model):
         return res
 
     @api.multi
-    def start(self):
+    def start_exec(self):
         """
         Restart the container.
         """
 
-        res = super(ClouderContainer, self).start()
+        res = super(ClouderContainer, self).start_exec()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\

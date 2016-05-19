@@ -62,7 +62,6 @@ class ClouderContainerLink(models.Model):
         Purge postfix configuration.
         """
         super(ClouderContainerLink, self).purge_link()
-        super(ClouderContainerLink, self).deploy_link()
         if self.name.name.code == 'shinken' \
                 and self.container_id.application_id.type_id.name == 'glances':
 

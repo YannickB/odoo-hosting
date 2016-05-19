@@ -36,35 +36,9 @@
         <record id="image_postfix" model="clouder.image">
             <field name="name">img_postfix</field>
             <field name="current_version">1</field>
-            <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[
-# Install Postfix.
-run echo "postfix postfix/main_mailer_type string Internet site" > preseed.txt
-run echo "postfix postfix/mailname string mail.clouder.at" >> preseed.txt
-# Use Mailbox format.
-run debconf-set-selections preseed.txt
-
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor postfix mailutils libsasl2-2 ca-certificates libsasl2-modules supervisor
-
-RUN sed -i '/myorigin =/d' /etc/postfix/main.cf
-RUN echo "myorigin = </etc/mailname" >> /etc/postfix/main.cf
-RUN touch /etc/postfix/virtual_aliases
-RUN echo "virtual_alias_maps = hash:/etc/postfix/virtual_aliases" >> /etc/postfix/main.cf
-RUN postmap /etc/postfix/virtual_aliases
-RUN mkdir /etc/aliases-dir
-RUN mv /etc/aliases /etc/aliases-dir/aliases
-RUN ln -s /etc/aliases-dir/aliases /etc/aliases
-
-
-RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "[program:postfix]" >> /etc/supervisor/conf.d/supervisord.conf
-RUN echo "command=/etc/init.d/postfix start" >> /etc/supervisor/conf.d/supervisord.conf
-
-USER root
-CMD ["/usr/bin/supervisord"]
-]]></field>
+            <field name="parent_from">clouder/clouder-postfix</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
         <record id="image_postfix_volume_postfix" model="clouder.image.volume">
             <field name="image_id" ref="image_postfix"/>
@@ -86,6 +60,13 @@ CMD ["/usr/bin/supervisord"]
             <field name="code">postfix</field>
             <field name="type_id" ref="apptype_postfix"/>
             <field name="default_image_id" ref="image_postfix"/>
+        </record>
+        <record id="app_postfix_link_spamassassin" model="clouder.application.link">
+            <field name="application_id" ref="app_postfix"/>
+            <field name="name" ref="clouder_template_spamassassin.app_spamassassin"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="container" eval="True"/>
         </record>
 
     </data>

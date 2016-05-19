@@ -47,12 +47,14 @@ class ClouderConfigSettings(models.Model):
 
     _name = 'clouder.config.settings'
     _description = 'Clouder configuration'
+    _inherit = ['clouder.model']
 
     name = fields.Char('Name')
     email_sysadmin = fields.Char('Email SysAdmin')
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')
     end_reset_bases = fields.Datetime('Last Reset Bases ended at')
+    end_certs_renewal = fields.Datetime('Last Certs Renewal ended at')
 
     @property
     def now_date(self):
@@ -83,6 +85,10 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def save_all(self):
+        self.do('save_all', 'save_all_exec')
+
+    @api.multi
+    def save_all_exec(self):
         """
         Execute some maintenance on backup containers, and force a save
         on all containers and bases.
@@ -124,6 +130,10 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def purge_expired_saves(self):
+        self.do('purge_expired_saves', 'purge_expired_saves_exec')
+
+    @api.multi
+    def purge_expired_saves_exec(self):
         """
         Purge all expired saves.
         """
@@ -133,6 +143,10 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def launch_next_saves(self):
+        self.do('launch_next_saves', 'launch_next_saves_exec')
+
+    @api.multi
+    def launch_next_saves_exec(self):
         """
         Save all containers and bases which passed their next save date.
         """
@@ -154,6 +168,10 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def reset_bases(self):
+        self.do('reset_bases', 'reset_bases_exec')
+
+    @api.multi
+    def reset_bases_exec(self):
         """
         Reset all bases marked for reset.
         """
@@ -170,13 +188,36 @@ class ClouderConfigSettings(models.Model):
         self.env.cr.commit()
 
     @api.multi
+    def certs_renewal(self):
+        self.do('certs_renewal', 'certs_renewal_exec')
+
+    @api.multi
+    def certs_renewal_exec(self):
+        """
+        Reset all bases marked for reset.
+        """
+        bases = self.env['clouder.base'].search(
+            [('cert_renewal_date', '!=', False),('cert_renewal_date', '<=', self.now_date)])
+        for base in bases:
+            base.renew_cert()
+
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.env.ref('clouder.clouder_settings').end_certs_renewal = now
+        self.env.cr.commit()
+
+    @api.multi
     def cron_daily(self):
+        self.do('cron_daily', 'cron_daily_exec')
+
+    @api.multi
+    def cron_daily_exec(self):
         """
         Call all actions which shall be executed daily.
         """
-        self.purge_expired_saves()
-        self.save_all()
-        self.reset_bases()
+        self.purge_expired_saves_exec()
+        self.save_all_exec()
+        self.reset_bases_exec()
+        self.certs_renewal_exec()
         return True
 
     @api.multi
