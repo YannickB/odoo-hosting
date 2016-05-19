@@ -83,11 +83,13 @@ class ClouderWebHelper(models.Model):
         if data:
             application_id = data.get('application_id', '')
             if application_id:
-                application_name = app_orm.browse(int(application_id))['name']
+                application_id = int(application_id)
+                application_name = app_orm.browse(application_id)['name']
             domain_id = data.get('domain_id', '')
             if domain_id:
-                domain_name = domain_orm.browse(int(domain_id))['name']
-            prefix = data.get('domain', '')
+                domain_id = int(domain_id)
+                domain_name = domain_orm.browse(domain_id)['name']
+            prefix = data.get('prefix', '')
 
 
         values = {
@@ -297,7 +299,9 @@ class WebsiteClouderCreate(http.Controller):
         final_vals = {
             'res': res,
             'app_name': request.session['first_form_values']['application_name'],
-            'domain_name': request.session['prefix'] + '.' + request.session['first_form_values']['domain_name']
+            'domain_name':
+                request.session['first_form_values']['prefix'] + '.' +
+                request.session['first_form_values']['domain_name']
         }
 
         return request.render("website_clouder_create.create_validation", final_vals)
