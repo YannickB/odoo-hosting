@@ -69,10 +69,8 @@ class ClouderWebHelper(models.Model):
         Parses the values used in the form
         If data is not provided, creates default values for the form
         """
-        cr, context = self.env.cr, self.env.context
-        app_orm = self.env['clouder.application']
-        application_ids = app_orm.search(cr, SUPERUSER_ID, [('web_create_type', '!=', 'disabled')], context=context)
-        applications = app_orm.browse(cr, SUPERUSER_ID, application_ids, context=context)
+        app_orm = self.env['clouder.application'].sudo()
+        applications = app_orm.search([('web_create_type', '!=', 'disabled')])
 
         application_id = ''
         application_name = ''
@@ -81,7 +79,7 @@ class ClouderWebHelper(models.Model):
         if data:
             application_id = data.get('application_id', '')
             if application_id:
-                application_name = app_orm.browse(cr, SUPERUSER_ID, int(application_id), context=context)['name']
+                application_name = app_orm.browse(int(application_id))['name']
             domain = data.get('domain', '')
 
 
@@ -127,10 +125,8 @@ class WebsiteClouderCreate(http.Controller):
         Saves the contact form data into a partner and returns the partner_id
             If an account was made, the corresponding partner is updated
         """
-        cr, uid, context, registry = request.cr, request.uid, request.context, request.registry
-
-        orm_partner = registry.get('res.partner')
-        orm_user = registry.get('res.users')
+        orm_partner = request.env['res.partner'].sudo()
+        orm_user = request.env['res.users'].sudo()
 
         partner_lang = request.lang if request.lang in [lang.code for lang in request.website.language_ids] else None
 
@@ -141,15 +137,17 @@ class WebsiteClouderCreate(http.Controller):
 
         # set partner_id
         partner_id = None
-        if uid != request.website.user_id.id:
-            partner_id = orm_user.browse(cr, SUPERUSER_ID, uid, context=context).partner_id.id
+        partner = None
+        if request.uid != request.website.user_id.id:
+            partner = orm_user.browse(request.uid).partner_id
+            partner_id = partner.id
 
         # save partner informations
         if partner_id and request.website.partner_id.id != partner_id:
-            orm_partner.write(cr, SUPERUSER_ID, [partner_id], partner_info, context=context)
+            partner.write(partner_info)
         else:
             # create partner
-            partner_id = orm_partner.create(cr, SUPERUSER_ID, partner_info, context=context)
+            partner_id = orm_partner.create(partner_info)
 
         if not isinstance(partner_id, int):
             partner_id = partner_id.id
@@ -186,16 +184,13 @@ class WebsiteClouderCreate(http.Controller):
         Parses the values used in the form
         If data is not provided, creates default values for the form
         """
-        cr, uid, context, registry = request.cr, request.uid, request.context, request.registry
-        orm_user = registry.get('res.users')
-        orm_country = registry.get('res.country')
-        state_orm = registry.get('res.country.state')
+        orm_user = request.env['res.users'].sudo()
+        orm_country = request.env['res.country'].sudo()
+        state_orm = request.env['res.country.state'].sudo()
 
-        country_ids = orm_country.search(cr, SUPERUSER_ID, [], context=context)
-        countries = orm_country.browse(cr, SUPERUSER_ID, country_ids, context)
-        states_ids = state_orm.search(cr, SUPERUSER_ID, [], context=context)
-        states = state_orm.browse(cr, SUPERUSER_ID, states_ids, context)
-        partner = orm_user.browse(cr, SUPERUSER_ID, request.uid, context).partner_id
+        countries = orm_country.search([])
+        states = state_orm.search([])
+        partner = orm_user.browse(request.uid).partner_id
 
         form_data = {}
         if not data:
@@ -208,14 +203,9 @@ class WebsiteClouderCreate(http.Controller):
         if not form_data.get('country_id'):
             country_code = request.session['geoip'].get('country_code')
             if country_code:
-                country_ids = request.registry.get('res.country').search(
-                    cr,
-                    uid,
-                    [('code', '=', country_code)],
-                    context=context
-                )
-                if country_ids:
-                    form_data['country_id'] = country_ids[0]
+                country = orm_country.search([('code', '=', country_code)])
+                if country:
+                    form_data['country_id'] = country[0].id
 
         values = {
             'countries': countries,
@@ -290,9 +280,7 @@ class WebsiteClouderCreate(http.Controller):
         values['partner_id'] = self.instance_partner_save(values['form_data'])
 
         # TODO: fill in required vals
-        cr, context, registry = request.cr, request.context, request.registry
-        app_orm = registry.get('clouder.application')
-        res = app_orm.create_instance_from_request(cr, SUPERUSER_ID, [], values, context=context)
+        res = request.env['clouder.application'].sudo().create_instance_from_request([])
 
         final_vals = {
             'res': res,
