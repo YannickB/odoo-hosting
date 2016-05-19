@@ -837,7 +837,7 @@ class ClouderContainer(models.Model):
                             [('hostport', '=', nextport),
                              ('container_id.server_id', '=', server.id)])
                         if not port_ids and not server.execute([
-                                'netstat', '-an', '|', 'grep', (self.server_id.public_ip and self.server_id.ip + ':' or '') + str(nextport)]):
+                                'netstat', '-an', '|', 'grep', (server.public_ip and server.ip + ':' or '') + str(nextport)]):
                             port['hostport'] = nextport
                         nextport += 1
                 if not port['hostport']:
