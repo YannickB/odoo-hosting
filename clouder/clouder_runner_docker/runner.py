@@ -140,11 +140,11 @@ class ClouderContainer(models.Model):
 
             cmd = ['docker', 'run', '-d', '-t', '--restart=always']
             for port in ports:
-                udp = ''
-                if port.udp:
-                    udp = '/udp'
                 cmd.extend(
-                    ['-p', self.server_id.ip + ':' + str(port.hostport) + ':' + port.localport + udp])
+                    ['-p', 
+                     (self.server_id.public_ip and self.server_id.ip + ':' or '') \
+                     + str(port.hostport) + ':' + port.localport \
+                     + (port.udp and '/udp' or '')])
             volumes_from = {}
             for volume in volumes:
                 if volume.hostpath:

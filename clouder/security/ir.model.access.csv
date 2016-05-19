@@ -1,5 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_queue_job_user,queue_job user,connector.model_queue_job,group_clouder_user,1,1,1,1
+access_clouder_job_user,clouder_job user,model_clouder_job,group_clouder_user,1,1,1,1
 access_clouder_config_settings_user,clouder_config_settings user,model_clouder_config_settings,group_clouder_user,1,0,0,0
 access_clouder_oneclick_user,clouder_oneclick user,model_clouder_oneclick,group_clouder_user,1,0,0,0
 access_clouder_config_backup_method_user,clouder_config_backup_method user,model_clouder_config_backup_method,group_clouder_user,1,0,0,0

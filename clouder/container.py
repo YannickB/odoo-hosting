@@ -129,6 +129,7 @@ class ClouderServer(models.Model):
         default=_default_public_key)
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
+    public_ip = fields.Boolean('Assign ports with public ip?', help="This is especially useful if you want to have several infrastructures on the same server, by using same ports but different ips. Otherwise the ports will be bind to all interfaces.")
     public = fields.Boolean('Public?')
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
     runner_id = fields.Many2one('clouder.container', 'Runner')
@@ -137,8 +138,8 @@ class ClouderServer(models.Model):
     oneclick_ports = fields.Boolean('Assign critical ports?')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(name, ssh_port)',
-         'Name/SSH must be unique!'),
+        ('name_uniq', 'unique(ip, ssh_port)',
+         'IP/SSH must be unique!'),
     ]
 
     @api.one
@@ -836,7 +837,7 @@ class ClouderContainer(models.Model):
                             [('hostport', '=', nextport),
                              ('container_id.server_id', '=', server.id)])
                         if not port_ids and not server.execute([
-                                'netstat', '-an', '|', 'grep', str(nextport)]):
+                                'netstat', '-an', '|', 'grep', (self.server_id.public_ip and self.server_id.ip + ':' or '') + str(nextport)]):
                             port['hostport'] = nextport
                         nextport += 1
                 if not port['hostport']:

@@ -311,9 +311,10 @@
                         <field name="public_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <field name="start_port"/>
                         <field name="end_port"/>
+                        <field name="public_ip"/>
+                        <field name="public"/>
                         <field name="supervision_id"/>
                         <field name="runner_id" widget="selection"/>
-                        <field name="public"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
                     <button name="test_connection" string="Test connection" type="object"/>

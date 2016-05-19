@@ -215,7 +215,7 @@ class ClouderModel(models.AbstractModel):
         Check that we specified the sysadmin email in configuration before
         making any action.
         """
-        if not self.env.ref('clouder.clouder_settings').email_sysadmin:
+        if self._name != 'clouder.config.settings' and not self.env.ref('clouder.clouder_settings').email_sysadmin:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify the sysadmin email in configuration"))
