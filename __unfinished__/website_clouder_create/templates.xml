@@ -2,9 +2,15 @@
 <openerp>
     <data>
         <!-- Adding custom js files in header -->
-        <template id="assets_frontend" inherit_id="website.assets_frontend">
+        <template id="assets_frontend" name="web_clouder_create_assets_front" inherit_id="website.assets_frontend">
             <xpath expr="." position="inside">
                 <script type="text/javascript" src="/website_clouder_create/static/src/js/instance_new.js"></script>
+            </xpath>
+        </template>
+
+        <template id="assets_backend" name="web_clouder_create_assets_back" inherit_id="website.assets_backend">
+            <xpath expr="." position="inside">
+                <script type="text/javascript" src="/website_clouder_create/static/src/js/new_instance_widget.js"/>
             </xpath>
         </template>
 

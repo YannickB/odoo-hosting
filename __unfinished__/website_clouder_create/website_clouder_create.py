@@ -45,6 +45,7 @@ class ClouderApplication(models.Model):
         default='disabled'
     )
 
+    @api.multi
     def create_instance_from_request(self, data):
         """
         Creates a clouder container or base using provided data
@@ -55,6 +56,46 @@ class ClouderApplication(models.Model):
         # TODO: return newly created model
         return 0
 
+
+class ClouderWebHelper(models.Model):
+    """
+    A class made to be called by widgets and webpages alike
+    """
+    _name = 'clouder.web.helper'
+
+    @api.multi
+    def application_form_values(self, data=None):
+        """
+        Parses the values used in the form
+        If data is not provided, creates default values for the form
+        """
+        cr, context = self.env.cr, self.env.context
+        app_orm = self.env['clouder.application']
+        application_ids = app_orm.search(cr, SUPERUSER_ID, [('web_create_type', '!=', 'disabled')], context=context)
+        applications = app_orm.browse(cr, SUPERUSER_ID, application_ids, context=context)
+
+        application_id = ''
+        application_name = ''
+        domain = ''
+
+        if data:
+            application_id = data.get('application_id', '')
+            if application_id:
+                application_name = app_orm.browse(cr, SUPERUSER_ID, int(application_id), context=context)['name']
+            domain = data.get('domain', '')
+
+
+        values = {
+            'applications': applications,
+            'form_data': {
+                'application_id': application_id,
+                'domain': domain,
+                'application_name': application_name
+            },
+            'error': {}
+        }
+
+        return values
 
 
 class WebsiteClouderCreate(http.Controller):
@@ -140,39 +181,6 @@ class WebsiteClouderCreate(http.Controller):
 
         return query
 
-    def application_form_values(self, data=None):
-        """
-        Parses the values used in the form
-        If data is not provided, creates default values for the form
-        """
-        cr, uid, context, registry = request.cr, request.uid, request.context, request.registry
-        app_orm = registry.get('clouder.application')
-        application_ids = app_orm.search(cr, SUPERUSER_ID, [('web_create_type', '!=', 'disabled')], context=context)
-        applications = app_orm.browse(cr, SUPERUSER_ID, application_ids, context=context)
-
-        application_id = ''
-        application_name = ''
-        domain = ''
-
-        if data:
-            application_id = data.get('application_id', '')
-            if application_id:
-                application_name = app_orm.browse(cr, SUPERUSER_ID, int(application_id), context=context)['name']
-            domain = data.get('domain', '')
-
-
-        values = {
-            'applications': applications,
-            'form_data': {
-                'application_id': application_id,
-                'domain': domain,
-                'application_name': application_name
-            },
-            'error': {}
-        }
-
-        return values
-
     def partner_form_values(self, data=None):
         """
         Parses the values used in the form
@@ -245,7 +253,7 @@ class WebsiteClouderCreate(http.Controller):
         """
         Displays the web form to create a new instance
         """
-        values = self.application_form_values()
+        values = request.env['clouder.web.helper'].application_form_values()
         return request.render("website_clouder_create.create_app_form", values)
 
     @http.route(['/instance/new/contact_info'], type='http', auth="public", website=True)
@@ -254,7 +262,7 @@ class WebsiteClouderCreate(http.Controller):
         Displays the web form to create a new instance
         """
         # Check the returned values
-        app_values = self.application_form_values(post)
+        app_values = request.env['clouder.web.helper'].application_form_values(data=post)
         app_values['error'] = self.application_form_validate(app_values['form_data'])
         # Return to the first form on error
         if app_values['error']:
@@ -282,7 +290,9 @@ class WebsiteClouderCreate(http.Controller):
         values['partner_id'] = self.instance_partner_save(values['form_data'])
 
         # TODO: fill in required vals
-        res = request.env['clouder.application'].create_instance_from_request(values)
+        cr, context, registry = request.cr, request.context, request.registry
+        app_orm = registry.get('clouder.application')
+        res = app_orm.create_instance_from_request(cr, SUPERUSER_ID, [], values, context=context)
 
         final_vals = {
             'res': res,
