@@ -35,11 +35,20 @@
                                             </select>
                                         </div>
                                         <div class="clearfix"/>
-                                        <div t-attf-class="form-group #{error.get('domain') and 'has-error' or ''} col-lg-6">
-                                            <label class="control-label" for="domain">Requested Domain Name</label>
-                                            <input type="text" name="domain" class="form-control" t-att-value="form_data.get('domain')"/>
+                                        <div t-attf-class="form-group #{error.get('prefix') and 'has-error' or ''} col-lg-6">
+                                            <label class="control-label" for="prefix">Requested Domain Name</label>
+                                            <input type="text" name="prefix" class="form-control" t-att-value="form_data.get('prefix')"/>
                                         </div>
                                     </div>
+                                    <div t-attf-class="form-group #{error.get('domain_id') and 'has-error' or ''} col-lg-6">
+                                            <label class="control-label" for="domain_id">Requested Application</label>
+                                            <select name="domain_id" class="form-control">
+                                                <option value="">Application...</option>
+                                                <t t-foreach="domains or []" t-as="domain">
+                                                    <option t-att-value="domain.id" t-att-selected="domain.id == form_data.get('domain_id')"><t t-esc="domain.name"/></option>
+                                                </t>
+                                            </select>
+                                        </div>
                                     <div class="clearfix">
                                         <a class="btn btn-default btn-primary pull-right mb32 a-submit">Next <span class="fa fa-long-arrow-right"/></a>
                                     </div>

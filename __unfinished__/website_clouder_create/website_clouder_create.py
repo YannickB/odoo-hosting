@@ -70,25 +70,35 @@ class ClouderWebHelper(models.Model):
         If data is not provided, creates default values for the form
         """
         app_orm = self.env['clouder.application'].sudo()
+        domain_orm = self.env['clouder.domain'].sudo()
         applications = app_orm.search([('web_create_type', '!=', 'disabled')])
+        domains = domain_orm.search([])
 
         application_id = ''
         application_name = ''
-        domain = ''
+        domain_id = ''
+        domain_name = ''
+        prefix = ''
 
         if data:
             application_id = data.get('application_id', '')
             if application_id:
                 application_name = app_orm.browse(int(application_id))['name']
-            domain = data.get('domain', '')
+            domain_id = data.get('domain_id', '')
+            if domain_id:
+                domain_name = domain_orm.browse(int(domain_id))['name']
+            prefix = data.get('domain', '')
 
 
         values = {
             'applications': applications,
+            'domains': domains,
             'form_data': {
                 'application_id': application_id,
-                'domain': domain,
-                'application_name': application_name
+                'prefix': prefix,
+                'domain_id': domain_id,
+                'application_name': application_name,
+                'domain_name': domain_name
             },
             'error': {}
         }
@@ -117,7 +127,8 @@ class WebsiteClouderCreate(http.Controller):
 
     app_mandatory_fields = [
         'application_id',
-        'domain'
+        'domain_id',
+        'prefix'
     ]
 
     def instance_partner_save(self, data):
@@ -258,10 +269,11 @@ class WebsiteClouderCreate(http.Controller):
         if app_values['error']:
             return request.render("website_clouder_create.create_app_form", app_values)
 
-        # Updating context
+        # Updating session
         request.session['first_form_values'] = app_values['form_data']
-        values = self.partner_form_values()
 
+        # Display new form
+        values = self.partner_form_values()
         return request.render("website_clouder_create.create_partner_form", values)
 
     @http.route('/instance/new/validate', type='http', auth="public", website=True)
@@ -285,7 +297,7 @@ class WebsiteClouderCreate(http.Controller):
         final_vals = {
             'res': res,
             'app_name': request.session['first_form_values']['application_name'],
-            'domain_name': request.session['first_form_values']['domain']
+            'domain_name': request.session['prefix'] + '.' + request.session['first_form_values']['domain_name']
         }
 
         return request.render("website_clouder_create.create_validation", final_vals)
