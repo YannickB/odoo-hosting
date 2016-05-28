@@ -784,7 +784,7 @@ class ClouderBase(models.Model):
     @api.multi
     def renew_cert(self):
         self = self.with_context(no_enqueue=True)
-        self.do('renew_cert', 'renew_cert')
+        self.do('renew_cert', 'renew_cert_exec')
 
 
     @api.multi
