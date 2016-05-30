@@ -63,7 +63,29 @@ class ClouderWebHelper(models.Model):
     """
     _name = 'clouder.web.helper'
 
-    @api.multi
+    @api.model
+    def js_app_form_values(self):
+        values = self.application_form_values()
+
+        result = {'domains': [], 'applications': []}
+
+        for domain in values['domains']:
+            result['domains'].append(
+                {
+                    'id': domain.id,
+                    'name': domain.name
+                }
+            )
+        for application in values['applications']:
+            result['applications'].append(
+                {
+                    'id': application.id,
+                    'name': application.name
+                }
+            )
+        return result
+
+    @api.model
     def application_form_values(self, data=None):
         """
         Parses the values used in the form
@@ -251,13 +273,21 @@ class WebsiteClouderCreate(http.Controller):
                 error[field_name] = 'missing'
         return error
 
-    @http.route(['/instance/new'], type='http', auth="public", website=True)
+    @http.route(['/instance/new_form_only'], type='http', auth="public", website=True)
     def display_app_form(self, **post):
         """
         Displays the web form to create a new instance
         """
         values = request.env['clouder.web.helper'].application_form_values()
         return request.render("website_clouder_create.create_app_form", values)
+
+    @http.route(['/instance/new'], type='http', auth="public", website=True)
+    def display_app_form(self, **post):
+        """
+        Displays the web form to create a new instance
+        """
+        values = request.env['clouder.web.helper'].application_form_values()
+        return request.render("website_clouder_create.create_app_form_in_page", values)
 
     @http.route(['/instance/new/contact_info'], type='http', auth="public", website=True)
     def display_partner_form(self, **post):

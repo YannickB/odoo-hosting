@@ -8,54 +8,54 @@
             </xpath>
         </template>
 
-        <template id="assets_backend" name="web_clouder_create_assets_back" inherit_id="website.assets_backend">
-            <xpath expr="." position="inside">
-                <script type="text/javascript" src="/website_clouder_create/static/src/js/new_instance_widget.js"/>
-            </xpath>
+
+        <template id="create_app_form">
+            <div class="container oe_website_clouder_instance">
+                <h1>Application Request</h1>
+                <form action="/instance/new/contact_info" method="post">
+                    <div class="row">
+                        <div class="col-md-8 oe_cart">
+                            <div class="row">
+                                <div t-attf-class="form-group #{error.get('application_id') and 'has-error' or ''} col-lg-6">
+                                    <label class="control-label" for="application_id">Requested Application</label>
+                                    <select name="application_id" class="form-control">
+                                        <option value="">Application...</option>
+                                        <t t-foreach="applications or []" t-as="application">
+                                            <option t-att-value="application.id" t-att-selected="application.id == form_data.get('application_id')"><t t-esc="application.name"/></option>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="clearfix"/>
+                                <div t-attf-class="form-group #{error.get('prefix') and 'has-error' or ''} col-lg-6">
+                                    <label class="control-label" for="prefix">Requested Prefix</label>
+                                    <input type="text" name="prefix" class="form-control" t-att-value="form_data.get('prefix')"/>
+                                </div>
+                                <div t-attf-class="form-group #{error.get('domain_id') and 'has-error' or ''} col-lg-6">
+                                    <label class="control-label" for="domain_id">and Domain Name</label>
+                                    <select name="domain_id" class="form-control">
+                                        <option value="">Domain...</option>
+                                        <t t-foreach="domains or []" t-as="domain">
+                                            <option t-att-value="domain.id" t-att-selected="domain.id == form_data.get('domain_id')"><t t-esc="domain.name"/></option>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="clearfix">
+                                <a class="btn btn-default btn-primary pull-right mb32 a-submit">Next <span class="fa fa-long-arrow-right"/></a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </template>
 
+
         <!-- Template for base options form -->
-        <template id="create_app_form">
+        <template id="create_app_form_in_page">
             <t t-call="website.layout">
                 <t t-set="additional_title">Application Options</t>
                 <div id="wrap">
-                    <div class="container oe_website_clouder_instance">
-                        <h1>Application Request</h1>
-                        <form action="/instance/new/contact_info" method="post">
-                            <div class="row">
-                                <div class="col-md-8 oe_cart">
-                                    <div class="row">
-                                        <div t-attf-class="form-group #{error.get('application_id') and 'has-error' or ''} col-lg-6">
-                                            <label class="control-label" for="application_id">Requested Application</label>
-                                            <select name="application_id" class="form-control">
-                                                <option value="">Application...</option>
-                                                <t t-foreach="applications or []" t-as="application">
-                                                    <option t-att-value="application.id" t-att-selected="application.id == form_data.get('application_id')"><t t-esc="application.name"/></option>
-                                                </t>
-                                            </select>
-                                        </div>
-                                        <div class="clearfix"/>
-                                        <div t-attf-class="form-group #{error.get('prefix') and 'has-error' or ''} col-lg-6">
-                                            <label class="control-label" for="prefix">Requested Prefix</label>
-                                            <input type="text" name="prefix" class="form-control" t-att-value="form_data.get('prefix')"/>
-                                        </div>
-                                        <div t-attf-class="form-group #{error.get('domain_id') and 'has-error' or ''} col-lg-6">
-                                            <label class="control-label" for="domain_id">and Domain Name</label>
-                                            <select name="domain_id" class="form-control">
-                                                <option value="">Domain...</option>
-                                                <t t-foreach="domains or []" t-as="domain">
-                                                    <option t-att-value="domain.id" t-att-selected="domain.id == form_data.get('domain_id')"><t t-esc="domain.name"/></option>
-                                                </t>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="clearfix">
-                                        <a class="btn btn-default btn-primary pull-right mb32 a-submit">Next <span class="fa fa-long-arrow-right"/></a>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+                    <t t-call="website_clouder_create.create_app_form"/>
                 </div>
             </t>
         </template>
