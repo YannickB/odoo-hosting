@@ -34,7 +34,6 @@
     'demo': [],
     'data': [
         'website_clouder_create_view.xml',
-        'templates.xml',
         'security/security.xml',
         'security/ir.model.access.csv'
     ],

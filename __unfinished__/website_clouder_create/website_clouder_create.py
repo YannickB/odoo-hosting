@@ -21,8 +21,10 @@
 ##############################################################################
 
 from openerp import models, fields, api, http, _
-from openerp.http import request
-
+import os
+import errno
+import subprocess
+import time
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -50,6 +52,23 @@ class ClouderApplication(models.Model):
         """
         Creates a clouder container or base using provided data
         """
+        """
+        Pour Yannick:
+
+        Données d'entrée:
+            Un dictionnaire contenant les clefs suivantes:
+                'clouder_partner_id': id du partenaire qui affiche le formulaire sur son site (entier),
+                'prefix': le préfixe du domain (string),
+                'application_id': id de l'application choisie (entier),
+                'domain_id': id du domaine choisi (entier),
+                'request_partner': partenaire contenant les infos remplies sur le formulaire (res.partner record)
+        Cadeau:
+            le code pour charger les ID
+                application = self.browse(data['application_id'])
+                domain = self.env['clouder.domain'].browse(data['domain_id'])
+                clouder_partner = self.env['res.partner'].browse(data['clouder_partner_id'])
+        """
+
         # TODO: implement
         _logger.info("\n\nCREATE INSTANCE DATA: {0}\n\n".format(data))
 
@@ -64,274 +83,201 @@ class ClouderWebHelper(models.Model):
     _name = 'clouder.web.helper'
 
     @api.model
-    def js_app_form_values(self):
-        values = self.application_form_values()
+    def maintain_wsgi_server(self):
+        """
+        Checks that the server is running.
 
-        result = {'domains': [], 'applications': []}
+        Prints log and attempts reload if it's not the case.
+        """
 
-        for domain in values['domains']:
-            result['domains'].append(
-                {
-                    'id': domain.id,
-                    'name': domain.name
-                }
+        def read_pid():
+            """
+            Reads the PID file for app_serv_form
+            """
+            pid_path = os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                'static',
+                'src',
+                'wsgi',
+                'app_serve_form.pid'
             )
-        for application in values['applications']:
-            result['applications'].append(
-                {
-                    'id': application.id,
-                    'name': application.name
-                }
+            try:
+                pid_f = open(pid_path)
+                pid = pid_f.read()
+                pid_f.close()
+                return pid
+            except:
+                return "-1"
+
+        def check_running(pid):
+            """
+            Tries to send signal 0 to a process to see if it lives
+            """
+            try:
+                os.kill(pid, 0)
+                return True
+            except OSError as err:
+                if err.errno == errno.ESRCH:
+                    # No process found
+                    return False
+                elif err.errno == errno.EPERM:
+                    # No permissions, but the process is running
+                    return True
+                else:
+                    # This should never happen: there is a problem and it should be checked
+                    _logger.error("Unexpected exception while checking for process health")
+                    raise err
+
+        def relaunch():
+            """
+            Relaunch process
+            """
+            path_to_wsgi = os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                'static',
+                'src',
+                'wsgi',
+                'app_serve_form.sh'
             )
-        return result
+            return subprocess.Popen([path_to_wsgi])
+
+        # Check PID file
+        proc_id = read_pid()
+
+        # if not PID file: relaunch
+        if not proc_id or proc_id == "-1":
+            _logger.warning("WSGI server not running! - Relaunching.")
+            relaunch()
+            # Making sure the process had time to start
+            time.sleep(5)
+
+        # Check if PID is running
+        if not check_running(proc_id):
+            _logger.warning("WSGI PID file exists but is not running. - Relaunching.")
+            relaunch()
 
     @api.model
-    def application_form_values(self, data=None):
+    def application_form_values(self):
         """
         Parses the values used in the form
         If data is not provided, creates default values for the form
         """
         app_orm = self.env['clouder.application'].sudo()
         domain_orm = self.env['clouder.domain'].sudo()
+        country_orm = self.env['res.country'].sudo()
+        state_orm = self.env['res.country.state'].sudo()
+
         applications = app_orm.search([('web_create_type', '!=', 'disabled')])
         domains = domain_orm.search([])
+        countries = country_orm.search([])
+        states = state_orm.search([])
 
-        application_id = ''
-        application_name = ''
-        domain_id = ''
-        domain_name = ''
-        prefix = ''
-
-        if data:
-            application_id = data.get('application_id', '')
-            if application_id:
-                application_id = int(application_id)
-                application_name = app_orm.browse(application_id)['name']
-            domain_id = data.get('domain_id', '')
-            if domain_id:
-                domain_id = int(domain_id)
-                domain_name = domain_orm.browse(domain_id)['name']
-            prefix = data.get('prefix', '')
-
-
-        values = {
+        return {
             'applications': applications,
             'domains': domains,
-            'form_data': {
-                'application_id': application_id,
-                'prefix': prefix,
-                'domain_id': domain_id,
-                'application_name': application_name,
-                'domain_name': domain_name
-            },
-            'error': {}
-        }
-
-        return values
-
-
-class WebsiteClouderCreate(http.Controller):
-    """
-    Defines a webpage to request creation of clouder container/bases
-    """
-
-    partner_mandatory_fields = [
-        "name",
-        "phone",
-        "email",
-        "street2",
-        "city",
-        "country_id"
-    ]
-    partner_optionnal_fields = [
-        "street",
-        "zip",
-        "state_id"
-    ]
-
-    app_mandatory_fields = [
-        'application_id',
-        'domain_id',
-        'prefix'
-    ]
-
-    def instance_partner_save(self, data):
-        """
-        Saves the contact form data into a partner and returns the partner_id
-            If an account was made, the corresponding partner is updated
-        """
-        orm_partner = request.env['res.partner'].sudo()
-        orm_user = request.env['res.users'].sudo()
-
-        partner_lang = request.lang if request.lang in [lang.code for lang in request.website.language_ids] else None
-
-        partner_info = {'customer': True}
-        if partner_lang:
-            partner_info['lang'] = partner_lang
-        partner_info.update(self.parse_partner_fields(data))
-
-        # set partner_id
-        partner_id = None
-        partner = None
-        if request.uid != request.website.user_id.id:
-            partner = orm_user.browse(request.uid).partner_id
-            partner_id = partner.id
-
-        # save partner informations
-        if partner_id and request.website.partner_id.id != partner_id:
-            partner.write(partner_info)
-        else:
-            # create partner
-            partner_id = orm_partner.create(partner_info)
-
-        if not isinstance(partner_id, int):
-            partner_id = partner_id.id
-
-        return partner_id
-
-    def parse_partner_fields(self, data):
-        """
-        Parses partner fields from form data
-        """
-        # set mandatory and optional fields
-        partner_fields = self.partner_mandatory_fields + \
-            self.partner_optionnal_fields
-
-        # set data
-        if isinstance(data, dict):
-            query = dict((field_name, data[field_name])
-                for field_name in partner_fields if field_name in data)
-        else:
-            query = dict((field_name, getattr(data, field_name))
-                for field_name in partner_fields if getattr(data, field_name))
-            if data.parent_id:
-                query['street'] = data.parent_id.name
-
-        if query.get('state_id'):
-            query['state_id'] = int(query['state_id'])
-        if query.get('country_id'):
-            query['country_id'] = int(query['country_id'])
-
-        return query
-
-    def partner_form_values(self, data=None):
-        """
-        Parses the values used in the form
-        If data is not provided, creates default values for the form
-        """
-        orm_user = request.env['res.users'].sudo()
-        orm_country = request.env['res.country'].sudo()
-        state_orm = request.env['res.country.state'].sudo()
-
-        countries = orm_country.search([])
-        states = state_orm.search([])
-        partner = orm_user.browse(request.uid).partner_id
-
-        form_data = {}
-        if not data:
-            if request.uid != request.website.user_id.id:
-                form_data.update(self.parse_partner_fields(partner))
-        else:
-            form_data = self.parse_partner_fields(data)
-
-        # Default search by user country
-        if not form_data.get('country_id'):
-            country_code = request.session['geoip'].get('country_code')
-            if country_code:
-                country = orm_country.search([('code', '=', country_code)])
-                if country:
-                    form_data['country_id'] = country[0].id
-
-        values = {
             'countries': countries,
             'states': states,
-            'form_data': form_data,
-            'error': {}
         }
 
-        return values
+    @api.model
+    def get_form_html(self):
+        # Load file
+        html_file = open(os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            'static',
+            'src',
+            'html',
+            'template.html'
+        ))
+        html = u""
+        for line in html_file:
+            html += unicode(line+"\n")
 
-    def application_form_validate(self, data):
-        """
-        Checks that the necessary values are filled correctly
-        """
-        # Validation
-        error = dict()
-        for field_name in self.app_mandatory_fields:
-            if not data.get(field_name):
-                error[field_name] = 'missing'
-        return error
+        # Load data from odoo
+        data = self.application_form_values()
 
-    def partner_form_validate(self, data):
-        """
-        Checks that the necessary values are filled correctly
-        """
-        # Validation
-        error = dict()
-        for field_name in self.partner_mandatory_fields:
-            if not data.get(field_name):
-                error[field_name] = 'missing'
-        return error
+        # Apply data to template
+        # Applications
+        options = u""
+        for app in data['applications']:
+            options += u"""<option value="{application.id}">{application.name}</option>""".format(application=app)
+        html = html.replace("==CL_ADD_APPLICATION_OPTIONS==", options)
 
-    @http.route(['/instance/new_form_only'], type='http', auth="public", website=True)
-    def display_app_form(self, **post):
-        """
-        Displays the web form to create a new instance
-        """
-        values = request.env['clouder.web.helper'].application_form_values()
-        return request.render("website_clouder_create.create_app_form", values)
+        # Domains
+        options = u""
+        for domain in data['domains']:
+            options += u"""<option value="{domain.id}">{domain.name}</option>""".format(domain=domain)
+        html = html.replace("==CL_ADD_DOMAIN_OPTIONS==", options)
 
-    @http.route(['/instance/new'], type='http', auth="public", website=True)
-    def display_app_form(self, **post):
-        """
-        Displays the web form to create a new instance
-        """
-        values = request.env['clouder.web.helper'].application_form_values()
-        return request.render("website_clouder_create.create_app_form_in_page", values)
+        # Countries
+        options = u""
+        for country in data['countries']:
+            options += u"""<option value="{country.id}">{country.name}</option>""".format(country=country)
+        html = html.replace("==CL_ADD_COUNTRY_OPTIONS==", options)
 
-    @http.route(['/instance/new/contact_info'], type='http', auth="public", website=True)
-    def display_partner_form(self, **post):
-        """
-        Displays the web form to create a new instance
-        """
-        # Check the returned values
-        app_values = request.env['clouder.web.helper'].application_form_values(data=post)
-        app_values['error'] = self.application_form_validate(app_values['form_data'])
-        # Return to the first form on error
-        if app_values['error']:
-            return request.render("website_clouder_create.create_app_form", app_values)
+        # States
+        options = u""
+        for state in data['states']:
+            options += u"""<option value="{state.id}" country_id="{state.country_id.id}">
+                {state.name}
+            </option>""".format(state=state)
+        html = html.replace("==CL_ADD_STATE_OPTIONS==", options)
 
-        # Updating session
-        request.session['first_form_values'] = app_values['form_data']
+        return html
 
-        # Display new form
-        values = self.partner_form_values()
-        return request.render("website_clouder_create.create_partner_form", values)
+    @api.model
+    def submit_form(self, post_data):
+        # Return codes:
+        #   0: success
+        #   1: mandatory field not set
 
-    @http.route('/instance/new/validate', type='http', auth="public", website=True)
-    def instance_new_form_validate(self, **post):
-        """
-        Validates data and launches the instance creation process
-        """
-        # Check that the form is correct
-        values = self.partner_form_values(post)
-        values['error'] = self.partner_form_validate(values['form_data'])
-        # Return to the first form on error
-        if values['error']:
-            return request.render("website_clouder_create.create_partner_form", values)
+        partner_mandatory_fields = [
+            "name",
+            "phone",
+            "email",
+            "street2",
+            "city",
+            "country_id"
+        ]
+        partner_optionnal_fields = [
+            "street",
+            "zip",
+            "state_id"
+        ]
+        instance_mandatory_fields = [
+            'application_id',
+            'domain_id',
+            'prefix',
+            'clouder_partner_id'
+        ]
 
-        # Create partner
-        values['partner_id'] = self.instance_partner_save(values['form_data'])
+        # Checking data
+        partner_data = {}
+        for mandat in partner_mandatory_fields:
+            if mandat not in post_data:
+                return {"code": 1, 'msg': 'Missing field "{0}"'.format(mandat)}
+            partner_data[mandat] = post_data[mandat]
+        for opt in partner_optionnal_fields:
+            if opt in post_data:
+                partner_data[opt] = post_data[opt]
 
-        # TODO: fill in required vals
-        res = request.env['clouder.application'].sudo().create_instance_from_request([])
+        instance_data = {}
+        for mandat in instance_mandatory_fields:
+            if mandat not in post_data:
+                return {"code": 1, 'msg': 'Missing field "{0}"'.format(mandat)}
+            instance_data[mandat] = post_data[mandat]
 
-        final_vals = {
-            'res': res,
-            'app_name': request.session['first_form_values']['application_name'],
-            'domain_name':
-                request.session['first_form_values']['prefix'] + '.' +
-                request.session['first_form_values']['domain_name']
-        }
+        # All data retrieved, creating partner
+        orm_partner = self.env['res.partner'].sudo()
+        instance_data['request_partner'] = orm_partner.create(partner_data)
 
-        return request.render("website_clouder_create.create_validation", final_vals)
+        # Parsing instance data
+        instance_data['clouder_partner_id'] = int(instance_data['clouder_partner_id'])
+        instance_data['application_id'] = int(instance_data['application_id'])
+        instance_data['domain_id'] = int(instance_data['domain_id'])
+
+        # Calling instance creation function
+        orm_app = self.env['clouder.application'].sudo()
+        orm_app.create_instance_from_request(instance_data)
+
+        return {'code': 0, 'msg': 'Instance creation launched'}

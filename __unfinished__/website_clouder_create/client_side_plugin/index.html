@@ -1,0 +1,23 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+
+<h1>Exemple de page hôte</h1>
+
+<div id="TestOdooPlugin" style="width:300px;"></div>
+
+<script>
+var TestOdoo = {}
+TestOdoo.params = {
+	'db':'test_invoice',
+    'partner_id': '0',
+	'lang':'fr_FR'
+};
+(function(w,d,s){var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='plugin.js';f.parentNode.insertBefore(j,f);})(window,document,'script');
+</script>
+</body>
+</html>
