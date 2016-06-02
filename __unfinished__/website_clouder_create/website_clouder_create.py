@@ -105,9 +105,13 @@ class ClouderWebHelper(models.Model):
                 pid_f = open(pid_path)
                 pid = pid_f.read()
                 pid_f.close()
-                return pid
+                if not pid or pid == '\n':
+                    return -1
+                return int(pid)
+            except ValueError, e:
+                return -2
             except:
-                return "-1"
+                return -99
 
         def check_running(pid):
             """
@@ -116,7 +120,7 @@ class ClouderWebHelper(models.Model):
             try:
                 os.kill(pid, 0)
                 return True
-            except OSError as err:
+            except OSError, err:
                 if err.errno == errno.ESRCH:
                     # No process found
                     return False
@@ -144,16 +148,22 @@ class ClouderWebHelper(models.Model):
         # Check PID file
         proc_id = read_pid()
 
-        # if not PID file: relaunch
-        if not proc_id or proc_id == "-1":
-            _logger.warning("WSGI server not running! - Relaunching.")
+        # if invalid PID: relaunch
+        if proc_id <= 0:
+            if proc_id == -1:
+                _logger.warning("WSGI server no PID - Relaunching.")
+            elif proc_id == -2:
+                _logger.warning("WSGI server unknown error with PID - Relaunching.")
+            elif proc_id == -99:
+                _logger.warning("WSGI server unknown error with PID - Relaunching.")
             relaunch()
-            # Making sure the process had time to start
+            # Making sure the process had time to start before reading PID again
             time.sleep(5)
+            proc_id = read_pid()
 
         # Check if PID is running
         if not check_running(proc_id):
-            _logger.warning("WSGI PID file exists but is not running. - Relaunching.")
+            _logger.warning("WSGI PID exists but is not running. - Relaunching.")
             relaunch()
 
     @api.model

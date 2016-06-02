@@ -24,12 +24,12 @@
     'name': 'Website Clouder Create',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['base', 'clouder', 'website'],
+    'depends': ['base', 'clouder'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
-    Creates a webpage to let users request a new container/base instance
+    Creates a WSGI app that serves a form to create new clouder instances from an external website
     """,
     'demo': [],
     'data': [
