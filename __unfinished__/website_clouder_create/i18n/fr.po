@@ -47,7 +47,7 @@ msgstr "Droits pour Clouder Web Helper seulement"
 #: code:addons/website_clouder_create/website_clouder_create.py:588
 #, python-format
 msgid "Company Name"
-msgstr "Société"
+msgstr "SociÃ©tÃ©"
 
 #. module: website_clouder_create
 #: selection:clouder.application,web_create_type:0
@@ -69,17 +69,17 @@ msgstr "Pays..."
 #. module: website_clouder_create
 #: field:clouder.web.helper,create_uid:0
 msgid "Created by"
-msgstr "Créé par"
+msgstr "CrÃ©Ã© par"
 
 #. module: website_clouder_create
 #: field:clouder.web.helper,create_date:0
 msgid "Created on"
-msgstr "Créé le"
+msgstr "CrÃ©Ã© le"
 
 #. module: website_clouder_create
 #: selection:clouder.application,web_create_type:0
 msgid "Disabled"
-msgstr "Désactivé"
+msgstr "DÃ©sactivÃ©"
 
 #. module: website_clouder_create
 #: code:addons/website_clouder_create/website_clouder_create.py:573
@@ -113,12 +113,12 @@ msgstr "Formulaire de demande d'instance Clouder"
 #. module: website_clouder_create
 #: field:clouder.web.helper,write_uid:0
 msgid "Last Updated by"
-msgstr "Dernière modification par"
+msgstr "DerniÃ¨re modification par"
 
 #. module: website_clouder_create
 #: field:clouder.web.helper,write_date:0
 msgid "Last Updated on"
-msgstr "Dernière modification le"
+msgstr "DerniÃ¨re modification le"
 
 #. module: website_clouder_create
 #: code:addons/website_clouder_create/website_clouder_create.py:638
@@ -130,7 +130,7 @@ msgstr "Suivant"
 #: code:addons/website_clouder_create/website_clouder_create.py:598
 #, python-format
 msgid "Phone"
-msgstr "Téléphone"
+msgstr "TÃ©lÃ©phone"
 
 #. module: website_clouder_create
 #: code:addons/website_clouder_create/website_clouder_create.py:569
@@ -142,7 +142,7 @@ msgstr "Sous-domaine"
 #: code:addons/website_clouder_create/website_clouder_create.py:643
 #, python-format
 msgid "Previous"
-msgstr "Précédent"
+msgstr "PrÃ©cÃ©dent"
 
 #. module: website_clouder_create
 #: code:addons/website_clouder_create/website_clouder_create.py:557
@@ -160,7 +160,7 @@ msgstr "Selectionnez..."
 #: code:addons/website_clouder_create/website_clouder_create.py:627
 #, python-format
 msgid "State / Province"
-msgstr "Etat / Département"
+msgstr "Etat / DÃ©partement"
 
 #. module: website_clouder_create
 #: code:addons/website_clouder_create/website_clouder_create.py:603
@@ -177,7 +177,7 @@ msgstr "Valider"
 #. module: website_clouder_create
 #: field:clouder.application,web_create_type:0
 msgid "Web creation"
-msgstr "Création via requette web"
+msgstr "CrÃ©ation via requette web"
 
 #. module: website_clouder_create
 #: code:addons/website_clouder_create/website_clouder_create.py:583

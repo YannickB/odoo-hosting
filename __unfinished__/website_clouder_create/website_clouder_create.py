@@ -547,6 +547,7 @@ class ClouderWebHelper(models.Model):
             <form id="ClouderForm" method="POST" action="">
 
                 <input type="hidden" name="clouder_partner_id" value=""/>
+                <input type="hidden" name="lang" value=""/>
                 <input type="hidden" name="db" value=""/>
 
                 <p class="CF_Title">""" + _("Request a Clouder Instance") + u"""</p>

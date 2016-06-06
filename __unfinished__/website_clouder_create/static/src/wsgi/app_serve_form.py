@@ -19,16 +19,16 @@ def call_html(database, lang):
     server = ServerProxy('http://localhost:8069/xmlrpc/object')
     return server.execute_kw(
         database, user_id, PASSWORD,
-        'clouder.web.helper', 'get_form_html', [], {'lang': lang}
+        'clouder.web.helper', 'get_form_html', [], {'context': {'lang': lang}}
     )
 
 
 def process_form(database, data):
     user_id = serv_connect(database)
     server = ServerProxy('http://localhost:8069/xmlrpc/object')
-    return server.execute(
+    return server.execute_kw(
         database, user_id, PASSWORD,
-        'clouder.web.helper', 'submit_form', [data]
+        'clouder.web.helper', 'submit_form', [data], {'context': {'lang': data['lang']}}
     )
 
 

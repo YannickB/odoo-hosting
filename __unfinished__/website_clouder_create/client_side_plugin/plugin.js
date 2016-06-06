@@ -11,6 +11,7 @@ TestOdoo.run = function($){
         $clouder_form.find('form').attr('action', TestOdoo.pluginPath + 'submit_form');
         $clouder_form.find('input[name="clouder_partner_id"]').val(TestOdoo.params['partner_id']);
         $clouder_form.find('input[name="db"]').val(TestOdoo.params['db']);
+        $clouder_form.find('input[name="lang"]').val(TestOdoo.params['lang']);
 
         //Controls the hidden state of the state selector depending on country
         $clouder_form.on('change', "select[name='country_id']", function () {
