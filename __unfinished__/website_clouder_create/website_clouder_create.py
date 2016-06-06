@@ -296,7 +296,7 @@ class ClouderWebHelper(models.Model):
         <html>
         <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>""" + _("Insert title here") + u"""</title>
+        <title>""" + _("Clouder instance request form") + u"""</title>
 
         <style type="text/css">
         /* Elements */
@@ -561,7 +561,7 @@ class ClouderWebHelper(models.Model):
                     </div>
                     <div class="clearfix"/>
                     <div class="form-group col-lg-6">
-                        <label class="control-label" for="prefix">""" + _("Prefix") + u"""</label>
+                        <label class="control-label" for="prefix">""" + _("Subdomain") + u"""</label>
                         <input type="text" name="prefix" class="form-control"/>
                     </div>
                     <div class="form-group col-lg-6">
