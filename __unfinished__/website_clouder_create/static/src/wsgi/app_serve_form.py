@@ -14,12 +14,12 @@ def serv_connect(database):
     return server.login(database, USERNAME, PASSWORD)
 
 
-def call_html(database):
+def call_html(database, lang):
     user_id = serv_connect(database)
     server = ServerProxy('http://localhost:8069/xmlrpc/object')
-    return server.execute(
+    return server.execute_kw(
         database, user_id, PASSWORD,
-        'clouder.web.helper', 'get_form_html', []
+        'clouder.web.helper', 'get_form_html', [], {'lang': lang}
     )
 
 
@@ -46,7 +46,7 @@ class WSGIClouderForm(object):
         req = Request(self.env)
         if 'db' not in req.form:
             raise BadRequest(description="Missing parameter")
-        full_file = call_html(req.form['db'])
+        full_file = call_html(req.form['db'], req.form['lang'])
         return self.send_response(Response(full_file))
 
     def submit_form(self):
@@ -74,4 +74,4 @@ class WSGIClouderForm(object):
             return ClosingIterator(self.send_response(e.get_response(self.env)))
 
 if __name__ == '__main__':
-    run_simple('0.0.0.0', 5050, WSGIClouderForm(), use_debugger=False, use_reloader=True)
+    run_simple('0.0.0.0', 8065, WSGIClouderForm(), use_debugger=False, use_reloader=True)

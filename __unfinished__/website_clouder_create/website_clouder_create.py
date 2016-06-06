@@ -191,17 +191,11 @@ class ClouderWebHelper(models.Model):
 
     @api.model
     def get_form_html(self):
-        # Load file
-        html_file = open(os.path.join(
-            os.path.dirname(os.path.realpath(__file__)),
-            'static',
-            'src',
-            'html',
-            'template.html'
-        ))
-        html = u""
-        for line in html_file:
-            html += unicode(line+"\n")
+        """
+        Loads the html template and fills-in the values before returning it
+        """
+        # Load template
+        html = self.get_template()
 
         # Load data from odoo
         data = self.application_form_values()
@@ -291,3 +285,360 @@ class ClouderWebHelper(models.Model):
         orm_app.create_instance_from_request(instance_data)
 
         return {'code': 0, 'msg': 'Instance creation launched'}
+
+    def get_template(self):
+        """
+        Returns the HTML form template with odoo-translated strings
+        """
+        # Return the template
+        return \
+            u"""<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+        <html>
+        <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>""" + _("Insert title here") + u"""</title>
+
+        <style type="text/css">
+        /* Elements */
+        #TestOdooPlugin a
+        {
+            color: #428bca;
+            text-decoration: none;
+            background: transparent;
+        }
+        #TestOdooPlugin a:active, a:hover
+        {
+            outline: 0;
+        }
+        #TestOdooPlugin a:hover, a:focus
+        {
+            color: #2a6496;
+            text-decoration: underline;
+        }
+        #TestOdooPlugin a:focus
+        {
+            outline: 5px auto -webkit-focus-ring-color;
+            outline: thin dotted;
+            outline-offset: -2px;
+        }
+        #TestOdooPlugin input
+        {
+            line-height: normal;
+        }
+        #TestOdooPlugin input[disabled]
+        {
+            cursor: default;
+        }
+        #TestOdooPlugin select
+        {
+            text-transform: none;
+        }
+        #TestOdooPlugin input, #TestOdooPlugin select
+        {
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
+            color: inherit;
+            font: inherit;
+            margin: 0;
+        }
+        #TestOdooPlugin label
+        {
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            max-width: 100%;
+        }
+        /* ID */
+        #TestOdooPlugin #CF_Title
+        {
+            font-size: 36px;
+            margin: .67em 0;
+            color: inherit;
+            font-family: inherit;
+            font-weight: 500;
+            line-height: 1.1;
+            margin-bottom: 10px;
+            margin-top: 20px;
+        }
+
+        /* Classes */
+        #TestOdooPlugin .mb32
+        {
+            margin-bottom: 32px !important;
+        }
+        #TestOdooPlugin .pull-right
+        {
+            float: right !important;
+            position: relative !important;
+            right: 10px;
+        }
+        #TestOdooPlugin .pull-left
+        {
+            float: left !important;
+            position: relative !important;
+            left: 10px;
+        }
+        #TestOdooPlugin .btn:hover, #TestOdooPlugin .btn:focus, #TestOdooPlugin .btn:active,""" \
+        + u"""#TestOdooPlugin .btn.active
+        {
+            background-color: #e6e6e6;
+            border-color: #adadad;
+            color: #333;
+            background-color: #3071a9;
+            border-color: #285e8e;
+            color: #fff;
+        }
+        #TestOdooPlugin .btn:active, #TestOdooPlugin .btn.active
+        {
+            background-image: none;
+        }
+        #TestOdooPlugin .btn
+        {
+            background-image: none;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-block;
+            font-size: 14px;
+            font-weight: normal;
+            line-height: 1.42857143;
+            margin-bottom: 0;
+            moz-user-select: none;
+            ms-user-select: none;
+            padding: 6px 12px;
+            text-align: center;
+            user-select: none;
+            vertical-align: middle;
+            webkit-user-select: none;
+            white-space: nowrap;
+            background-color: #428bca;
+            border-color: #357ebd;
+            color: #fff;
+        }
+        #TestOdooPlugin .btn:focus, #TestOdooPlugin .btn:active:focus, #TestOdooPlugin .btn.active:focus
+        {
+            outline: 5px auto -webkit-focus-ring-color;
+            outline: thin dotted;
+            outline-offset: -2px;
+        }
+        #TestOdooPlugin .btn:hover, #TestOdooPlugin .btn:focus
+        {
+            color: #333;
+            text-decoration: none;
+        }
+        #TestOdooPlugin .btn:active, #TestOdooPlugin .btn.active
+        {
+            background-image: none;
+            box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+            outline: 0;
+            webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+        }
+        #TestOdooPlugin .form-control
+        {
+            background-color: #fff;
+            background-image: none;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+            color: #555;
+            display: inline-block;
+            font-size: 14px;
+            height: 34px;
+            line-height: 1.42857143;
+            o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+            padding: 6px 12px;
+            transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+            webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+            webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+            width: 100%;
+        }
+        #TestOdooPlugin input[class="form-control"]
+        {
+            height: 20px;
+        }
+        #TestOdooPlugin select[class="form-control"]
+        {
+            width: 118%;
+        }
+        #TestOdooPlugin .form-control:focus
+        {
+            border-color: #66afe9;
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
+            outline: 0;
+            webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
+        }
+        #TestOdooPlugin .form-control::-moz-placeholder
+        {
+            color: #777;
+            opacity: 1;
+        }
+        #TestOdooPlugin .form-control:-ms-input-placeholder
+        {
+            color: #777;
+        }
+        #TestOdooPlugin .form-control::-webkit-input-placeholder
+        {
+            color: #777;
+        }
+        #TestOdooPlugin .form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control
+        {
+            background-color: #eee;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+        #TestOdooPlugin .has-error .form-control
+        {
+            border-color: #a94442;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+            webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+        }
+        #TestOdooPlugin .has-error .form-control:focus
+        {
+            border-color: #843534;
+            box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
+            webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
+        }
+        #TestOdooPlugin .has-error .control-label
+        {
+            color: #a94442;
+        }
+        #TestOdooPlugin .col-lg-6
+        {
+            min-height: 1px;
+            padding-left: 0px;
+            padding-right: 25px;
+            position: relative;
+        }
+        #TestOdooPlugin .clearfix:after, #TestOdooPlugin .form-group:after
+        {
+            clear: both;
+        }
+        #TestOdooPlugin .clearfix:before, #TestOdooPlugin .clearfix:after, #TestOdooPlugin .form-group:before,""" \
+        + u"""#TestOdooPlugin .form-group:after
+        {
+            content: " ";
+            display: table;
+        }
+        #TestOdooPlugin .clearfix:before, #TestOdooPlugin .clearfix:after
+        {
+            content: " ";
+            display: table;
+        }
+        #TestOdooPlugin .form-group
+        {
+            margin-bottom: 15px;
+            width: 40%;
+        }
+        #TestOdooPlugin .fa
+        {
+            display: inline-block;
+            font: normal normal normal 14px/1 FontAwesome;
+            font-family: FontAwesome !important;
+            font-size: inherit;
+            moz-osx-font-smoothing: grayscale;
+            text-rendering: auto;
+            webkit-font-smoothing: antialiased;
+        }
+        </style>
+
+        </head>
+        <body>
+            <form id="ClouderForm" method="POST" action="">
+
+                <input type="hidden" name="clouder_partner_id" value=""/>
+                <input type="hidden" name="db" value=""/>
+
+                <p class="CF_Title">""" + _("Request a Clouder Instance") + u"""</p>
+
+                <fieldset class="CL_Step CL_Step1">
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="application_id">""" + _("Application") + u"""</label>
+                        <select name="application_id" class="form-control">
+                            <option value="">""" + _("Application...") + u"""</option>
+                            ==CL_ADD_APPLICATION_OPTIONS==
+                        </select>
+                    </div>
+                    <div class="clearfix"/>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="prefix">""" + _("Prefix") + u"""</label>
+                        <input type="text" name="prefix" class="form-control"/>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="domain_id">""" + _("Domain Name") + u"""</label>
+                        <select name="domain_id" class="form-control">
+                            <option value="">""" + _("Domain...") + u"""</option>
+                            ==CL_ADD_DOMAIN_OPTIONS==
+                        </select>
+                    </div>
+                </fieldset>
+
+                <fieldset class="CL_Step CL_Step2">
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="contact_name">""" + _("Your Name") + u"""</label>
+                        <input type="text" name="name" class="form-control"/>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="street" style="font-weight: normal">""" \
+                            + _("Company Name") \
+                            + u"""</label>
+                        <input type="text" name="street" class="form-control"/>
+                    </div>
+                    <div class="clearfix"/>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="contact_name">""" + _("Email") + u"""</label>
+                        <input type="email" name="email" class="form-control"/>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="phone">""" + _("Phone") + u"""</label>
+                        <input type="tel" name="phone" class="form-control"/>
+                    </div>
+                    <div class="clearfix"/>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="street2">""" + _("Street") + u"""</label>
+                        <input type="text" name="street2" class="form-control"/>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="city">""" + _("City") + u"""</label>
+                        <input type="text" name="city" class="form-control"/>
+                    </div>
+                    <div class="clearfix"/>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="zip" style="font-weight: normal">""" \
+                            + _("Zip / Postal Code") \
+                            + u"""</label>
+                        <input type="text" name="zip" class="form-control"/>
+                    </div>
+                    <div class="clearfix"/>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="country_id">""" + _("Country") + u"""</label>
+                        <select name="country_id" class="form-control">
+                            <option value="">""" + _("Country...") + u"""</option>
+                            ==CL_ADD_COUNTRY_OPTIONS==
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="state_id" style="font-weight: normal">""" \
+                            + _("State / Province") \
+                            + u"""</label>
+                        <select name="state_id" class="form-control">
+                            <option value="">""" + _("Select...") + u"""</option>
+                            ==CL_ADD_STATE_OPTIONS==
+                        </select>
+                    </div>
+                </fieldset>
+
+
+                <div class="CL_Step CL_Step1 clearfix">
+                    <a class="btn pull-right mb32 a-next">""" + _("Next") \
+            + u""" <span class="fa fa-long-arrow-right"/></a>
+                </div>
+
+                <div class="CL_Step CL_Step2 clearfix">
+                    <a class="btn pull-left mb32 a-prev">""" + _("Previous") \
+            + u""" <span class="fa fa-long-arrow-left"/></a>
+                    <a class="btn pull-right mb32 a-submit">""" + _("Submit") + u""" <span class="fa"/></a>
+                </div>
+            </form>
+        </body>
+        </html>"""
