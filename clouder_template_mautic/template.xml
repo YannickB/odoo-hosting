@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="apptype_mautic" model="clouder.application.type">
+            <field name="name">mautic</field>
+            <field name="system_user">www-data</field>
+        </record>
+        <record id="apptype_mautic_option_db_password" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_mautic"/>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+        </record>
+
+
+        <record id="image_mautic" model="clouder.image">
+            <field name="name">img_mautic</field>
+            <field name="current_version">1.4.1</field>
+            <field name="parent_from">clouder/clouder-mautic</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+        <record id="image_mautic_volume_www" model="clouder.image.volume">
+            <field name="image_id" ref="image_mautic"/>
+            <field name="name">/var/www</field>
+        </record>
+        <record id="image_mautic_volume_etc" model="clouder.image.volume">
+            <field name="image_id" ref="image_mautic"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_mautic_port_http" model="clouder.image.port">
+            <field name="image_id" ref="image_mautic"/>
+            <field name="name">http</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+
+
+        <record id="app_mautic" model="clouder.application">
+            <field name="name">Mautic</field>
+            <field name="code">mautic</field>
+            <field name="type_id" ref="apptype_mautic"/>
+            <field name="default_image_id" ref="image_mautic"/>
+            <field name="current_version">8.0</field>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_mautic_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="app_mautic"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_mautic_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_mautic"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_mautic_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="app_mautic"/>
+            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
+        <record id="app_mautic_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_mautic"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_mautic_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="app_mautic"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <record id="app_mautic_link_piwik" model="clouder.application.link">
+            <field name="application_id" ref="app_mautic"/>
+            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+            <field name="base" eval="True"/>
+        </record>
+
+    </data>
+</openerp>

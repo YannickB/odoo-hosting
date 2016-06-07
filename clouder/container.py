@@ -119,6 +119,7 @@ class ClouderServer(models.Model):
     environment_id = fields.Many2one('clouder.environment', 'Environment',
                                      required=True)
     ip = fields.Char('IP')
+    login = fields.Char('Login')
     ssh_port = fields.Integer('SSH port')
 
     private_key = fields.Text(
@@ -224,7 +225,7 @@ class ClouderServer(models.Model):
                                 '/.ssh/config', '\n  Port ' +
                                 str(self.ssh_port))
         self.execute_write_file(self.home_directory +
-                                '/.ssh/config', '\n  User root')
+                                '/.ssh/config', '\n  User ' + (self.login or 'root'))
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n  IdentityFile ~/.ssh/keys/' + self.name)
         self.execute_write_file(self.home_directory + '/.ssh/config',

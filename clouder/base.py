@@ -622,10 +622,10 @@ class ClouderBase(models.Model):
         need to be done in another service.
         """
         base_name = False
-        if reset_base_name in self.env.context:
+        if 'reset_base_name' in self.env.context:
             base_name = self.env.context['reset_base_name']
         container = False
-        if reset_container in self.env.context:
+        if 'reset_container' in self.env.context:
             container = self.env.context['reset_container']
         base_reset_id = self.reset_id and self.reset_id or self
         if 'save_comment' not in self.env.context:
@@ -784,7 +784,7 @@ class ClouderBase(models.Model):
     @api.multi
     def renew_cert(self):
         self = self.with_context(no_enqueue=True)
-        self.do('renew_cert', 'renew_cert')
+        self.do('renew_cert', 'renew_cert_exec')
 
 
     @api.multi
