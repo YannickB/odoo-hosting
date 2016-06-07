@@ -1,14 +1,16 @@
 TestOdoo.pluginPath = 'http://mblaptop:8065/';
 
 TestOdoo.run = function($){
-    $('#TestOdooPlugin').css('background', 'none');
+    $odoo_plugin = $('#TestOdooPlugin');
+    $odoo_plugin.css('background', 'none');
+    $odoo_plugin.find('.CL_thanks').hide();
     
     $('#ClouderForm').each(function(){
         $clouder_form = $(this);
         //Show step 1 by default
         TestOdoo.showStep($clouder_form, 1);
         //Fill form data with already known variables
-        $clouder_form.find('form').attr('action', TestOdoo.pluginPath + 'submit_form');
+        $clouder_form.attr('action', TestOdoo.pluginPath + 'submit_form');
         $clouder_form.find('input[name="clouder_partner_id"]').val(TestOdoo.params['partner_id']);
         $clouder_form.find('input[name="db"]').val(TestOdoo.params['db']);
         $clouder_form.find('input[name="lang"]').val(TestOdoo.params['lang']);
@@ -34,7 +36,7 @@ TestOdoo.run = function($){
         });
         $clouder_form.find('.a-submit').off('click').on('click', function () {
             if (!TestOdoo.error_step($clouder_form, 2)){
-                $(this).closest('form').submit();
+                TestOdoo.submit_override($, $clouder_form, $odoo_plugin);
             }
         });
 
@@ -57,13 +59,40 @@ TestOdoo.run = function($){
             });
         });
     });
-    
-    
 };
+
+TestOdoo.submit_override = function($, $form, $plugin){
+    $.ajax({
+        url: $form.attr('action'),
+        data: $form.serialize(),
+        method: 'POST',
+        dataType: 'html',
+        success: function(msg) {
+            $form.hide();
+            $plugin.find('.CL_thanks').show();
+        },
+        error: function(jq, txt, err) {
+            $plugin.html("ERROR: Could not submit form");
+        }
+    });
+}
 
 TestOdoo.add_error_to_elt = function($elt){
     var err_class = "has-error";
     if (!$elt.val())
+    {
+        $elt.parent().addClass(err_class);
+        return true;
+    }
+    $elt.parent().removeClass(err_class);
+    return false;
+};
+
+TestOdoo.error_email = function($elt){
+    var email = $elt.val();
+    var err_class = "has-error";
+    var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (email == '' || !re.test(email))
     {
         $elt.parent().addClass(err_class);
         return true;
@@ -93,7 +122,7 @@ TestOdoo.error_step = function($current, step){
         
         has_error = TestOdoo.add_error_to_elt($name_select) || has_error;
         has_error = TestOdoo.add_error_to_elt($phone_select) || has_error;
-        has_error = TestOdoo.add_error_to_elt($email_select) || has_error;
+        has_error = TestOdoo.error_email($email_select) || has_error;
         has_error = TestOdoo.add_error_to_elt($street2_select) || has_error;
         has_error = TestOdoo.add_error_to_elt($city_select) || has_error;
         has_error = TestOdoo.add_error_to_elt($country_select) || has_error;

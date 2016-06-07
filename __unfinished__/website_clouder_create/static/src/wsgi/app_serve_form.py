@@ -74,4 +74,4 @@ class WSGIClouderForm(object):
             return ClosingIterator(self.send_response(e.get_response(self.env)))
 
 if __name__ == '__main__':
-    run_simple('0.0.0.0', 8065, WSGIClouderForm(), use_debugger=False, use_reloader=True)
+    run_simple('0.0.0.0', 8065, WSGIClouderForm(), use_debugger=False, use_reloader=False)

@@ -195,7 +195,7 @@ class ClouderWebHelper(models.Model):
         Loads the html template and fills-in the values before returning it
         """
         # Load template
-        html = self.get_template()
+        html = self.get_form_template()
 
         # Load data from odoo
         data = self.application_form_values()
@@ -286,7 +286,7 @@ class ClouderWebHelper(models.Model):
 
         return {'code': 0, 'msg': 'Instance creation launched'}
 
-    def get_template(self):
+    def get_form_template(self):
         """
         Returns the HTML form template with odoo-translated strings
         """
@@ -349,10 +349,12 @@ class ClouderWebHelper(models.Model):
             margin-bottom: 5px;
             max-width: 100%;
         }
-        /* ID */
-        #TestOdooPlugin #CF_Title
+
+        /* Classes */
+        #TestOdooPlugin .CF_Title
         {
-            font-size: 36px;
+            font-size: 25px;
+            text-align: center;
             margin: .67em 0;
             color: inherit;
             font-family: inherit;
@@ -361,8 +363,6 @@ class ClouderWebHelper(models.Model):
             margin-bottom: 10px;
             margin-top: 20px;
         }
-
-        /* Classes */
         #TestOdooPlugin .mb32
         {
             margin-bottom: 32px !important;
@@ -641,5 +641,7 @@ class ClouderWebHelper(models.Model):
                     <a class="btn pull-right mb32 a-submit">""" + _("Submit") + u""" <span class="fa"/></a>
                 </div>
             </form>
+            <p class="CL_thanks">""" + _("Your request for a Clouder instance has been sent.") + u"""<br/>""" \
+                                     + _("Thank you for your interest in Clouder!") + u"""</p>
         </body>
         </html>"""
