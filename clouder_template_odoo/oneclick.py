@@ -162,9 +162,10 @@ class ClouderServer(models.Model):
             'application_id': application.id,
 #            'port_ids': ports
         })
-        port = port_obj.search([('container_id', '=', postfix.id),('name','=','postfix')])
-        port.write({'hostport': 25})
-        postfix.reinstall()
+        if self.oneclick_ports:
+            port = port_obj.search([('container_id', '=', postfix.id),('name','=','postfix')])
+            port.write({'hostport': 25})
+            postfix.reinstall()
 
         application = application_obj.search([('code', '=', 'bind')])
         ports = []
@@ -177,9 +178,10 @@ class ClouderServer(models.Model):
             'application_id': application.id,
 #            'port_ids': ports
         })
-        port = port_obj.search([('container_id', '=', bind.id),('name','=','bind')])
-        port.write({'hostport': 53})
-        bind.reinstall()
+        if self.oneclick_ports:
+            port = port_obj.search([('container_id', '=', bind.id),('name','=','bind')])
+            port.write({'hostport': 53})
+            bind.reinstall()
 
 
         application = application_obj.search([('code', '=', 'proxy')])
@@ -194,11 +196,12 @@ class ClouderServer(models.Model):
             'application_id': application.id,
 #            'port_ids': ports
         })
-        port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx')])
-        port.write({'hostport': 80})
-        port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx-ssl')])
-        port.write({'hostport': 443})
-        proxy.reinstall()
+        if self.oneclick_ports:
+            port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx')])
+            port.write({'hostport': 80})
+            port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx-ssl')])
+            port.write({'hostport': 443})
+            proxy.reinstall()
 
 
         application = application_obj.search([('code', '=', 'shinken')])
