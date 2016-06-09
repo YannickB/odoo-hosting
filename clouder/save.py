@@ -635,7 +635,8 @@ class ClouderSave(models.Model):
                 self.log("A base_id was linked in the save")
                 base = self.base_id
 
-            base.save(comment='Before restore ' + self.name, no_enqueue=True)
+            self = self.with_context(save_comment='Before restore ' + self.name)
+            base.save_exec(no_enqueue=True)
 
             self.restore_action(base)
 

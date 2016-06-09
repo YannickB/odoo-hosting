@@ -256,11 +256,11 @@ class ClouderSave(models.Model):
         return res
 
     @api.multi
-    def restore_base(self):
+    def restore_base(self, base):
         """
         Restore the sites folder.
         """
-        res = super(ClouderSave, self).restore_base()
+        res = super(ClouderSave, self).restore_base(base)
         if self.base_id.application_id.type_id.name == 'drupal':
             self.container_id.execute(['rm', '-rf',
                                '/var/www/drupal/sites/' + self.base_id.fulldomain], username='www-data')
