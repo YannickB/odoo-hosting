@@ -474,6 +474,18 @@ class ClouderContainer(models.Model):
          'Name must be unique per server!'),
     ]
 
+
+    @api.one
+    @api.constrains('environment_id')
+    def _validate_data(self):
+        """
+        Check that the environment linked to the container have a prefix.
+        """
+        if not self.environment_id.prefix:
+            raise except_orm(
+                _('Data error!'),
+                _("The environment need to have a prefix"))
+
     @api.one
     @api.constrains('suffix')
     def _validate_data(self):

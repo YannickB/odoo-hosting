@@ -45,7 +45,7 @@ class ClouderEnvironment(models.Model):
 
     name = fields.Char('Name', required=True)
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)
-    prefix = fields.Char('Prefix', required=True)
+    prefix = fields.Char('Prefix', required=False)
     user_ids = fields.Many2many(
         'res.users', 'clouder_environment_user_rel',
         'environment_id', 'user_id', 'Users')
@@ -66,7 +66,7 @@ class ClouderEnvironment(models.Model):
         Check that the prefix does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w]*$", self.prefix):
+        if self.prefix and not re.match("^[\w]*$", self.prefix):
             raise except_orm(
                 _('Data error!'),
                 _("Prefix can only contains letters"))
