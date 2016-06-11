@@ -550,8 +550,8 @@ class ClouderSave(models.Model):
                 self = self.with_context(forcesave=False)
                 self = self.with_context(nosave=True)
 
-            container.save(
-                comment='Before restore ' + self.name, no_enqueue=True)
+            self = self.with_context(save_comment='Before restore ' + self.name)
+            container.save_exec(no_enqueue=True)
 
             self.restore_action(container)
 
