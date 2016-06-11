@@ -627,8 +627,7 @@ class ClouderContainer(models.Model):
                 if link['source'].container and \
                         link['source'].auto or link['source'].make_link:
                     next_id = link['next']
-                    if not next_id and \
-                            'parent_id' in vals and vals['parent_id']:
+                    if 'parent_id' in vals and vals['parent_id']:
                         parent = self.env['clouder.container.child'].browse(
                             vals['parent_id'])
                         for parent_link in parent.container_id.link_ids:
@@ -742,6 +741,7 @@ class ClouderContainer(models.Model):
             'option_ids': self.option_ids,
             'link_ids': self.link_ids,
             'child_ids': self.child_ids,
+            'parent_id': self.parent_id and self.parent_id.id or False
             }
         vals = self.onchange_application_id_vals(vals)
         self.env['clouder.container.option'].search(

@@ -74,7 +74,11 @@ class ClouderContainer(models.Model):
             server.shinken_configfile], username='shinken')
         self.execute([
             'sed', '-i',
-            '"s/PORT/' + nrpe.ports['nrpe']['hostport'] + '/g"',
+            '"s/SSHPORT/' + str(server.ssh_port) + '/g"',
+            server.shinken_configfile], username='shinken')
+        self.execute([
+            'sed', '-i',
+            '"s/NRPEPORT/' + nrpe.ports['nrpe']['hostport'] + '/g"',
             server.shinken_configfile], username='shinken')
         self.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'],
                      username='shinken')
