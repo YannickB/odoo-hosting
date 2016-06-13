@@ -5,15 +5,15 @@ Clouder.run = function($){
     
     $('#ClouderForm').each(function(){
         $clouder_form = $(this);
-        //Show step 1 by default
+        // Show step 1 by default
         Clouder.showStep($clouder_form, 1);
-        //Fill form data with already known variables
+        // Fill form data with already known variables
         $clouder_form.attr('action', Clouder.pluginPath + 'submit_form');
         $clouder_form.find('input[name="clouder_partner_id"]').val(Clouder.params['partner_id']);
         $clouder_form.find('input[name="db"]').val(Clouder.params['db']);
         $clouder_form.find('input[name="lang"]').val(Clouder.params['lang']);
 
-        //Controls the hidden state of the state selector depending on country
+        // Controls the hidden state of the state selector depending on country
         $clouder_form.on('change', "select[name='country_id']", function () {
             var $select = $clouder_form.find("select[name='state_id']");
             $select.find("option:not(:first)").hide();
@@ -22,7 +22,7 @@ Clouder.run = function($){
         });
         $clouder_form.find("select[name='country_id']").change();
 
-        //Buttons handlers
+        // Buttons handlers
         $clouder_form.find('.a-next').off('click').on('click', function () {
             if (!Clouder.error_step($clouder_form, 1)){
                 Clouder.showStep($clouder_form, 2);
@@ -38,7 +38,7 @@ Clouder.run = function($){
             }
         });
 
-        //Resize and handle divs
+        // Resize and handle divs
         $clouder_form.find('fieldset').each(function(){
             var col = 0;
             $(this).find('div').each(function(){
@@ -128,21 +128,18 @@ Clouder.error_step = function($current, step){
     return has_error;
 };
 
+// Displays the right elements, corresponding to the current step. Hides the others.
 Clouder.showStep = function($current, step){
-    // affiche les champs correspondant à la bonne étape
     $current.find('.CL_Step').hide();
     $current.find('.CL_Step'+step).show();
 };
 
-//charge les plugins jQuery et règle les valeurs par défaut
+// Loads JQuery plugins and sets default values
 Clouder.loadJQueryPlugins = function() {
-    jQuery.noConflict(); // évite que notre version de jQuery entre en conflit avec l'hôte
+    jQuery.noConflict(); // Avoid conflicts between our JQuery and the possibly existing one
     jQuery(document).ready(function($) {
-        //$('#ClouderPlugin').css('background', 'url('+Clouder.loading+') no-repeat center bottom');
-        
         Clouder.params.langShort = Clouder.params.lang.split('_')[0];
-            
-        // charge le formulaire dans la div ClouderPlugin et déclenche le module
+        // Loads the form content in the ClouderPlugin div and launches the javascript
         Clouder.loadPhp($);
     });
 };
@@ -164,17 +161,17 @@ Clouder.loadPhp = function ($) {
     });
 };
 
-//charge un javascript externe et déclenche une acion en cas de succès
+// Loads and external javascript and launches a function if successful
 Clouder.getScript = function (url, success) {
     var script = document.createElement('script');
     script.src = url;
     var head = document.getElementsByTagName('head')[0],
     done = false;
-    // Ecouteurs d'événement
+
     script.onload = script.onreadystatechange = function() {
         if (!done && (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')) {
         done = true;
-            // déclenche la fonction passée en paramètre
+            // Launch the argument-given function
             success();
             script.onload = script.onreadystatechange = null;
             head.removeChild(script);
@@ -183,7 +180,7 @@ Clouder.getScript = function (url, success) {
     head.appendChild(script);
 };
 
-// charge jQUeryUi si absent
+// Loads jQUeryUi if it's not done already
 Clouder.getJqueryUi = function() {
     if (typeof jQuery.ui == 'undefined') {
         jQuery("head").append("<link rel='stylesheet' type='text/css' href='//ajax.googleapis.com/ajax/libs/jqueryui/1/themes/south-street/jquery-ui.min.css' />");
@@ -195,13 +192,17 @@ Clouder.getJqueryUi = function() {
     }
 };
 
-// déclenche la séquence de bootstrap
-// Charge jQuery si absent
+
+
+// The following part launches the bootstrap sequence
+
+// Loads jQuery if it's not loaded already
 if (typeof jQuery == 'undefined') {
     Clouder.getScript('//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js', function() {
-        // jQuery est prêt, charge jQueryUi
+        // Loading the rest inside the newly loaded jQuery
         Clouder.getJqueryUi();
     });
-} else { // jQuery déjà présent, charge jQueryUi
+} else {
+    // Loading the rest on the already loaded jQuery
     Clouder.getJqueryUi();
 };

@@ -19,5 +19,24 @@
 # <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-import website_clouder_create
 
+{
+    'name': 'Clouder Website',
+    'version': '1.0',
+    'category': 'Clouder',
+    'depends': ['base', 'clouder'],
+    'author': 'Yannick Buron (Clouder), Nicolas Petit',
+    'license': 'Other OSI approved licence',
+    'website': 'https://github.com/clouder-community/clouder',
+    'description': """
+    Creates a WSGI app that serves a form to create new clouder instances from an external website
+    """,
+    'demo': [],
+    'data': [
+        'clouder_website_view.xml',
+        'security/security.xml',
+        'security/ir.model.access.csv'
+    ],
+    'installable': True,
+    'application': True,
+}
