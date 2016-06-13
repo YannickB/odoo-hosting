@@ -52,28 +52,59 @@ class ClouderApplication(models.Model):
         """
         Creates a clouder container or base using provided data
         """
+        application = self.browse(data['application_id'])
+        partner = data['request_partner']
+
         """
-        Pour Yannick:
+        Deplace la création de l'environment ailleurs si tu veux.
+        Si on crée une base, on ne demande rien par rapport à l'environmement, celui ci sera automatiquement
+            créé ou automatiquement assigné.
+        Par contre si on créé un container le prefix est obligatoire, dans ce cas on affiche un
+            champ env_prefix sur le formulaire avec le prefix de l'environement.
+        De plus, toujours uniquement si container, dès que le visiteur a saisi son email on fait
+            un appel ajax pour savoir si cet email a déjà des environment lié.
+        Si oui on affiche un champ sélection env_id non requis pour choisir l'un des environement existant,
+            automatiquement rempli avec le premier environmement de la liste.
+        Si env_id est rempli, on masque le champ env_prefix.
+        De plus, l'appel ajax affiche également un champ password si l'email existe, comme chez ava.
 
-        Données d'entrée:
-            Un dictionnaire contenant les clefs suivantes:
-                'clouder_partner_id': id du partenaire qui affiche le formulaire sur son site (entier),
-                'prefix': le préfixe du domain (string),
-                'application_id': id de l'application choisie (entier),
-                'domain_id': id du domaine choisi (entier),
-                'request_partner': partenaire contenant les infos remplies sur le formulaire (res.partner record)
-        Cadeau:
-            le code pour charger les ID
-                application = self.browse(data['application_id'])
-                domain = self.env['clouder.domain'].browse(data['domain_id'])
-                clouder_partner = self.env['res.partner'].browse(data['clouder_partner_id'])
+        A noter : le formulaire ne doit pas seulement créer un res.partner, il doit creer un res.users
+            avec le groupe d'acces clouder user
         """
+        if not data['env_id']:
+            env_obj = self.env['clouder.environment']
+            env_id = env_obj.search([('partner_id', '=', partner.id)])
+            if env_id:
+                data['env_id'] = env_id[0]
+            else:
+                data['env_id'] = env_obj.create({
+                    'name': partner.name,
+                    'partner_id': partner.id,
+                    'prefix': data['env_prefix']  # Can be False
+                })
 
-        # TODO: implement
-        _logger.info("\n\nCREATE INSTANCE DATA: {0}\n\n".format(data))
+        if application.web_create_type == 'container':
+            return self.env['clouder.container'].create({
+                'environment_id': data['env_id'],
+                'suffix': data['suffix'],
+                'application_id': application.id
+            })
 
-        # TODO: return newly created model
-        return 0
+        if application.web_create_type == 'base':
+            return self.env['clouder.base'].create({
+                'suffix': data['prefix'],
+                'domain_id': data['domain_id'],
+                'environment_id': data['env_id'],
+                'title': data['title'],
+                'application_id': application.id,
+                'poweruser_name': partner.email,
+                'poweruser_email': partner.email,
+                'lang': data['lang'],
+                'ssl_only': True,
+                'autosave': True,
+            })
+
+        return False
 
 
 class ClouderWebHelper(models.Model):
@@ -108,7 +139,7 @@ class ClouderWebHelper(models.Model):
                 if not pid or pid == '\n':
                     return -1
                 return int(pid)
-            except ValueError, e:
+            except ValueError:
                 return -2
             except:
                 return -99
