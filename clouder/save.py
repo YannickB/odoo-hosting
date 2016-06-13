@@ -721,6 +721,7 @@ class ClouderSave(models.Model):
                 ['rm', '-rf', '/base-backup/restore-' + self.name],
                 username='root')
 
+        container.server_id.execute(['ls', directory])
         container.server_id.execute(['cat', directory + '/backup-date'])
         container.server_id.execute(['rm', '-rf', directory + '/backup-date'])
         if not self.base_fullname:

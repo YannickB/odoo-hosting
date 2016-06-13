@@ -143,6 +143,7 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def launch_next_saves(self):
+        self = self.with_context(no_enqueue=True)
         self.do('launch_next_saves', 'launch_next_saves_exec')
 
     @api.multi
@@ -207,6 +208,7 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def cron_daily(self):
+        self = self.with_context(no_enqueue=True)
         self.do('cron_daily', 'cron_daily_exec')
 
     @api.multi

@@ -174,7 +174,7 @@ class ClouderSave(models.Model):
                     '-h', self.container_id.db_server,
                     '-U', self.container_id.db_user, database,
                     '>', '/base-backup/' + self.name + '/' +
-                    database + '.dump'],
+                    self.base_dumpfile],
                     username=self.base_id.application_id.type_id.system_user)
         return res
 
