@@ -550,8 +550,8 @@ class ClouderSave(models.Model):
                 self = self.with_context(forcesave=False)
                 self = self.with_context(nosave=True)
 
-            container.save(
-                comment='Before restore ' + self.name, no_enqueue=True)
+            self = self.with_context(save_comment='Before restore ' + self.name)
+            container.save_exec(no_enqueue=True)
 
             self.restore_action(container)
 
@@ -635,7 +635,8 @@ class ClouderSave(models.Model):
                 self.log("A base_id was linked in the save")
                 base = self.base_id
 
-            base.save(comment='Before restore ' + self.name, no_enqueue=True)
+            self = self.with_context(save_comment='Before restore ' + self.name)
+            base.save_exec(no_enqueue=True)
 
             self.restore_action(base)
 
@@ -720,6 +721,7 @@ class ClouderSave(models.Model):
                 ['rm', '-rf', '/base-backup/restore-' + self.name],
                 username='root')
 
+        container.server_id.execute(['ls', directory])
         container.server_id.execute(['cat', directory + '/backup-date'])
         container.server_id.execute(['rm', '-rf', directory + '/backup-date'])
         if not self.base_fullname:

@@ -347,8 +347,7 @@ class ClouderBase(models.Model):
             for link in links_to_process:
                 if link['source'].base and link['source'].auto:
                     next_id = link['next']
-                    if not next_id and \
-                            'parent_id' in vals and vals['parent_id']:
+                    if 'parent_id' in vals and vals['parent_id']:
                         parent = self.env['clouder.base.child'].browse(
                             vals['parent_id'])
                         for parent_link in parent.base_id.link_ids:
@@ -450,6 +449,7 @@ class ClouderBase(models.Model):
             'option_ids': self.option_ids,
             'link_ids': self.link_ids,
             'child_ids': self.child_ids,
+            'parent_id': self.parent_id and self.parent_id.id or False
             }
         vals = self.onchange_application_id_vals(vals)
         self.env['clouder.container.option'].search(
