@@ -119,6 +119,7 @@ class ClouderServer(models.Model):
     environment_id = fields.Many2one('clouder.environment', 'Environment',
                                      required=True)
     ip = fields.Char('IP')
+    login = fields.Char('Login')
     ssh_port = fields.Integer('SSH port')
 
     private_key = fields.Text(
@@ -224,7 +225,7 @@ class ClouderServer(models.Model):
                                 '/.ssh/config', '\n  Port ' +
                                 str(self.ssh_port))
         self.execute_write_file(self.home_directory +
-                                '/.ssh/config', '\n  User root')
+                                '/.ssh/config', '\n  User ' + (self.login or 'root'))
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n  IdentityFile ~/.ssh/keys/' + self.name)
         self.execute_write_file(self.home_directory + '/.ssh/config',
@@ -627,8 +628,7 @@ class ClouderContainer(models.Model):
                 if link['source'].container and \
                         link['source'].auto or link['source'].make_link:
                     next_id = link['next']
-                    if not next_id and \
-                            'parent_id' in vals and vals['parent_id']:
+                    if 'parent_id' in vals and vals['parent_id']:
                         parent = self.env['clouder.container.child'].browse(
                             vals['parent_id'])
                         for parent_link in parent.container_id.link_ids:
@@ -790,7 +790,8 @@ class ClouderContainer(models.Model):
             'option_ids': self.option_ids,
             'link_ids': self.link_ids,
             'child_ids': self.child_ids,
-            'metadata_ids': self.metadata_ids
+            'metadata_ids': self.metadata_ids,
+            'parent_id': self.parent_id and self.parent_id.id or False
             }
         vals = self.onchange_application_id_vals(vals)
         self.env['clouder.container.option'].search(

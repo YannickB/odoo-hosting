@@ -321,6 +321,8 @@
                         <field name="name"/>
                         <field name="environment_id"/>
                         <field name="ip" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
+                        <newline/>
+                        <field name="login" attrs="{'invisible':[('runner_id','!=',False)]}"/>
                         <field name="ssh_port" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <newline/>
                         <field name="private_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>

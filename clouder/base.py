@@ -351,8 +351,7 @@ class ClouderBase(models.Model):
             for link in links_to_process:
                 if link['source'].base and link['source'].auto:
                     next_id = link['next']
-                    if not next_id and \
-                            'parent_id' in vals and vals['parent_id']:
+                    if 'parent_id' in vals and vals['parent_id']:
                         parent = self.env['clouder.base.child'].browse(
                             vals['parent_id'])
                         for parent_link in parent.base_id.link_ids:
@@ -502,7 +501,8 @@ class ClouderBase(models.Model):
             'option_ids': self.option_ids,
             'link_ids': self.link_ids,
             'child_ids': self.child_ids,
-            'metadata_ids': self.metadata_ids
+            'metadata_ids': self.metadata_ids,
+            'parent_id': self.parent_id and self.parent_id.id or False
             }
         vals = self.onchange_application_id_vals(vals)
         self.env['clouder.container.option'].search(
@@ -675,10 +675,10 @@ class ClouderBase(models.Model):
         need to be done in another service.
         """
         base_name = False
-        if reset_base_name in self.env.context:
+        if 'reset_base_name' in self.env.context:
             base_name = self.env.context['reset_base_name']
         container = False
-        if reset_container in self.env.context:
+        if 'reset_container' in self.env.context:
             container = self.env.context['reset_container']
         base_reset_id = self.reset_id and self.reset_id or self
         if 'save_comment' not in self.env.context:
@@ -837,7 +837,7 @@ class ClouderBase(models.Model):
     @api.multi
     def renew_cert(self):
         self = self.with_context(no_enqueue=True)
-        self.do('renew_cert', 'renew_cert')
+        self.do('renew_cert', 'renew_cert_exec')
 
 
     @api.multi

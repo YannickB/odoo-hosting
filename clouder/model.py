@@ -224,8 +224,8 @@ class ClouderModel(models.AbstractModel):
     def check_priority(self):
         priority = False
         for job in self.job_ids:
-            if job.state != 'done' and job.priority <= 999:
-                priority = job.priority
+            if job.job_id and job.job_id.state != 'done' and job.job_id.priority <= 999:
+                priority = job.job_id.priority
         return priority
 
     @api.multi

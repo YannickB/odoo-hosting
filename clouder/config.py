@@ -112,17 +112,17 @@ class ClouderConfigSettings(models.Model):
         containers = self.env['clouder.container'].search(
             [('autosave', '=', True)])
         for container in containers:
-            container.save()
+            container.save_exec()
 
         bases = self.env['clouder.base'].search([('autosave', '=', True)])
         for base in bases:
-            base.save()
+            base.save_exec()
 
         links = self.env['clouder.container.link'].search(
             [('container_id.application_id.type_id.name', '=', 'backup'),
              ('name.name.code', '=', 'backup-upl')])
         for link in links:
-            link.deploy_()
+            link.deploy_exec()
 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.env.ref('clouder.clouder_settings').end_save_all = now
@@ -143,6 +143,7 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def launch_next_saves(self):
+        self = self.with_context(no_enqueue=True)
         self.do('launch_next_saves', 'launch_next_saves_exec')
 
     @api.multi
@@ -150,21 +151,21 @@ class ClouderConfigSettings(models.Model):
         """
         Save all containers and bases which passed their next save date.
         """
-        self = self.with_context(save_comment='Auto save')
+        self = self.with_context(no_enqueue=True, save_comment='Auto save')
         containers = self.env['clouder.container'].search([
             ('autosave', '=', True),
             ('date_next_save', '!=', False),
             ('date_next_save', '<',
              self.now_date + ' ' + self.now_hour_regular)])
         for container in containers:
-            container.save()
+            container.save_exec()
         bases = self.env['clouder.base'].search([
             ('autosave', '=', True),
             ('date_next_save', '!=', False),
             ('date_next_save', '<',
              self.now_date + ' ' + self.now_hour_regular)])
         for base in bases:
-            base.save()
+            base.save_exec()
 
     @api.multi
     def reset_bases(self):
@@ -207,6 +208,7 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def cron_daily(self):
+        self = self.with_context(no_enqueue=True)
         self.do('cron_daily', 'cron_daily_exec')
 
     @api.multi
@@ -214,6 +216,7 @@ class ClouderConfigSettings(models.Model):
         """
         Call all actions which shall be executed daily.
         """
+        self = self.with_context(no_enqueue=True)
         self.purge_expired_saves_exec()
         self.save_all_exec()
         self.reset_bases_exec()
@@ -222,6 +225,9 @@ class ClouderConfigSettings(models.Model):
 
     @api.multi
     def reset_all_jobs(self):
-        self.env.cr.execute(
-            "update queue_job set state='done' "
-            "where state in ('started', 'enqueued')")
+        job_obj = self.env['queue.job']
+        jobs = job_obj.search([('state','in',['pending','started','enqueued','failed'])])
+        jobs.write({'state': 'done'})
+        clouder_job_obj = self.env['clouder.job']
+        clouder_jobs = clouder_job_obj.search([('job_id','in',[j.id for j in jobs])])
+        clouder_jobs.write({'state': 'failed'})

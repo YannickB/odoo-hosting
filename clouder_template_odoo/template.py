@@ -155,10 +155,9 @@ class ClouderBase(models.Model):
                      ".get_object_reference('base', 'group_no_one')[1]")
             extended_group_id = client.model('ir.model.data')\
                 .get_object_reference('base', 'group_no_one')[1]
-            self.log("client.model('res.groups').write([" +
-                     str(extended_group_id) + "], {'users': [(4, 1)]})")
-            client.model('res.groups').write([extended_group_id],
-                                             {'users': [(4, 1)]})
+            self.log("client.model('res.users').write([" + str(admin_id) + "], {'groups_id': [(4, " + str(extended_group_id) + ")]})")
+            client.model('res.users').write([1],
+                                             {'groups_id': [(4, extended_group_id)]})
 
             if self.application_id.options['default_account_chart']['value']\
                     or self.options['account_chart']['value']:
