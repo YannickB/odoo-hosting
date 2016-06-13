@@ -8,16 +8,17 @@
 
 <h1>Exemple de page hôte</h1>
 
-<div id="TestOdooPlugin" style="width:400px;"></div>
+<div id="ClouderPlugin" style="width:400px;"></div>
 
 <script>
-var TestOdoo = {}
-TestOdoo.params = {
+var Clouder = {}
+Clouder.params = {
     'db':'test_invoice',
     'partner_id': '0',
-    'lang':'fr_FR'
+    'lang':'fr_FR',
 };
-(function(w,d,s){var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='plugin.js';f.parentNode.insertBefore(j,f);})(window,document,'script');
+Clouder.pluginPath = 'http://mblaptop:8065/';
+(function(w,d,s){var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='http://mblaptop:8065/plugin.js';f.parentNode.insertBefore(j,f);})(window,document,'script');
 </script>
 </body>
 </html>

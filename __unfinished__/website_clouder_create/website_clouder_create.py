@@ -300,40 +300,40 @@ class ClouderWebHelper(models.Model):
 
         <style type="text/css">
         /* Elements */
-        #TestOdooPlugin a
+        #ClouderPlugin a
         {
             color: #428bca;
             text-decoration: none;
             background: transparent;
         }
-        #TestOdooPlugin a:active, a:hover
+        #ClouderPlugin a:active, a:hover
         {
             outline: 0;
         }
-        #TestOdooPlugin a:hover, a:focus
+        #ClouderPlugin a:hover, a:focus
         {
             color: #2a6496;
             text-decoration: underline;
         }
-        #TestOdooPlugin a:focus
+        #ClouderPlugin a:focus
         {
             outline: 5px auto -webkit-focus-ring-color;
             outline: thin dotted;
             outline-offset: -2px;
         }
-        #TestOdooPlugin input
+        #ClouderPlugin input
         {
             line-height: normal;
         }
-        #TestOdooPlugin input[disabled]
+        #ClouderPlugin input[disabled]
         {
             cursor: default;
         }
-        #TestOdooPlugin select
+        #ClouderPlugin select
         {
             text-transform: none;
         }
-        #TestOdooPlugin input, #TestOdooPlugin select
+        #ClouderPlugin input, #ClouderPlugin select
         {
             font-family: inherit;
             font-size: inherit;
@@ -342,7 +342,7 @@ class ClouderWebHelper(models.Model):
             font: inherit;
             margin: 0;
         }
-        #TestOdooPlugin label
+        #ClouderPlugin label
         {
             display: inline-block;
             font-weight: bold;
@@ -351,7 +351,7 @@ class ClouderWebHelper(models.Model):
         }
 
         /* Classes */
-        #TestOdooPlugin .CF_Title
+        #ClouderPlugin .CF_Title
         {
             font-size: 25px;
             text-align: center;
@@ -363,24 +363,24 @@ class ClouderWebHelper(models.Model):
             margin-bottom: 10px;
             margin-top: 20px;
         }
-        #TestOdooPlugin .mb32
+        #ClouderPlugin .mb32
         {
             margin-bottom: 32px !important;
         }
-        #TestOdooPlugin .pull-right
+        #ClouderPlugin .pull-right
         {
             float: right !important;
             position: relative !important;
             right: 10px;
         }
-        #TestOdooPlugin .pull-left
+        #ClouderPlugin .pull-left
         {
             float: left !important;
             position: relative !important;
             left: 10px;
         }
-        #TestOdooPlugin .btn:hover, #TestOdooPlugin .btn:focus, #TestOdooPlugin .btn:active,""" \
-        + u"""#TestOdooPlugin .btn.active
+        #ClouderPlugin .btn:hover, #ClouderPlugin .btn:focus, #ClouderPlugin .btn:active,""" \
+        + u"""#ClouderPlugin .btn.active
         {
             background-color: #e6e6e6;
             border-color: #adadad;
@@ -389,11 +389,11 @@ class ClouderWebHelper(models.Model):
             border-color: #285e8e;
             color: #fff;
         }
-        #TestOdooPlugin .btn:active, #TestOdooPlugin .btn.active
+        #ClouderPlugin .btn:active, #ClouderPlugin .btn.active
         {
             background-image: none;
         }
-        #TestOdooPlugin .btn
+        #ClouderPlugin .btn
         {
             background-image: none;
             border: 1px solid transparent;
@@ -416,25 +416,25 @@ class ClouderWebHelper(models.Model):
             border-color: #357ebd;
             color: #fff;
         }
-        #TestOdooPlugin .btn:focus, #TestOdooPlugin .btn:active:focus, #TestOdooPlugin .btn.active:focus
+        #ClouderPlugin .btn:focus, #ClouderPlugin .btn:active:focus, #ClouderPlugin .btn.active:focus
         {
             outline: 5px auto -webkit-focus-ring-color;
             outline: thin dotted;
             outline-offset: -2px;
         }
-        #TestOdooPlugin .btn:hover, #TestOdooPlugin .btn:focus
+        #ClouderPlugin .btn:hover, #ClouderPlugin .btn:focus
         {
             color: #333;
             text-decoration: none;
         }
-        #TestOdooPlugin .btn:active, #TestOdooPlugin .btn.active
+        #ClouderPlugin .btn:active, #ClouderPlugin .btn.active
         {
             background-image: none;
             box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
             outline: 0;
             webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
         }
-        #TestOdooPlugin .form-control
+        #ClouderPlugin .form-control
         {
             background-color: #fff;
             background-image: none;
@@ -453,84 +453,84 @@ class ClouderWebHelper(models.Model):
             webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
             width: 100%;
         }
-        #TestOdooPlugin input[class="form-control"]
+        #ClouderPlugin input[class="form-control"]
         {
             height: 20px;
         }
-        #TestOdooPlugin select[class="form-control"]
+        #ClouderPlugin select[class="form-control"]
         {
             width: 118%;
         }
-        #TestOdooPlugin .form-control:focus
+        #ClouderPlugin .form-control:focus
         {
             border-color: #66afe9;
             box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
             outline: 0;
             webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
         }
-        #TestOdooPlugin .form-control::-moz-placeholder
+        #ClouderPlugin .form-control::-moz-placeholder
         {
             color: #777;
             opacity: 1;
         }
-        #TestOdooPlugin .form-control:-ms-input-placeholder
+        #ClouderPlugin .form-control:-ms-input-placeholder
         {
             color: #777;
         }
-        #TestOdooPlugin .form-control::-webkit-input-placeholder
+        #ClouderPlugin .form-control::-webkit-input-placeholder
         {
             color: #777;
         }
-        #TestOdooPlugin .form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control
+        #ClouderPlugin .form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control
         {
             background-color: #eee;
             cursor: not-allowed;
             opacity: 1;
         }
-        #TestOdooPlugin .has-error .form-control
+        #ClouderPlugin .has-error .form-control
         {
             border-color: #a94442;
             box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
             webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
         }
-        #TestOdooPlugin .has-error .form-control:focus
+        #ClouderPlugin .has-error .form-control:focus
         {
             border-color: #843534;
             box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
             webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
         }
-        #TestOdooPlugin .has-error .control-label
+        #ClouderPlugin .has-error .control-label
         {
             color: #a94442;
         }
-        #TestOdooPlugin .col-lg-6
+        #ClouderPlugin .col-lg-6
         {
             min-height: 1px;
             padding-left: 0px;
             padding-right: 25px;
             position: relative;
         }
-        #TestOdooPlugin .clearfix:after, #TestOdooPlugin .form-group:after
+        #ClouderPlugin .clearfix:after, #ClouderPlugin .form-group:after
         {
             clear: both;
         }
-        #TestOdooPlugin .clearfix:before, #TestOdooPlugin .clearfix:after, #TestOdooPlugin .form-group:before,""" \
-        + u"""#TestOdooPlugin .form-group:after
+        #ClouderPlugin .clearfix:before, #ClouderPlugin .clearfix:after, #ClouderPlugin .form-group:before,""" \
+        + u"""#ClouderPlugin .form-group:after
         {
             content: " ";
             display: table;
         }
-        #TestOdooPlugin .clearfix:before, #TestOdooPlugin .clearfix:after
+        #ClouderPlugin .clearfix:before, #ClouderPlugin .clearfix:after
         {
             content: " ";
             display: table;
         }
-        #TestOdooPlugin .form-group
+        #ClouderPlugin .form-group
         {
             margin-bottom: 15px;
             width: 40%;
         }
-        #TestOdooPlugin .fa
+        #ClouderPlugin .fa
         {
             display: inline-block;
             font: normal normal normal 14px/1 FontAwesome;

@@ -1,8 +1,9 @@
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request, Response
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest
-from werkzeug.wsgi import ClosingIterator
+from werkzeug.wsgi import ClosingIterator, wrap_file
 from xmlrpclib import ServerProxy
+import os
 
 SERVER = 'http://localhost:8069'
 USERNAME = 'clouder_web_helper'
@@ -59,6 +60,12 @@ class WSGIClouderForm(object):
             raise BadRequest(description=result['msg'])
         return self.send_response(Response(result['msg']))
 
+    def plugin_js(self):
+        js_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'plugin.js')
+        js_fd = open(js_path)
+        r = Response(wrap_file(self.env, js_fd), direct_passthrough=True)
+        return self.send_response(r)
+
     def __call__(self, environ, start_response):
         try:
             self.env = environ
@@ -68,6 +75,8 @@ class WSGIClouderForm(object):
                 return self.request_form()
             elif request_url == '/submit_form':
                 return self.submit_form()
+            elif request_url == '/plugin.js':
+                return self.plugin_js()
             else:
                 raise NotFound()
         except HTTPException, e:
