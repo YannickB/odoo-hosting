@@ -248,8 +248,7 @@ class ClouderBase(models.Model):
                 vals['application_id'])
 
             if 'admin_name' not in vals or not vals['admin_name']:
-                vals['admin_name'] = application.admin_name
-
+                vals['admin_name'] = application.admin_name and application.admin_name or self.email_sysadmin
             if 'admin_email' not in vals or not vals['admin_email']:
                 vals['admin_email'] = application.admin_email \
                     and application.admin_email \
@@ -444,6 +443,7 @@ class ClouderBase(models.Model):
     def onchange_application_id(self):
         vals = {
             'application_id': self.application_id.id,
+            'container_id': self.application_id.next_container_id and self.application_id.next_container_id.id or False,
             'admin_name': self.admin_name,
             'admin_email': self.admin_email,
             'option_ids': self.option_ids,

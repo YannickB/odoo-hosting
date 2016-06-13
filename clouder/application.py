@@ -136,6 +136,7 @@ class ClouderApplication(models.Model):
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=True)
     base = fields.Boolean('Can have base?')
+    next_container_id = fields.Many2one('clouder.container', 'Next container')
     admin_name = fields.Char('Admin name')
     admin_email = fields.Char('Admin email')
     archive_id = fields.Many2one('clouder.container', 'Archive')

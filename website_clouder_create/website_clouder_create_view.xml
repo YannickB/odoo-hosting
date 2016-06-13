@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <record id="view_clouder_application_form_web_create" model="ir.ui.view">
+            <field name="name">clouder.application.form.invoicing</field>
+            <field name="inherit_id" ref="clouder.view_clouder_application_form"/>
+            <field name="model">clouder.application</field>
+            <field name="arch" type="xml">
+                <field name="required" position="after">
+                    <field name="web_create_type"/>
+                </field>
+            </field>
+        </record>
+        <record model="ir.cron" id="wsgi_app_serve_form_run">
+            <field name="name">WSGI app_serve_form run</field>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field eval="False" name="doall"/>
+            <field eval="'clouder.web.helper'" name="model"/>
+            <field eval="'maintain_wsgi_server'" name="function"/>
+            <field eval="'()'" name="args"/>
+        </record>
+    </data>
+</openerp>
