@@ -4,6 +4,7 @@ from werkzeug.exceptions import HTTPException, NotFound, BadRequest
 from werkzeug.wsgi import ClosingIterator, wrap_file
 from xmlrpclib import ServerProxy
 import os
+import json
 
 SERVER = 'http://localhost:8069'
 USERNAME = 'clouder_web_helper'
@@ -13,6 +14,19 @@ PASSWORD = 'clwh'
 def serv_connect(database):
     server = ServerProxy('http://localhost:8069/xmlrpc/common')
     return server.login(database, USERNAME, PASSWORD)
+
+
+def check_login(database, login, password=False):
+    if not password:
+        user_id = serv_connect(database)
+        server = ServerProxy('http://localhost:8069/xmlrpc/object')
+        return server.execute_kw(
+            database, user_id, PASSWORD,
+            'clouder.web.helper', 'check_login_exists', [login], {'context': {}}
+        )
+    else:
+        server = ServerProxy('http://localhost:8069/xmlrpc/common')
+        return bool(server.login(database, login, password))
 
 
 def call_html(database, lang):
@@ -66,6 +80,25 @@ class WSGIClouderForm(object):
         r = Response(wrap_file(self.env, js_fd), direct_passthrough=True)
         return self.send_response(r)
 
+    def page_login(self):
+        req = Request(self.env)
+        post_data = {x: req.form[x] for x in req.form}
+        if 'db' not in post_data or 'login' not in post_data:
+            raise BadRequest(description="Missing parameter")
+        if 'password' not in post_data:
+            post_data['password'] = False
+        result = check_login(post_data['db'], post_data['login'], post_data['password'])
+        return self.send_response(Response(json.dumps({'result': result})))
+
+    def loading_gif(self):
+        data = open('loading32x32.gif', 'rb').read()
+        self.st_res('200 OK', [
+            ('content-type', 'image/gif'),
+            ('content-length', str(len(data))),
+            ('Access-Control-Allow-Origin', '*')
+        ])
+        return [data]
+
     def __call__(self, environ, start_response):
         try:
             self.env = environ
@@ -77,6 +110,10 @@ class WSGIClouderForm(object):
                 return self.submit_form()
             elif request_url == '/plugin.js':
                 return self.plugin_js()
+            elif request_url == '/login':
+                return self.page_login()
+            elif request_url == '/img/loading32x32.gif':
+                return self.loading_gif()
             else:
                 raise NotFound()
         except HTTPException, e:

@@ -21,6 +21,7 @@
 ##############################################################################
 
 from openerp import models, fields, api, http, _
+from xmlrpclib import ServerProxy
 import os
 import errno
 import subprocess
@@ -55,22 +56,6 @@ class ClouderApplication(models.Model):
         application = self.browse(data['application_id'])
         partner = data['request_partner']
 
-        """
-        Deplace la création de l'environment ailleurs si tu veux.
-        Si on crée une base, on ne demande rien par rapport à l'environmement, celui ci sera automatiquement
-            créé ou automatiquement assigné.
-        Par contre si on créé un container le prefix est obligatoire, dans ce cas on affiche un
-            champ env_prefix sur le formulaire avec le prefix de l'environement.
-        De plus, toujours uniquement si container, dès que le visiteur a saisi son email on fait
-            un appel ajax pour savoir si cet email a déjà des environment lié.
-        Si oui on affiche un champ sélection env_id non requis pour choisir l'un des environement existant,
-            automatiquement rempli avec le premier environmement de la liste.
-        Si env_id est rempli, on masque le champ env_prefix.
-        De plus, l'appel ajax affiche également un champ password si l'email existe, comme chez ava.
-
-        A noter : le formulaire ne doit pas seulement créer un res.partner, il doit creer un res.users
-            avec le groupe d'acces clouder user
-        """
         if not data['env_id']:
             env_obj = self.env['clouder.environment']
             env_id = env_obj.search([('partner_id', '=', partner.id)])
@@ -261,6 +246,11 @@ class ClouderWebHelper(models.Model):
         return html
 
     @api.model
+    def check_login_exists(self, login):
+        orm_user = self.env['res.users'].sudo()
+        return bool(orm_user.search([('login', '=', login)]))
+
+    @api.model
     def submit_form(self, post_data):
         # Return codes:
         #   0: success
@@ -285,11 +275,14 @@ class ClouderWebHelper(models.Model):
             'prefix',
             'clouder_partner_id'
         ]
+        other_fields = [
+            'password'
+        ]
 
         # Checking data
         partner_data = {}
         for mandat in partner_mandatory_fields:
-            if mandat not in post_data:
+            if mandat not in post_data or not post_data[mandat]:
                 return {"code": 1, 'msg': 'Missing field "{0}"'.format(mandat)}
             partner_data[mandat] = post_data[mandat]
         for opt in partner_optionnal_fields:
@@ -298,13 +291,48 @@ class ClouderWebHelper(models.Model):
 
         instance_data = {}
         for mandat in instance_mandatory_fields:
-            if mandat not in post_data:
+            if mandat not in post_data or not post_data[mandat]:
                 return {"code": 1, 'msg': 'Missing field "{0}"'.format(mandat)}
             instance_data[mandat] = post_data[mandat]
 
-        # All data retrieved, creating partner
+        other_data = {}
+        for opt in other_fields:
+            if opt in post_data:
+                other_data[opt] = post_data[opt]
+            else:
+                other_data[opt] = ''
+
+        # All data retrieved
         orm_partner = self.env['res.partner'].sudo()
-        instance_data['request_partner'] = orm_partner.create(partner_data)
+        orm_user = self.env['res.users'].sudo()
+
+        # If the user exists, try to login and update partner
+        if self.check_login_exists(partner_data['email']):
+            server = ServerProxy('http://localhost:8069/xmlrpc/common')
+            user_id = server.login(self.env.cr.dbname, partner_data['email'], other_data['password'])
+            if not user_id:
+                return {"code": 2, 'msg': 'Incorrect user/password'}
+            user = orm_user.browse([user_id])[0]
+
+            if user.partner_id:
+                user.partner_id.write(partner_data)
+                instance_data['request_partner'] = user.partner_id
+            else:
+                instance_data['request_partner'] = orm_partner.create(partner_data)
+                user.sudo().write({'partner_id': instance_data['request_partner'].id})
+
+        # If the user doesn't exist, create a new partner and user
+        else:
+            instance_data['request_partner'] = orm_partner.create(partner_data)
+            user = orm_user.create({
+                'login': partner_data['email'],
+                'partner_id': instance_data['request_partner'].id
+            })
+
+            # Add user to Clouder user group
+            self.env.ref('clouder.group_clouder_user').sudo().write({
+                'users': [(4, user.id)]
+            })
 
         # Parsing instance data
         instance_data['clouder_partner_id'] = int(instance_data['clouder_partner_id'])
@@ -382,6 +410,21 @@ class ClouderWebHelper(models.Model):
         }
 
         /* Classes */
+        #ClouderPlugin .CL_Loading
+        {
+            position:relative;
+
+            /* IE 8 */
+            -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+            /* IE 5-7 */
+            filter: alpha(opacity=50);
+            /* Netscape */
+            -moz-opacity: 0.5;
+            /* Safari 1.x */
+            -khtml-opacity: 0.5;
+            /* Good browsers */
+            opacity: 0.5;
+        }
         #ClouderPlugin .CF_Title
         {
             font-size: 25px;
@@ -575,13 +618,13 @@ class ClouderWebHelper(models.Model):
 
         </head>
         <body>
+            <p class="CF_Title">""" + _("Request a Clouder Instance") + u"""</p>
+            <div class="CL_Loading"/>
             <form id="ClouderForm" method="POST" action="">
-
                 <input type="hidden" name="clouder_partner_id" value=""/>
                 <input type="hidden" name="lang" value=""/>
                 <input type="hidden" name="db" value=""/>
 
-                <p class="CF_Title">""" + _("Request a Clouder Instance") + u"""</p>
 
                 <fieldset class="CL_Step CL_Step1">
                     <div class="form-group col-lg-6">
@@ -603,11 +646,20 @@ class ClouderWebHelper(models.Model):
                             ==CL_ADD_DOMAIN_OPTIONS==
                         </select>
                     </div>
+                    <div class="clearfix"/>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="email">""" + _("Email") + u"""</label>
+                        <input type="email" name="email" class="form-control"/>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="password">""" + _("Password") + u"""</label>
+                        <input type="password" name="password" class="form-control"/>
+                    </div>
                 </fieldset>
 
                 <fieldset class="CL_Step CL_Step2">
                     <div class="form-group col-lg-6">
-                        <label class="control-label" for="contact_name">""" + _("Your Name") + u"""</label>
+                        <label class="control-label" for="name">""" + _("Your Name") + u"""</label>
                         <input type="text" name="name" class="form-control"/>
                     </div>
                     <div class="form-group col-lg-6">
@@ -615,15 +667,6 @@ class ClouderWebHelper(models.Model):
                             + _("Company Name") \
                             + u"""</label>
                         <input type="text" name="street" class="form-control"/>
-                    </div>
-                    <div class="clearfix"/>
-                    <div class="form-group col-lg-6">
-                        <label class="control-label" for="contact_name">""" + _("Email") + u"""</label>
-                        <input type="email" name="email" class="form-control"/>
-                    </div>
-                    <div class="form-group col-lg-6">
-                        <label class="control-label" for="phone">""" + _("Phone") + u"""</label>
-                        <input type="tel" name="phone" class="form-control"/>
                     </div>
                     <div class="clearfix"/>
                     <div class="form-group col-lg-6">
@@ -640,6 +683,10 @@ class ClouderWebHelper(models.Model):
                             + _("Zip / Postal Code") \
                             + u"""</label>
                         <input type="text" name="zip" class="form-control"/>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="phone">""" + _("Phone") + u"""</label>
+                        <input type="tel" name="phone" class="form-control"/>
                     </div>
                     <div class="clearfix"/>
                     <div class="form-group col-lg-6">
@@ -660,6 +707,8 @@ class ClouderWebHelper(models.Model):
                     </div>
                 </fieldset>
 
+                <div class="CL_hint">
+                </div>
 
                 <div class="CL_Step CL_Step1 clearfix">
                     <a class="btn pull-right mb32 a-next">""" + _("Next") \
@@ -672,7 +721,14 @@ class ClouderWebHelper(models.Model):
                     <a class="btn pull-right mb32 a-submit">""" + _("Submit") + u""" <span class="fa"/></a>
                 </div>
             </form>
-            <p class="CL_thanks">""" + _("Your request for a Clouder instance has been sent.") + u"""<br/>""" \
+            <p class="CL_final_thanks">""" + _("Your request for a Clouder instance has been sent.") + u"""<br/>""" \
                                      + _("Thank you for your interest in Clouder!") + u"""</p>
+
+            <p class="CL_final_error">
+                <span class="CL_Error_msg"/>
+                <div class="clearfix"/>
+                <a class="btn pull-left mb32 a-retry">""" + _("Retry") \
+            + u""" <span class="fa fa-long-arrow-left"/></a>
+            </p>
         </body>
         </html>"""
