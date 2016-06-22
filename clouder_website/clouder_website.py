@@ -71,11 +71,10 @@ class ClouderApplication(models.Model):
         if application.web_create_type == 'container':
             return self.env['clouder.container'].create({
                 'environment_id': data['env_id'],
-                'suffix': data['suffix'],
+                'suffix': data['prefix'],
                 'application_id': application.id
             })
-
-        if application.web_create_type == 'base':
+        elif application.web_create_type == 'base':
             return self.env['clouder.base'].create({
                 'suffix': data['prefix'],
                 'domain_id': data['domain_id'],
@@ -183,6 +182,25 @@ class ClouderWebHelper(models.Model):
             relaunch()
 
     @api.model
+    def get_env_ids(self, uid):
+        """
+        Returns the existing environment ids for the given uid
+        """
+        env_orm = self.env['clouder.environment'].sudo()
+        user_orm = self.env['res.users'].sudo()
+
+        user = user_orm.browse([uid])[0]
+        env_ids = env_orm.search([('partner_id', '=', user.partner_id.id)])
+
+        res = {}
+        for env in env_ids:
+            res[str(env.id)] = {
+                'name': env.name
+            }
+
+        return res
+
+    @api.model
     def application_form_values(self):
         """
         Parses the values used in the form
@@ -220,7 +238,7 @@ class ClouderWebHelper(models.Model):
         # Applications
         options = u""
         for app in data['applications']:
-            options += u"""<option value="{application.id}">{application.name}</option>""".format(application=app)
+            options += u"""<option inst_type="{a.web_create_type}" value="{a.id}">{a.name}</option>""".format(a=app)
         html = html.replace("==CL_ADD_APPLICATION_OPTIONS==", options)
 
         # Domains
@@ -275,6 +293,10 @@ class ClouderWebHelper(models.Model):
             'prefix',
             'clouder_partner_id'
         ]
+        instance_optional_fields = [
+            'env_id',
+            'env_prefix'
+        ]
         other_fields = [
             'password'
         ]
@@ -295,12 +317,18 @@ class ClouderWebHelper(models.Model):
                 return {"code": 1, 'msg': 'Missing field "{0}"'.format(mandat)}
             instance_data[mandat] = post_data[mandat]
 
+        for opt in instance_optional_fields:
+            if opt in post_data:
+                instance_data[opt] = post_data[opt]
+            else:
+                instance_data[opt] = False
+
         other_data = {}
         for opt in other_fields:
             if opt in post_data:
                 other_data[opt] = post_data[opt]
             else:
-                other_data[opt] = ''
+                other_data[opt] = False
 
         # All data retrieved
         orm_partner = self.env['res.partner'].sudo()
@@ -655,6 +683,20 @@ class ClouderWebHelper(models.Model):
                         <label class="control-label" for="password">""" + _("Password") + u"""</label>
                         <input type="password" name="password" class="form-control"/>
                     </div>
+                    <div class="clearfix"/>
+                    <div id="CL_env_form">
+                        <div class="form-group col-lg-6">
+                            <label class="control-label" for="env_prefix">""" + _("New environment name") + u"""</label>
+                            <input type="text" name="env_prefix" class="form-control"/>
+                        </div>
+                        <div class="form-group col-lg-6">
+                            <label class="control-label" for="env_id">
+                                """ + _("... or use an existing one") + u"""</label>
+                            <select name="env_id" class="form-control">
+                                <option value="">""" + _("<= Use new name") + u"""</option>
+                            </select>
+                        </div>
+                    </div>
                 </fieldset>
 
                 <fieldset class="CL_Step CL_Step2">
@@ -722,13 +764,13 @@ class ClouderWebHelper(models.Model):
                 </div>
             </form>
             <p class="CL_final_thanks">""" + _("Your request for a Clouder instance has been sent.") + u"""<br/>""" \
-                                     + _("Thank you for your interest in Clouder!") + u"""</p>
+            + _("Thank you for your interest in Clouder!") + u"""</p>
 
-            <p class="CL_final_error">
+            <div class="CL_final_error">
                 <span class="CL_Error_msg"/>
                 <div class="clearfix"/>
                 <a class="btn pull-left mb32 a-retry">""" + _("Retry") \
             + u""" <span class="fa fa-long-arrow-left"/></a>
-            </p>
+            </div>
         </body>
         </html>"""

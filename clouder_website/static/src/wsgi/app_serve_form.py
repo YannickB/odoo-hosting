@@ -26,7 +26,7 @@ def check_login(database, login, password=False):
         )
     else:
         server = ServerProxy('http://localhost:8069/xmlrpc/common')
-        return bool(server.login(database, login, password))
+        return server.login(database, login, password)
 
 
 def call_html(database, lang):
@@ -44,6 +44,15 @@ def process_form(database, data):
     return server.execute_kw(
         database, user_id, PASSWORD,
         'clouder.web.helper', 'submit_form', [data], {'context': {'lang': data['lang']}}
+    )
+
+
+def load_env_from_partner(database, uid, lang):
+    user_id = serv_connect(database)
+    server = ServerProxy('http://localhost:8069/xmlrpc/object')
+    return server.execute_kw(
+        database, user_id, PASSWORD,
+        'clouder.web.helper', 'get_env_ids', [uid], {'context': {'lang': lang}}
     )
 
 
@@ -67,8 +76,16 @@ class WSGIClouderForm(object):
     def submit_form(self):
         req = Request(self.env)
         post_data = {x: req.form[x] for x in req.form}
+
         if 'db' not in post_data:
             raise BadRequest(description="Missing parameter")
+
+        # Changing empty/missing env info into booleans
+        if 'env_id' not in post_data or not post_data['env_id']:
+            post_data['env_id'] = False
+        if 'env_prefix' not in post_data or not post_data['env_prefix']:
+            post_data['env_prefix'] = False
+
         result = process_form(post_data['db'], post_data)
         if int(result['code']):
             raise BadRequest(description=result['msg'])
@@ -87,7 +104,7 @@ class WSGIClouderForm(object):
             raise BadRequest(description="Missing parameter")
         if 'password' not in post_data:
             post_data['password'] = False
-        result = check_login(post_data['db'], post_data['login'], post_data['password'])
+        result = bool(check_login(post_data['db'], post_data['login'], post_data['password']))
         return self.send_response(Response(json.dumps({'result': result})))
 
     def loading_gif(self):
@@ -98,6 +115,17 @@ class WSGIClouderForm(object):
             ('Access-Control-Allow-Origin', '*')
         ])
         return [data]
+
+    def get_env(self):
+        req = Request(self.env)
+        post_data = {x: req.form[x] for x in req.form}
+        if 'db' not in post_data or 'login' not in post_data or 'password' not in post_data:
+            raise BadRequest(description="Missing parameter")
+        uid = check_login(post_data['db'], post_data['login'], post_data['password'])
+        if not uid:
+            return json.dumps({'error': 'Could not login with given credentials.'})
+        result = load_env_from_partner(post_data['db'], uid, post_data['lang'])
+        return self.send_response(Response(json.dumps({'result': result})))
 
     def __call__(self, environ, start_response):
         try:
@@ -114,6 +142,8 @@ class WSGIClouderForm(object):
                 return self.page_login()
             elif request_url == '/img/loading32x32.gif':
                 return self.loading_gif()
+            elif request_url == '/get_env':
+                return self.get_env()
             else:
                 raise NotFound()
         except HTTPException, e:
