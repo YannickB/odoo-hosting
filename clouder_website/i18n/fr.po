@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 8.0-20150826\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-06-07 09:03+0000\n"
-"PO-Revision-Date: 2016-06-07 09:03+0000\n"
+"POT-Creation-Date: 2016-06-22 16:23+0000\n"
+"PO-Revision-Date: 2016-06-22 16:23+0000\n"
 "Last-Translator: <>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,13 +16,25 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:557
+#: code:addons/clouder_website/clouder_website.py:699
+#, python-format
+msgid "... or use an existing one"
+msgstr "... ou choisir parmis:"
+
+#. module: clouder_website
+#: code:addons/clouder_website/clouder_website.py:701
+#, python-format
+msgid "<= Use new name"
+msgstr "<= Utiliser un nouvel environement"
+
+#. module: clouder_website
+#: code:addons/clouder_website/clouder_website.py:660
 #, python-format
 msgid "Application"
 msgstr "Application"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:559
+#: code:addons/clouder_website/clouder_website.py:662
 #, python-format
 msgid "Application..."
 msgstr "Application..."
@@ -33,13 +45,13 @@ msgid "Base"
 msgstr "Base"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:603
+#: code:addons/clouder_website/clouder_website.py:724
 #, python-format
 msgid "City"
 msgstr "Ville"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:299
+#: code:addons/clouder_website/clouder_website.py:387
 #, python-format
 msgid "Clouder instance request form"
 msgstr "Formulaire de demande d'instance Clouder"
@@ -50,7 +62,7 @@ msgid "Clouder web helper only access"
 msgstr "Droits pour Clouder Web Helper seulement"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:584
+#: code:addons/clouder_website/clouder_website.py:714
 #, python-format
 msgid "Company Name"
 msgstr "Société"
@@ -61,13 +73,13 @@ msgid "Container"
 msgstr "Conteneur"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:615
+#: code:addons/clouder_website/clouder_website.py:740
 #, python-format
 msgid "Country"
 msgstr "Pays"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:617
+#: code:addons/clouder_website/clouder_website.py:742
 #, python-format
 msgid "Country..."
 msgstr "Pays..."
@@ -88,19 +100,19 @@ msgid "Disabled"
 msgstr "Désactivé"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:569
+#: code:addons/clouder_website/clouder_website.py:676
 #, python-format
 msgid "Domain Name"
 msgstr "Nom de domaine"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:571
+#: code:addons/clouder_website/clouder_website.py:678
 #, python-format
 msgid "Domain..."
 msgstr "Domaine..."
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:590
+#: code:addons/clouder_website/clouder_website.py:684
 #, python-format
 msgid "Email"
 msgstr "Email"
@@ -111,74 +123,103 @@ msgid "ID"
 msgstr "ID"
 
 #. module: clouder_website
+#: field:clouder.web.helper,__last_update:0
+msgid "Last Modified on"
+msgstr "Dernière modification le"
+
+#. module: clouder_website
 #: field:clouder.web.helper,write_uid:0
 msgid "Last Updated by"
-msgstr "Dernière modification par"
+msgstr "Dernière mise-à-jour par"
 
 #. module: clouder_website
 #: field:clouder.web.helper,write_date:0
 msgid "Last Updated on"
-msgstr "Dernière modification le"
+msgstr "Dernière mise-à-jour le"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:634
+#: code:addons/clouder_website/clouder_website.py:694
+#, python-format
+msgid "New environment name"
+msgstr "Nom du nouvel environnement"
+
+#. module: clouder_website
+#: code:addons/clouder_website/clouder_website.py:761
 #, python-format
 msgid "Next"
 msgstr "Suivant"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:594
+#: code:addons/clouder_website/clouder_website.py:688
+#, python-format
+msgid "Password"
+msgstr "Mot de passe"
+
+#. module: clouder_website
+#: code:addons/clouder_website/clouder_website.py:735
 #, python-format
 msgid "Phone"
 msgstr "Téléphone"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:639
+#: code:addons/clouder_website/clouder_website.py:766
 #, python-format
 msgid "Previous"
 msgstr "Précédent"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:553
+#: code:addons/clouder_website/clouder_website.py:650
 #, python-format
 msgid "Request a Clouder Instance"
 msgstr "Demander une instance Clouder"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:626
+#: code:addons/clouder_website/clouder_website.py:777
+#, python-format
+msgid "Retry"
+msgstr "Re-essayer"
+
+#. module: clouder_website
+#: code:addons/clouder_website/clouder_website.py:751
 #, python-format
 msgid "Select..."
 msgstr "Selectionnez..."
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:623
+#: code:addons/clouder_website/clouder_website.py:748
 #, python-format
 msgid "State / Province"
 msgstr "Etat / Département"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:599
+#: code:addons/clouder_website/clouder_website.py:720
 #, python-format
 msgid "Street"
 msgstr "Rue"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:565
+#: code:addons/clouder_website/clouder_website.py:672
 #, python-format
 msgid "Subdomain"
 msgstr "Sous-domaine"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:641
+#: code:addons/clouder_website/clouder_website.py:768
 #, python-format
 msgid "Submit"
 msgstr "Valider"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:645
+#: code:addons/clouder_website/clouder_website.py:772
 #, python-format
 msgid "Thank you for your interest in Clouder!"
-msgstr "Merci d'avoir choisi Clouder!"
+msgstr "Merci de l'intérêt que vous portez a Clouder!"
+
+#. module: clouder_website
+#: code:addons/clouder_website/clouder_website.py:667
+#, python-format
+msgid "Instance title"
+msgstr "Nom de l'Instance"
 
 #. module: clouder_website
 #: field:clouder.application,web_create_type:0
@@ -186,19 +227,19 @@ msgid "Web creation"
 msgstr "Création via requette web"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:579
+#: code:addons/clouder_website/clouder_website.py:709
 #, python-format
 msgid "Your Name"
 msgstr "Votre Nom"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:644
+#: code:addons/clouder_website/clouder_website.py:771
 #, python-format
 msgid "Your request for a Clouder instance has been sent."
-msgstr "Votre demande d'instance Clouder a été envoyée."
+msgstr "Votre requette d'instance Clouder à été envoyée."
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:609
+#: code:addons/clouder_website/clouder_website.py:730
 #, python-format
 msgid "Zip / Postal Code"
 msgstr "Zip / Code Postal"

@@ -238,12 +238,14 @@ Clouder.error_step = function(step){
         $app_select = Clouder.$plugin.find('select[name="application_id"]');
         $domain_select = Clouder.$plugin.find('select[name="domain_id"]');
         $prefix_input = Clouder.$plugin.find('input[name="prefix"]');
+        $title_input = Clouder.$plugin.find('input[name="title"]');
         $password_select = Clouder.$plugin.find('input[name="password"]');
         $email_select = Clouder.$plugin.find('input[name="email"]');
         
         has_error = Clouder.add_error_to_elt($app_select) || has_error;
         has_error = Clouder.add_error_to_elt($domain_select) || has_error;
         has_error = Clouder.add_error_to_elt($prefix_input) || has_error;
+        has_error = Clouder.add_error_to_elt($title_input) || has_error;
         has_error = Clouder.error_email($email_select) || has_error;
 
         if (has_error){

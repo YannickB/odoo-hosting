@@ -60,13 +60,13 @@ class ClouderApplication(models.Model):
             env_obj = self.env['clouder.environment']
             env_id = env_obj.search([('partner_id', '=', partner.id)])
             if env_id:
-                data['env_id'] = env_id[0]
+                data['env_id'] = env_id[0].id
             else:
                 data['env_id'] = env_obj.create({
                     'name': partner.name,
                     'partner_id': partner.id,
                     'prefix': data['env_prefix']  # Can be False
-                })
+                }).id
 
         if application.web_create_type == 'container':
             return self.env['clouder.container'].create({
@@ -76,14 +76,14 @@ class ClouderApplication(models.Model):
             })
         elif application.web_create_type == 'base':
             return self.env['clouder.base'].create({
-                'suffix': data['prefix'],
+                'name': data['prefix'],
                 'domain_id': data['domain_id'],
                 'environment_id': data['env_id'],
                 'title': data['title'],
                 'application_id': application.id,
                 'poweruser_name': partner.email,
                 'poweruser_email': partner.email,
-                'lang': data['lang'],
+                'lang': 'lang' in self.env.context and self.env.context['lang'] or 'en_US',
                 'ssl_only': True,
                 'autosave': True,
             })
@@ -291,7 +291,8 @@ class ClouderWebHelper(models.Model):
             'application_id',
             'domain_id',
             'prefix',
-            'clouder_partner_id'
+            'clouder_partner_id',
+            'title'
         ]
         instance_optional_fields = [
             'env_id',
@@ -661,6 +662,10 @@ class ClouderWebHelper(models.Model):
                             <option value="">""" + _("Application...") + u"""</option>
                             ==CL_ADD_APPLICATION_OPTIONS==
                         </select>
+                    </div>
+                    <div class="form-group col-lg-6">
+                        <label class="control-label" for="title">""" + _("Instance title") + u"""</label>
+                        <input type="text" name="title" class="form-control"/>
                     </div>
                     <div class="clearfix"/>
                     <div class="form-group col-lg-6">
