@@ -326,7 +326,7 @@ class ClouderBase(models.Model):
         """
         Get default pricegrids from container
         """
-        if vals['container_id']:
+        if 'container_id' in vals and vals['container_id']:
             container = self.env['clouder.container'].browse([vals['container_id']])[0]
             pricegrids = []
 
