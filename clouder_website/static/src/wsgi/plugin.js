@@ -14,6 +14,9 @@ Clouder.run = function($){
         // Hide hint
         $clouder_form.find('.CL_hint').hide();
 
+        // Hide instance title
+        $clouder_form.find('input[name="title"]').parent().hide();
+
         // Env input
         $clouder_form.find('select[name="env_id"]').parent().hide();
         $clouder_form.find('#CL_env_form').hide();
@@ -43,15 +46,22 @@ Clouder.run = function($){
         });
         $clouder_form.find('select[name="env_id"]').change();
 
-        // Controls the appearance of env inputs depending on application_id
+        // Controls the appearance of env/title inputs depending on application_id
         $clouder_form.on('change', "select[name='application_id']", function(){
             var $app_id = $clouder_form.find("select[name='application_id']");
             var $env_div = $clouder_form.find('#CL_env_form');
+            var $title_input = $clouder_form.find('input[name="title"]');
             if ($app_id.find('option:selected').attr('inst_type')==='container'){
                 $env_div.show();
+                $title_input.parent().hide();
+            }
+            else if ($app_id.find('option:selected').attr('inst_type')==='base'){
+                $env_div.hide();
+                $title_input.parent().show();
             }
             else {
                 $env_div.hide();
+                $title_input.parent().hide();
             }
         });
         $clouder_form.find('select[name="application_id"]').change();
@@ -82,7 +92,10 @@ Clouder.run = function($){
         $clouder_form.on('change', 'input[name="password"]', function(){
             // Invalidate login
             Clouder.login_validated = false;
+
+            // Hide and empty env selection
             $clouder_form.find('select[name="env_id"]').parent().hide();
+            $clouder_form.find('select[name="env_id"]').find('option:gt(0)').remove();
 
             var $email = $clouder_form.find("input[name='email']");
             var $passwd = $clouder_form.find("input[name='password']");
@@ -221,10 +234,12 @@ Clouder.add_error_to_elt = function($elt){
 Clouder.error_email = function($elt){
     var email = $elt.val();
     var err_class = "has-error";
+    var $hint = Clouder.$plugin.find('.CL_hint');
     var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     if (email == '' || !re.test(email))
     {
         $elt.parent().addClass(err_class);
+        $hint.text('Please enter a valid email address');
         return true;
     }
     $elt.parent().removeClass(err_class);
@@ -234,29 +249,51 @@ Clouder.error_email = function($elt){
 Clouder.error_step = function(step){
     var has_error = false;
     var $hint = Clouder.$plugin.find('.CL_hint');
+    $hint.text('');
+    $hint.hide();
+
     if (step == 1){
         $app_select = Clouder.$plugin.find('select[name="application_id"]');
         $domain_select = Clouder.$plugin.find('select[name="domain_id"]');
         $prefix_input = Clouder.$plugin.find('input[name="prefix"]');
-        $title_input = Clouder.$plugin.find('input[name="title"]');
         $password_select = Clouder.$plugin.find('input[name="password"]');
         $email_select = Clouder.$plugin.find('input[name="email"]');
         
         has_error = Clouder.add_error_to_elt($app_select) || has_error;
         has_error = Clouder.add_error_to_elt($domain_select) || has_error;
         has_error = Clouder.add_error_to_elt($prefix_input) || has_error;
-        has_error = Clouder.add_error_to_elt($title_input) || has_error;
         has_error = Clouder.error_email($email_select) || has_error;
 
+        if ($app_select.find('option:selected').attr('inst_type')==='container'){
+            $env_prefix = Clouder.$plugin.find('input[name="env_prefix"]');
+            $env_id = Clouder.$plugin.find('select[name="env_id"]');
+
+            if (!$env_id.val() && !$env_prefix.val()){
+                has_error = true;
+                $env_id.parent().addClass('has-error');
+                $env_prefix.parent().addClass('has-error');
+            }
+            else {
+                $env_id.parent().removeClass('has-error');
+                $env_prefix.parent().removeClass('has-error');
+            }
+        }
+        else if ($app_select.find('option:selected').attr('inst_type')==='base'){
+            $title_input = Clouder.$plugin.find('input[name="title"]');
+            has_error = Clouder.add_error_to_elt($title_input) || has_error;
+        }
+
         if (has_error){
-            $hint.text("Please fill in the required fields.");
+            if (!$hint.text()){
+                $hint.text("Please fill in the required fields.");
+            }
             $hint.show();
         }
 
         if ($password_select.parent().hasClass('js_required')){
             has_error = Clouder.add_error_to_elt($password_select) || has_error;
             has_error = !Clouder.login_validated || has_error;
-            if (has_error){
+            if (!Clouder.login_validated){
                 $hint.text("Invalid password for registered user.");
                 $hint.show();
             }

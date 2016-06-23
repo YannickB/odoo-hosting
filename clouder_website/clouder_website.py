@@ -439,6 +439,11 @@ class ClouderWebHelper(models.Model):
         }
 
         /* Classes */
+        #ClouderPlugin .CL_hint
+        {
+            color: red;
+            text-align: center;
+        }
         #ClouderPlugin .CL_Loading
         {
             position:relative;
