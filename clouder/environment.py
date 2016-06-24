@@ -22,14 +22,8 @@
 
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
-from openerp import modules
-
-import model
 
 import re
-
-import time
-from datetime import datetime, timedelta
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -61,12 +55,17 @@ class ClouderEnvironment(models.Model):
 
     @api.one
     @api.constrains('prefix')
-    def _validate_data(self):
+    def _check_prefix(self):
         """
         Check that the prefix does not contain any forbidden
         characters.
+        Also checks that you cannot remove a prefix when containers are linked to the environment
         """
         if self.prefix and not re.match("^[\w]*$", self.prefix):
             raise except_orm(
                 _('Data error!'),
                 _("Prefix can only contains letters"))
+        if self.container_ids and not self.prefix:
+            raise except_orm(
+                _('Data error!'),
+                _("You cannot have an empty prefix when containers are linked"))

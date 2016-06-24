@@ -53,7 +53,7 @@ class ClouderDomain(models.Model):
 
     @api.one
     @api.constrains('name')
-    def _validate_data(self):
+    def _check_name(self):
         """
         Check that the domain name does not contain any forbidden
         characters.
@@ -202,7 +202,7 @@ class ClouderBase(models.Model):
 
     @api.one
     @api.constrains('name', 'admin_name', 'admin_email', 'poweruser_email')
-    def _validate_data(self):
+    def _check_forbidden_chars_credentials(self):
         """
         Check that the base name and some other fields does not contain any
         forbidden characters.

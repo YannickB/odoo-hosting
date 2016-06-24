@@ -145,7 +145,7 @@ class ClouderServer(models.Model):
 
     @api.one
     @api.constrains('name', 'ip')
-    def _validate_data(self):
+    def _check_name_ip(self):
         """
         Check that the server domain does not contain any forbidden
         characters.
@@ -474,10 +474,9 @@ class ClouderContainer(models.Model):
          'Name must be unique per server!'),
     ]
 
-
     @api.one
     @api.constrains('environment_id')
-    def _validate_data(self):
+    def _check_environment(self):
         """
         Check that the environment linked to the container have a prefix.
         """
@@ -488,7 +487,7 @@ class ClouderContainer(models.Model):
 
     @api.one
     @api.constrains('suffix')
-    def _validate_data(self):
+    def _check_suffix(self):
         """
         Check that the container name does not contain any forbidden
         characters.

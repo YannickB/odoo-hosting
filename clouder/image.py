@@ -66,7 +66,7 @@ class ClouderImage(models.Model):
 
     @api.one
     @api.constrains('name')
-    def _validate_data(self):
+    def _check_name(self):
         """
         Check that the image name does not contain any forbidden
         characters.
@@ -205,7 +205,7 @@ class ClouderImageVersion(models.Model):
 
     @api.one
     @api.constrains('name')
-    def _validate_data(self):
+    def _check_name(self):
         """
         Check that the image version name does not contain any forbidden
         characters.

@@ -70,7 +70,7 @@ class ClouderApplicationType(models.Model):
 
     @api.one
     @api.constrains('name', 'system_user')
-    def _validate_data(self):
+    def _check_forbidden_chars_name_sys_user(self):
         """
         Check that the application type name does not contain any forbidden
         characters.
@@ -240,7 +240,7 @@ class ClouderApplication(models.Model):
 
     @api.one
     @api.constrains('code', 'admin_name', 'admin_email')
-    def _validate_data(self):
+    def _check_forbidden_chars_credentials_code(self):
         """
         Check that the application name does not contain any forbidden
         characters.

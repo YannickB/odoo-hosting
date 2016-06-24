@@ -72,7 +72,7 @@ class ClouderConfigSettings(models.Model):
 
     @api.one
     @api.constrains('email_sysadmin')
-    def _validate_data(self):
+    def _check_email_sysadmin(self):
         """
         Check that the sysadmin email does not contain any forbidden
         characters.
