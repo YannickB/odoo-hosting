@@ -108,7 +108,7 @@ class WSGIClouderForm(object):
         return self.send_response(Response(json.dumps({'result': result})))
 
     def loading_gif(self):
-        data = open('loading32x32.gif', 'rb').read()
+        data = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'loading32x32.gif'), 'rb').read()
         self.st_res('200 OK', [
             ('content-type', 'image/gif'),
             ('content-length', str(len(data))),
