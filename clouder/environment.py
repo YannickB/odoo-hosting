@@ -22,6 +22,8 @@
 
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
+from openerp import modules
+
 
 import re
 
@@ -69,3 +71,15 @@ class ClouderEnvironment(models.Model):
             raise except_orm(
                 _('Data error!'),
                 _("You cannot have an empty prefix when containers are linked"))
+
+    @api.multi
+    def write(self, vals):
+        """
+        Removes the possibility to change the prefix if containers are linked
+        """
+        if 'prefix' in vals and self.container_ids:
+            raise except_orm(
+                _('Data error!'),
+                _("You cannot have an empty prefix when containers are linked"))
+
+        super(ClouderEnvironment, self).write(vals)
