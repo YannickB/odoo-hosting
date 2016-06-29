@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Author: Yannick Buron
+# Author: Yannick Buron, Nicolas Petit
 # Copyright 2015, TODAY Clouder SASU
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,7 @@
 ##############################################################################
 
 from openerp import models, fields, api, http, _
+from openerp.exceptions import except_orm
 from xmlrpclib import ServerProxy
 import os
 import errno
@@ -91,11 +92,59 @@ class ClouderApplication(models.Model):
         return False
 
 
+class ClouderWebSession(models.Model):
+    """
+    A class to store session info from the external web form
+    """
+    _name = 'clouder.web.session'
+
+    def _get_name(self):
+        """
+        Computes a name for a clouder web session
+        """
+        return self.partner_id.name.replace(' ', '_') + fields.Date.today()
+
+    name = fields.Char("Name", compute='_get_name', required=False)
+    partner_id = fields.Many2one('res.partner', 'Partner', required=True)
+    clouder_partner_id = fields.Many2one('res.partner', 'Sales Partner', required=True)
+    application_id = fields.Many2one('clouder.application', 'Application', required=True)
+    domain_id = fields.Many2one('clouder.domain', 'Domain', required=True)
+    prefix = fields.Char('Prefix', required=True)
+    title = fields.Char('Title')
+    environment_id = fields.Many2one('clouder.environment', 'Environment')
+    environment_prefix = fields.Char('Environment prefix')
+
+    @api.one
+    @api.constrains('application_id', 'title', 'environment_id', 'environment_prefix')
+    def _check_complex_requirements(self):
+        """
+        Checks fields requirements that are dependant on others
+        """
+        if self.application_id.web_create_type == "base":
+            if not self.title:
+                raise except_orm(
+                    _('Data error!'),
+                    _("You need to specify a title when applying for a base"))
+        elif self.application_id.web_create_type == "container":
+            if not (self.environment_id or self.environment_prefix):
+                raise except_orm(
+                    _('Data error!'),
+                    _("You need to specify an existing or new environment when applying for a container"))
+
+
 class ClouderWebHelper(models.Model):
     """
     A class made to be called by widgets and webpages alike
     """
     _name = 'clouder.web.helper'
+
+    @api.model
+    def set_invoicing(self):
+        """
+        This function should be overriden by clouder payment modules
+        Returns the amount to invoice
+        """
+        return 0
 
     @api.model
     def maintain_wsgi_server(self):
@@ -368,9 +417,41 @@ class ClouderWebHelper(models.Model):
         instance_data['application_id'] = int(instance_data['application_id'])
         instance_data['domain_id'] = int(instance_data['domain_id'])
 
+        # Creating session using information
+        orm_cws = self.env['clouder.web.session'].sudo()
+        session_id = orm_cws.create(instance_data)
+
+        return {
+            'code': 0,
+            'msg': 'Session created',
+            'session_id': session_id,
+            'payment': False
+        }
+
+    def submit_payment(self, clouder_web_session_id, vendor_response):
+        """
+        Should be overriden by clouder payment modules
+        Checks that the vendor response is OK and creates the instance using session info
+        """
+
+        # In this default version, payment isn't even checked
+        orm_cws = self.env['clouder.web.session'].sudo()
+        session_info = orm_cws.browse([clouder_web_session_id])[0]
+
+        data = {
+            'clouder_partner_id': session_info.clouder_partner_id.id,
+            'application_id': session_info.application_id.id,
+            'domain_id': session_info.domain_id.id,
+            'request_partner': session_info.partner_id.id,
+            'prefix': session_info.prefix,
+            'title': session_info.title,
+            'env_id': session_info.environment_id.id,
+            'env_prefix': session_info.environment_prefix
+        }
+
         # Calling instance creation function
         orm_app = self.env['clouder.application'].sudo()
-        orm_app.create_instance_from_request(instance_data)
+        orm_app.create_instance_from_request(data)
 
         return {'code': 0, 'msg': 'Instance creation launched'}
 

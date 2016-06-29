@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Author: Yannick Buron
+# Author: Yannick Buron, Nicolas Petit
 # Copyright 2015, TODAY Clouder SASU
 #
 # This program is free software: you can redistribute it and/or modify
