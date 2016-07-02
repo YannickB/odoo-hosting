@@ -29,13 +29,13 @@
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
-    Creates a WSGI app that serves a form to create new clouder instances from an external website
+    Creates an HTTP controller that serves a form to create new clouder instances from an external website
     """,
     'demo': [],
     'data': [
         'clouder_website_view.xml',
-        'security/security.xml',
-        'security/ir.model.access.csv'
+        #'security/security.xml',
+        #'security/ir.model.access.csv'
     ],
     'installable': True,
     'application': True,

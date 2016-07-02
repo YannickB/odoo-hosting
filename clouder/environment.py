@@ -49,8 +49,6 @@ class ClouderEnvironment(models.Model):
         'clouder.container', 'environment_id', 'Containers')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(name)',
-         'Name must be unique!'),
         ('prefix_uniq', 'unique(prefix)',
          'Prefix must be unique!'),
     ]

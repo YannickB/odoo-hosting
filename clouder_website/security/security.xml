@@ -2,7 +2,7 @@
 <openerp>
     <data noupdate="0">
 
-        <record id="user_clouder_web_helper_only" model="res.users">
+        <!--<record id="user_clouder_web_helper_only" model="res.users">
             <field name="name">Clouder web helper only access</field>
             <field name="login">clouder_web_helper</field>
             <field name="password">clwh</field>
@@ -11,6 +11,6 @@
         <record id="group_clouder_web_helper_only" model="res.groups">
             <field name="name">Clouder web helper only access</field>
             <field name="users" eval="[(4, ref('user_clouder_web_helper_only'))]"/>
-        </record>
+        </record>-->
     </data>
 </openerp>

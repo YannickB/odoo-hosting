@@ -23,10 +23,7 @@
 from openerp import models, fields, api, http, _
 from openerp.exceptions import except_orm
 from xmlrpclib import ServerProxy
-import os
-import errno
-import subprocess
-import time
+import copy
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -49,41 +46,63 @@ class ClouderApplication(models.Model):
         default='disabled'
     )
 
+    @api.one
+    @api.constrains('web_create_type', 'next_server_id', 'next_container_id', 'base')
+    def _check_web_create_type_next(self):
+        """
+        Checks that the base web type can only be applied on application that can have bases
+        Checks that the next container/server is correctly set depending on the web_create type
+        """
+        if self.web_create_type == 'base':
+            if not self.base:
+                raise except_orm(
+                    _('Data error!'),
+                    _("You cannot attribute the web type 'Base' to an application that cannot have bases."))
+            if not self.next_container_id:
+                raise except_orm(
+                    _('Data error!'),
+                    _("You need to specify the next container for web type 'Base'"))
+        elif self.web_create_type == 'container' and not self.next_server_id:
+            raise except_orm(
+                _('Data error!'),
+                _("You need to specify the next server for web type 'Container'"))
+
     @api.multi
-    def create_instance_from_request(self, data):
+    def create_instance_from_request(self, session_id):
         """
         Creates a clouder container or base using provided data
         """
-        application = self.browse(data['application_id'])
-        partner = data['request_partner']
+        orm_cws = self.env['clouder.web.session'].sudo()
+        data = orm_cws.browse([session_id])[0]
 
-        if not data['env_id']:
+        if not data.environment_id:
             env_obj = self.env['clouder.environment']
-            env_id = env_obj.search([('partner_id', '=', partner.id)])
+            env_id = env_obj.search([('partner_id', '=', data.partner_id.id)])
             if env_id:
-                data['env_id'] = env_id[0].id
+                data.environment_id = env_id[0]
             else:
-                data['env_id'] = env_obj.create({
-                    'name': partner.name,
-                    'partner_id': partner.id,
-                    'prefix': data['env_prefix']  # Can be False
-                }).id
+                data.environment_id = env_obj.create({
+                    'name': data.partner_id.name,
+                    'partner_id': data.partner_id.id,
+                    'prefix': data.environment_prefix  # Can be False
+                })
 
-        if application.web_create_type == 'container':
+        if data.application_id.web_create_type == 'container':
             return self.env['clouder.container'].create({
-                'environment_id': data['env_id'],
-                'suffix': data['prefix'],
-                'application_id': application.id
+                'environment_id': data.environment_id.id,
+                'suffix': data.prefix,
+                'application_id': data.application_id.id
             })
-        elif application.web_create_type == 'base':
+        elif data.application_id.web_create_type == 'base':
             return self.env['clouder.base'].create({
-                'name': data['prefix'],
-                'domain_id': data['domain_id'],
-                'environment_id': data['env_id'],
-                'title': data['title'],
-                'application_id': application.id,
-                'poweruser_name': partner.email,
-                'poweruser_email': partner.email,
+                'name': data.prefix,
+                'domain_id': data.domain_id.id,
+                'container_id': data.application_id.next_container_id.id,
+                'environment_id': data.environment_id.id,
+                'title': data.title,
+                'application_id': data.application_id.id,
+                'poweruser_name': data.partner_id.email,
+                'poweruser_email': data.partner_id.email,
                 'lang': 'lang' in self.env.context and self.env.context['lang'] or 'en_US',
                 'ssl_only': True,
                 'autosave': True,
@@ -102,7 +121,7 @@ class ClouderWebSession(models.Model):
         """
         Computes a name for a clouder web session
         """
-        return self.partner_id.name.replace(' ', '_') + fields.Date.today()
+        return self.partner_id.name.replace(' ', '_') + "_" + fields.Date.today()
 
     name = fields.Char("Name", compute='_get_name', required=False)
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)
@@ -137,98 +156,6 @@ class ClouderWebHelper(models.Model):
     A class made to be called by widgets and webpages alike
     """
     _name = 'clouder.web.helper'
-
-    @api.model
-    def set_invoicing(self):
-        """
-        This function should be overriden by clouder payment modules
-        Returns the amount to invoice
-        """
-        return 0
-
-    @api.model
-    def maintain_wsgi_server(self):
-        """
-        Checks that the server is running.
-
-        Prints log and attempts reload if it's not the case.
-        """
-
-        def read_pid():
-            """
-            Reads the PID file for app_serv_form
-            """
-            pid_path = os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                'static',
-                'src',
-                'wsgi',
-                'app_serve_form.pid'
-            )
-            try:
-                pid_f = open(pid_path)
-                pid = pid_f.read()
-                pid_f.close()
-                if not pid or pid == '\n':
-                    return -1
-                return int(pid)
-            except ValueError:
-                return -2
-            except:
-                return -99
-
-        def check_running(pid):
-            """
-            Tries to send signal 0 to a process to see if it lives
-            """
-            try:
-                os.kill(pid, 0)
-                return True
-            except OSError, err:
-                if err.errno == errno.ESRCH:
-                    # No process found
-                    return False
-                elif err.errno == errno.EPERM:
-                    # No permissions, but the process is running
-                    return True
-                else:
-                    # This should never happen: there is a problem and it should be checked
-                    _logger.error("Unexpected exception while checking for process health")
-                    raise err
-
-        def relaunch():
-            """
-            Relaunch process
-            """
-            path_to_wsgi = os.path.join(
-                os.path.dirname(os.path.realpath(__file__)),
-                'static',
-                'src',
-                'wsgi',
-                'app_serve_form.sh'
-            )
-            return subprocess.Popen([path_to_wsgi])
-
-        # Check PID file
-        proc_id = read_pid()
-
-        # if invalid PID: relaunch
-        if proc_id <= 0:
-            if proc_id == -1:
-                _logger.warning("WSGI server no PID - Relaunching.")
-            elif proc_id == -2:
-                _logger.warning("WSGI server unknown error with PID - Relaunching.")
-            elif proc_id == -99:
-                _logger.warning("WSGI server unknown error with PID - Relaunching.")
-            relaunch()
-            # Making sure the process had time to start before reading PID again
-            time.sleep(5)
-            proc_id = read_pid()
-
-        # Check if PID is running
-        if not check_running(proc_id):
-            _logger.warning("WSGI PID exists but is not running. - Relaunching.")
-            relaunch()
 
     @api.model
     def get_env_ids(self, uid):
@@ -340,12 +267,12 @@ class ClouderWebHelper(models.Model):
             'application_id',
             'domain_id',
             'prefix',
-            'clouder_partner_id',
-            'title'
+            'clouder_partner_id'
         ]
         instance_optional_fields = [
             'env_id',
-            'env_prefix'
+            'env_prefix',
+            'title'
         ]
         other_fields = [
             'password'
@@ -384,7 +311,7 @@ class ClouderWebHelper(models.Model):
         orm_partner = self.env['res.partner'].sudo()
         orm_user = self.env['res.users'].sudo()
 
-        # If the user exists, try to login and update partner
+        # If the user exists, try to login and create/update partner
         if self.check_login_exists(partner_data['email']):
             server = ServerProxy('http://localhost:8069/xmlrpc/common')
             user_id = server.login(self.env.cr.dbname, partner_data['email'], other_data['password'])
@@ -392,19 +319,21 @@ class ClouderWebHelper(models.Model):
                 return {"code": 2, 'msg': 'Incorrect user/password'}
             user = orm_user.browse([user_id])[0]
 
-            if user.partner_id:
-                user.partner_id.write(partner_data)
-                instance_data['request_partner'] = user.partner_id
-            else:
-                instance_data['request_partner'] = orm_partner.create(partner_data)
-                user.sudo().write({'partner_id': instance_data['request_partner'].id})
+            # Do not update empty fields
+            partner_update_dict = copy.deepcopy(partner_data)
+            for x in partner_data:
+                if not partner_update_dict[x]:
+                    del partner_update_dict[x]
+
+            user.partner_id.write(partner_update_dict)
+            instance_data['partner_id'] = user.partner_id.id
 
         # If the user doesn't exist, create a new partner and user
         else:
-            instance_data['request_partner'] = orm_partner.create(partner_data)
+            instance_data['partner_id'] = orm_partner.create(partner_data).id
             user = orm_user.create({
                 'login': partner_data['email'],
-                'partner_id': instance_data['request_partner'].id
+                'partner_id': instance_data['partner_id']
             })
 
             # Add user to Clouder user group
@@ -416,6 +345,10 @@ class ClouderWebHelper(models.Model):
         instance_data['clouder_partner_id'] = int(instance_data['clouder_partner_id'])
         instance_data['application_id'] = int(instance_data['application_id'])
         instance_data['domain_id'] = int(instance_data['domain_id'])
+        instance_data['environment_id'] = instance_data['env_id']
+        instance_data['environment_prefix'] = instance_data['env_prefix']
+        del instance_data['env_id']
+        del instance_data['env_prefix']
 
         # Creating session using information
         orm_cws = self.env['clouder.web.session'].sudo()
@@ -424,36 +357,9 @@ class ClouderWebHelper(models.Model):
         return {
             'code': 0,
             'msg': 'Session created',
-            'session_id': session_id,
+            'session_id': session_id.id,
             'payment': False
         }
-
-    def submit_payment(self, clouder_web_session_id, vendor_response):
-        """
-        Should be overriden by clouder payment modules
-        Checks that the vendor response is OK and creates the instance using session info
-        """
-
-        # In this default version, payment isn't even checked
-        orm_cws = self.env['clouder.web.session'].sudo()
-        session_info = orm_cws.browse([clouder_web_session_id])[0]
-
-        data = {
-            'clouder_partner_id': session_info.clouder_partner_id.id,
-            'application_id': session_info.application_id.id,
-            'domain_id': session_info.domain_id.id,
-            'request_partner': session_info.partner_id.id,
-            'prefix': session_info.prefix,
-            'title': session_info.title,
-            'env_id': session_info.environment_id.id,
-            'env_prefix': session_info.environment_prefix
-        }
-
-        # Calling instance creation function
-        orm_app = self.env['clouder.application'].sudo()
-        orm_app.create_instance_from_request(data)
-
-        return {'code': 0, 'msg': 'Instance creation launched'}
 
     def get_form_template(self):
         """
@@ -854,8 +760,6 @@ class ClouderWebHelper(models.Model):
                     <a class="btn pull-right mb32 a-submit">""" + _("Submit") + u""" <span class="fa"/></a>
                 </div>
             </form>
-            <p class="CL_final_thanks">""" + _("Your request for a Clouder instance has been sent.") + u"""<br/>""" \
-            + _("Thank you for your interest in Clouder!") + u"""</p>
 
             <div class="CL_final_error">
                 <span class="CL_Error_msg"/>

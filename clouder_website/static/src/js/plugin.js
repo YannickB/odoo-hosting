@@ -207,14 +207,20 @@ Clouder.submit_override = function(){
         dataType: 'html',
         success: function(data) {
             data = JSON.parse(data);
-            if (data.payment) {
-                Clouder.$plugin.append(data.html)
+            if (data.html){
+                Clouder.$plugin.append('<div id="'+data.div_id+'"></div>');
+                $new_div = Clouder.$plugin.find('.'+data.div_id)
+                $new_div.html(data.html);
                 Clouder.loading(false);
+                $form.hide();
+                $new_div.show();
             }
             else {
                 Clouder.loading(false);
                 $form.hide();
-                Clouder.$plugin.find('.CL_final_thanks').show();
+                $error = Clouder.$plugin.find('.CL_final_error');
+                $error.find('.CL_Error_msg').text('ERROR: Did not understand server response');
+                $error.show();
             }
         },
         error: function(jq, txt, err) {
