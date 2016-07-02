@@ -209,7 +209,7 @@ Clouder.submit_override = function(){
             data = JSON.parse(data);
             if (data.html){
                 Clouder.$plugin.append('<div id="'+data.div_id+'"></div>');
-                $new_div = Clouder.$plugin.find('.'+data.div_id)
+                $new_div = Clouder.$plugin.find('#'+data.div_id)
                 $new_div.html(data.html);
                 Clouder.loading(false);
                 $form.hide();
