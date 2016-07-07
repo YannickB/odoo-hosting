@@ -75,6 +75,19 @@ class ClouderApplication(models.Model):
         orm_cws = self.env['clouder.web.session'].sudo()
         data = orm_cws.browse([session_id])[0]
 
+        # Create user if it doesn't exist yet
+        if data.fresh_partner:
+            orm_user = self.env['res.users'].sudo()
+            user = orm_user.create({
+                'login': data.partner_id.email,
+                'partner_id': data.partner_id.id
+            })
+            # Add user to Clouder user group
+            self.env.ref('clouder.group_clouder_user').sudo().write({
+                'users': [(4, user.id)]
+            })
+
+        # Create environment if it doesn't exist
         if not data.environment_id:
             env_obj = self.env['clouder.environment']
             env_id = env_obj.search([('partner_id', '=', data.partner_id.id)])
@@ -84,9 +97,10 @@ class ClouderApplication(models.Model):
                 data.environment_id = env_obj.create({
                     'name': data.partner_id.name,
                     'partner_id': data.partner_id.id,
-                    'prefix': data.environment_prefix  # Can be False
+                    'prefix': data.environment_prefix
                 })
 
+        # Create the requested instance
         if data.application_id.web_create_type == 'container':
             return self.env['clouder.container'].create({
                 'environment_id': data.environment_id.id,
@@ -129,9 +143,10 @@ class ClouderWebSession(models.Model):
     application_id = fields.Many2one('clouder.application', 'Application', required=True)
     domain_id = fields.Many2one('clouder.domain', 'Domain', required=True)
     prefix = fields.Char('Prefix', required=True)
-    title = fields.Char('Title')
-    environment_id = fields.Many2one('clouder.environment', 'Environment')
-    environment_prefix = fields.Char('Environment prefix')
+    title = fields.Char('Title', required=False)
+    environment_id = fields.Many2one('clouder.environment', 'Environment', required=False)
+    environment_prefix = fields.Char('Environment prefix', required=False)
+    fresh_partner = fields.Boolean('Freshly created partner?', default=False, required=True)
 
     @api.one
     @api.constrains('application_id', 'title', 'environment_id', 'environment_prefix')
@@ -249,6 +264,7 @@ class ClouderWebHelper(models.Model):
         # Return codes:
         #   0: success
         #   1: mandatory field not set
+        #   2: invalid credentials
 
         partner_mandatory_fields = [
             "name",
@@ -283,6 +299,11 @@ class ClouderWebHelper(models.Model):
         for mandat in partner_mandatory_fields:
             if mandat not in post_data or not post_data[mandat]:
                 return {"code": 1, 'msg': 'Missing field "{0}"'.format(mandat)}
+
+            # Make sure we only save lower-case email adresses to avoid mismatch when checking login
+            if mandat == "email":
+                post_data[mandat] = post_data[mandat].lower()
+
             partner_data[mandat] = post_data[mandat]
         for opt in partner_optionnal_fields:
             if opt in post_data:
@@ -299,6 +320,8 @@ class ClouderWebHelper(models.Model):
                 instance_data[opt] = post_data[opt]
             else:
                 instance_data[opt] = False
+
+        instance_data['fresh_partner'] = False
 
         other_data = {}
         for opt in other_fields:
@@ -328,18 +351,10 @@ class ClouderWebHelper(models.Model):
             user.partner_id.write(partner_update_dict)
             instance_data['partner_id'] = user.partner_id.id
 
-        # If the user doesn't exist, create a new partner and user
+        # If the user doesn't exist, create a new partner
         else:
             instance_data['partner_id'] = orm_partner.create(partner_data).id
-            user = orm_user.create({
-                'login': partner_data['email'],
-                'partner_id': instance_data['partner_id']
-            })
-
-            # Add user to Clouder user group
-            self.env.ref('clouder.group_clouder_user').sudo().write({
-                'users': [(4, user.id)]
-            })
+            instance_data['fresh_partner'] = True
 
         # Parsing instance data
         instance_data['clouder_partner_id'] = int(instance_data['clouder_partner_id'])

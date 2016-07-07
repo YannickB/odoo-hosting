@@ -25,7 +25,7 @@ Clouder.run = function($){
         Clouder.showStep(1);
 
         // Fill form data with already known variables
-        $clouder_form.attr('action', Clouder.pluginPath + 'submit_form');
+        $clouder_form.attr('action', Clouder.pluginPath + 'clouder_form/submit_form');
         $clouder_form.find('input[name="clouder_partner_id"]').val(Clouder.params['partner_id']);
         $clouder_form.find('input[name="db"]').val(Clouder.params['db']);
         $clouder_form.find('input[name="lang"]').val(Clouder.params['lang']);
@@ -356,7 +356,7 @@ Clouder.get_env = function($login, $password, when_callback){
 
     function ajax_get_env(){
         return Clouder.$.ajax({
-            url: Clouder.pluginPath + 'get_env',
+            url: Clouder.pluginPath + 'clouder_form/get_env',
             data: {
                 'login': $login.val(),
                 'password': $password.val(),
@@ -404,7 +404,7 @@ Clouder.user_login = function($login, $password, when_callback){
 
     function axaj_login(){
         return Clouder.$.ajax({
-            url: Clouder.pluginPath + 'form_login',
+            url: Clouder.pluginPath + 'clouder_form/form_login',
             data: {'login': $login.val(), 'password': $password.val(), 'db': Clouder.params['db']},
             method:'POST',
             cache: false,
@@ -489,12 +489,12 @@ Clouder.loadJQueryPlugins = function() {
     });
 };
 
-Clouder.img_loading = Clouder.pluginPath + "img/loading32x32.gif"
+Clouder.img_loading = Clouder.pluginPath + "clouder_form/img/loading32x32.gif"
 
 Clouder.loadPhp = function ($) {
     $('#ClouderPlugin').css('min-height', '52px');
     $.ajax({
-        url: Clouder.pluginPath + 'request_form',
+        url: Clouder.pluginPath + 'clouder_form/request_form',
         data: Clouder.params,
         method:'POST',
         dataType: 'html',

@@ -43,6 +43,19 @@ class FormController(http.Controller):
     #######################
     #      Utilities      #
     #######################
+    def include_run_js(self, js_path):
+        """
+        Returns a string containing a html script tag that loads the given js path
+        Note: The js_path argument is the path without the hostname
+        """
+        return """<script>
+            (function(w,d,s){
+                var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
+                j.async=true;j.src=Clouder.pluginPath+'{0}';
+                f.parentNode.insertBefore(j,f);
+            })(window,document,'script');
+        </script>""".format(js_path)
+
     def check_login(self, login, password=False):
         """
         Checks the login
@@ -75,7 +88,8 @@ class FormController(http.Controller):
         instance_id = orm_app.create_instance_from_request(data['result']['session_id'])
 
         if not instance_id:
-            return self.bad_request("Error: instance creation failed.")
+            html = """<p>""" + _("Error: instance creation failed.") + u"""</p>"""
+            return self.bad_request(html)
 
         html = """<p>""" + \
             _("Your request for a Clouder instance has been sent.") + u"""<br/>""" + \
@@ -90,7 +104,7 @@ class FormController(http.Controller):
     #######################
     #        Pages        #
     #######################
-    @http.route('/request_form', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/request_form', type='http', auth='public', methods=['POST'])
     def request_form(self, **post):
         """
         Fetches and returns the HTML base form
@@ -105,7 +119,7 @@ class FormController(http.Controller):
 
         return request.make_response(full_file, headers=HEADERS)
 
-    @http.route('/submit_form', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/submit_form', type='http', auth='public', methods=['POST'])
     def submit_form(self, **post):
         """
         Submits the base form then calls the next part of the process
@@ -142,7 +156,7 @@ class FormController(http.Controller):
         # Otherwise, we continue with the process
         return self.hook_next(data)
 
-    @http.route('/form_login', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/form_login', type='http', auth='public', methods=['POST'])
     def page_login(self, **post):
         """
         Uses check_login on the provided login and password
@@ -155,7 +169,7 @@ class FormController(http.Controller):
         result = self.check_login(post['login'], post['password'])
         return request.make_response(json.dumps({'result': result}), headers=HEADERS)
 
-    @http.route('/get_env', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/get_env', type='http', auth='public', methods=['POST'])
     def get_env(self, **post):
         """
         Returns the list of environments linked to the given user
@@ -179,7 +193,7 @@ class FormController(http.Controller):
     #######################
     #        Files        #
     #######################
-    @http.route('/js/plugin.js', type='http', auth='public', methods=['GET'])
+    @http.route('/clouder_form/js/plugin.js', type='http', auth='public', methods=['GET'])
     def plugin_js(self, **post):
         """
         Serves the initial javascript plugin that makes the form work
@@ -195,7 +209,7 @@ class FormController(http.Controller):
         )
         return response
 
-    @http.route('/img/loading32x32.gif', type='http', auth='public', methods=['GET'])
+    @http.route('/clouder_form/img/loading32x32.gif', type='http', auth='public', methods=['GET'])
     def loading_gif(self, **post):
         """
         Serves the loading gif for the form
