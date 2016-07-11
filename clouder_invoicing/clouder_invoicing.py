@@ -93,6 +93,9 @@ class ClouderInvoicingPricegridLine(models.Model):
         class_to_search = self.link_type + ".metadata"
         class_link = self.link_type.split('.')[-1] + "_id"
 
+        # Return a default value for instance creation amount
+        if class_link == 'application':
+            return 1
         # Search for the metadata
         metadata = self.env[class_to_search].search([
             (class_link, '=', self.link.id),
@@ -119,7 +122,8 @@ class ClouderInvoicingPricegridLine(models.Model):
                 if len(linked_recs) > 1:
                     raise except_orm(
                         _('Pricegrid invoice_amount error!'),
-                        _("This function should only be called from recordsets linked to the same container/base.")
+                        _("This function should only be called from a set of records " +
+                          "linked to the same container OR base OR application.")
                     )
         # Grouping lines by invoicing unit
         invoicing_data = {}
@@ -181,6 +185,19 @@ class ClouderApplication(models.Model):
         'link_application',
         'Pricegrids'
     )
+    invoicing_product_id = fields.Many2one('product.product', string="Invoicing product")
+
+    @api.one
+    @api.constrains('pricegrid_ids', 'invoicing_product_id')
+    def _check_pricegrid_product(self):
+        """
+        Checks that the invoicing product is set if there are pricegrids
+        """
+        if self.pricegrid_ids and not self.invoicing_product_id:
+            raise except_orm(
+                _('Application pricegrid error!'),
+                _("An application with pricegrids must have an invoicing product set.")
+            )
 
 
 class ClouderContainer(models.Model):
@@ -285,12 +302,16 @@ class ClouderContainer(models.Model):
                     if base.should_invoice() and base.pricegrid_ids:
                         results['invoice_base_data'].append({
                             'id': base.id,
+                            'product_id': base.application_id.invoicing_product_id,
+                            'partner_id': base.environment_id.partner_id.id,
                             'amount': base.pricegrid_ids.invoice_amount()
                         })
             elif container.should_invoice() and container.pricegrid_ids:
                 # Invoicing per container
                 results['invoice_container_data'].append({
                     'id': container.id,
+                    'product_id': container.application_id.invoicing_product_id,
+                    'partner_id': container.environment_id.partner_id.id,
                     'amount': container.pricegrid_ids.invoice_amount()
                 })
         return results
@@ -386,26 +407,61 @@ class ClouderBase(models.Model):
 
 class AccountInvoice(models.Model):
     """
-    Overrides invoices to allow supplier invoice from possible master clouder
+    Overrides invoices to allow invoicing operations on clouder instances
     """
     _inherit = "account.invoice"
 
     @api.model
-    def invoice_containers(self, containers):
-        container_env = self.env['clouder.container']
-        base_env = self.env['clouder.base']
+    def clouder_make_invoice(self, data):
+        """
+        Creates an invoice from clouder data
+        """
+        orm_accline = self.env['account.invoice.line']
+
+        invoice = self.create({
+            'origin': data['origin'],
+            'partner_id': data['partner_id']
+        })
+        orm_accline.create({
+            'invoice_id': invoice.id,
+            'origin': data['origin'],
+            'product_id': data['product_id'],
+            'price_unit': data['amount']
+        })
+
+        return invoice.id
+
+    @api.model
+    def clouder_invoice_containers(self, containers):
+        """
+        Launch invoice-related data gathering for container and their linked bases,
+        the use that data to create relevant invoices.
+        """
+        orm_cont = self.env['clouder.container']
+        orm_base = self.env['clouder.base']
+
+        result = {
+            'containers': {},
+            'bases': {}
+        }
 
         # Gathering invoice data from containers
         invoice_data = containers.get_invoicing_data()
 
         # Processing containers
         for container_data in invoice_data['invoice_container_data']:
-            # TODO: create a real invoice
-            _logger.info('\nINVOICING CONTAINER {0} FOR {1}\n'.format(container_data['id'], container_data['amount']))
-
+            container = orm_cont.browse([container_data['id']])[0]
+            origin = container.name + "_" + fields.Date.today()
+            invoice_id = self.clouder_make_invoice({
+                'origin': origin,
+                'partner_id': container_data['partner_id'],
+                'product_id': container_data['product_id'],
+                'amount': container_data['amount']
+            })
             # Updating date for container
-            c_ids = container_env.search([('id', '=', container_data['id'])])
-            c_ids.write({'last_invoiced': fields.Date.today()})
+            container.write({'last_invoiced': fields.Date.today()})
+
+            result['containers'][container.id] = invoice_id
 
         # Processing bases
         for base_data in invoice_data['invoice_base_data']:
@@ -413,17 +469,17 @@ class AccountInvoice(models.Model):
             _logger.info('\nINVOICING BASE {0} FOR {1}\n'.format(base_data['id'], base_data['amount']))
 
             # Updating date for base
-            b_ids = base_env.search([('id', '=', base_data['id'])])
+            b_ids = orm_base.search([('id', '=', base_data['id'])])
             b_ids.write({'last_invoiced': fields.Date.today()})
 
     @api.model
     def clouder_invoicing(self):
         """
-        Invoice containers
+        Launch invoicing on all existing instances
         """
         # Getting all containers
         containers = self.env['clouder.container'].search([])
-        self.invoice_containers(containers)
+        self.clouder_invoice_containers(containers)
 
     @api.model
     def create_clouder_supplier_invoice(self, amount):
