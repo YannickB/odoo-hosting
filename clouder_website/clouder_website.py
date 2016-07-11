@@ -372,7 +372,7 @@ class ClouderWebHelper(models.Model):
         return {
             'code': 0,
             'msg': 'Session created',
-            'session_id': session_id.id,
+            'clws_id': session_id.id,
             'payment': False
         }
 

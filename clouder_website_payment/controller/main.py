@@ -40,19 +40,15 @@ class FormControllerExtend(FormController):
         """
         Returns the payment form after the basic form was submitted
         """
-        #orm_clwh = request.env['clouder.web.helper'].sudo()
-        #html = orm_clwh.call_payment(data['result']['session_id'], request.httprequest.url_root)
-
-        orm_cpny = request.env['res.company'].sudo()
-        company_id = orm_cpny._company_default_get('res.partner')
-
         orm_clws = request.env['clouder.web.session'].sudo()
-        session = orm_clws.browse([data['result']['session_id']])[0]
+        session = orm_clws.browse([data['result']['clws_id']])[0]
 
         # TODO: use real values instead
         from openerp import fields
-        ref = "TEST"+fields.Date.today()
+        session.write({'reference': "TEST"+fields.Date.today()})
         amount = 10
+        orm_cpny = request.env['res.company'].sudo()
+        company_id = orm_cpny._company_default_get('res.partner')
         currency_id = False
         # END TODO
 
@@ -61,11 +57,14 @@ class FormControllerExtend(FormController):
         render_ctx = dict(request.context, submit_class='btn btn-primary', submit_txt=_('Pay Now'))
         for acquirer in orm_acq.search([('website_published', '=', True), ('company_id', '=', company_id)]):
             acquirer.button = acquirer.with_context(**render_ctx).render(
-                ref,
+                session.reference,
                 amount,
                 currency_id,
                 partner_id=session.partner_id.id,
-                tx_values={}
+                tx_values={
+                    'return_url': '/clouder_form/payment_complete',
+                    'cancel_url': '/clouder_form/payment_cancel'
+                }
             )[0]
             acquirers.append(acquirer)
 
@@ -74,17 +73,111 @@ class FormControllerExtend(FormController):
             'hostname': request.httprequest.url_root
         }
 
-        html = request.env.ref('clouder_website_payment.clouder_web_payment_buttons').render(
+        html = request.env.ref('clouder_website_payment.payment_buttons').render(
             qweb_context,
             engine='ir.qweb',
             context=request.context
         )
 
-        html += self.include_run_js('clouder_website_payment/static/src/js/clouder_website_payment.js')
-
         resp = {
+            'clws_id': session.id,
             'html': html,
             'div_id': 'CL_payment',
+            'js': [
+                'clouder_website_payment/static/src/js/clouder_website_payment.js'
+            ]
         }
 
         return request.make_response(json.dumps(resp), headers=HEADERS)
+
+    @http.route('/clouder_form/payment_complete', type='http', auth='public', methods=['POST'])
+    def payment_complete(self, **post):
+        """
+        Redirect page after a successful payment
+        """
+        # Check parameters
+        lang = 'en_US'
+        if 'lang' in post:
+            lang = post['lang']
+        request.env = self.env_with_context({'lang': lang})
+
+        # TODO: remove debug
+        import pprint
+        _logger.info(u"\n\n{0}\n\n".format(pprint.pformat(post, indent=4)))
+
+        html = request.env.ref('clouder_website_payment.payment_success').render(
+            {},
+            engine='ir.qweb',
+            context=request.context
+        )
+
+        return request.make_response(html, headers=HEADERS)
+
+
+    @http.route('/clouder_form/payment_cancel', type='http', auth='public', methods=['POST'])
+    def payment_cancel(self, **post):
+        """
+        Redirect page after a cancelled payment
+        """
+        # Check parameters
+        lang = 'en_US'
+        if 'lang' in post:
+            lang = post['lang']
+        request.env = self.env_with_context({'lang': lang})
+
+        # TODO: remove debug
+        import pprint
+        _logger.info(u"\n\n{0}\n\n".format(pprint.pformat(post, indent=4)))
+
+        html = request.env.ref('clouder_website_payment.payment_cancel').render(
+            {},
+            engine='ir.qweb',
+            context=request.context
+        )
+
+        return request.make_response(html, headers=HEADERS)
+
+
+
+    @http.route('/clouder_form/submit_acquirer', type='http', auth='public', methods=['POST'])
+    def submit_acquirer(self, **post):
+        """
+        Fetches and returns the HTML base form
+        """
+        # Check parameters
+        lang = 'en_US'
+        if 'lang' in post:
+            lang = post['lang']
+        request.env = self.env_with_context({'lang': lang})
+
+        request.env = request.env.with_context()
+
+        if 'clws_id' not in post or 'acquirer_id' not in post:
+            return self.bad_request("Bad request")
+        else:
+            post['clws_id'] = int(post['clws_id'])
+            post['acquirer_id'] = int(post['acquirer_id'])
+
+        orm_clws = request.env['clouder.web.session'].sudo()
+        session = orm_clws.browse([post['clws_id']])[0]
+
+        # TODO: use real values instead
+        amount = 10
+        orm_cpny = request.env['res.company'].sudo()
+        company_id = orm_cpny._company_default_get('res.partner')
+        company = orm_cpny.browse([company_id])[0]
+        currency_id = company.currency_id.id
+        # END TODO
+
+        orm_paytr = request.env['payment.transaction'].sudo()
+        orm_paytr.create({
+            'acquirer_id': post['acquirer_id'],
+            'type': 'form',
+            'amount': amount,
+            'currency_id': currency_id,
+            'partner_id': session.partner_id.id,
+            'partner_country_id': session.partner_id.country_id.id,
+            'reference': session.reference,
+        })
+
+        return request.make_response("OK", headers=HEADERS)

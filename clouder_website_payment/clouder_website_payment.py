@@ -28,61 +28,16 @@ _logger = logging.getLogger(__name__)
 
 class ClouderWebSession(models.Model):
     """
-    A class to store session info from the external web form
+    Adds invoice reference to the new instance session
     """
     _inherit = 'clouder.web.session'
 
     reference = fields.Char('Invoice Reference', required=False)
 
 
-class ClouderWebHelper(models.Model):
-    """
-    A class made to be called by widgets and webpages alike
-    """
-    _inherit = 'clouder.web.helper'
-
-    def make_invoice(self, session_id):
-        """
-        Makes all the necessary invoice actions and returns the invoice
-        Also updates the session with the invoice reference
-        """
-        # TODO: implement the actual invoice part
-        # TODO: update session with invoice ref
-        return 0
-
-    def get_payments_form(self, session_id, ref, amount):
-        """
-        Returns the payment form with working buttons, ready to be displayed
-        """
-        orm_pay_acq = self.env['payment.acquirer'].sudo()
-        orm_clws = self.env['clouder.web.session'].sudo()
-
-        session = orm_clws.browse([session_id])[0]
-
-        html = orm_pay_acq.render_payment_block(ref, amount, False, partner_id=session.partner_id.id)
-
-        # TODO: modify the form to return the session
-
-        return html
-
-    def call_payment(self, session_id, public_hostname):
-        """
-        Creates an invoice, generates the HTML form for payment and returns it
-        """
-        # TODO: make it a real invoice
-        invoice_id = self.make_invoice(session_id)
-
-        session = self.env['clouder.web.session'].sudo().browse([session_id])[0]
-        ref = "TEST"+fields.Date.today()
-        session.write({'reference': ref})
-
-        # DEBUG TODO: remove test vals
-        return self.get_payments_form(session_id, ref, 10)
-
-
 class PaymentTransaction(models.Model):
     """
-    A class to store session info from the external web form
+    Override payment form to allow
     """
     _inherit = 'payment.transaction'
 
@@ -90,13 +45,16 @@ class PaymentTransaction(models.Model):
         # Process payment
         result = super(PaymentTransaction, self).form_feedback(cr, uid, data, acquirer_name, context=context)
 
+        # Since this is an old-api definition we need to make the new environment ourselves
+        env = api.Environment(cr, uid, context)
+
         # Search for corresponding web session
-        orm_clws = self.env['clouder.web.session'].sudo()
-        session = orm_clws.search([('reference', '=', self.reference)])
+        orm_clws = env['clouder.web.session']
+        session = orm_clws.search([('reference', '=', data['item_number'])])
         if session:
             session = session[0]
 
-        # DEBUG TODO: if successfull make it validate the payment
+        # DEBUG TODO: if successfull make it launch instance creation
         _logger.info(u"\n\nMEOW\n\n")
         _logger.info(u"\n\n{0}\n\n".format(session))
         if session:

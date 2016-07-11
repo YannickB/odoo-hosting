@@ -2,6 +2,7 @@ Clouder.run = function($){
     Clouder.$ = $;
     Clouder.$plugin = Clouder.$('#ClouderPlugin');
     Clouder.login_validated = false;
+    Clouder.clws_id = false;
 
     Clouder.$plugin.css('background', 'none');
     Clouder.$plugin.find('.CL_final_thanks').hide();
@@ -183,7 +184,7 @@ Clouder.loading = function(state){
         $loading.hide();
         $form.show();
     }
-}
+};
 
 Clouder.submit_override = function(){
     var $form = Clouder.$plugin.find('#ClouderForm');
@@ -211,6 +212,10 @@ Clouder.submit_override = function(){
                 Clouder.$plugin.append('<div id="'+data.div_id+'"></div>');
                 $new_div = Clouder.$plugin.find('#'+data.div_id)
                 $new_div.html(data.html);
+                data.js.forEach(function(path){
+                    Clouder.$.getScript(Clouder.pluginPath + path);
+                });
+                Clouder.clws_id = data.clws_id;
                 Clouder.loading(false);
                 $form.hide();
                 $new_div.show();
@@ -231,7 +236,7 @@ Clouder.submit_override = function(){
             $error.show();
         }
     });
-}
+};
 
 Clouder.add_error_to_elt = function($elt){
     var err_class = "has-error";
@@ -360,7 +365,6 @@ Clouder.get_env = function($login, $password, when_callback){
             data: {
                 'login': $login.val(),
                 'password': $password.val(),
-                'db': Clouder.params['db'],
                 'lang': Clouder.params['lang']
             },
             method:'POST',
@@ -405,7 +409,7 @@ Clouder.user_login = function($login, $password, when_callback){
     function axaj_login(){
         return Clouder.$.ajax({
             url: Clouder.pluginPath + 'clouder_form/form_login',
-            data: {'login': $login.val(), 'password': $password.val(), 'db': Clouder.params['db']},
+            data: {'login': $login.val(), 'password': $password.val()},
             method:'POST',
             cache: false,
             dataType: 'html',

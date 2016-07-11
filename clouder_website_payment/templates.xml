@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
-        <template id="clouder_web_payment_buttons">
+        <template id="payment_buttons">
               <t t-set="additional_title">Shop - Select Payment Mode</t>
               <div class="clouder_js_payment" t-if="acquirers" id="payment_method">
                   <div class="col-lg-5 col-sm-6">
@@ -27,6 +27,18 @@
                       </t>
                   </div>
               </div>
+        </template>
+        <template id="payment_success">
+            <t t-set="additional_title">Payment successful</t>
+            <p>Thank you for your interest in Clouder.</p>
+            <br/>
+            <p>You should receive an email with login instructions soon.</p>
+        </template>
+        <template id="payment_cancel">
+            <t t-set="additional_title">Payment cancelled</t>
+            <p>We're sorry to see you go.</p>
+            <br/>
+            <p>Hope we meet again sometime in the future!</p>
         </template>
     </data>
 </openerp>

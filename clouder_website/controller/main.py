@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import http, _
+from openerp import http, api, _
 from openerp.http import request
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest
 from werkzeug.wrappers import Response
@@ -43,18 +43,14 @@ class FormController(http.Controller):
     #######################
     #      Utilities      #
     #######################
-    def include_run_js(self, js_path):
+    def env_with_context(self, context):
         """
-        Returns a string containing a html script tag that loads the given js path
-        Note: The js_path argument is the path without the hostname
+        Returns a new environment made from the current request one and the given parameters
         """
-        return """<script>
-            (function(w,d,s){
-                var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
-                j.async=true;j.src=Clouder.pluginPath+'{0}';
-                f.parentNode.insertBefore(j,f);
-            })(window,document,'script');
-        </script>""".format(js_path)
+        new_context = {k: v for k, v in request.context.iteritems()}
+        new_context.update(context)
+        return api.Environment(request.cr, request.uid, new_context)
+
 
     def check_login(self, login, password=False):
         """
@@ -85,20 +81,24 @@ class FormController(http.Controller):
         """
         # Since there's nothing else to do in the original plugin, we just launch the instance creation
         orm_app = request.env['clouder.application'].sudo()
-        instance_id = orm_app.create_instance_from_request(data['result']['session_id'])
-
-        if not instance_id:
-            html = """<p>""" + _("Error: instance creation failed.") + u"""</p>"""
-            return self.bad_request(html)
-
-        html = """<p>""" + \
-            _("Your request for a Clouder instance has been sent.") + u"""<br/>""" + \
-            _("Thank you for your interest in Clouder!") + u"""</p>"""
+        instance_id = orm_app.create_instance_from_request(data['result']['clws_id'])
 
         resp = {
-            'html': html,
-            'div_id': 'CL_final_thanks',
+            'html': '',
+            'div_id': '',
+            'js': [],
+            'clws_id': data['result']['clws_id']
         }
+
+        if not instance_id:
+            resp['html'] = """<p>""" + _("Error: instance creation failed.") + u"""</p>"""
+            resp['div_id'] = 'CL_error_retry'
+        else:
+            resp['html'] = """<p>""" + \
+                _("Your request for a Clouder instance has been sent.") + u"""<br/>""" + \
+                _("Thank you for your interest in Clouder!") + u"""</p>"""
+            resp['div_id'] = 'CL_final_thanks'
+
         return request.make_response(json.dumps(resp), headers=HEADERS)
 
     #######################
@@ -113,8 +113,9 @@ class FormController(http.Controller):
         lang = 'en_US'
         if 'lang' in post:
             lang = post['lang']
+        request.env = self.env_with_context({'lang': lang})
 
-        orm_clwh = request.env['clouder.web.helper'].sudo().with_context(lang=lang)
+        orm_clwh = request.env['clouder.web.helper'].sudo()
         full_file = orm_clwh.get_form_html()
 
         return request.make_response(full_file, headers=HEADERS)
@@ -133,8 +134,9 @@ class FormController(http.Controller):
         lang = 'en_US'
         if 'lang' in post:
             lang = post['lang']
+        request.env = self.env_with_context({'lang': lang})
 
-        orm_clwh = request.env['clouder.web.helper'].sudo().with_context(lang=lang)
+        orm_clwh = request.env['clouder.web.helper'].sudo()
         result = orm_clwh.submit_form(post)
 
         # TODO: move those lines to a separate payment plugin
@@ -179,6 +181,8 @@ class FormController(http.Controller):
         lang = 'en_US'
         if 'lang' in post:
             lang = post['lang']
+        request.env = self.env_with_context({'lang': lang})
+
         if 'login' not in post or 'password' not in post:
             return self.bad_request("Missing credentials")
 
