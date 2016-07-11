@@ -437,6 +437,20 @@ class AccountInvoice(models.Model):
         Launch invoice-related data gathering for container and their linked bases,
         the use that data to create relevant invoices.
         """
+        def make_invoice_and_update(orm_class, data):
+            instance = orm_class.browse([data['id']])[0]
+            origin = instance.name + "_" + fields.Date.today()
+            invoice = self.clouder_make_invoice({
+                'origin': origin,
+                'partner_id': data['partner_id'],
+                'product_id': data['product_id'],
+                'amount': data['amount']
+            })
+            # Updating date for instance
+            instance.write({'last_invoiced': fields.Date.today()})
+
+            return invoice.id
+
         orm_cont = self.env['clouder.container']
         orm_base = self.env['clouder.base']
 
@@ -450,27 +464,14 @@ class AccountInvoice(models.Model):
 
         # Processing containers
         for container_data in invoice_data['invoice_container_data']:
-            container = orm_cont.browse([container_data['id']])[0]
-            origin = container.name + "_" + fields.Date.today()
-            invoice_id = self.clouder_make_invoice({
-                'origin': origin,
-                'partner_id': container_data['partner_id'],
-                'product_id': container_data['product_id'],
-                'amount': container_data['amount']
-            })
-            # Updating date for container
-            container.write({'last_invoiced': fields.Date.today()})
-
-            result['containers'][container.id] = invoice_id
+            invoice_id = make_invoice_and_update(orm_cont, container_data)
+            result['containers'][container_data['id']] = invoice_id
 
         # Processing bases
         for base_data in invoice_data['invoice_base_data']:
-            # TODO: create a real invoice
-            _logger.info('\nINVOICING BASE {0} FOR {1}\n'.format(base_data['id'], base_data['amount']))
-
-            # Updating date for base
-            b_ids = orm_base.search([('id', '=', base_data['id'])])
-            b_ids.write({'last_invoiced': fields.Date.today()})
+            invoice_id = make_invoice_and_update(orm_base, base_data)
+            result['containers'][base_data['id']] = invoice_id
+        return result
 
     @api.model
     def clouder_invoicing(self):
