@@ -173,7 +173,7 @@ class ClouderApplication(models.Model):
 
     @property
     def fullcode(self):
-        fullcode = self.type_id.name
+        fullcode = self.code
         if self.parent_id:
             fullcode = self.parent_id.fullcode + '-' + self.code
         return fullcode
