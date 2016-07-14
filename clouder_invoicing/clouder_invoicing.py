@@ -457,12 +457,19 @@ class AccountInvoice(models.Model):
         def make_invoice_and_update(orm_class, data):
             instance = orm_class.browse([data['id']])[0]
             origin = instance.name + "_" + fields.Date.today()
-            invoice = self.clouder_make_invoice({
+
+            inv_data = {
                 'origin': origin,
                 'partner_id': data['partner_id'],
                 'product_id': data['product_id'],
+                'account_id': data['account_id'],
                 'amount': data['amount']
-            })
+            }
+            if 'name' in data:
+                inv_data['name'] = data['name'],
+
+            invoice = self.clouder_make_invoice(inv_data)
+            
             # Updating date for instance
             instance.write({'last_invoiced': fields.Date.today()})
 
