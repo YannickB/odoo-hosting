@@ -9,6 +9,7 @@
             <field name="arch" type="xml">
                 <page string="Save" position="after">
                     <page string="Invoicing">
+                        <field name="invoicing_product_id"/>
                         <group string="Pricing grid">
                             <field name="pricegrid_ids" editable="bottom">
                                 <tree>
