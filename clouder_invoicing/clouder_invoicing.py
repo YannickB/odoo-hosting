@@ -94,7 +94,7 @@ class ClouderInvoicingPricegridLine(models.Model):
         class_link = self.link_type.split('.')[-1] + "_id"
 
         # Return a default value for instance creation amount
-        if class_link == 'application':
+        if self.link_type == 'clouder.application':
             return 1
         # Search for the metadata
         metadata = self.env[class_to_search].search([
