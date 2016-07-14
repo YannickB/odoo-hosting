@@ -58,7 +58,7 @@ class FormControllerExtend(FormController):
             'amount': session.application_id.pricegrid_ids.invoice_amount(),
             'partner_id': session.partner_id.id,
             'account_id': session.partner_id.property_account_receivable.id,
-            'product_id': session.application_id.invoicing_product_id,
+            'product_id': session.application_id.invoicing_product_id.id,
             'name': inv_desc,
             'origin': session.application_id.name + "_" + fields.Date.today()
         }
