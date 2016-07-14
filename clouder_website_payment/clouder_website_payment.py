@@ -33,7 +33,7 @@ class ClouderApplication(models.Model):
     """
 
     @api.one
-    @api.constraints('pricegrid_ids', 'web_create_type')
+    @api.constrains('pricegrid_ids', 'web_create_type')
     def _check_create_type_pricegrids(self):
         if self.web_create_type != 'disabled' and not self.pricegrid_ids:
             raise except_orm(
@@ -60,7 +60,7 @@ class ClouderWebSession(models.Model):
         default='started'
     )
 
-    @api.property
+    @property
     def should_unlink(self):
         """
         Returns true if the session should be pruned from the database
