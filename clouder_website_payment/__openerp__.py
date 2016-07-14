@@ -33,7 +33,8 @@
     """,
     'demo': [],
     'data': [
-        'templates.xml'
+        'templates.xml',
+        'clouder_website_payment_data.xml'
     ],
     'installable': True,
     'application': True,
