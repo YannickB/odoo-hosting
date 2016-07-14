@@ -34,6 +34,7 @@
     'demo': [],
     'data': [
         'clouder_invoicing_view.xml',
+        'clouder_invoicing_data.xml'
     ],
     'installable': True,
     'application': True,
