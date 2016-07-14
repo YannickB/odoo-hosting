@@ -21,7 +21,7 @@
 
         <record id="container_instance_product" model="product.product">
             <field name="name">Container/Base Instance Fee</field>
-            <field name="categ_id" ref="clouder_instance_product_category"/>
+            <field name="categ_id" ref="container_instance_product_category"/>
             <field name="standard_price">0</field>
             <field name="list_price">0</field>
             <field name="type">service</field>
