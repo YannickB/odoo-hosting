@@ -44,6 +44,18 @@ class ClouderApplication(models.Model):
             )
 
 
+class AccountInvoice(models.Model):
+    """
+    Ovveride to create a function that will be run at startup to allow cancelled invoices on the sales journal
+    """
+    def _make_sales_journal_cancellable(self):
+        """
+        Updates the default sales journal to allow invoice cancellation
+        """
+        journal = self._default_journal()
+        journal.write({'update_posted': True})
+
+
 class ClouderWebSession(models.Model):
     """
     Adds invoice reference to the new instance session

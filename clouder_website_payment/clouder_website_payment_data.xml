@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
-    <data>
+    <data noupdate="1">
+        <!-- Cron to prune obsolete clouder web sessions -->
         <record model="ir.cron" id="clouder_web_session_prune">
             <field name="name">Prune clouder web sessions</field>
             <field name="interval_number">1</field>
@@ -11,5 +12,8 @@
             <field eval="'prune_records'" name="function"/>
             <field eval="'()'" name="args"/>
         </record>
+
+        <!-- Launch function at install to allow cancellation of invoice on default sales journal -->
+        <function model="account.invoice" name="_make_sales_journal_cancellable"/>
     </data>
 </openerp>
