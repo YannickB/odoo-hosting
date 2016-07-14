@@ -21,9 +21,25 @@
 ##############################################################################
 
 from openerp import models, fields, api, http, _
+from openerp.exceptions import except_orm
 import logging
 
 _logger = logging.getLogger(__name__)
+
+
+class ClouderApplication(models.Model):
+    """
+    Checks that the web create type has pricegrids
+    """
+
+    @api.one
+    @api.constraints('pricegrid_ids', 'web_create_type')
+    def _check_create_type_pricegrids(self):
+        if self.web_create_type != 'disabled' and not self.pricegrid_ids:
+            raise except_orm(
+                _('Application error!'),
+                _("You cannot define a web creation type without defining price grids.")
+            )
 
 
 class ClouderWebSession(models.Model):
@@ -33,6 +49,41 @@ class ClouderWebSession(models.Model):
     _inherit = 'clouder.web.session'
 
     reference = fields.Char('Invoice Reference', required=False)
+    state = fields.Selection(
+        [
+            ('started', 'Started'),
+            ('canceled', 'Cancelled'),
+            ('payment_processed', 'Payment Processed'),
+            ('done', 'Done')
+        ],
+        'State',
+        default='started'
+    )
+
+    @api.property
+    def should_unlink(self):
+        """
+        Returns true if the session should be pruned from the database
+        """
+        d_from_str = fields.Datetime.from_string
+        last_access_days = (d_from_str(fields.Datetime.now()) - d_from_str(self.write_date)).days
+        if self.state == 'started' and last_access_days > 5:
+            return True
+        elif self.state == 'cancelled' and last_access_days > 1:
+            return True
+        elif self.state == 'done':
+            return True
+        return False
+
+    @api.model
+    def prune_records(self):
+        """
+        Prune records that are marked as such
+        Should not be called from a recordset!
+        """
+        for record in self.search([]):
+            if record.should_unlink():
+                record.unlink()
 
 
 class PaymentTransaction(models.Model):
@@ -49,15 +100,39 @@ class PaymentTransaction(models.Model):
         env = api.Environment(cr, uid, context)
 
         # Search for corresponding web session
-        orm_clws = env['clouder.web.session']
+        orm_clws = env['clouder.web.session'].sudo()
         session = orm_clws.search([('reference', '=', data['item_number'])])
-        if session:
-            session = session[0]
 
-        # DEBUG TODO: if successfull make it launch instance creation
-        _logger.info(u"\n\nMEOW\n\n")
-        _logger.info(u"\n\n{0}\n\n".format(session))
-        if session:
-            _logger.info(u"\n\n{0}\n\n".format(session.partner_id.name))
+        # If no session is found, skip and proceed as usual
+        if not session:
+            return result
 
+        # Finding transaction
+        tx = None
+        tx_find_method_name = '_%s_form_get_tx_from_data' % acquirer_name
+        if hasattr(self, tx_find_method_name):
+            tx = getattr(self, tx_find_method_name)(cr, uid, data, context=context)
+
+        # At this point there should never be a case where there is no found invoice
+        session = session[0]
+        orm_inv = env['account.invoice'].sudo()
+        invoice = orm_inv.search([('internal_number', '=', session.reference)])[0]
+
+        if tx and tx.state == 'cancel':
+            # Cancel session and invoice
+            session.write({'state', 'canceled'})
+            invoice.action_cancel()
+        else:
+            # Launch instance creation
+            env['clouder.application'].sudo().create_instance_from_request(session.id)
+
+            # Confirm invoice and change session state
+            invoice.invoice_validate()
+            session.write({'state': 'payment_processed'})
+
+            # TODO: Reconcile payment if the payment is already done ?
+            if tx.state == 'done':
+                pass
+
+        # Return the result from super at the end
         return result

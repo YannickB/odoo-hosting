@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import http, _
+from openerp import http, _, fields
 from openerp.http import request
 from openerp.addons.clouder_website.controller.main import FormController
 import json
@@ -41,25 +41,34 @@ class FormControllerExtend(FormController):
         Returns the payment form after the basic form was submitted
         """
         orm_clws = request.env['clouder.web.session'].sudo()
-        session = orm_clws.browse([data['result']['clws_id']])[0]
-
-        # TODO: use real values instead
-        from openerp import fields
-        session.write({'reference': "TEST"+fields.Date.today()})
-        amount = 10
-        orm_cpny = request.env['res.company'].sudo()
-        company_id = orm_cpny._company_default_get('res.partner')
-        currency_id = False
-        # END TODO
-
+        orm_inv = request.env['account.invoice'].sudo()
         orm_acq = request.env['payment.acquirer'].sudo()
+        orm_cpny = request.env['res.company'].sudo()
+
+        session = orm_clws.browse([data['result']['clws_id']])[0]
+        company_id = orm_cpny._company_default_get('res.partner')
+
+        # Creating invoice
+        invoice_data = {
+            'amount': session.application_id.pricegrid_ids.invoice_amount(),
+            'partner_id': session.partner_id,
+            'product_id': session.application_id.invoice_product_id,
+            'origin': session.application_id.name + "_" + fields.Date.today()
+        }
+        invoice_id = orm_inv.clouder_make_invoice(invoice_data)
+        invoice = orm_inv.browse([invoice_id])[0]
+
+        # Saving invoice reference
+        session.write({'reference': invoice.internal_number})
+
+        # Setting acquirer buttons
         acquirers = []
         render_ctx = dict(request.context, submit_class='btn btn-primary', submit_txt=_('Pay Now'))
         for acquirer in orm_acq.search([('website_published', '=', True), ('company_id', '=', company_id)]):
             acquirer.button = acquirer.with_context(**render_ctx).render(
                 session.reference,
-                amount,
-                currency_id,
+                invoice.amount_total,
+                invoice.currency_id,
                 partner_id=session.partner_id.id,
                 tx_values={
                     'return_url': '/clouder_form/payment_complete',
@@ -68,17 +77,18 @@ class FormControllerExtend(FormController):
             )[0]
             acquirers.append(acquirer)
 
+        # Render the form
         qweb_context = {
             'acquirers': acquirers,
             'hostname': request.httprequest.url_root
         }
-
         html = request.env.ref('clouder_website_payment.payment_buttons').render(
             qweb_context,
             engine='ir.qweb',
             context=request.context
         )
 
+        # Send response
         resp = {
             'clws_id': session.id,
             'html': html,
@@ -87,7 +97,6 @@ class FormControllerExtend(FormController):
                 'clouder_website_payment/static/src/js/clouder_website_payment.js'
             ]
         }
-
         return request.make_response(json.dumps(resp), headers=HEADERS)
 
     @http.route('/clouder_form/payment_complete', type='http', auth='public', methods=['POST'])
@@ -137,8 +146,6 @@ class FormControllerExtend(FormController):
 
         return request.make_response(html, headers=HEADERS)
 
-
-
     @http.route('/clouder_form/submit_acquirer', type='http', auth='public', methods=['POST'])
     def submit_acquirer(self, **post):
         """
@@ -161,20 +168,22 @@ class FormControllerExtend(FormController):
         orm_clws = request.env['clouder.web.session'].sudo()
         session = orm_clws.browse([post['clws_id']])[0]
 
-        # TODO: use real values instead
-        amount = 10
-        orm_cpny = request.env['res.company'].sudo()
-        company_id = orm_cpny._company_default_get('res.partner')
-        company = orm_cpny.browse([company_id])[0]
-        currency_id = company.currency_id.id
-        # END TODO
+        # Search the invoice
+        orm_inv = request.env['account.invoice'].sudo()
+        invoice = orm_inv.search([('internal_number', '=', session.reference)])
+        if not invoice:
+            # TODO: handle error here
+            pass
+        else:
+            invoice = invoice[0]
 
+        # Make the payment transaction
         orm_paytr = request.env['payment.transaction'].sudo()
         orm_paytr.create({
             'acquirer_id': post['acquirer_id'],
             'type': 'form',
-            'amount': amount,
-            'currency_id': currency_id,
+            'amount': invoice.amount_total,
+            'currency_id': invoice.currency_id,
             'partner_id': session.partner_id.id,
             'partner_country_id': session.partner_id.country_id.id,
             'reference': session.reference,
