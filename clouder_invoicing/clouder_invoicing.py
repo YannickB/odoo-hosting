@@ -428,12 +428,14 @@ class AccountInvoice(models.Model):
 
         invoice = self.create({
             'origin': data['origin'],
-            'partner_id': data['partner_id']
+            'partner_id': data['partner_id'],
+            'account_id': data['account_id']
         })
         orm_accline.create({
             'invoice_id': invoice.id,
             'origin': data['origin'],
             'product_id': data['product_id'],
+            'name': data['name'],
             'price_unit': data['amount']
         })
 
