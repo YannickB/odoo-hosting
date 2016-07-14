@@ -180,12 +180,20 @@ class ClouderApplication(models.Model):
     """
     _inherit = 'clouder.application'
 
+    @api.one
+    def _get_default_product(self):
+        return self.env.ref('clouder_invoicing.container_instance_product').id
+
     pricegrid_ids = fields.One2many(
         'clouder.invoicing.pricegrid.line',
         'link_application',
         'Pricegrids'
     )
-    invoicing_product_id = fields.Many2one('product.product', string="Invoicing product")
+    invoicing_product_id = fields.Many2one(
+        'product.product',
+        string="Invoicing product",
+        default=_get_default_product
+    )
 
     @api.one
     @api.constrains('pricegrid_ids', 'invoicing_product_id')

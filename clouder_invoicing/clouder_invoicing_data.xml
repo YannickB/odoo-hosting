@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
+        <!-- Invoicing daily cron -->
         <record model="ir.cron" id="clouder_invoicing_run">
             <field name="name">Run Clouder Invoicing</field>
             <field name="interval_number">1</field>
@@ -10,6 +11,22 @@
             <field eval="'account.invoice'" name="model"/>
             <field eval="'clouder_invoicing'" name="function"/>
             <field eval="'()'" name="args"/>
+        </record>
+
+        <!-- Default application invoicing product -->
+        <record id="container_instance_product_category" model="product.category">
+          <field name="parent_id" ref="product.product_category_all"/>
+          <field name="name">Container/Base Instance</field>
+        </record>
+
+        <record id="container_instance_product" model="product.product">
+            <field name="name">Container/Base Instance Fee</field>
+            <field name="categ_id" ref="clouder_instance_product_category"/>
+            <field name="standard_price">0</field>
+            <field name="list_price">0</field>
+            <field name="type">service</field>
+            <field name="description">The service fee to keep an instance running</field>
+            <field name="description_sale">The managing fee for your Container/Base instance</field>
         </record>
     </data>
 </openerp>
