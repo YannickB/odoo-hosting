@@ -32,6 +32,8 @@ class ClouderApplication(models.Model):
     Checks that the web create type has pricegrids
     """
 
+    _inherit = 'clouder.application'
+
     @api.one
     @api.constrains('pricegrid_ids', 'web_create_type')
     def _check_create_type_pricegrids(self):
