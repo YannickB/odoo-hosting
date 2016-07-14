@@ -109,7 +109,7 @@ class FormControllerExtend(FormController):
         }
         return request.make_response(json.dumps(resp), headers=HEADERS)
 
-    @http.route('/clouder_form/payment_complete', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/payment_complete', type='http', auth='public', methods=['GET'])
     def payment_complete(self, **post):
         """
         Redirect page after a successful payment
@@ -133,7 +133,7 @@ class FormControllerExtend(FormController):
         return request.make_response(html, headers=HEADERS)
 
 
-    @http.route('/clouder_form/payment_cancel', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/payment_cancel', type='http', auth='public', methods=['GET'])
     def payment_cancel(self, **post):
         """
         Redirect page after a cancelled payment
