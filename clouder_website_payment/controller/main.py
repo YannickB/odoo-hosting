@@ -49,7 +49,7 @@ class FormControllerExtend(FormController):
         company_id = orm_cpny._company_default_get('res.partner')
 
         inv_desc = "{0} {1}".format(
-            session.application_id.invoicing_product_id.sale_description,
+            session.application_id.invoicing_product_id.description_sale,
             session.name
         )
 
