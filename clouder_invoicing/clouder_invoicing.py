@@ -312,6 +312,7 @@ class ClouderContainer(models.Model):
                             'id': base.id,
                             'product_id': base.application_id.invoicing_product_id,
                             'partner_id': base.environment_id.partner_id.id,
+                            'account_id': base.environment_id.partner_id.property_account_receivable.id,
                             'amount': base.pricegrid_ids.invoice_amount()
                         })
             elif container.should_invoice() and container.pricegrid_ids:
@@ -320,6 +321,7 @@ class ClouderContainer(models.Model):
                     'id': container.id,
                     'product_id': container.application_id.invoicing_product_id,
                     'partner_id': container.environment_id.partner_id.id,
+                    'account_id': container.environment_id.partner_id.property_account_receivable.id,
                     'amount': container.pricegrid_ids.invoice_amount()
                 })
         return results
@@ -431,13 +433,18 @@ class AccountInvoice(models.Model):
             'partner_id': data['partner_id'],
             'account_id': data['account_id']
         })
-        orm_accline.create({
+
+        line_data = {
             'invoice_id': invoice.id,
             'origin': data['origin'],
             'product_id': data['product_id'],
-            'name': data['name'],
             'price_unit': data['amount']
-        })
+        }
+
+        if 'name' in data:
+            line_data['name'] = data['name']
+
+        orm_accline.create(line_data)
 
         return invoice.id
 
