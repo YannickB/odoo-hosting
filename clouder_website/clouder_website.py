@@ -135,7 +135,20 @@ class ClouderWebSession(models.Model):
         """
         Computes a name for a clouder web session
         """
-        return self.partner_id.name.replace(' ', '_') + "_" + fields.Date.today()
+        name = "{0} {1} {2}".format(
+            self.application_id.name,
+            self.application_id.web_create_type,
+            self.domain_id.name
+        )
+        if self.application_id.web_create_type == 'base':
+            name += " {0}".format(
+                self.prefix
+            )
+        elif self.application_id.web_create_type == 'container':
+            name += " {0}".format(
+                self.environment_id and self.environment_id.prefix or self.prefix
+            )
+        return name
 
     name = fields.Char("Name", compute='_get_name', required=False)
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)

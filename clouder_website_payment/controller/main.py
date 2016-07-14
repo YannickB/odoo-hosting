@@ -48,12 +48,18 @@ class FormControllerExtend(FormController):
         session = orm_clws.browse([data['result']['clws_id']])[0]
         company_id = orm_cpny._company_default_get('res.partner')
 
+        inv_desc = "{0} {1}".format(
+            session.application_id.invoicing_product_id.sale_description,
+            session.name
+        )
+
         # Creating invoice
         invoice_data = {
             'amount': session.application_id.pricegrid_ids.invoice_amount(),
             'partner_id': session.partner_id.id,
             'account_id': session.partner_id.property_account_receivable.id,
             'product_id': session.application_id.invoicing_product_id,
+            'name': inv_desc,
             'origin': session.application_id.name + "_" + fields.Date.today()
         }
         invoice_id = orm_inv.clouder_make_invoice(invoice_data)
