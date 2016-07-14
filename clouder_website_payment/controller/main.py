@@ -65,6 +65,9 @@ class FormControllerExtend(FormController):
         invoice_id = orm_inv.clouder_make_invoice(invoice_data)
         invoice = orm_inv.browse([invoice_id])[0]
 
+        # Validating invoice to create reference number
+        invoice.signal_workflow('invoice_open')
+
         # Saving invoice reference
         session.write({'reference': invoice.internal_number})
 
@@ -75,7 +78,7 @@ class FormControllerExtend(FormController):
             acquirer.button = acquirer.with_context(**render_ctx).render(
                 session.reference,
                 invoice.amount_total,
-                invoice.currency_id,
+                invoice.currency_id.id,
                 partner_id=session.partner_id.id,
                 tx_values={
                     'return_url': '/clouder_form/payment_complete',
@@ -164,8 +167,6 @@ class FormControllerExtend(FormController):
             lang = post['lang']
         request.env = self.env_with_context({'lang': lang})
 
-        request.env = request.env.with_context()
-
         if 'clws_id' not in post or 'acquirer_id' not in post:
             return self.bad_request("Bad request")
         else:
@@ -190,7 +191,7 @@ class FormControllerExtend(FormController):
             'acquirer_id': post['acquirer_id'],
             'type': 'form',
             'amount': invoice.amount_total,
-            'currency_id': invoice.currency_id,
+            'currency_id': invoice.currency_id.id,
             'partner_id': session.partner_id.id,
             'partner_country_id': session.partner_id.country_id.id,
             'reference': session.reference,

@@ -123,13 +123,12 @@ class PaymentTransaction(models.Model):
         if tx and tx.state == 'cancel':
             # Cancel session and invoice
             session.write({'state', 'canceled'})
-            invoice.action_cancel()
+            invoice.signal_workflow('invoice_cancel')
         else:
             # Launch instance creation
             env['clouder.application'].sudo().create_instance_from_request(session.id)
 
-            # Confirm invoice and change session state
-            invoice.invoice_validate()
+            # Change session state
             session.write({'state': 'payment_processed'})
 
             # TODO: Reconcile payment if the payment is already done ?

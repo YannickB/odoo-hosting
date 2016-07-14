@@ -24,7 +24,7 @@
     'name': 'Clouder Website Payment',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['clouder_website', 'payment', 'clouder_invoicing'],
+    'depends': ['clouder_website', 'payment', 'clouder_invoicing', 'account_cancel'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
