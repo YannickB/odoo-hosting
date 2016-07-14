@@ -48,6 +48,8 @@ class AccountInvoice(models.Model):
     """
     Ovveride to create a function that will be run at startup to allow cancelled invoices on the sales journal
     """
+    _inherit = 'account.invoice'
+
     def _make_sales_journal_cancellable(self):
         """
         Updates the default sales journal to allow invoice cancellation
