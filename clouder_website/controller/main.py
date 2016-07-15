@@ -139,11 +139,6 @@ class FormController(http.Controller):
         orm_clwh = request.env['clouder.web.helper'].sudo()
         result = orm_clwh.submit_form(post)
 
-        # TODO: move those lines to a separate payment plugin
-        # If there is no payment, launch the rest before returning to the client
-        # if 'payment' in result and not result['payment']:
-        #     result = orm_clwh.submit_payment(result['session_id'], True)
-
         # Return bad request on failure
         if int(result['code']):
             return self.bad_request(result['msg'])

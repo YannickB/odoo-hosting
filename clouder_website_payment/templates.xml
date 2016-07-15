@@ -28,6 +28,10 @@
                   </div>
               </div>
         </template>
+        <template id="payment_redirect">
+            <t t-set="additional_title">Payment processing</t>
+            <p>You should be redirected to the selected payment process shortly.</p>
+        </template>
         <template id="payment_success">
             <t t-set="additional_title">Payment successful</t>
             <p>Thank you for your interest in Clouder.</p>

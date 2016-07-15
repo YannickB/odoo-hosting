@@ -197,4 +197,16 @@ class FormControllerExtend(FormController):
             'reference': session.reference,
         })
 
-        return request.make_response("OK", headers=HEADERS)
+        html = request.env.ref('clouder_website_payment.payment_redirect').render(
+            {},
+            engine='ir.qweb',
+            context=request.context
+        )
+
+        response = {
+            'html': html,
+            'js': [],
+            'div_id': 'CL_payment_redirect'
+        }
+
+        return request.make_response(response, headers=HEADERS)

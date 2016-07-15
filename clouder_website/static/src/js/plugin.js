@@ -3,6 +3,7 @@ Clouder.run = function($){
     Clouder.$plugin = Clouder.$('#ClouderPlugin');
     Clouder.login_validated = false;
     Clouder.clws_id = false;
+    Clouder.clean = [];
 
     Clouder.$plugin.css('background', 'none');
     Clouder.$plugin.find('.CL_final_thanks').hide();
@@ -168,6 +169,26 @@ Clouder.run = function($){
     });
 };
 
+Clouder.readresponse = function(data){
+    // Clean old dynamically added divs
+    for (div in Clouder.clean) {
+        Clouder.$plugin.find(div).remove();
+    }
+    Clouder.clean = [];
+
+    Clouder.$plugin.append('<div id="'+data.div_id+'"></div>');
+    $new_div = Clouder.$plugin.find('#'+data.div_id);
+
+    // Push new div for future cleanups
+    Clouder.clean.push('#'+data.div_id);
+
+    $new_div.html(data.html);
+    data.js.forEach(function(path){
+        Clouder.$.getScript(Clouder.pluginPath + path);
+    });
+    $new_div.show();
+};
+
 Clouder.loading = function(state){
     var $loading = Clouder.$plugin.find('.CL_Loading');
     var $form = Clouder.$plugin.find('#ClouderForm');
@@ -209,16 +230,10 @@ Clouder.submit_override = function(){
         success: function(data) {
             data = JSON.parse(data);
             if (data.html){
-                Clouder.$plugin.append('<div id="'+data.div_id+'"></div>');
-                $new_div = Clouder.$plugin.find('#'+data.div_id)
-                $new_div.html(data.html);
-                data.js.forEach(function(path){
-                    Clouder.$.getScript(Clouder.pluginPath + path);
-                });
+                Clouder.readresponse(data);
                 Clouder.clws_id = data.clws_id;
                 Clouder.loading(false);
                 $form.hide();
-                $new_div.show();
             }
             else {
                 Clouder.loading(false);
