@@ -172,7 +172,7 @@ Clouder.run = function($){
 Clouder.readresponse = function(data){
     // Clean old dynamically added divs
     for (div in Clouder.clean) {
-        Clouder.$plugin.find(div).remove();
+        Clouder.$plugin.find(Clouder.clean[i]).remove();
     }
     Clouder.clean = [];
 
@@ -183,34 +183,33 @@ Clouder.readresponse = function(data){
     Clouder.clean.push('#'+data.div_id);
 
     $new_div.html(data.html);
-    data.js.forEach(function(path){
-        Clouder.$.getScript(Clouder.pluginPath + path);
-    });
+    for (i in data.js){
+        Clouder.$.getScript(Clouder.pluginPath + data.js[i]);
+    }
     $new_div.show();
 };
 
-Clouder.loading = function(state){
+Clouder.loading = function(state, $selector){
     var $loading = Clouder.$plugin.find('.CL_Loading');
-    var $form = Clouder.$plugin.find('#ClouderForm');
     if (state){
         $loading.css('background', 'black url('+Clouder.img_loading+') no-repeat center center');
         $loading.css('height', $form.height());
         $loading.css('width', $form.width());
-        $form.hide();
+        $selector.hide();
         Clouder.$plugin.find('.CL_hint').hide();
         $loading.show();
     }
     else {
         $loading.css('background', '');
         $loading.hide();
-        $form.show();
+        $selector.show();
     }
 };
 
 Clouder.submit_override = function(){
     var $form = Clouder.$plugin.find('#ClouderForm');
 
-    Clouder.loading(true);
+    Clouder.loading(true, $form);
 
     // Empty env values if application type is not container
     $app_id = $form.find('select[name="application_id"]');
@@ -232,11 +231,11 @@ Clouder.submit_override = function(){
             if (data.html){
                 Clouder.readresponse(data);
                 Clouder.clws_id = data.clws_id;
-                Clouder.loading(false);
+                Clouder.loading(false, $form);
                 $form.hide();
             }
             else {
-                Clouder.loading(false);
+                Clouder.loading(false, $form);
                 $form.hide();
                 $error = Clouder.$plugin.find('.CL_final_error');
                 $error.find('.CL_Error_msg').text('ERROR: Did not understand server response');
@@ -244,7 +243,7 @@ Clouder.submit_override = function(){
             }
         },
         error: function(jq, txt, err) {
-            Clouder.loading(false);
+            Clouder.loading(false, $form);
             $form.hide();
             $error = Clouder.$plugin.find('.CL_final_error');
             $error.find('.CL_Error_msg').text('ERROR: Could not submit form');
@@ -369,7 +368,8 @@ Clouder.error_step = function(step){
 */
 Clouder.get_env = function($login, $password, when_callback){
     // Put the form in loading mode
-    Clouder.loading(true);
+    $form = Clouder.$plugin.find('#ClouderForm');
+    Clouder.loading(true, $form);
 
     // Declare vars
     var result = {'res': false, 'error': false};
@@ -397,7 +397,7 @@ Clouder.get_env = function($login, $password, when_callback){
     if ($login.val()){
         Clouder.$.when(ajax_get_env()).always(function(useless){
             when_callback(result);
-            Clouder.loading(false);
+            Clouder.loading(false, $form);
         });
     }
     else {
@@ -405,7 +405,7 @@ Clouder.get_env = function($login, $password, when_callback){
         $password.parent().removeClass('js_required');
         $password.val('');
         $password.parent().hide();
-        Clouder.loading(false);
+        Clouder.loading(false, $form);
     }
 
 }
@@ -416,7 +416,8 @@ Clouder.get_env = function($login, $password, when_callback){
 */
 Clouder.user_login = function($login, $password, when_callback){
     // Put the form in loading mode
-    Clouder.loading(true);
+    $form = Clouder.$plugin.find('#ClouderForm');
+    Clouder.loading(true, $form);
 
     // Declare vars
     var result = {'res': false, 'error': false};
@@ -445,7 +446,7 @@ Clouder.user_login = function($login, $password, when_callback){
     if ($login.val()){
         Clouder.$.when(axaj_login()).always(function(useless){
             when_callback(result);
-            Clouder.loading(false);
+            Clouder.loading(false, $form);
             if (result.res && $password.val()){
                 Clouder.get_env($login, $password, function(data){
                     var first = true;
@@ -487,7 +488,7 @@ Clouder.user_login = function($login, $password, when_callback){
         $password.parent().removeClass('js_required');
         $password.val('');
         $password.parent().hide();
-        Clouder.loading(false);
+        Clouder.loading(false, $form);
     }
 
 }

@@ -17,7 +17,7 @@ $payment.on("click", 'button[type="submit"],button[name="submit"]', function (ev
         return false;
     }
     $payment.hide();
-    Clouder.loading(true);
+    Clouder.loading(true, $payment);
     Clouder.$.ajax({
         url: Clouder.pluginPath + 'clouder_form/submit_acquirer',
         data: {
@@ -30,12 +30,12 @@ $payment.on("click", 'button[type="submit"],button[name="submit"]', function (ev
         dataType: 'html',
         success: function(data) {
             Clouder.readresponse(data);
-            Clouder.loading(false);
+            Clouder.loading(false, $payment);
+            $payment.hide();
             $form.submit();
-        }
+        },
         error: function(h, t, e){
-            Clouder.loading(false);
-            $payment.show();
+            Clouder.loading(false, $payment);
         }
     });
 });
