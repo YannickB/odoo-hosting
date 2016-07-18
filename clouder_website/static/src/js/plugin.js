@@ -114,7 +114,7 @@ Clouder.run = function($){
                     }
                     else {
                         $passwd.parent().addClass('has-error');
-                        $hint.text = "Invalid password.";
+                        $hint.html("Invalid password");
                         $hint.show();
                     }
                 });
@@ -143,9 +143,9 @@ Clouder.run = function($){
         });
         Clouder.$plugin.find('.a-retry').off('click').on('click', function(){
             Clouder.$plugin.find('.CL_final_error').hide();
-            Clouder.loading(true);
+            Clouder.loading(true, $clouder_form);
             Clouder.showStep(1);
-            Clouder.loading(false);
+            Clouder.loading(false, $clouder_form);
         });
 
         // Resize and handle divs
@@ -176,7 +176,7 @@ Clouder.parse_check = function(data){
     else {
         // Display hint returned by server
         $hint = Clouder.$plugin.find('.CL_hint');
-        $hint.text = data.message;
+        $hint.html(data.message);
         $hint.show();
 
         // Removing processed variables
@@ -191,11 +191,11 @@ Clouder.parse_check = function(data){
 };
 
 Clouder.check_instance_data = function(){
-    Clouder.loading(true, $form);
-
     $form = Clouder.$plugin.find('#ClouderForm');
+    Clouder.loading(true, $form);
     inst_type = $form.find('select[name="application_id"]').find('option:selected').attr('inst_type');
     ajax_data = {
+        'inst_type': inst_type,
         'env_id': $form.find('select[name="env_id"]').find('option:selected').val(),
         'env_prefix': $form.find('input[name="env_prefix"]').val(),
         'domain_id': $form.find('select[name="domain_id"]').find('option:selected').val(),
@@ -345,7 +345,7 @@ Clouder.error_email = function($elt){
 Clouder.error_step = function(step){
     var has_error = false;
     var $hint = Clouder.$plugin.find('.CL_hint');
-    $hint.text('');
+    $hint.html('');
     $hint.hide();
 
     if (step == 1){
@@ -533,10 +533,10 @@ Clouder.user_login = function($login, $password, when_callback){
                     }
                     else {
                         if (data.error){
-                            $hint.text = error;
+                            $hint.html(data.error);
                         }
                         else {
-                            $hint.text = "Unknown error: could not load existing environments.";
+                            $hint.html("Unknown error: could not load existing environments.");
                         }
                         $hint.show();
 

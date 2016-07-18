@@ -258,7 +258,7 @@ class FormController(http.Controller):
             orm_base = request.env['clouder.base'].sudo()
             result = orm_base.search([
                 ('domain_id', '=', int(post['domain_id'])),
-                ('prefix', '=', post['prefix'])
+                ('name', '=', post['prefix'])
             ])
             if result:
                 result = {
