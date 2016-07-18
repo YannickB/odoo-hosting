@@ -10,7 +10,7 @@ Clouder.run = function($){
     Clouder.$plugin.find('.CL_final_error').hide();
     Clouder.$plugin.find('.CL_Loading').hide();
     
-    $('#ClouderForm').each(function(){
+    Clouder.$plugin.find('#ClouderForm').each(function(){
         $clouder_form = $(this);
 
         // Hide hint
@@ -166,6 +166,70 @@ Clouder.run = function($){
                 }
             });
         });
+    });
+};
+
+Clouder.parse_check = function(data){
+    if(data.next_step_validated){
+        Clouder.showStep(2);
+    }
+    else {
+        // Display hint returned by server
+        $hint = Clouder.$plugin.find('.CL_hint');
+        $hint.text = data.message;
+        $hint.show();
+
+        // Removing processed variables
+        delete data.message;
+        delete data.next_step_validated;
+
+        // Adding errors to elements
+        for (elt in data){
+            Clouder.$plugin.find("[name='"+elt+"']").parent().addClass("has-error");
+        }
+    }
+};
+
+Clouder.check_instance_data = function(){
+    Clouder.loading(true, $form);
+
+    $form = Clouder.$plugin.find('#ClouderForm');
+    inst_type = $form.find('select[name="application_id"]').find('option:selected').attr('inst_type');
+    ajax_data = {
+        'env_id': $form.find('select[name="env_id"]').find('option:selected').val(),
+        'env_prefix': $form.find('input[name="env_prefix"]').val(),
+        'domain_id': $form.find('select[name="domain_id"]').find('option:selected').val(),
+        'prefix': $form.find('input[name="prefix"]').val(),
+    }
+    Clouder.$.ajax({
+        url: Clouder.pluginPath + 'clouder_form/check_data',
+        data: ajax_data,
+        method: 'POST',
+        cache: false,
+        dataType: 'html',
+        success: function(data) {
+            data = JSON.parse(data);
+            if (data.error){
+                $error = Clouder.$plugin.find('.CL_final_error');
+                $error.find('.CL_Error_msg').text(data.error);
+
+                Clouder.loading(false, $form);
+                $form.hide();
+
+                $error.show();
+            }
+            else {
+                Clouder.parse_check(data);
+                Clouder.loading(false, $form);
+            }
+        },
+        error: function(jq, txt, err) {
+            Clouder.loading(false, $form);
+            $form.hide();
+            $error = Clouder.$plugin.find('.CL_final_error');
+            $error.find('.CL_Error_msg').text('ERROR: Could not submit form');
+            $error.show();
+        }
     });
 };
 
@@ -331,9 +395,9 @@ Clouder.error_step = function(step){
             }
         }
 
-        // If there's no error after all that, we can proceed
+        // If there's no error after all that, we can check the data with the server
         if (!has_error){
-            Clouder.showStep(2);
+            Clouder.check_instance_data();
         }
     }
     else if (step == 2){

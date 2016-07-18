@@ -13,7 +13,30 @@
             <field eval="'()'" name="args"/>
         </record>
 
-        <!-- Launch function at install to allow cancellation of invoice on default sales journal -->
-        <function model="account.invoice" name="_make_sales_journal_cancellable"/>
+
+        <!-- Cron to launch invoice creation from clouder web sessions -->
+        <record model="ir.cron" id="clouder_web_session_invoices">
+            <field name="name">Prune clouder web sessions</field>
+            <field name="interval_number">10</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field eval="False" name="doall"/>
+            <field eval="'clouder.web.session'" name="model"/>
+            <field eval="'launch_update_with_invoice'" name="function"/>
+            <field eval="'()'" name="args"/>
+        </record>
+
+
+        <!-- Cron to launch instance creation from clouder web sessions -->
+        <record model="ir.cron" id="clouder_web_session_instances">
+            <field name="name">Prune clouder web sessions</field>
+            <field name="interval_number">15</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field eval="False" name="doall"/>
+            <field eval="'clouder.web.session'" name="model"/>
+            <field eval="'create_instances'" name="function"/>
+            <field eval="'()'" name="args"/>
+        </record>
     </data>
 </openerp>

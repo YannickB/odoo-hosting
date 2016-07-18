@@ -68,6 +68,7 @@ class ClouderWebSession(models.Model):
     state = fields.Selection(
         [
             ('started', 'Started'),
+            ('pending', 'Pending'),
             ('canceled', 'Cancelled'),
             ('payment_processed', 'Payment Processed'),
             ('done', 'Done')
@@ -75,6 +76,89 @@ class ClouderWebSession(models.Model):
         'State',
         default='started'
     )
+    invoice_id = fields.Many2one('account.invoice', 'Invoice', required=False)
+
+    @api.model
+    def launch_update_with_invoice(self):
+        """
+        Search for sessions that have been paid and launch invoice creation
+        """
+        sessions = self.search([
+            ('state', '=', 'payment_processed'),
+            ('invoice_id', '=', False)
+        ])
+        # No session meets the criteria: do nothing
+        if not sessions:
+            return
+
+        orm_trans = self.env['payment.transaction']
+
+        # Make an empty recordset
+        sessions_to_update = sessions[0]
+        sessions_to_update = sessions_to_update - sessions[0]
+
+        for session in sessions:
+            transac = orm_trans.search([('reference', '=', session.reference)])[0]
+
+            # Add to the sessions to update is the transaction has been completed
+            if transac.state == 'done':
+                sessions_to_update = sessions_to_update + session
+
+        # Launch invoice creation
+        sessions_to_update.make_invoice()
+
+    @api.multi
+    def make_invoice(self):
+        """
+        Creates invoice and links it to the session
+        """
+        orm_inv = self.env['account.invoice']
+
+        for session in self:
+            # Check that the function isn't called with unsuitable sessions
+            if session.state != 'payment_processed' or session.invoice_id:
+                raise except_orm(
+                    _('Clouder Web Session error!'),
+                    _("You cannot launch invoice creation when a session is not process or already has an invoice")
+                )
+
+            # Creating invoice
+            inv_desc = "{0} {1}".format(
+                session.application_id.invoicing_product_id.description_sale,
+                session.name
+            )
+            invoice_data = {
+                'amount': session.application_id.pricegrid_ids.invoice_amount(),
+                'partner_id': session.partner_id.id,
+                'account_id': session.partner_id.property_account_receivable.id,
+                'product_id': session.application_id.invoicing_product_id.id,
+                'name': inv_desc,
+                'origin': session.application_id.name + "_" + fields.Date.today()
+            }
+            invoice_id = orm_inv.clouder_make_invoice(invoice_data)
+            invoice = orm_inv.browse([invoice_id])[0]
+            session.write({'invoice_id': invoice.id})
+
+            # Validating invoice to create reference number
+            invoice.signal_workflow('invoice_open')
+
+    @api.model
+    def create_instances(self):
+        """
+        Creates an instance for suitable sessions
+        """
+        # Search for sessions that generated an invoice (payment is "done")
+        sessions = self.search([
+            ('invoice_id', '!=', False)
+        ])
+        # No session meets the criteria: do nothing
+        if not sessions:
+            return
+
+        # Launch instance creation
+        orm_app = self.env['clouder.application']
+        for session in sessions:
+            orm_app.create_instance_from_request(session.id)
 
     @property
     def should_unlink(self):
@@ -83,9 +167,9 @@ class ClouderWebSession(models.Model):
         """
         d_from_str = fields.Datetime.from_string
         last_access_days = (d_from_str(fields.Datetime.now()) - d_from_str(self.write_date)).days
-        if self.state == 'started' and last_access_days > 5:
+        if self.state == 'started' and last_access_days > 9:
             return True
-        elif self.state == 'cancelled' and last_access_days > 1:
+        elif self.state == 'cancelled' and last_access_days > 2:
             return True
         elif self.state == 'done':
             return True
@@ -122,6 +206,7 @@ class PaymentTransaction(models.Model):
         # If no session is found, skip and proceed as usual
         if not session:
             return result
+        session = session[0]
 
         # Finding transaction
         tx = None
@@ -129,25 +214,12 @@ class PaymentTransaction(models.Model):
         if hasattr(self, tx_find_method_name):
             tx = getattr(self, tx_find_method_name)(cr, uid, data, context=context)
 
-        # At this point there should never be a case where there is no found invoice
-        session = session[0]
-        orm_inv = env['account.invoice'].sudo()
-        invoice = orm_inv.search([('internal_number', '=', session.reference)])[0]
-
-        if tx and tx.state == 'cancel':
-            # Cancel session and invoice
+        if tx and tx.state in ['cancel', 'error']:
+            # Cancel session
             session.write({'state', 'canceled'})
-            invoice.signal_workflow('invoice_cancel')
-        else:
-            # Launch instance creation
-            env['clouder.application'].sudo().create_instance_from_request(session.id)
-
+        elif tx and tx.state in ['pending', 'done']:
             # Change session state
             session.write({'state': 'payment_processed'})
-
-            # TODO: Reconcile payment if the payment is already done ?
-            if tx.state == 'done':
-                pass
 
         # Return the result from super at the end
         return result

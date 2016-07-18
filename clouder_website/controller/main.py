@@ -153,6 +153,149 @@ class FormController(http.Controller):
         # Otherwise, we continue with the process
         return self.hook_next(data)
 
+    @http.route('/clouder_form/check_data', type='http', auth='public', methods=['POST'])
+    def check_data(self, **post):
+        """
+        Checks that the form data submitted is not a doublon
+        """
+        if 'inst_type' not in post:
+            result = {'error': _('Missing inst_type parameter')}
+            return request.make_response(json.dumps(result), headers=HEADERS)
+        if post['inst_type'] not in ['container', 'base']:
+            result = {'error': _('Incorrect inst_type parameter: {0}').format(post['inst_type'])}
+            return request.make_response(json.dumps(result), headers=HEADERS)
+
+        # Checking data errors for container requests
+        if post['inst_type'] == 'container':
+            if 'env_id' not in post or 'env_prefix' not in post or 'prefix' not in post:
+                result = {'error': _('Missing argument for check.')}
+                return request.make_response(json.dumps(result), headers=HEADERS)
+            if post['env_id']:
+                orm_cont = request.env['clouder.container'].sudo()
+                # Searching for existing containers with the environment and prefix
+                result = orm_cont.search([
+                    ('environment_id', '=', int(post['env_id'])),
+                    ('suffix', '=', post['prefix'])
+                ])
+                # If a container is found, return an error for those fields
+                if result:
+                    result = {
+                        'next_step_validated': False,
+                        'prefix': False,
+                        'env_id': False,
+                        'message': _('Container prefix already un use for this environment.') +
+                        _('<br/>Please change the environment or prefix.')
+                    }
+                    return request.make_response(json.dumps(result), headers=HEADERS)
+
+                # Otherwise, search for sessions that already reserved the name
+                orm_clws = request.env['clouder.web.session'].sudo()
+                result = orm_clws.search([
+                    ('environment_id', '=', int(post['env_id'])),
+                    ('prefix', '=', post['prefix'])
+                ])
+                # If there is such a session, invalidate data
+                if result:
+                    result = {
+                        'next_step_validated': False,
+                        'prefix': False,
+                        'env_id': False,
+                        'message': _('Container prefix already reserved for this environment.') +
+                        _('<br/>Please change the environment or prefix.')
+                    }
+                    return request.make_response(json.dumps(result), headers=HEADERS)
+
+                # No problem detected
+                result = {
+                    'next_step_validated': True,
+                    'prefix': True,
+                    'env_id': True,
+                    'message': False
+                }
+                return request.make_response(json.dumps(result), headers=HEADERS)
+
+            else:
+                # Check that the environment prefix is not already attributed
+                orm_env = request.env['clouder.environment'].sudo()
+                result = orm_env.search([('prefix', '=', post['env_prefix'])])
+                if result:
+                    result = {
+                        'env_prefix': result,
+                        'message': _('Environment prefix already in use.') +
+                        _('<br/>Please use a different environment or environment prefix.')
+                    }
+                    return request.make_response(json.dumps(result), headers=HEADERS)
+
+                # Check that the environment prefix is not already reserved
+                orm_clws = request.env['clouder.web.session'].sudo()
+                result = orm_clws.search([
+                    ('environment_id', '=', False),
+                    ('env_prefix', '=', post['env_prefix'])
+                ])
+                if result:
+                    result = {
+                        'env_prefix': result,
+                        'message': _('Environment prefix already reserved.') +
+                        _('<br/>Please use a different environment or environment prefix.')
+                    }
+                    return request.make_response(json.dumps(result), headers=HEADERS)
+
+                # No problem detected
+                result = {
+                    'next_step_validated': True,
+                    'env_prefix': True,
+                    'message': False
+                }
+                return request.make_response(json.dumps(result), headers=HEADERS)
+
+        # Check data for base request
+        elif post['inst_type'] == 'base':
+            if 'domain_id' not in post or 'prefix' not in post:
+                result = {'error': _('Missing argument for check.')}
+                return request.make_response(json.dumps(result), headers=HEADERS)
+
+            # Check that the prefix is not already in use for this domain
+            orm_base = request.env['clouder.base'].sudo()
+            result = orm_base.search([
+                ('domain_id', '=', int(post['domain_id'])),
+                ('prefix', '=', post['prefix'])
+            ])
+            if result:
+                result = {
+                    'next_step_validated': False,
+                    'domain_id': False,
+                    'prefix': False,
+                    'message': _('Base prefix is already in use for this domain.') +
+                        _('<br/>Please change the prefix or domain.')
+                }
+                return request.make_response(json.dumps(result), headers=HEADERS)
+
+            # Check that the prefix/domain combination is not already reserved
+            orm_clws = request.env['clouder.web.session'].sudo()
+            result = orm_clws.search([
+                ('domain_id', '=', int(post['domain_id'])),
+                ('prefix', '=', post['prefix'])
+            ])
+
+            if result:
+                result = {
+                    'next_step_validated': False,
+                    'domain_id': False,
+                    'prefix': False,
+                    'message': _('Base prefix is already in reserved for this domain.') +
+                        _('<br/>Please change the prefix or domain.')
+                }
+                return request.make_response(json.dumps(result), headers=HEADERS)
+
+            # No problem detected
+            result = {
+                'next_step_validated': True,
+                'domain_id': True,
+                'prefix': True,
+                'message': False
+            }
+            return request.make_response(json.dumps(result), headers=HEADERS)
+
     @http.route('/clouder_form/form_login', type='http', auth='public', methods=['POST'])
     def page_login(self, **post):
         """
