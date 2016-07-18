@@ -1,6 +1,8 @@
 Clouder
 -------
 
+[![Join the chat at https://gitter.im/clouder-community/clouder](https://badges.gitter.im/clouder-community/clouder.svg)](https://gitter.im/clouder-community/clouder?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Clouder is a platform which aim to standardize good practices for hosting open-source software. Whether you are launching a hosting offer, are the sysadmin of a company, or just want to host software for you and your friends, Clouder will allow you to easily deploy and maintain a professionnal infrastructure with very basic technical knowledge.
 
 More specifically, it is an orchestrator which is based on container technology (currently only supports Docker), each application will be installed inside a container and Clouder will establish links between them. It is based on Odoo, an open-source software application which is very efficient at managing this kind of workflow and process.
