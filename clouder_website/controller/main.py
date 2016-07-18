@@ -228,7 +228,15 @@ class FormController(http.Controller):
 
                 # Check that the environment prefix is not already reserved
                 orm_clws = request.env['clouder.web.session'].sudo()
+
+                app_ids = [
+                    app.id for app in self.env['clouder.application'].search([
+                        ('web_create_type', '=', 'container')
+                    ])
+                ]
+
                 result = orm_clws.search([
+                    ('application_id', 'in', app_ids),
                     ('environment_id', '=', False),
                     ('env_prefix', '=', post['env_prefix'])
                 ])
@@ -272,7 +280,15 @@ class FormController(http.Controller):
 
             # Check that the prefix/domain combination is not already reserved
             orm_clws = request.env['clouder.web.session'].sudo()
+
+            app_ids = [
+                app.id for app in self.env['clouder.application'].search([
+                    ('web_create_type', '=', 'base')
+                ])
+            ]
+
             result = orm_clws.search([
+                ('application_id', 'in', app_ids),
                 ('domain_id', '=', int(post['domain_id'])),
                 ('prefix', '=', post['prefix'])
             ])

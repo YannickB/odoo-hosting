@@ -162,6 +162,114 @@ class ClouderWebSession(models.Model):
     fresh_partner = fields.Boolean('Freshly created partner?', default=False, required=True)
 
     @api.one
+    @api.constrains('environment_id', 'prefix', 'application_id')
+    def _check_env_and_prefix_not_used(self):
+        """
+        Checks that there is no existing container using this environment with the same prefix
+        """
+        if self.application_id.web_create_type == 'container' and self.environment_id:
+            container = self.env['clouder.container'].search([
+                ('prefix', '=', self.prefix),
+                ('environment_id', '=', self.environment_id.id)
+            ])
+
+            if container:
+                raise except_orm(
+                    _('Session duplicate error!'),
+                    _('Container already exists with environment {0} and prefix {1}').format(
+                        self.environment_id.prefix,
+                        self.prefix
+                    )
+                )
+            session = self.search([
+                ('prefix', '=', self.prefix),
+                ('environment_id', '=', self.environment_id.id)
+            ])
+            if session:
+                raise except_orm(
+                    _('Session duplicate error!'),
+                    _('Session already exists with environment {0} and prefix {1}').format(
+                        self.environment_id.prefix,
+                        self.prefix
+                    )
+                )
+
+    @api.one
+    @api.constrains('environment_prefix', 'environment_id')
+    def _check_envprefix_not_used(self):
+        """
+        Checks that there is no existing environment using the same prefix
+        """
+        if self.application_id.web_create_type == 'container' and self.prefix and not self.environment_id:
+            env = self.env['clouder.environment'].search([
+                ('prefix', '=', self.prefix)
+            ])
+            if env:
+                raise except_orm(
+                    _('Session duplicate error!'),
+                    _('Environment prefix \'{0}\' already exists.').format(
+                        self.prefix
+                    )
+                )
+
+            app_ids = [
+                app.id for app in self.env['clouder.application'].search([
+                    ('web_create_type', '=', 'container')
+                ])
+            ]
+            session = self.search([
+                ('application_id', 'in', app_ids),
+                ('environment_id', '=', False),
+                ('prefix', '=', self.prefix)
+            ])
+            if session:
+                raise except_orm(
+                    _('Session duplicate error!'),
+                    _('Environment prefix \'{0}\' is already reserved.').format(
+                        self.prefix
+                    )
+                )
+
+    @api.one
+    @api.constrains('application_id', 'domain_id', 'prefix')
+    def _check_base_domain_prefix_not_used(self):
+        """
+        Checks that there is no domain/prefix combination in bases
+        """
+        if self.application_id.web_create_type == 'base':
+            base = self.env['clouder.base'].search([
+                ('name', '=', self.prefix),
+                ('domain_id', '=', self.domain_id.id)
+            ])
+            if base:
+                raise except_orm(
+                    _('Session duplicate error!'),
+                    _('Base with domain \'{0}\' and name \'{1}\' already exists.').format(
+                        self.domain_id.name,
+                        self.prefix
+                    )
+                )
+
+            app_ids = [
+                app.id for app in self.env['clouder.application'].search([
+                    ('web_create_type', '=', 'base')
+                ])
+            ]
+            session = self.search([
+                ('application_id', 'in', app_ids),
+                ('prefix', '=', self.prefix),
+                ('domain_id', '=', self.domain_id.id)
+            ])
+            if session:
+                raise except_orm(
+                    _('Session duplicate error!'),
+                    _('Base with domain \'{0}\' and name \'{1}\' is already reserved.').format(
+                        self.domain_id.name,
+                        self.prefix
+                    )
+                )
+
+    @api.one
     @api.constrains('application_id', 'title', 'environment_id', 'environment_prefix')
     def _check_complex_requirements(self):
         """
@@ -171,12 +279,14 @@ class ClouderWebSession(models.Model):
             if not self.title:
                 raise except_orm(
                     _('Data error!'),
-                    _("You need to specify a title when applying for a base"))
+                    _("You need to specify a title when applying for a base")
+                )
         elif self.application_id.web_create_type == "container":
             if not (self.environment_id or self.environment_prefix):
                 raise except_orm(
                     _('Data error!'),
-                    _("You need to specify an existing or new environment when applying for a container"))
+                    _("You need to specify an existing or new environment when applying for a container")
+                )
 
 
 class ClouderWebHelper(models.Model):
