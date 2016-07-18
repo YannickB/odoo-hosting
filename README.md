@@ -14,7 +14,10 @@ And the best is, you don't need to research extensively if you want to provide h
 Community
 ---------
 
-You can find more information, support forum and mailing-list on https://www.goclouder.net/, you can find the documentation at http://doc.goclouder.net/.
+You can find more information, support forum and mailing-list on https://goclouder.net/, you can find the documentation at http://doc.goclouder.net/.
 
-Development (including documentation) is done here on github, contributions are welcome; please read the CLA guidelines https://github.com/clouder-community/clouder/blob/8.0/doc/cla/sign-cla.md if you want to make a pull request.
+If you need help for using or contributing to Clouder, you can easily contact us on our public chatroom : https://gitter.im/clouder-community/clouder
+
+Development (including documentation) is done here on github, contributions are welcome; please read the CLA guidelines https://github.com/clouder-community/clouder/blob/8.0/doc/cla/sign-cla.md if you want to make a pull request. 
+CLA is asked only to avoid possible legal issues in the future, like the OCA projects you keep your copyright but provide an irrevocable licence to the project maintener. If this happen in the future, you only give us the right to relicence under a licence recognized by the Open Source Initiative.
 
