@@ -43,6 +43,26 @@ class ClouderApplication(models.Model):
                 _("You cannot define a web creation type without defining price grids.")
             )
 
+    @api.multi
+    def create_instance_from_request(self, session_id):
+        """
+        Overwrite instance creation to set session status
+        """
+        created_id = super(self, ClouderApplication).create_instance_from_request(session_id)
+
+        session = self.env['clouder.web.session'].browse([session_id])[0]
+
+        # Change state to error by default
+        state = 'error'
+
+        # If the session was created successfully: change state to done
+        if created_id:
+            state = 'done'
+
+        session.write({'state': state})
+
+        return created_id
+
 
 class AccountInvoice(models.Model):
     """
@@ -64,6 +84,7 @@ class ClouderWebSession(models.Model):
     """
     _inherit = 'clouder.web.session'
 
+    amount = fields.Float('Amount to pay')
     reference = fields.Char('Invoice Reference', required=False)
     state = fields.Selection(
         [
@@ -71,6 +92,7 @@ class ClouderWebSession(models.Model):
             ('pending', 'Pending'),
             ('canceled', 'Cancelled'),
             ('payment_processed', 'Payment Processed'),
+            ('error', 'Error'),
             ('done', 'Done')
         ],
         'State',
@@ -85,7 +107,8 @@ class ClouderWebSession(models.Model):
         """
         sessions = self.search([
             ('state', '=', 'payment_processed'),
-            ('invoice_id', '=', False)
+            ('invoice_id', '=', False),
+            ('amount', '!=', False)
         ])
         # No session meets the criteria: do nothing
         if not sessions:
@@ -128,12 +151,12 @@ class ClouderWebSession(models.Model):
                 session.name
             )
             invoice_data = {
-                'amount': session.application_id.pricegrid_ids.invoice_amount(),
+                'amount': session.amount,
                 'partner_id': session.partner_id.id,
                 'account_id': session.partner_id.property_account_receivable.id,
                 'product_id': session.application_id.invoicing_product_id.id,
                 'name': inv_desc,
-                'origin': session.application_id.name + "_" + fields.Date.today()
+                'origin': session.reference
             }
             invoice_id = orm_inv.clouder_make_invoice(invoice_data)
             invoice = orm_inv.browse([invoice_id])[0]

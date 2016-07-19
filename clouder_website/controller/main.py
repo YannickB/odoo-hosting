@@ -183,8 +183,8 @@ class FormController(http.Controller):
                         'next_step_validated': False,
                         'prefix': False,
                         'env_id': False,
-                        'message': _('Container prefix already un use for this environment.') +
-                        _('<br/>Please change the environment or prefix.')
+                        'message': _('Container name already un use for this environment.') +
+                        _('<br/>Please change the environment or domain prefix.')
                     }
                     return request.make_response(json.dumps(result), headers=HEADERS)
 
@@ -220,7 +220,7 @@ class FormController(http.Controller):
                 result = orm_env.search([('prefix', '=', post['env_prefix'])])
                 if result:
                     result = {
-                        'env_prefix': result,
+                        'env_prefix': False,
                         'message': _('Environment prefix already in use.') +
                         _('<br/>Please use a different environment or environment prefix.')
                     }
@@ -228,9 +228,9 @@ class FormController(http.Controller):
 
                 # Check that the environment prefix is not already reserved
                 orm_clws = request.env['clouder.web.session'].sudo()
-
+                orm_app = request.env['clouder.application'].sudo()
                 app_ids = [
-                    app.id for app in self.env['clouder.application'].search([
+                    app.id for app in orm_app.search([
                         ('web_create_type', '=', 'container')
                     ])
                 ]
@@ -238,11 +238,11 @@ class FormController(http.Controller):
                 result = orm_clws.search([
                     ('application_id', 'in', app_ids),
                     ('environment_id', '=', False),
-                    ('env_prefix', '=', post['env_prefix'])
+                    ('environment_prefix', '=', post['env_prefix'])
                 ])
                 if result:
                     result = {
-                        'env_prefix': result,
+                        'env_prefix': False,
                         'message': _('Environment prefix already reserved.') +
                         _('<br/>Please use a different environment or environment prefix.')
                     }
@@ -280,9 +280,10 @@ class FormController(http.Controller):
 
             # Check that the prefix/domain combination is not already reserved
             orm_clws = request.env['clouder.web.session'].sudo()
+            orm_app = request.env['clouder.application'].sudo()
 
             app_ids = [
-                app.id for app in self.env['clouder.application'].search([
+                app.id for app in orm_app.search([
                     ('web_create_type', '=', 'base')
                 ])
             ]

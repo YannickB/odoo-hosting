@@ -131,24 +131,26 @@ class ClouderWebSession(models.Model):
     """
     _name = 'clouder.web.session'
 
+    @api.one
     def _get_name(self):
         """
         Computes a name for a clouder web session
         """
-        name = "{0} {1} {2}".format(
+        name = "App{0}-{1}".format(
             self.application_id.name,
-            self.application_id.web_create_type,
-            self.domain_id.name
+            self.application_id.web_create_type
         )
         if self.application_id.web_create_type == 'base':
-            name += " {0}".format(
-                self.prefix
+            name += "_{0}-{1}".format(
+                self.prefix,
+                self.domain_id.name
             )
         elif self.application_id.web_create_type == 'container':
-            name += " {0}".format(
-                self.environment_id and self.environment_id.prefix or self.prefix
+            name += "_{0}-{1}".format(
+                self.environment_id and self.environment_id.prefix or self.environment_prefix,
+                self.prefix
             )
-        return name
+        self.name = name
 
     name = fields.Char("Name", compute='_get_name', required=False)
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)
@@ -169,7 +171,7 @@ class ClouderWebSession(models.Model):
         """
         if self.application_id.web_create_type == 'container' and self.environment_id:
             container = self.env['clouder.container'].search([
-                ('prefix', '=', self.prefix),
+                ('suffix', '=', self.prefix),
                 ('environment_id', '=', self.environment_id.id)
             ])
 
@@ -182,6 +184,7 @@ class ClouderWebSession(models.Model):
                     )
                 )
             session = self.search([
+                ('id', '!=', self.id),
                 ('prefix', '=', self.prefix),
                 ('environment_id', '=', self.environment_id.id)
             ])
@@ -202,13 +205,13 @@ class ClouderWebSession(models.Model):
         """
         if self.application_id.web_create_type == 'container' and self.prefix and not self.environment_id:
             env = self.env['clouder.environment'].search([
-                ('prefix', '=', self.prefix)
+                ('prefix', '=', self.environment_prefix)
             ])
             if env:
                 raise except_orm(
                     _('Session duplicate error!'),
                     _('Environment prefix \'{0}\' already exists.').format(
-                        self.prefix
+                        self.environment_prefix
                     )
                 )
 
@@ -218,15 +221,16 @@ class ClouderWebSession(models.Model):
                 ])
             ]
             session = self.search([
+                ('id', '!=', self.id),
                 ('application_id', 'in', app_ids),
                 ('environment_id', '=', False),
-                ('prefix', '=', self.prefix)
+                ('environment_prefix', '=', self.environment_prefix)
             ])
             if session:
                 raise except_orm(
                     _('Session duplicate error!'),
                     _('Environment prefix \'{0}\' is already reserved.').format(
-                        self.prefix
+                        self.environment_prefix
                     )
                 )
 
@@ -256,6 +260,7 @@ class ClouderWebSession(models.Model):
                 ])
             ]
             session = self.search([
+                ('id', '!=', self.id),
                 ('application_id', 'in', app_ids),
                 ('prefix', '=', self.prefix),
                 ('domain_id', '=', self.domain_id.id)

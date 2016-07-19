@@ -16,7 +16,7 @@
 
         <!-- Cron to launch invoice creation from clouder web sessions -->
         <record model="ir.cron" id="clouder_web_session_invoices">
-            <field name="name">Prune clouder web sessions</field>
+            <field name="name">Clouder create invoice from web sessions</field>
             <field name="interval_number">10</field>
             <field name="interval_type">minutes</field>
             <field name="numbercall">-1</field>
@@ -29,7 +29,7 @@
 
         <!-- Cron to launch instance creation from clouder web sessions -->
         <record model="ir.cron" id="clouder_web_session_instances">
-            <field name="name">Prune clouder web sessions</field>
+            <field name="name">Clouder create instances from web sessions</field>
             <field name="interval_number">15</field>
             <field name="interval_type">minutes</field>
             <field name="numbercall">-1</field>
