@@ -1,6 +1,8 @@
 Clouder
 -------
 
+[![Join the chat at https://gitter.im/clouder-community/clouder](https://badges.gitter.im/clouder-community/clouder.svg)](https://gitter.im/clouder-community/clouder?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Clouder is a platform which aim to standardize good practices for hosting open-source software. Whether you are launching a hosting offer, are the sysadmin of a company, or just want to host software for you and your friends, Clouder will allow you to easily deploy and maintain a professionnal infrastructure with very basic technical knowledge.
 
 More specifically, it is an orchestrator which is based on container technology (currently only supports Docker), each application will be installed inside a container and Clouder will establish links between them. It is based on Odoo, an open-source software application which is very efficient at managing this kind of workflow and process.
@@ -12,7 +14,10 @@ And the best is, you don't need to research extensively if you want to provide h
 Community
 ---------
 
-You can find more information, support forum and mailing-list on https://www.goclouder.net/, you can find the documentation at http://doc.goclouder.net/.
+You can find more information, support forum and mailing-list on https://goclouder.net/, you can find the documentation at http://doc.goclouder.net/.
 
-Development (including documentation) is done here on github, contributions are welcome; please read the CLA guidelines https://github.com/clouder-community/clouder/blob/8.0/doc/cla/sign-cla.md if you want to make a pull request.
+If you need help for using or contributing to Clouder, you can easily contact us on our public chatroom : https://gitter.im/clouder-community/clouder
+
+Development (including documentation) is done here on github, contributions are welcome; please read the CLA guidelines https://github.com/clouder-community/clouder/blob/8.0/doc/cla/sign-cla.md if you want to make a pull request. 
+CLA is asked only to avoid possible legal issues in the future, like the OCA projects you keep your copyright but provide an irrevocable licence to the project maintener. If this happen in the future, you only give us the right to relicence under a licence recognized by the Open Source Initiative.
 

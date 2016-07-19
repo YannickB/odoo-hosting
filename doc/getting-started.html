@@ -10,9 +10,9 @@ Odoo installation
 
 | This guide will not cover the Odoo installation in itself, we suggest you read `the installation documentation on the official website <https://www.odoo.com/documentation/8.0/setup/install.html>`_.
 | You can also contact us on `www.goclouder.net <https://www.goclouder.net/>`_ to ask for a free instance, it may be easier for you because you obviously can't install your Clouder on a server managed by this same Clouder.
-| Due to the extensive use of ssh, Clouder is only compatible with Linux and has only be tested on a Debian distribution.
+| Due to the extensive use of ssh, Clouder is only compatible with Linux and has be tested on Debian and Ubuntu 16.04.
 
-Once your Odoo installation is ready, download the Clouder modules on `Github <https://github.com/clouder-community/clouder/>`_ and add them in your addons directory, then install the clouder module and clouder_template_odoo (this module will install a lot of template dependencies, like postgres, postfix etc...).
+Once your Odoo installation is ready, install the paramiko + erppeek Python libraries (pip install paramiko erppeek), download the `OCA/Connector module on Github <https://github.com/OCA/connector/tree/8.0>`_ and the `Clouder modules on Github <https://github.com/clouder-community/clouder/tree/8.1>`_ and add them in your addons directory, then install the clouder module and clouder_template_odoo (this module will install a lot of template dependencies, like postgres, postfix etc...).
 
 .. image:: images/gettingstarted-moduleslist.png
 
@@ -24,7 +24,7 @@ The first thing to do is to set the sysadmin email in the Clouder configuration.
 
 .. image:: images/gettingstarted-configuration.png
 
-Then you have to configure the server you want to connect. See the `how to connect a server chapter <connect-server.rst>`_ for more explanation.
+Then you have to configure the server you want to connect. See the `how to connect a server chapter <connect-server.html>`_ for more explanation.
 
 .. image:: images/gettingstarted-server.png
 
@@ -86,7 +86,7 @@ Then you can generate the others images. For this tutorial, we'll need theses on
 
 For each, select the registry container and the version of the base image you want to use, then build it. Some of them will take time, especially shinken which may take around twenty minutes to generate.
 
-See the `Image chapter <images.rst>`_ for more informations about the fields in the image form.
+See the `Image chapter <images.html>`_ for more informations about the fields in the image form.
 
 
 Deploy containers
@@ -145,7 +145,7 @@ Finally, you can deploy your Odoo container. Indicate your postfix and postgres 
 
 If you want to monitor ssh connexion and container backup, you can add shinken in the links and click on deploy. You can do it anytime, even after creating the container.
 
-For more information about the container fields, you can read the `Containers chapter <containers.rst>`_.
+For more information about the container fields, you can read the `Containers chapter <containers.html>`_.
 
 
 Build the application
@@ -157,7 +157,7 @@ Next, you need to go on the Clouder application in the Applications menu.
 
 Indicate the archive container and click on the build button. This will download the Odoo files and the Clouder modules.
 
-For more information about the application fields, you can read the `Applications chapter <applications.rst>`_.
+For more information about the application fields, you can read the `Applications chapter <applications.html>`_.
 
 
 Deploy the service
@@ -168,7 +168,7 @@ Now that we have the application, we can deploy it in our Odoo container.
 .. image:: images/gettingstarted-service.png
 
 | Don’t forget to indicate the postgres container in the link.
-| For more information about the service fields, you can read the `Services chapter <services.rst>`_.
+| For more information about the service fields, you can read the `Services chapter <services.html>`_.
 
 
 Configure the domain
@@ -180,7 +180,7 @@ Before we can add our base, we need to add the domain in your Clouder.
 
 Configure your domain at your domain provider to use your server as the DNS server (take care, the change may take days to propagate). This is optional, you can continue to use the DNS of your provider but in this case you’ll have to add manually the record each time you create a base in your Clouder.
 
-For more information about the domain fields, you can read the `Domains and Bases chapter <domains-bases.rst>`_.
+For more information about the domain fields, you can read the `Domains and Bases chapter <domains-bases.html>`_.
 
 
 Add the base
@@ -194,7 +194,7 @@ Don’t forget to configure the bind/shinken/proxy/postfix links and the backup 
 
 .. image:: images/gettingstarted-result.png
 
-For more information about the base fields, you can read the `Domains and Bases chapter <domains-bases.rst>`_.
+For more information about the base fields, you can read the `Domains and Bases chapter <domains-bases.html>`_.
 
 Go to your shinken instance to see the health of your infrastructure in real time (Default login : admin / admin)
 
