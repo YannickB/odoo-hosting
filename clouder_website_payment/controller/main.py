@@ -49,7 +49,7 @@ class FormControllerExtend(FormController):
         # Saving reference and amount
         session.write({
             'reference': "{0}_{1}".format(session.name, fields.Date.today()),
-            'amount': session.application_id.pricegrid_ids.invoice_amount()
+            'amount': session.application_id.initial_invoice_amount
         })
 
         # If instance creation is free, we just get to the creation process
