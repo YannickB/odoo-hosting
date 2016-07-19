@@ -22,7 +22,7 @@
 
 from openerp import models, api, modules
 import requests, re, logging
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 
 class ClouderContainer(models.Model):
     """
@@ -104,7 +104,7 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'mautic':
-            baseUrl = "http://" self.name + "." + self.domain_id.name
+            baseUrl = "http://" + self.name + "." + self.domain_id.name
             installerUrl = "/index.php/installer/step/"
 
             #mysql_pswd need to be updated
