@@ -10,7 +10,8 @@
                 <page string="Save" position="after">
                     <page string="Invoicing">
                         <group string="Pricing grid">
-                        <field name="invoicing_product_id"/>
+                            <field name="initial_invoice_amount"/>
+                            <field name="invoicing_product_id"/>
                             <field name="pricegrid_ids" editable="bottom">
                                 <tree>
                                     <field name="threshold"/>

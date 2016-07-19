@@ -194,6 +194,20 @@ class ClouderApplication(models.Model):
         string="Invoicing product",
         default=_get_default_product
     )
+    initial_invoice_amount = fields.Float(
+        'Instance Creation Fees',
+        help="""This is the price to pay once at instance creation.
+        This price is manually set and unrelated to price grids computation."""
+    )
+
+    @api.one
+    @api.constrains('initial_invoice_amount')
+    def _check_initial_invoice_amount_positive(self):
+        if self.initial_invoice_amount < 0.0:
+            raise except_orm(
+                _('Application invoice error!'),
+                _("You cannot set a negative amount as instance creation fees.")
+            )
 
     @api.one
     @api.constrains('pricegrid_ids', 'invoicing_product_id')
