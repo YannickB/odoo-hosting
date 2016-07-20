@@ -670,6 +670,9 @@
                                     <field name="name"/>
                                     <field name="clouder_type"/>
                                     <field name="value_type"/>
+                                    <field name="is_function"/>
+                                    <field name="func_name"/>
+                                    <field name="default_value"/>
                                 </tree>
                             </field>
                         </page>
@@ -684,6 +687,42 @@
                 <tree string="Applications">
                     <field name="name"/>
                 </tree>
+            </field>
+        </record>
+
+        <record id="view_clouder_application_metadata_tree" model="ir.ui.view">
+            <field name="name">clouder.application.metadata.tree</field>
+            <field name="model">clouder.application.metadata</field>
+            <field name="arch" type="xml">
+                <tree string="Application Metadata">
+                    <field name="application_id"/>
+                    <field name="name"/>
+                    <field name="clouder_type"/>
+                    <field name="value_type"/>
+                    <field name="is_function"/>
+                    <field name="func_name"/>
+                    <field name="default_value"/>
+                </tree>
+            </field>
+        </record>
+        <record id="view_clouder_application_metadata_form" model="ir.ui.view">
+            <field name="name">clouder.application.metadata.form</field>
+            <field name="model">clouder.application.metadata</field>
+            <field name="arch" type="xml">
+                <form string="Application Metadata" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="application_id"/>
+                        <newline/>
+                        <field name="clouder_type"/>
+                        <newline/>
+                        <field name="value_type"/>
+                        <field name="default_value"/>
+                        <newline/>
+                        <field name="is_function"/>
+                        <field name="func_name" attrs="{'invisible': [('is_function','=', 0)],'required': [('is_function','=', 1)]}"/>
+                    </group>
+                </form>
             </field>
         </record>
 
