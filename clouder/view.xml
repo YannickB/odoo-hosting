@@ -720,7 +720,7 @@
                         <field name="default_value"/>
                         <newline/>
                         <field name="is_function"/>
-                        <field name="func_name" attrs="{'invisible': [('is_function','=', 0)],'required': [('is_function','=', 1)]}"/>
+                        <field name="func_name" attrs="{'invisible': [('is_function','=', False)], 'required': [('is_function','=', True)]}"/>
                     </group>
                 </form>
             </field>

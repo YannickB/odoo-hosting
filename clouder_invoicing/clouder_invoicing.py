@@ -34,6 +34,14 @@ class ClouderInvoicingPricegridLine(models.Model):
     """
     _name = 'clouder.invoicing.pricegrid.line'
 
+    @api.one
+    def _get_application_id(self):
+        object = self.link
+        if self.link._name != 'clouder.application':
+            object = self.link.application_id
+        return object
+
+    application_id = fields.Many2one('clouder.application', 'Application', compute='_get_application_id', store=True)
     application_metadata = fields.Many2one('clouder.application.metadata', 'Invoicing Unit', required=True)
     threshold = fields.Integer('Threshold', required=True)
     price = fields.Float('Price', required=True)
@@ -50,10 +58,11 @@ class ClouderInvoicingPricegridLine(models.Model):
     link_base = fields.Many2one('clouder.base', 'Base')
 
     @api.one
-    @api.constrains('link_application', 'link_container', 'link_base')
-    def _check_links(self):
+    @api.constrains('link_application', 'link_container', 'link_base', 'application_metadata')
+    def _check_links_and_metadata(self):
         """
         Checks that at least one - and only one - of the three links is defined
+        Checks that the application_metadata has the right application id
         """
         # At least one should be defined
         if not self.link:
@@ -68,6 +77,15 @@ class ClouderInvoicingPricegridLine(models.Model):
             raise except_orm(
                 _('Pricegrid error!'),
                 _("Pricegrid links to application/container/base are exclusive to one another.")
+            )
+
+        # Update application_id since the links may have changed
+        self.application_id = self._get_application_id()
+
+        if self.application_id.id != self.application_metadata.application_id.id:
+            raise except_orm(
+                _('Pricegrid error!'),
+                _("The metadata should be associated with the same application as the pricegrid.")
             )
 
     @property
