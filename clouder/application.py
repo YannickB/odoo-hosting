@@ -359,7 +359,7 @@ class ClouderApplicationMetadata(models.Model):
             ('container', 'Container'),
             ('base', 'Base')
         ], 'Type', required=True)
-    is_function = fields.Boolean('Function', help="Is the value computed by a function?", required=True, default=False)
+    is_function = fields.Boolean('Function', help="Is the value computed by a function?", required=False, default=False)
     func_name = fields.Char('Function Name', size=64)
     default_value = fields.Text('Default Value')
     value_type = fields.Selection(
@@ -377,6 +377,6 @@ class ClouderApplicationMetadata(models.Model):
     @api.multi
     def check_function(self):
         for metadata in self:
-            if self.is_function and not self.func_name:
+            if metadata.is_function and not metadata.func_name:
                 raise except_orm(_('Data error!'), _(
                     "You must enter the function name to set is_function to true."))
