@@ -12,11 +12,14 @@ $payment.on("click", 'button[type="submit"],button[name="submit"]', function (ev
     ev.preventDefault();
     ev.stopPropagation();
     var $form = Clouder.$(ev.currentTarget).parents('form');
+
+    // Make the form open in a new window
+    $form.attr("target", "_blank");
+
     var acquirer_id = Clouder.$(ev.currentTarget).parents('div.oe_sale_acquirer_button').first().data('id');
     if (! acquirer_id) {
         return false;
     }
-    $payment.hide();
     Clouder.loading(true, $payment);
     Clouder.$.ajax({
         url: Clouder.pluginPath + 'clouder_form/submit_acquirer',
@@ -29,7 +32,7 @@ $payment.on("click", 'button[type="submit"],button[name="submit"]', function (ev
         cache: false,
         dataType: 'html',
         success: function(data) {
-            Clouder.readresponse(data);
+            Clouder.readresponse(JSON.parse(data), false);
             Clouder.loading(false, $payment);
             $payment.hide();
             $form.submit();

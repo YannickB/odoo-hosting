@@ -233,12 +233,14 @@ Clouder.check_instance_data = function(){
     });
 };
 
-Clouder.readresponse = function(data){
-    // Clean old dynamically added divs
-    for (div in Clouder.clean) {
-        Clouder.$plugin.find(Clouder.clean[i]).remove();
+Clouder.readresponse = function(data, cleanup=true){
+    if (cleanup){
+        // Clean old dynamically added divs
+        for (div in Clouder.clean) {
+            Clouder.$plugin.find(Clouder.clean[i]).remove();
+        }
+        Clouder.clean = [];
     }
-    Clouder.clean = [];
 
     Clouder.$plugin.append('<div id="'+data.div_id+'"></div>');
     $new_div = Clouder.$plugin.find('#'+data.div_id);

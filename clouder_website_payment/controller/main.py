@@ -165,16 +165,16 @@ class FormControllerExtend(FormController):
             'reference': session.reference,
         })
 
-        html = request.env.ref('clouder_website_payment.payment_redirect').render(
+        html = request.env.ref('clouder_website_payment.payment_popup').render(
             {},
             engine='ir.qweb',
             context=request.context
         )
 
-        response = {
+        resp = {
             'html': html,
             'js': [],
-            'div_id': 'CL_payment_redirect'
+            'div_id': 'CL_payment_popup'
         }
 
-        return request.make_response(response, headers=HEADERS)
+        return request.make_response(json.dumps(resp), headers=HEADERS)

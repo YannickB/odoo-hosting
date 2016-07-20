@@ -48,7 +48,7 @@ class ClouderApplication(models.Model):
         """
         Overwrite instance creation to set session status
         """
-        created_id = super(self, ClouderApplication).create_instance_from_request(session_id)
+        created_id = super(ClouderApplication, self).create_instance_from_request(session_id)
 
         session = self.env['clouder.web.session'].browse([session_id])[0]
 
