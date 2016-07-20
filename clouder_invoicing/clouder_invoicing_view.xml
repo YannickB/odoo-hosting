@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
+        <!-- Pricegrid views -->
+        <record id="view_clouder_invoicing_pricdegrid_line_form" model="ir.ui.view">
+            <field name="name">clouder.invoicing.pricegrid.line.form</field>
+            <field name="model">clouder.invoicing.pricegrid.line</field>
+            <field name="arch" type="xml">
+                <form string="Pricegrid line" version="7.0">
+                    <group col="4">
+                        <field name="application_metadata"/>
+                        <field name="threshold"/>
+                        <newline/>
+                        <field name="price"/>
+                        <field name="type"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
         <!-- Application Invoicing -->
         <record id="view_clouder_application_form_invoicing" model="ir.ui.view">
             <field name="name">clouder.application.form.invoicing</field>
