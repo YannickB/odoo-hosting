@@ -33,8 +33,7 @@ class ClouderInvoicingPricegridLine(models.Model):
     Defines a pricegrid line
     """
     _name = 'clouder.invoicing.pricegrid.line'
-
-    @api.one
+    
     def _get_application_id(self):
         object = self.link
         if self.link._name != 'clouder.application':
@@ -80,7 +79,7 @@ class ClouderInvoicingPricegridLine(models.Model):
             )
 
         # Update application_id since the links may have changed
-        self.application_id = self._get_application_id()
+        self.application_id = self._get_application_id()[0]
 
         if self.application_id.id != self.application_metadata.application_id.id:
             raise except_orm(
