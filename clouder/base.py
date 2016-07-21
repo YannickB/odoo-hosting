@@ -426,7 +426,7 @@ class ClouderBase(models.Model):
 
             # Processing Metadata
             metadata_vals = []
-            metadata_sources = {x.id: x for x in application.metadata_ids}
+            metadata_sources = {x.id: x for x in application.metadata_ids if x.clouder_type == 'base'}
             sources_to_add = metadata_sources.keys()
             metadata_to_process = []
             if 'metadata_ids' in vals:

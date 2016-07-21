@@ -714,7 +714,7 @@ class ClouderContainer(models.Model):
 
             # Getting metadata
             metadata_vals = []
-            metadata_sources = {x.id: x for x in application.metadata_ids}
+            metadata_sources = {x.id: x for x in application.metadata_ids if x.clouder_type == 'container'}
             sources_to_add = metadata_sources.keys()
             metadata_to_process = []
             if 'metadata_ids' in vals:
@@ -1106,7 +1106,7 @@ class ClouderContainer(models.Model):
 
         if 'nosave' in self.env.context \
                 or (not self.autosave and 'forcesave' not in self.env.context):
-            self.log('This base container not be saved '
+            self.log('This container shall not be saved '
                      'or the backup isnt configured in conf, '
                      'skipping save container')
             return
@@ -1565,9 +1565,9 @@ class ClouderContainerMetadata(models.Model):
         """
         Checks that the metadata is intended for containers
         """
-        if self.name.clouder_type != 'base':
+        if self.name.clouder_type != 'container':
             raise except_orm(
-                _('Base Metadata error!'),
+                _('Container Metadata error!'),
                 _("This metadata is intended for {0} only.".format(self.name.clouder_type))
             )
 
@@ -1585,11 +1585,11 @@ class ClouderContainerMetadata(models.Model):
         except Exception as e:
             # Logging error for reference
             _logger.error(
-                "Base Metadata error!\n" +
+                "Container Metadata error!\n" +
                 "Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data)
             )
             # User display
             raise except_orm(
-                _('Base Metadata error!'),
+                _('Container Metadata error!'),
                 _("Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data))
             )

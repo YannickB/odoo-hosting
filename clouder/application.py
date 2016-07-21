@@ -378,5 +378,7 @@ class ClouderApplicationMetadata(models.Model):
     def check_function(self):
         for metadata in self:
             if metadata.is_function and not metadata.func_name:
-                raise except_orm(_('Data error!'), _(
-                    "You must enter the function name to set is_function to true."))
+                raise except_orm(
+                    _('Data error!'),
+                    _("You must enter the function name to set is_function to true.")
+                )
