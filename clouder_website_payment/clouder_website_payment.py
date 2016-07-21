@@ -22,6 +22,7 @@
 
 from openerp import models, fields, api, http, _
 from openerp.exceptions import except_orm
+import openerp
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -48,34 +49,35 @@ class ClouderApplication(models.Model):
         """
         Overwrite instance creation to set session status
         """
-        created_id = super(ClouderApplication, self).create_instance_from_request(session_id)
+        created_id = False
+        try:
+            created_id = super(ClouderApplication, self).create_instance_from_request(session_id)
+        except Exception, e:
+            # Creating a separate cursor to commit errors in case of exception thrown
+            with openerp.registry(self.env.cr.dbname).cursor() as new_cr:
+                new_env = api.Environment(new_cr, self.env.uid, self.env.context)
 
-        session = self.env['clouder.web.session'].browse([session_id])[0]
+                orm_clws = new_env['clouder.web.session']
+                session = orm_clws.browse([session_id])[0]
+                session.state = 'error'
 
-        # Change state to error by default
+                # Commit the change we just made
+                new_env.cr.commit()
+
+            # Throw the error again to finish the process
+            raise e
+
+        # Checking the results
         state = 'error'
-
         # If the session was created successfully: change state to done
         if created_id:
             state = 'done'
 
-        session.write({'state': state})
-
+        # Update the session
+        session = self.env['clouder.web.session'].browse([session_id])[0]
+        session.state = state
+        
         return created_id
-
-
-class AccountInvoice(models.Model):
-    """
-    Ovveride to create a function that will be run at startup to allow cancelled invoices on the sales journal
-    """
-    _inherit = 'account.invoice'
-
-    def _make_sales_journal_cancellable(self):
-        """
-        Updates the default sales journal to allow invoice cancellation
-        """
-        journal = self._default_journal()
-        journal.write({'update_posted': True})
 
 
 class ClouderWebSession(models.Model):

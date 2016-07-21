@@ -72,12 +72,17 @@ class ClouderApplication(models.Model):
         """
         Creates a clouder container or base using provided data
         """
-        orm_cws = self.env['clouder.web.session'].sudo()
-        data = orm_cws.browse([session_id])[0]
+        orm_clws = self.env['clouder.web.session'].sudo()
+        data = orm_clws.browse([session_id])[0]
+
+        orm_user = self.env['res.users'].sudo()
+        user = orm_user.search([
+            ('partner_id', '=', data.partner_id.id),
+            ('login', '=', data.partner_id.email)
+        ])
 
         # Create user if it doesn't exist yet
-        if data.fresh_partner:
-            orm_user = self.env['res.users'].sudo()
+        if not user:
             user = orm_user.create({
                 'login': data.partner_id.email,
                 'partner_id': data.partner_id.id
@@ -161,7 +166,6 @@ class ClouderWebSession(models.Model):
     title = fields.Char('Title', required=False)
     environment_id = fields.Many2one('clouder.environment', 'Environment', required=False)
     environment_prefix = fields.Char('Environment prefix', required=False)
-    fresh_partner = fields.Boolean('Freshly created partner?', default=False, required=True)
 
     @api.one
     @api.constrains('environment_id', 'prefix', 'application_id')
@@ -449,8 +453,6 @@ class ClouderWebHelper(models.Model):
             else:
                 instance_data[opt] = False
 
-        instance_data['fresh_partner'] = False
-
         other_data = {}
         for opt in other_fields:
             if opt in post_data:
@@ -462,7 +464,7 @@ class ClouderWebHelper(models.Model):
         orm_partner = self.env['res.partner'].sudo()
         orm_user = self.env['res.users'].sudo()
 
-        # If the user exists, try to login and create/update partner
+        # If the user exists, try to login and update partner
         if self.check_login_exists(partner_data['email']):
             server = ServerProxy('http://localhost:8069/xmlrpc/common')
             user_id = server.login(self.env.cr.dbname, partner_data['email'], other_data['password'])
@@ -482,7 +484,6 @@ class ClouderWebHelper(models.Model):
         # If the user doesn't exist, create a new partner
         else:
             instance_data['partner_id'] = orm_partner.create(partner_data).id
-            instance_data['fresh_partner'] = True
 
         # Parsing instance data
         instance_data['clouder_partner_id'] = int(instance_data['clouder_partner_id'])
