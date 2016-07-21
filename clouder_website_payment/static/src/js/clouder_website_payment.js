@@ -10,11 +10,20 @@ $payment.on("click", "input[name='acquirer']", function (ev) {
 // When clicking on payment button: create the tx using json then continue to the acquirer
 $payment.on("click", 'button[type="submit"],button[name="submit"]', function (ev) {
     ev.preventDefault();
+
+    // Make a window while the event is still declared as valid
+    var myWindow = window.open(
+        Clouder.pluginPath + '/clouder_form/payment_popup_wait&lang=' + Clouder.params['lang'],
+        'cl_payment_popup',
+        'resizable=1,scrollbars=yes,height=500,width=700'
+    );
+
     ev.stopPropagation();
+
     var $form = Clouder.$(ev.currentTarget).parents('form');
 
-    // Make the form open in a new window
-    $form.attr("target", "_blank");
+    // Make the form open in the new window
+    $form.attr("target", "cl_payment_popup");
 
     var acquirer_id = Clouder.$(ev.currentTarget).parents('div.oe_sale_acquirer_button').first().data('id');
     if (! acquirer_id) {

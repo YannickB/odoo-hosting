@@ -29,9 +29,14 @@
             </div>
         </template>
 
+        <template id="payment_form_popup_message">
+            <t t-set="additional_title">Payment processing</t>
+            <p>A popup should be displaying the payment information.</p>
+        </template>
+
         <template id="payment_popup">
             <t t-set="additional_title">Payment processing</t>
-            <p>You should be directed to the payment in a new window shortly.</p>
+            <p>You should be directed to the payment shortly.</p>
         </template>
 
         <template id="payment_success">

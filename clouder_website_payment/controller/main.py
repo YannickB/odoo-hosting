@@ -132,6 +132,25 @@ class FormControllerExtend(FormController):
 
         return request.make_response(html, headers=HEADERS)
 
+    @http.route('clouder_form/payment_popup_wait', type='http', auth='public', methods=['GET'])
+    def payment_cancel(self, **post):
+        """
+        Redirect page after a cancelled payment
+        """
+        # Check parameters
+        lang = 'en_US'
+        if 'lang' in post:
+            lang = post['lang']
+        request.env = self.env_with_context({'lang': lang})
+
+        html = request.env.ref('clouder_website_payment.payment_popup').render(
+            {},
+            engine='ir.qweb',
+            context=request.context
+        )
+
+        return request.make_response(html, headers=HEADERS)
+
     @http.route('/clouder_form/submit_acquirer', type='http', auth='public', methods=['POST'])
     def submit_acquirer(self, **post):
         """
@@ -165,7 +184,7 @@ class FormControllerExtend(FormController):
             'reference': session.reference,
         })
 
-        html = request.env.ref('clouder_website_payment.payment_popup').render(
+        html = request.env.ref('clouder_website_payment.payment_form_popup_message').render(
             {},
             engine='ir.qweb',
             context=request.context
