@@ -174,7 +174,8 @@ class ClouderWebSession(models.Model):
         """
         # Search for sessions that generated an invoice (payment is "done")
         sessions = self.search([
-            ('invoice_id', '!=', False)
+            ('invoice_id', '!=', False),
+            ('state', '=', 'payment_processed')
         ])
         # No session meets the criteria: do nothing
         if not sessions:

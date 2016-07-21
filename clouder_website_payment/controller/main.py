@@ -132,7 +132,7 @@ class FormControllerExtend(FormController):
 
         return request.make_response(html, headers=HEADERS)
 
-    @http.route('clouder_form/payment_popup_wait', type='http', auth='public', methods=['GET'])
+    @http.route('/clouder_form/payment_popup_wait', type='http', auth='public', methods=['GET'])
     def payment_cancel(self, **post):
         """
         Redirect page after a cancelled payment
