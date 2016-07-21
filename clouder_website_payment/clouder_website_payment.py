@@ -207,7 +207,7 @@ class ClouderWebSession(models.Model):
         Should not be called from a recordset!
         """
         for record in self.search([]):
-            if record.should_unlink():
+            if record.should_unlink:
                 record.unlink()
 
 
