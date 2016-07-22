@@ -23,6 +23,7 @@
 from openerp import models, fields, api, http, _
 from openerp.exceptions import except_orm
 import openerp
+import threading
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -52,19 +53,31 @@ class ClouderApplication(models.Model):
         created_id = False
         try:
             created_id = super(ClouderApplication, self).create_instance_from_request(session_id)
-        except Exception, e:
-            # Creating a separate cursor to commit errors in case of exception thrown
-            with openerp.registry(self.env.cr.dbname).cursor() as new_cr:
-                new_env = api.Environment(new_cr, self.env.uid, self.env.context)
+        except Exception as e:
+            def thread_session_update_state(dbname, uid, context):
+                # Creating a separate cursor to commit errors in case of exception thrown
+                with openerp.api.Environment.manage():
+                    with openerp.registry(dbname).cursor() as new_cr:
+                        new_env = api.Environment(new_cr, uid, context)
 
-                orm_clws = new_env['clouder.web.session']
-                session = orm_clws.browse([session_id])[0]
-                session.state = 'error'
+                        orm_clws = new_env['clouder.web.session']
+                        session = orm_clws.browse([session_id])[0]
+                        session.state = 'error'
 
-                # Commit the change we just made
-                new_env.cr.commit()
+                        # Commit the change we just made
+                        new_env.cr.commit()
 
-            # Throw the error again to finish the process
+                # Return to avoid getting back to the other instructions after this thread
+                return
+
+            # Making a thread to avoid having a deadlock when updating the session
+            sess_update = threading.Thread(
+                target=thread_session_update_state,
+                args=(self.env.cr.dbname, self.env.uid, self.env.context)
+            )
+            sess_update.start()
+
+            # Throw the error to finish the process and have it display in logs/screen
             raise e
 
         # Checking the results
