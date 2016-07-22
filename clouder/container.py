@@ -1543,7 +1543,7 @@ class ClouderContainerMetadata(models.Model):
         def _missing_function():
             # If the function is missing, raise an exception
             raise except_orm(
-                _('Base Metadata error!'),
+                _('Container Metadata error!'),
                 _("Invalid function name {0} for clouder.container".format(self.name.func_name))
             )
 
@@ -1589,12 +1589,7 @@ class ClouderContainerMetadata(models.Model):
         # call the value property to see if the metadata can be loaded properly
         try:
             self.value
-        except Exception as e:
-            # Logging error for reference
-            _logger.error(
-                "Container Metadata error!\n" +
-                "Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data)
-            )
+        except ValueError as e:
             # User display
             raise except_orm(
                 _('Container Metadata error!'),
