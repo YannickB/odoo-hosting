@@ -375,10 +375,22 @@ class ClouderApplicationMetadata(models.Model):
 
     @api.depends('is_function', 'func_name')
     @api.multi
-    def check_function(self):
+    def _check_function(self):
+        """
+        Checks that the function name is defined and exists if is_functions is set to True
+        """
         for metadata in self:
-            if metadata.is_function and not metadata.func_name:
-                raise except_orm(
-                    _('Data error!'),
-                    _("You must enter the function name to set is_function to true.")
-                )
+            if metadata.is_function:
+                if not metadata.func_name:
+                    raise except_orm(
+                        _('Data error!'),
+                        _("You must enter the function name to set is_function to true.")
+                    )
+                else:
+                    obj_env = self.env['clouder.'+self.clouder_type]
+                    if not getattr(obj_env, self.func_name, False):
+                        raise except_orm(
+                            _('Base Metadata error!'),
+                            _("Invalid function name {0} for clouder.base".format(self.name.func_name))
+                        )
+

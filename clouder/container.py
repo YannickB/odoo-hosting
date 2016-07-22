@@ -1540,10 +1540,17 @@ class ClouderContainerMetadata(models.Model):
         """
         Property that returns the value formatted by type
         """
+        def _missing_function():
+            # If the function is missing, raise an exception
+            raise except_orm(
+                _('Base Metadata error!'),
+                _("Invalid function name {0} for clouder.container".format(self.name.func_name))
+            )
+
         # Computing the function if needed
         val_to_convert = self.value_data
         if self.name.is_function:
-            val_to_convert = "{0}".format(getattr(self.container_id, self.name.func_name)())
+            val_to_convert = "{0}".format(getattr(self.container_id, self.name.func_name, _missing_function)())
             # If it is a function, the text version should be updated for display
             self.with_context(skip_check=True).write({'value_data': val_to_convert})
 
