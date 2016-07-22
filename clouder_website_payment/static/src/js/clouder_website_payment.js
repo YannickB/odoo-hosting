@@ -13,7 +13,7 @@ $payment.on("click", 'button[type="submit"],button[name="submit"]', function (ev
 
     // Make a window while the event is still declared as valid
     var myWindow = window.open(
-        Clouder.pluginPath + '/clouder_form/payment_popup_wait&lang=' + Clouder.params['lang'],
+        Clouder.pluginPath + '/clouder_form/payment_popup_wait?lang=' + Clouder.params['lang'],
         'cl_payment_popup',
         'resizable=1,scrollbars=yes,height=500,width=700'
     );
