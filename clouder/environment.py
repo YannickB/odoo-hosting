@@ -24,12 +24,8 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 from openerp import modules
 
-import model
 
 import re
-
-import time
-from datetime import datetime, timedelta
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -45,7 +41,7 @@ class ClouderEnvironment(models.Model):
 
     name = fields.Char('Name', required=True)
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)
-    prefix = fields.Char('Prefix', required=True)
+    prefix = fields.Char('Prefix', required=False)
     user_ids = fields.Many2many(
         'res.users', 'clouder_environment_user_rel',
         'environment_id', 'user_id', 'Users')
@@ -53,20 +49,35 @@ class ClouderEnvironment(models.Model):
         'clouder.container', 'environment_id', 'Containers')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(name)',
-         'Name must be unique!'),
         ('prefix_uniq', 'unique(prefix)',
          'Prefix must be unique!'),
     ]
 
     @api.one
     @api.constrains('prefix')
-    def _validate_data(self):
+    def _check_prefix(self):
         """
         Check that the prefix does not contain any forbidden
         characters.
+        Also checks that you cannot remove a prefix when containers are linked to the environment
         """
-        if not re.match("^[\w]*$", self.prefix):
+        if self.prefix and not re.match("^[\w]*$", self.prefix):
             raise except_orm(
                 _('Data error!'),
                 _("Prefix can only contains letters"))
+        if self.container_ids and not self.prefix:
+            raise except_orm(
+                _('Data error!'),
+                _("You cannot have an empty prefix when containers are linked"))
+
+    @api.multi
+    def write(self, vals):
+        """
+        Removes the possibility to change the prefix if containers are linked
+        """
+        if 'prefix' in vals and self.container_ids:
+            raise except_orm(
+                _('Data error!'),
+                _("You cannot have an empty prefix when containers are linked"))
+
+        super(ClouderEnvironment, self).write(vals)

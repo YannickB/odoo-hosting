@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <template id="payment_buttons">
+            <t t-set="additional_title">Shop - Select Payment Mode</t>
+            <div class="clouder_js_payment" t-if="acquirers" id="payment_method">
+                <div class="col-lg-5 col-sm-6">
+                    <h4>Payment Method:</h4>
+                    <ul class="list-unstyled">
+                        <li t-foreach="acquirers or []" t-as="acquirer">
+                            <label t-if="acquirer.button">
+                                <input t-att-value="acquirer.id" type="radio" name="acquirer" t-att-checked="acquirers[0] == acquirer"/>
+                                <img class="media-object" style="width: 60px; display: inline-block;"
+                                    t-att-title="acquirer.name"
+                                    t-att-src="'%s/payment_%s/static/src/img/%s_icon.png' % (hostname, acquirer.provider, acquirer.provider)"/>
+                                <span t-field="acquirer.name"/>
+                            </label>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-sm-3">
+                    <t t-foreach="acquirers or []" t-as="acquirer">
+                        <div t-att-data-id="acquirer.id" class="oe_sale_acquirer_button hidden pull-right">
+                            <div t-raw="acquirer.button"/>
+                            <div t-field="acquirer.pre_msg"/>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </template>
+
+        <template id="payment_form_popup_message">
+            <t t-set="additional_title">Payment processing</t>
+            <p>A popup should be displaying the payment information.</p>
+        </template>
+
+        <template id="payment_popup">
+            <t t-set="additional_title">Payment processing</t>
+            <p>You should be directed to the payment shortly.</p>
+        </template>
+
+        <template id="payment_success">
+            <t t-set="additional_title">Payment successful</t>
+            <p>Thank you for your interest in Clouder.</p>
+            <br/>
+            <p>You should receive an email with login instructions soon.</p>
+        </template>
+
+        <template id="payment_cancel">
+            <t t-set="additional_title">Payment cancelled</t>
+            <p>We're sorry to see you go.</p>
+            <br/>
+            <p>Hope we meet again sometime in the future!</p>
+        </template>
+    </data>
+</openerp>
