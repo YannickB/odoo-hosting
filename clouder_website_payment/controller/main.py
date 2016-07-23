@@ -54,7 +54,7 @@ class FormControllerExtend(FormController):
 
         # If instance creation is free, we just get to the creation process
         if not session.amount:
-            return super(self, FormControllerExtend).hook_next(data)
+            return super(FormControllerExtend, self).hook_next(data)
 
         # Setting acquirer buttons
         acquirers = []
