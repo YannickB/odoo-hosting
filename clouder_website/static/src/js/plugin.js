@@ -33,7 +33,7 @@ Clouder.run = function($){
         $clouder_form.find('input[name="lang"]').val(Clouder.params['lang']);
 
         // Controls the state of env_prefix input depending on env_id
-        $clouder_form.on('change', "select[name='env_id']", function(){
+        $clouder_form.on('change', "select[name='environment_id']", function(){
             var $env_id = $clouder_form.find('select[name="environment_id"]');
             var $env_prefix = $clouder_form.find('input[name="environment_prefix"]');
             if (Clouder.login_validated && $env_id.val()){
@@ -196,8 +196,8 @@ Clouder.check_instance_data = function(){
     inst_type = $form.find('select[name="application_id"]').find('option:selected').attr('inst_type');
     ajax_data = {
         'inst_type': inst_type,
-        'env_id': $form.find('select[name="environment_id"]').find('option:selected').val(),
-        'env_prefix': $form.find('input[name="environment_prefix"]').val(),
+        'environment_id': $form.find('select[name="environment_id"]').find('option:selected').val(),
+        'environment_prefix': $form.find('input[name="environment_prefix"]').val(),
         'domain_id': $form.find('select[name="domain_id"]').find('option:selected').val(),
         'prefix': $form.find('input[name="prefix"]').val(),
     }

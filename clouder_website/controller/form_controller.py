@@ -300,10 +300,24 @@ class FormController(http.Controller):
 
         # Checking data errors for container requests
         if post['inst_type'] == 'container':
-            if 'environment_id' not in post or 'environment_prefix' not in post or 'prefix' not in post:
-                result = {'error': _('Missing argument for check.')}
+            # Check that the required data has been passed
+            if ('environment_id' not in post and 'environment_prefix' not in post) or 'prefix' not in post:
+                result = {'error': _('Prefix and either environment_id or environment_prefix are required.')}
                 return request.make_response(json.dumps(result), headers=HEADERS)
+            # Check that the required data is not empty
+            if (not post['environment_id'] and not post['environment_prefix']) or not post['prefix']:
+                result = {'error': _('Prefix and either environment_id or environment_prefix should not be empty.')}
+                return request.make_response(json.dumps(result), headers=HEADERS)
+
+            # If we have an ID
             if post['environment_id']:
+                # Check that the ID is valid
+                try:
+                    int(post['environment_id'])
+                except ValueError:
+                    result = {'error': _('Invalid environment_id: {0}.').format(post['environment_id'])}
+                    return request.make_response(json.dumps(result), headers=HEADERS)
+
                 orm_cont = request.env['clouder.container'].sudo()
                 # Searching for existing containers with the environment and prefix
                 result = orm_cont.search([
