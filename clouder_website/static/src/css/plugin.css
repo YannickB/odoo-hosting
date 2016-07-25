@@ -1,0 +1,259 @@
+/* Elements */
+#ClouderPlugin a
+{
+    color: #428bca;
+    text-decoration: none;
+    background: transparent;
+}
+#ClouderPlugin a:active, a:hover
+{
+    outline: 0;
+}
+#ClouderPlugin a:hover, a:focus
+{
+    color: #2a6496;
+    text-decoration: underline;
+}
+#ClouderPlugin a:focus
+{
+    outline: 5px auto -webkit-focus-ring-color;
+    outline: thin dotted;
+    outline-offset: -2px;
+}
+#ClouderPlugin input
+{
+    line-height: normal;
+}
+#ClouderPlugin input[disabled]
+{
+    cursor: default;
+}
+#ClouderPlugin select
+{
+    text-transform: none;
+}
+#ClouderPlugin input, #ClouderPlugin select
+{
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    font: inherit;
+    margin: 0;
+}
+#ClouderPlugin label
+{
+    display: inline-block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    max-width: 100%;
+}
+
+/* Classes */
+#ClouderPlugin .CL_hint
+{
+    color: red;
+    text-align: center;
+}
+#ClouderPlugin .CL_Loading
+{
+    position:relative;
+
+    /* IE 8 */
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+    /* IE 5-7 */
+    filter: alpha(opacity=50);
+    /* Netscape */
+    -moz-opacity: 0.5;
+    /* Safari 1.x */
+    -khtml-opacity: 0.5;
+    /* Good browsers */
+    opacity: 0.5;
+}
+#ClouderPlugin .CF_Title
+{
+    font-size: 25px;
+    text-align: center;
+    margin: .67em 0;
+    color: inherit;
+    font-family: inherit;
+    font-weight: 500;
+    line-height: 1.1;
+    margin-bottom: 10px;
+    margin-top: 20px;
+}
+#ClouderPlugin .mb32
+{
+    margin-bottom: 32px !important;
+}
+#ClouderPlugin .pull-right
+{
+    float: right !important;
+    position: relative !important;
+    right: 10px;
+}
+#ClouderPlugin .pull-left
+{
+    float: left !important;
+    position: relative !important;
+    left: 10px;
+}
+#ClouderPlugin .btn:hover, #ClouderPlugin .btn:focus, #ClouderPlugin .btn:active, #ClouderPlugin .btn.active
+{
+    background-color: #e6e6e6;
+    border-color: #adadad;
+    color: #333;
+    background-color: #3071a9;
+    border-color: #285e8e;
+    color: #fff;
+}
+#ClouderPlugin .btn:active, #ClouderPlugin .btn.active
+{
+    background-image: none;
+}
+#ClouderPlugin .btn
+{
+    background-image: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 1.42857143;
+    margin-bottom: 0;
+    moz-user-select: none;
+    ms-user-select: none;
+    padding: 6px 12px;
+    text-align: center;
+    user-select: none;
+    vertical-align: middle;
+    webkit-user-select: none;
+    white-space: nowrap;
+    background-color: #428bca;
+    border-color: #357ebd;
+    color: #fff;
+}
+#ClouderPlugin .btn:focus, #ClouderPlugin .btn:active:focus, #ClouderPlugin .btn.active:focus
+{
+    outline: 5px auto -webkit-focus-ring-color;
+    outline: thin dotted;
+    outline-offset: -2px;
+}
+#ClouderPlugin .btn:hover, #ClouderPlugin .btn:focus
+{
+    color: #333;
+    text-decoration: none;
+}
+#ClouderPlugin .btn:active, #ClouderPlugin .btn.active
+{
+    background-image: none;
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+    outline: 0;
+    webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+}
+#ClouderPlugin .form-control
+{
+    background-color: #fff;
+    background-image: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    color: #555;
+    display: inline-block;
+    font-size: 14px;
+    height: 34px;
+    line-height: 1.42857143;
+    o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+    padding: 6px 12px;
+    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+    webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
+    width: 100%;
+}
+#ClouderPlugin input[class="form-control"]
+{
+    height: 20px;
+}
+#ClouderPlugin select[class="form-control"]
+{
+    width: 118%;
+}
+#ClouderPlugin .form-control:focus
+{
+    border-color: #66afe9;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
+    outline: 0;
+    webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
+}
+#ClouderPlugin .form-control::-moz-placeholder
+{
+    color: #777;
+    opacity: 1;
+}
+#ClouderPlugin .form-control:-ms-input-placeholder
+{
+    color: #777;
+}
+#ClouderPlugin .form-control::-webkit-input-placeholder
+{
+    color: #777;
+}
+#ClouderPlugin .form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control
+{
+    background-color: #eee;
+    cursor: not-allowed;
+    opacity: 1;
+}
+#ClouderPlugin .has-error .form-control
+{
+    border-color: #a94442;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+}
+#ClouderPlugin .has-error .form-control:focus
+{
+    border-color: #843534;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
+    webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
+}
+#ClouderPlugin .has-error .control-label
+{
+    color: #a94442;
+}
+#ClouderPlugin .col-lg-6
+{
+    min-height: 1px;
+    padding-left: 0px;
+    padding-right: 25px;
+    position: relative;
+}
+#ClouderPlugin .clearfix:after, #ClouderPlugin .form-group:after
+{
+    clear: both;
+}
+#ClouderPlugin .clearfix:before, #ClouderPlugin .clearfix:after, #ClouderPlugin .form-group:before, #ClouderPlugin .form-group:after
+{
+    content: " ";
+    display: table;
+}
+#ClouderPlugin .clearfix:before, #ClouderPlugin .clearfix:after
+{
+    content: " ";
+    display: table;
+}
+#ClouderPlugin .form-group
+{
+    margin-bottom: 15px;
+    width: 40%;
+}
+#ClouderPlugin .fa
+{
+    display: inline-block;
+    font: normal normal normal 14px/1 FontAwesome;
+    font-family: FontAwesome !important;
+    font-size: inherit;
+    moz-osx-font-smoothing: grayscale;
+    text-rendering: auto;
+    webkit-font-smoothing: antialiased;
+}

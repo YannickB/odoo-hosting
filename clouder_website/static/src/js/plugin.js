@@ -575,7 +575,7 @@ Clouder.loadJQueryPlugins = function() {
     });
 };
 
-Clouder.img_loading = Clouder.pluginPath + "clouder_form/img/loading32x32.gif"
+Clouder.img_loading = Clouder.pluginPath + "clouder_website/static/src/img/loading32x32.gif"
 
 Clouder.loadPhp = function ($) {
     $('#ClouderPlugin').css('min-height', '52px');
