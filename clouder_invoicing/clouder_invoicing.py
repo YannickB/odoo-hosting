@@ -194,7 +194,7 @@ class ClouderApplication(models.Model):
     """
     _inherit = 'clouder.application'
 
-    @api.one
+    @api.model
     def _get_default_product(self):
         product = self.env.ref('clouder_invoicing.container_instance_product', False) and \
             self.env.ref('clouder_invoicing.container_instance_product') or \
