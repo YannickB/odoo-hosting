@@ -456,8 +456,28 @@ class FormController(http.Controller):
             return self.bad_request("Missing parameter login")
         if 'password' not in post:
             post['password'] = False
-        result = self.check_login(post['login'], post['password'])
-        return request.make_response(json.dumps({'result': result}), headers=HEADERS)
+        uid = self.check_login(post['login'], post['password'])
+
+        result = {'response': bool(uid)}
+
+        # Provide information to fill the form if login was successfull
+        if post['password'] and uid:
+            orm_user = request.env['res.users'].sudo()
+            user = orm_user.search([uid])[0]
+
+            result['partner_info'] = {
+                "name": user.partner_id.name,
+                "phone": user.partner_id.phone,
+                "email": user.partner_id.email,
+                "street2": user.partner_id.street2,
+                "city": user.partner_id.city,
+                "country_id": user.partner_id.country_id.id,
+                "street": user.partner_id.street,
+                "zip": user.partner_id.zip,
+                "state_id": user.partner_id.state_id.id
+            }
+
+        return request.make_response(json.dumps(result), headers=HEADERS)
 
     @http.route('/clouder_form/get_env', type='http', auth='public', methods=['POST'])
     def get_env(self, **post):

@@ -496,7 +496,7 @@ Clouder.user_login = function($login, $password, when_callback){
             cache: false,
             dataType: 'html',
             success: function(data) {
-                result.res = JSON.parse(data).result;
+                result = JSON.parse(data);
             },
             error: function(jq, txt, err) {
                 if ($password.val()){
@@ -513,7 +513,26 @@ Clouder.user_login = function($login, $password, when_callback){
         Clouder.$.when(axaj_login()).always(function(useless){
             when_callback(result);
             Clouder.loading(false, $form);
-            if (result.res && $password.val()){
+            // Successfull login with password provided
+            if (result.response && $password.val()){
+                // Read and apply partner info
+
+                for(attr_name in result.partner_info){
+                    // Select attributes
+                    if(attr_name.match(/_id$/)){
+                        $select = Clouder.$plugin.find('select[name="'+attr_name+'"');
+                        $select.find('option:selected').removeAttr("selected");
+                        $select.val(result.partner_info[attr_name]);
+                    }
+                    // Other attributes
+                    else {
+                        $field = Clouder.$plugin.find('input[name="'+attr_name+'"');
+                        $field.val(result.partner_info[attr_name]);
+                    }
+
+                }
+
+                // Get environment info
                 Clouder.get_env($login, $password, function(data){
                     var first = true;
                     $hint = Clouder.$plugin.find('.CL_hint');
