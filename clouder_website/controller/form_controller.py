@@ -158,10 +158,10 @@ class FormController(http.Controller):
         Submits the base form then calls the next part of the process
         """
         # Changing empty/missing env info into booleans
-        if 'env_id' not in post or not post['env_id']:
-            post['env_id'] = False
-        if 'env_prefix' not in post or not post['env_prefix']:
-            post['env_prefix'] = False
+        if 'environment_id' not in post or not post['environment_id']:
+            post['environment_id'] = False
+        if 'environment_prefix' not in post or not post['environment_prefix']:
+            post['environment_prefix'] = False
         # Check parameters
         lang = 'en_US'
         if 'lang' in post:
@@ -188,8 +188,8 @@ class FormController(http.Controller):
             'clouder_partner_id'
         ]
         instance_optional_fields = [
-            'env_id',
-            'env_prefix',
+            'environment_id',
+            'environment_prefix',
             'title'
         ]
         other_fields = [
@@ -263,10 +263,10 @@ class FormController(http.Controller):
         instance_data['clouder_partner_id'] = int(instance_data['clouder_partner_id'])
         instance_data['application_id'] = int(instance_data['application_id'])
         instance_data['domain_id'] = int(instance_data['domain_id'])
-        instance_data['environment_id'] = instance_data['env_id']
-        instance_data['environment_prefix'] = instance_data['env_prefix']
-        del instance_data['env_id']
-        del instance_data['env_prefix']
+        instance_data['environment_id'] = instance_data['environment_id']
+        instance_data['environment_prefix'] = instance_data['environment_prefix']
+        del instance_data['environment_id']
+        del instance_data['environment_prefix']
 
         # Creating session using information
         orm_cws = request.env['clouder.web.session'].sudo()
@@ -300,14 +300,14 @@ class FormController(http.Controller):
 
         # Checking data errors for container requests
         if post['inst_type'] == 'container':
-            if 'env_id' not in post or 'env_prefix' not in post or 'prefix' not in post:
+            if 'environment_id' not in post or 'environment_prefix' not in post or 'prefix' not in post:
                 result = {'error': _('Missing argument for check.')}
                 return request.make_response(json.dumps(result), headers=HEADERS)
-            if post['env_id']:
+            if post['environment_id']:
                 orm_cont = request.env['clouder.container'].sudo()
                 # Searching for existing containers with the environment and prefix
                 result = orm_cont.search([
-                    ('environment_id', '=', int(post['env_id'])),
+                    ('environment_id', '=', int(post['environment_id'])),
                     ('suffix', '=', post['prefix'])
                 ])
                 # If a container is found, return an error for those fields
@@ -315,7 +315,7 @@ class FormController(http.Controller):
                     result = {
                         'next_step_validated': False,
                         'prefix': False,
-                        'env_id': False,
+                        'environment_id': False,
                         'message': _('Container name already un use for this environment.') +
                         _('<br/>Please change the environment or domain prefix.')
                     }
@@ -324,7 +324,7 @@ class FormController(http.Controller):
                 # Otherwise, search for sessions that already reserved the name
                 orm_clws = request.env['clouder.web.session'].sudo()
                 result = orm_clws.search([
-                    ('environment_id', '=', int(post['env_id'])),
+                    ('environment_id', '=', int(post['environment_id'])),
                     ('prefix', '=', post['prefix'])
                 ])
                 # If there is such a session, invalidate data
@@ -332,7 +332,7 @@ class FormController(http.Controller):
                     result = {
                         'next_step_validated': False,
                         'prefix': False,
-                        'env_id': False,
+                        'environment_id': False,
                         'message': _('Container prefix already reserved for this environment.') +
                         _('<br/>Please change the environment or prefix.')
                     }
@@ -342,7 +342,7 @@ class FormController(http.Controller):
                 result = {
                     'next_step_validated': True,
                     'prefix': True,
-                    'env_id': True,
+                    'environment_id': True,
                     'message': False
                 }
                 return request.make_response(json.dumps(result), headers=HEADERS)
@@ -350,10 +350,10 @@ class FormController(http.Controller):
             else:
                 # Check that the environment prefix is not already attributed
                 orm_env = request.env['clouder.environment'].sudo()
-                result = orm_env.search([('prefix', '=', post['env_prefix'])])
+                result = orm_env.search([('prefix', '=', post['environment_prefix'])])
                 if result:
                     result = {
-                        'env_prefix': False,
+                        'environment_prefix': False,
                         'message': _('Environment prefix already in use.') +
                         _('<br/>Please use a different environment or environment prefix.')
                     }
@@ -371,11 +371,11 @@ class FormController(http.Controller):
                 result = orm_clws.search([
                     ('application_id', 'in', app_ids),
                     ('environment_id', '=', False),
-                    ('environment_prefix', '=', post['env_prefix'])
+                    ('environment_prefix', '=', post['environment_prefix'])
                 ])
                 if result:
                     result = {
-                        'env_prefix': False,
+                        'environment_prefix': False,
                         'message': _('Environment prefix already reserved.') +
                         _('<br/>Please use a different environment or environment prefix.')
                     }
@@ -384,7 +384,7 @@ class FormController(http.Controller):
                 # No problem detected
                 result = {
                     'next_step_validated': True,
-                    'env_prefix': True,
+                    'environment_prefix': True,
                     'message': False
                 }
                 return request.make_response(json.dumps(result), headers=HEADERS)

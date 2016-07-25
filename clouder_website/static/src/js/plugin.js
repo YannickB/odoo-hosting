@@ -20,7 +20,7 @@ Clouder.run = function($){
         $clouder_form.find('input[name="title"]').parent().hide();
 
         // Env input
-        $clouder_form.find('select[name="env_id"]').parent().hide();
+        $clouder_form.find('select[name="environment_id"]').parent().hide();
         $clouder_form.find('#CL_env_form').hide();
 
         // Show step 1 by default
@@ -34,8 +34,8 @@ Clouder.run = function($){
 
         // Controls the state of env_prefix input depending on env_id
         $clouder_form.on('change', "select[name='env_id']", function(){
-            var $env_id = $clouder_form.find('select[name="env_id"]');
-            var $env_prefix = $clouder_form.find('input[name="env_prefix"]');
+            var $env_id = $clouder_form.find('select[name="environment_id"]');
+            var $env_prefix = $clouder_form.find('input[name="environment_prefix"]');
             if (Clouder.login_validated && $env_id.val()){
                 $env_prefix.attr('readonly', true);
                 $env_prefix.attr('disabled', true);
@@ -46,7 +46,7 @@ Clouder.run = function($){
                 $env_prefix.attr('disabled', false);
             }
         });
-        $clouder_form.find('select[name="env_id"]').change();
+        $clouder_form.find('select[name="environment_id"]').change();
 
         // Controls the appearance of env/title inputs depending on application_id
         $clouder_form.on('change', "select[name='application_id']", function(){
@@ -72,7 +72,7 @@ Clouder.run = function($){
         $clouder_form.on('change', "input[name='email']", function(){
             // Invalidate login
             Clouder.login_validated = false;
-            $clouder_form.find('select[name="env_id"]').parent().hide();
+            $clouder_form.find('select[name="environment_id"]').parent().hide();
 
             var $email = $clouder_form.find("input[name='email']");
             var $passwd = $clouder_form.find("input[name='password']");
@@ -96,8 +96,8 @@ Clouder.run = function($){
             Clouder.login_validated = false;
 
             // Hide and empty env selection
-            $clouder_form.find('select[name="env_id"]').parent().hide();
-            $clouder_form.find('select[name="env_id"]').find('option:gt(0)').remove();
+            $clouder_form.find('select[name="environment_id"]').parent().hide();
+            $clouder_form.find('select[name="environment_id"]').find('option:gt(0)').remove();
 
             var $email = $clouder_form.find("input[name='email']");
             var $passwd = $clouder_form.find("input[name='password']");
@@ -110,7 +110,7 @@ Clouder.run = function($){
                         $passwd.parent().removeClass('has-error');
                         $hint.hide();
                         Clouder.login_validated = true;
-                        $clouder_form.find('select[name="env_id"]').parent().show();
+                        $clouder_form.find('select[name="environment_id"]').parent().show();
                     }
                     else {
                         $passwd.parent().addClass('has-error');
@@ -196,8 +196,8 @@ Clouder.check_instance_data = function(){
     inst_type = $form.find('select[name="application_id"]').find('option:selected').attr('inst_type');
     ajax_data = {
         'inst_type': inst_type,
-        'env_id': $form.find('select[name="env_id"]').find('option:selected').val(),
-        'env_prefix': $form.find('input[name="env_prefix"]').val(),
+        'env_id': $form.find('select[name="environment_id"]').find('option:selected').val(),
+        'env_prefix': $form.find('input[name="environment_prefix"]').val(),
         'domain_id': $form.find('select[name="domain_id"]').find('option:selected').val(),
         'prefix': $form.find('input[name="prefix"]').val(),
     }
@@ -279,8 +279,8 @@ Clouder.submit_override = function(){
 
     // Empty env values if application type is not container
     $app_id = $form.find('select[name="application_id"]');
-    $env_id = $form.find('select[name="env_id"]');
-    $env_prefix = $form.find('input[name="env_prefix"]');
+    $env_id = $form.find('select[name="environment_id"]');
+    $env_prefix = $form.find('input[name="environment_prefix"]');
     if ($app_id.find('option:selected').attr('inst_type')!=='container'){
         $env_id.val('');
         $env_prefix.val('');
@@ -363,8 +363,8 @@ Clouder.error_step = function(step){
         has_error = Clouder.error_email($email_select) || has_error;
 
         if ($app_select.find('option:selected').attr('inst_type')==='container'){
-            $env_prefix = Clouder.$plugin.find('input[name="env_prefix"]');
-            $env_id = Clouder.$plugin.find('select[name="env_id"]');
+            $env_prefix = Clouder.$plugin.find('input[name="environment_prefix"]');
+            $env_id = Clouder.$plugin.find('select[name="environment_id"]');
 
             if (!$env_id.val() && !$env_prefix.val()){
                 has_error = true;
@@ -519,7 +519,7 @@ Clouder.user_login = function($login, $password, when_callback){
                     $hint = Clouder.$plugin.find('.CL_hint');
                     if (data.res){
                         for(env_id in data.res){
-                            $env_select = Clouder.$plugin.find('select[name="env_id"]');
+                            $env_select = Clouder.$plugin.find('select[name="environment_id"]');
 
                             // Add option for each env
                             $env_select.append('<option value="'+env_id+'">'+data.res[env_id]['name']+'</option>');

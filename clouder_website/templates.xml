@@ -61,12 +61,12 @@
                             <div class="clearfix"/>
                             <div id="CL_env_form">
                                 <div class="form-group col-lg-6">
-                                    <label class="control-label" for="env_prefix">New environment name</label>
-                                    <input type="text" name="env_prefix" class="form-control"/>
+                                    <label class="control-label" for="environment_prefix">New environment name</label>
+                                    <input type="text" name="environment_prefix" class="form-control"/>
                                 </div>
                                 <div class="form-group col-lg-6">
-                                    <label class="control-label" for="env_id">... or use an existing one</label>
-                                    <select name="env_id" class="form-control">
+                                    <label class="control-label" for="environment_id">... or use an existing one</label>
+                                    <select name="environment_id" class="form-control">
                                         <option value="">&lt;= Use new name</option>
                                     </select>
                                 </div>
