@@ -24,6 +24,7 @@ from openerp import http, api, _
 from openerp.http import request
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest
 from xmlrpclib import ServerProxy
+from unicodedata import normalize
 import json
 import logging
 import copy
@@ -40,6 +41,18 @@ class FormController(http.Controller):
     #######################
     #      Utilities      #
     #######################
+    @staticmethod
+    def uni_norm(string):
+        """
+        Formats the passed string into its closest ascii form and returns it
+        Used to transform accents into their unnaccented counterparts for sorting
+        Example:
+            uni_norm(u'àéèêÏÎç') returns 'aeeeIIc'
+        """
+        if not isinstance(string, unicode):
+            return string
+        return normalize('NFD', string).encode('ascii', 'ignore')
+
     def env_with_context(self, context):
         """
         Returns a new environment made from the current request one and the given parameters
@@ -125,10 +138,10 @@ class FormController(http.Controller):
 
         # Render the form
         qweb_context = {
-            'applications': applications,
-            'domains': domains,
-            'countries': countries,
-            'states': states,
+            'applications': applications.sorted(key=lambda r: self.uni_norm(r.name)),
+            'domains': domains.sorted(key=lambda r: self.uni_norm(r.name)),
+            'countries': countries.sorted(key=lambda r: self.uni_norm(r.name)),
+            'states': states.sorted(key=lambda r: self.uni_norm(r.name)),
             'hostname': request.httprequest.url_root
         }
         html = request.env.ref('clouder_website.plugin_form').render(
