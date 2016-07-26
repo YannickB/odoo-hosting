@@ -263,10 +263,8 @@ class FormController(http.Controller):
         instance_data['clouder_partner_id'] = int(instance_data['clouder_partner_id'])
         instance_data['application_id'] = int(instance_data['application_id'])
         instance_data['domain_id'] = int(instance_data['domain_id'])
-        instance_data['environment_id'] = instance_data['environment_id']
-        instance_data['environment_prefix'] = instance_data['environment_prefix']
-        del instance_data['environment_id']
-        del instance_data['environment_prefix']
+        if instance_data['environment_id']:
+            instance_data['environment_id'] = int(instance_data['environment_id'])
 
         # Creating session using information
         orm_cws = request.env['clouder.web.session'].sudo()
