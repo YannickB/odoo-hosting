@@ -214,7 +214,7 @@ class ClouderBase(models.Model):
         if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits and -"))
-        if self.admin_name and not re.match("^[\w\d_]*$", self.admin_name):
+        if not re.match("^[\w\d_.@-]*$", self.admin_name):
             raise except_orm(_('Data error!'), _(
                 "Admin name can only contains letters, digits and underscore"))
         if self.admin_email\
@@ -252,8 +252,9 @@ class ClouderBase(models.Model):
                 vals['application_id'])
 
             if 'admin_name' not in vals or not vals['admin_name']:
-                vals['admin_name'] = application.admin_name and application.admin_name or \
-                                     self.email_sysadmin.replace('.', '_').replace('@', '_').replace('-', '_')
+                vals['admin_name'] = application.admin_name \
+                     and application.admin_name \
+                     or self.email_sysadmin
             if 'admin_email' not in vals or not vals['admin_email']:
                 vals['admin_email'] = application.admin_email \
                     and application.admin_email \

@@ -329,20 +329,24 @@ Clouder.add_error_to_elt = function($elt){
     return false;
 };
 
-Clouder.error_email = function($elt){
-    var email = $elt.val();
+Clouder.phone_re = /^((\+[1-9]{1,4}[ \-]*)|(\([0-9]{2,3}\)[ \-]*)|([0-9]{2,4})[ \-]*)*?[0-9]{3,4}?[ \-]*[0-9]{3,4}?$/;
+Clouder.email_re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+Clouder.cont_suff_re = /^[\w\d-]*$/;
+Clouder.base_pref_re = /^[\w\d.-]*$/;
+Clouder.env_pref_re = /^[\w]*$/;
+Clouder.error_regexp = function($elt, re, err_msg){
+    var elt_val = $elt.val();
     var err_class = "has-error";
     var $hint = Clouder.$plugin.find('.CL_hint');
-    var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    if (email == '' || !re.test(email))
+    if (elt_val == '' || !re.test(elt_val))
     {
         $elt.parent().addClass(err_class);
-        $hint.text('Please enter a valid email address');
+        $hint.html(err_msg);
         return true;
     }
     $elt.parent().removeClass(err_class);
     return false;
-};
+}
 
 Clouder.error_step = function(step){
     var has_error = false;
@@ -359,17 +363,35 @@ Clouder.error_step = function(step){
         
         has_error = Clouder.add_error_to_elt($app_select) || has_error;
         has_error = Clouder.add_error_to_elt($domain_select) || has_error;
-        has_error = Clouder.add_error_to_elt($prefix_input) || has_error;
-        has_error = Clouder.error_email($email_select) || has_error;
+        has_error = Clouder.error_regexp(
+            $email_select,
+            Clouder.email_re,
+            'Please enter a valid email.'
+        ) || has_error;
 
         if ($app_select.find('option:selected').attr('inst_type')==='container'){
             $env_prefix = Clouder.$plugin.find('input[name="environment_prefix"]');
             $env_id = Clouder.$plugin.find('select[name="environment_id"]');
 
+            // Prefix used as container suffix
+            has_error = Clouder.error_regexp(
+                $prefix_input,
+                Clouder.cont_suff_re,
+                'Prefix can only contain alphanumeric characters and hyphens (-).'
+            ) || has_error;
+
             if (!$env_id.val() && !$env_prefix.val()){
                 has_error = true;
                 $env_id.parent().addClass('has-error');
                 $env_prefix.parent().addClass('has-error');
+            }
+            else if (!$env_id.val()) {
+                // Checking environment_prefix with regexp
+                has_error = Clouder.error_regexp(
+                    $env_prefix,
+                    Clouder.env_pref_re,
+                    'Environment prefix can only contain alphanumeric characters.'
+                ) || has_error;
             }
             else {
                 $env_id.parent().removeClass('has-error');
@@ -377,13 +399,19 @@ Clouder.error_step = function(step){
             }
         }
         else if ($app_select.find('option:selected').attr('inst_type')==='base'){
+            // Prefix used as base prefix
+            has_error = Clouder.error_regexp(
+                $prefix_input,
+                Clouder.base_pref_re,
+                'Prefix can only contain alphanumeric characters, hyphens (-) and dots (.).'
+            ) || has_error;
             $title_input = Clouder.$plugin.find('input[name="title"]');
             has_error = Clouder.add_error_to_elt($title_input) || has_error;
         }
 
         if (has_error){
-            if (!$hint.text()){
-                $hint.text("Please fill in the required fields.");
+            if (!$hint.html()){
+                $hint.html("Please fill in the required fields.");
             }
             $hint.show();
         }
@@ -392,7 +420,7 @@ Clouder.error_step = function(step){
             has_error = Clouder.add_error_to_elt($password_select) || has_error;
             has_error = !Clouder.login_validated || has_error;
             if (!Clouder.login_validated){
-                $hint.text("Invalid password for registered user.");
+                $hint.html("Invalid password for registered user.");
                 $hint.show();
             }
         }
@@ -410,7 +438,11 @@ Clouder.error_step = function(step){
         $country_select = Clouder.$plugin.find('select[name="country_id"]');
 
         has_error = Clouder.add_error_to_elt($name_select) || has_error;
-        has_error = Clouder.add_error_to_elt($phone_select) || has_error;
+        has_error = Clouder.error_regexp(
+            $phone_select,
+            Clouder.phone_re,
+            'Please enter a valid phone number.'
+        ) || has_error;
         has_error = Clouder.add_error_to_elt($street2_select) || has_error;
         has_error = Clouder.add_error_to_elt($city_select) || has_error;
         has_error = Clouder.add_error_to_elt($country_select) || has_error;
@@ -419,7 +451,9 @@ Clouder.error_step = function(step){
             Clouder.submit_override();
         }
         else {
-            $hint.text("Please fill in the required fields.");
+            if (!$hint.html()){
+                $hint.html("Please fill in the required fields.");
+            }
             $hint.show();
         }
     }
