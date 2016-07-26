@@ -30,7 +30,7 @@ Note that the commands FROM (use parent field), MAINTENER (use the sysadmin emai
 | In the container, one field will be added : the hostport which is the port to access the localport in the container from outside of the host system. It is automatically attributed within the port range of the server but you can also force a specific port (Especially needed for the Bind, Proxy and Postfix applications which have to listen on ports 25, 53, 80 and 443 of the host system)
 
 | Then, if you have a parent image, you have to select the parent version you want to use. Else you have to specify the FROM statement like you would use in a Dockerfile (example : debian:latest).
-| You also have to specify the registry container where the image will be stored. For more information about this very specific kind of container, see the `Getting Started chapter <getting-started.rst>`_.
+| You also have to specify the registry container where the image will be stored. For more information about this very specific kind of container, see the `Getting Started chapter <getting-started.html>`_.
 
 Finally, you can press the build button. This will create a new image version, named from the current date, and execute the commands to build it and store it in the registry.
 

@@ -100,7 +100,7 @@ The goal of having a Contributor License Agreement for Clouder is to:
   trouble, e.g. in the form of patent lawsuits
 
 This is done by establishing a credible, non-repudiable record that each
-contributor really intended to contribute to the Odoo project under specific
+contributor really intended to contribute to the Clouder project under specific
 terms, and they had the right to make those contributions.
 
 The CLA is for the protection of the contributors, the project and its users.
@@ -123,7 +123,7 @@ required to sign and submit the Individual Contributor License Agreement
 signature to the list of validated contributors inside the project source code.
 
 If someone is unable to sign the CLA, their contributions will have to be
-removed from the Odoo project.
+removed from the Clouder project.
 
 In addition, if some or all of someone's contributions are written as part of
 an employment by somebody else, the work may not belong to the contributor but
