@@ -22,7 +22,7 @@
 
 from openerp import http, _, fields
 from openerp.http import request
-from openerp.addons.clouder_website.controller.main import FormController
+from openerp.addons.clouder_website.controller.form_controller import FormController
 import json
 import logging
 

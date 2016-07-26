@@ -34,8 +34,7 @@
     'demo': [],
     'data': [
         'clouder_website_view.xml',
-        #'security/security.xml',
-        #'security/ir.model.access.csv'
+        'templates.xml'
     ],
     'installable': True,
     'application': True,

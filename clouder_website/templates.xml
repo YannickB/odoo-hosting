@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <template id="plugin_form">
+            <html>
+                <head>
+                    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+                    <title>Clouder instance request form</title>
+                    <link
+                            rel="stylesheet"
+                            type="text/css"
+                            t-att-href="'%s/clouder_website/static/src/css/plugin.css' % (hostname)"
+                    />
+                </head>
+                <body>
+                    <p class="CF_Title">Request a Clouder Instance</p>
+                    <div class="CL_Loading"/>
+                    <form id="ClouderForm" method="POST" action="">
+                        <input type="hidden" name="clouder_partner_id" value=""/>
+                        <input type="hidden" name="lang" value=""/>
+                        <input type="hidden" name="db" value=""/>
+
+
+                        <fieldset class="CL_Step CL_Step1">
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="application_id">Application</label>
+                                <select name="application_id" class="form-control">
+                                    <option value="">Application...</option>
+                                    <t t-foreach="applications or []" t-as="app">
+                                        <option t-att-inst_type="app.web_create_type" t-att-value="app.id" t-esc="app.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="title">Instance title</label>
+                                <input type="text" name="title" class="form-control"/>
+                            </div>
+                            <div class="clearfix"/>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="prefix">Subdomain</label>
+                                <input type="text" name="prefix" class="form-control"/>
+                            </div>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="domain_id">Domain Name</label>
+                                <select name="domain_id" class="form-control">
+                                    <option value="">Domain...</option>
+                                    <t t-foreach="domains or []" t-as="domain">
+                                        <option t-att-value="domain.id" t-esc="domain.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="clearfix"/>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="email">Email</label>
+                                <input type="email" name="email" class="form-control"/>
+                            </div>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="password">Password</label>
+                                <input type="password" name="password" class="form-control"/>
+                            </div>
+                            <div class="clearfix"/>
+                            <div id="CL_env_form">
+                                <div class="form-group col-lg-6">
+                                    <label class="control-label" for="environment_prefix">New environment name</label>
+                                    <input type="text" name="environment_prefix" class="form-control"/>
+                                </div>
+                                <div class="form-group col-lg-6">
+                                    <label class="control-label" for="environment_id">... or use an existing one</label>
+                                    <select name="environment_id" class="form-control">
+                                        <option value="">&lt;= Use new name</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="CL_Step CL_Step2">
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="name">Your Name</label>
+                                <input type="text" name="name" class="form-control"/>
+                            </div>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="street" style="font-weight: normal">Company Name</label>
+                                <input type="text" name="street" class="form-control"/>
+                            </div>
+                            <div class="clearfix"/>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="street2">Street</label>
+                                <input type="text" name="street2" class="form-control"/>
+                            </div>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="city">City</label>
+                                <input type="text" name="city" class="form-control"/>
+                            </div>
+                            <div class="clearfix"/>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="zip" style="font-weight: normal">Zip / Postal Code</label>
+                                <input type="text" name="zip" class="form-control"/>
+                            </div>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="phone">Phone</label>
+                                <input type="tel" name="phone" class="form-control"/>
+                            </div>
+                            <div class="clearfix"/>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="country_id">Country</label>
+                                <select name="country_id" class="form-control">
+                                    <option value="">Country...</option>
+                                    <t t-foreach="countries or []" t-as="country">
+                                        <option t-att-value="country.id" t-esc="country.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="form-group col-lg-6">
+                                <label class="control-label" for="state_id" style="font-weight: normal">State / Province</label>
+                                <select name="state_id" class="form-control">
+                                    <option value="">Select...</option>
+                                    <t t-foreach="states or []" t-as="state">
+                                        <option t-att-value="state.id" t-att-country_id="state.country_id.id" t-esc="state.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                        </fieldset>
+
+                        <div class="CL_hint">
+                        </div>
+
+                        <div class="CL_Step CL_Step1 clearfix">
+                            <a class="btn pull-right mb32 a-next">Next<span class="fa fa-long-arrow-right"/></a>
+                        </div>
+
+                        <div class="CL_Step CL_Step2 clearfix">
+                            <a class="btn pull-left mb32 a-prev">Previous<span class="fa fa-long-arrow-left"/></a>
+                            <a class="btn pull-right mb32 a-submit">Submit<span class="fa"/></a>
+                        </div>
+                    </form>
+
+                    <div class="CL_final_error">
+                        <span class="CL_Error_msg"/>
+                        <div class="clearfix"/>
+                        <a class="btn pull-left mb32 a-retry">Retry<span class="fa fa-long-arrow-left"/></a>
+                    </div>
+                </body>
+            </html>
+        </template>
+    </data>
+</openerp>

@@ -23,13 +23,11 @@
 from openerp import http, api, _
 from openerp.http import request
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest
-from werkzeug.wrappers import Response
-from werkzeug.wsgi import wrap_file, ClosingIterator
 from xmlrpclib import ServerProxy
+from unicodedata import normalize
 import json
 import logging
 import copy
-import os
 
 _logger = logging.getLogger(__name__)
 
@@ -43,6 +41,18 @@ class FormController(http.Controller):
     #######################
     #      Utilities      #
     #######################
+    @staticmethod
+    def uni_norm(string):
+        """
+        Formats the passed string into its closest ascii form and returns it
+        Used to transform accents into their unnaccented counterparts for sorting
+        Example:
+            uni_norm(u'àéèêÏÎç') returns 'aeeeIIc'
+        """
+        if not isinstance(string, unicode):
+            return string
+        return normalize('NFD', string).encode('ascii', 'ignore')
+
     def env_with_context(self, context):
         """
         Returns a new environment made from the current request one and the given parameters
@@ -51,7 +61,6 @@ class FormController(http.Controller):
         new_context.update(context)
         return api.Environment(request.cr, request.uid, new_context)
 
-
     def check_login(self, login, password=False):
         """
         Checks the login
@@ -59,8 +68,8 @@ class FormController(http.Controller):
         If a password is provided, returns true if the login/password are valid credentials, false otherwise
         """
         if not password:
-            orm_clwh = request.env['clouder.web.helper'].sudo()
-            return orm_clwh.check_login_exists(login)
+            orm_user = request.env['res.users'].sudo()
+            return bool(orm_user.search([('login', '=', login)]))
         else:
             server = ServerProxy('http://localhost:8069/xmlrpc/common')
             return server.login(request.db, login, password)
@@ -69,6 +78,7 @@ class FormController(http.Controller):
         """
         Returns a "Bad Request" response with CORS headers
         """
+        # TODO: replace with error handling
         _logger.warning('Bad request received: {0}'.format(desc))
         response = BadRequest(description=desc).get_response(request.httprequest.environ)
         for (hdr, val) in HEADERS:
@@ -107,7 +117,7 @@ class FormController(http.Controller):
     @http.route('/clouder_form/request_form', type='http', auth='public', methods=['POST'])
     def request_form(self, **post):
         """
-        Fetches and returns the HTML base form
+        Generates and returns the HTML base form
         """
         # Check parameters
         lang = 'en_US'
@@ -115,10 +125,32 @@ class FormController(http.Controller):
             lang = post['lang']
         request.env = self.env_with_context({'lang': lang})
 
-        orm_clwh = request.env['clouder.web.helper'].sudo()
-        full_file = orm_clwh.get_form_html()
+        # Getting data to generate the form
+        app_orm = request.env['clouder.application'].sudo()
+        domain_orm = request.env['clouder.domain'].sudo()
+        country_orm = request.env['res.country'].sudo()
+        state_orm = request.env['res.country.state'].sudo()
 
-        return request.make_response(full_file, headers=HEADERS)
+        applications = app_orm.search([('web_create_type', '!=', 'disabled')])
+        domains = domain_orm.search([])
+        countries = country_orm.search([])
+        states = state_orm.search([])
+
+        # Render the form
+        qweb_context = {
+            'applications': applications.sorted(key=lambda r: self.uni_norm(r.name)),
+            'domains': domains.sorted(key=lambda r: self.uni_norm(r.name)),
+            'countries': countries.sorted(key=lambda r: self.uni_norm(r.name)),
+            'states': states.sorted(key=lambda r: self.uni_norm(r.name)),
+            'hostname': request.httprequest.url_root
+        }
+        html = request.env.ref('clouder_website.plugin_form').render(
+            qweb_context,
+            engine='ir.qweb',
+            context=request.context
+        )
+
+        return request.make_response(html, headers=HEADERS)
 
     @http.route('/clouder_form/submit_form', type='http', auth='public', methods=['POST'])
     def submit_form(self, **post):
@@ -126,31 +158,130 @@ class FormController(http.Controller):
         Submits the base form then calls the next part of the process
         """
         # Changing empty/missing env info into booleans
-        if 'env_id' not in post or not post['env_id']:
-            post['env_id'] = False
-        if 'env_prefix' not in post or not post['env_prefix']:
-            post['env_prefix'] = False
+        if 'environment_id' not in post or not post['environment_id']:
+            post['environment_id'] = False
+        if 'environment_prefix' not in post or not post['environment_prefix']:
+            post['environment_prefix'] = False
         # Check parameters
         lang = 'en_US'
         if 'lang' in post:
             lang = post['lang']
         request.env = self.env_with_context({'lang': lang})
 
-        orm_clwh = request.env['clouder.web.helper'].sudo()
-        result = orm_clwh.submit_form(post)
+        partner_mandatory_fields = [
+            "name",
+            "phone",
+            "email",
+            "street2",
+            "city",
+            "country_id"
+        ]
+        partner_optionnal_fields = [
+            "street",
+            "zip",
+            "state_id"
+        ]
+        instance_mandatory_fields = [
+            'application_id',
+            'domain_id',
+            'prefix',
+            'clouder_partner_id'
+        ]
+        instance_optional_fields = [
+            'environment_id',
+            'environment_prefix',
+            'title'
+        ]
+        other_fields = [
+            'password'
+        ]
 
-        # Return bad request on failure
-        if int(result['code']):
-            return self.bad_request(result['msg'])
+        # Checking data
+        partner_data = {}
+        for mandat in partner_mandatory_fields:
+            if mandat not in post or not post[mandat]:
+                return self.bad_request('Missing field "{0}"'.format(mandat))
+
+            # Make sure we only save lower-case email adresses to avoid mismatch when checking login
+            if mandat == "email":
+                post[mandat] = post[mandat].lower()
+
+            partner_data[mandat] = post[mandat]
+        for opt in partner_optionnal_fields:
+            if opt in post:
+                partner_data[opt] = post[opt]
+
+        instance_data = {}
+        for mandat in instance_mandatory_fields:
+            if mandat not in post or not post[mandat]:
+                return self.bad_request('Missing field "{0}"'.format(mandat))
+            instance_data[mandat] = post[mandat]
+
+        for opt in instance_optional_fields:
+            if opt in post:
+                instance_data[opt] = post[opt]
+            else:
+                instance_data[opt] = False
+
+        other_data = {}
+        for opt in other_fields:
+            if opt in post:
+                other_data[opt] = post[opt]
+            else:
+                other_data[opt] = False
+
+        # All data retrieved
+        orm_partner = request.env['res.partner'].sudo()
+        orm_user = request.env['res.users'].sudo()
+
+        # If the user exists, try to login and update partner
+        if self.check_login(partner_data['email']):
+            # Check that the password exists and is correct
+            user_id = False
+            if other_data['password']:
+                user_id = self.check_login(partner_data['email'], other_data['password'])
+            if not user_id:
+                return self.bad_request('Incorrect user/password')
+
+            # Retrieve user
+            user = orm_user.browse([user_id])[0]
+
+            # Do not update empty fields
+            partner_update_dict = copy.deepcopy(partner_data)
+            for x in partner_data:
+                if not partner_update_dict[x]:
+                    del partner_update_dict[x]
+
+            user.partner_id.write(partner_update_dict)
+            instance_data['partner_id'] = user.partner_id.id
+
+        # If the user doesn't exist, create a new partner
+        else:
+            instance_data['partner_id'] = orm_partner.create(partner_data).id
+
+        # Parsing instance data
+        instance_data['clouder_partner_id'] = int(instance_data['clouder_partner_id'])
+        instance_data['application_id'] = int(instance_data['application_id'])
+        instance_data['domain_id'] = int(instance_data['domain_id'])
+        if instance_data['environment_id']:
+            instance_data['environment_id'] = int(instance_data['environment_id'])
+
+        # Creating session using information
+        orm_cws = request.env['clouder.web.session'].sudo()
+        session_id = orm_cws.create(instance_data)
 
         data = {
             'post_data': {},
-            'result': result
+            'result': {
+                'code': 0,
+                'msg': 'Session created',
+                'clws_id': session_id.id,
+                'payment': False
+            }
         }
         for x in post:
             data['post_data'][x] = copy.deepcopy(post[x])
 
-        # Otherwise, we continue with the process
         return self.hook_next(data)
 
     @http.route('/clouder_form/check_data', type='http', auth='public', methods=['POST'])
@@ -167,14 +298,28 @@ class FormController(http.Controller):
 
         # Checking data errors for container requests
         if post['inst_type'] == 'container':
-            if 'env_id' not in post or 'env_prefix' not in post or 'prefix' not in post:
-                result = {'error': _('Missing argument for check.')}
+            # Check that the required data has been passed
+            if ('environment_id' not in post and 'environment_prefix' not in post) or 'prefix' not in post:
+                result = {'error': _('Prefix and either environment_id or environment_prefix are required.')}
                 return request.make_response(json.dumps(result), headers=HEADERS)
-            if post['env_id']:
+            # Check that the required data is not empty
+            if (not post['environment_id'] and not post['environment_prefix']) or not post['prefix']:
+                result = {'error': _('Prefix and either environment_id or environment_prefix should not be empty.')}
+                return request.make_response(json.dumps(result), headers=HEADERS)
+
+            # If we have an ID
+            if post['environment_id']:
+                # Check that the ID is valid
+                try:
+                    int(post['environment_id'])
+                except ValueError:
+                    result = {'error': _('Invalid environment_id: {0}.').format(post['environment_id'])}
+                    return request.make_response(json.dumps(result), headers=HEADERS)
+
                 orm_cont = request.env['clouder.container'].sudo()
                 # Searching for existing containers with the environment and prefix
                 result = orm_cont.search([
-                    ('environment_id', '=', int(post['env_id'])),
+                    ('environment_id', '=', int(post['environment_id'])),
                     ('suffix', '=', post['prefix'])
                 ])
                 # If a container is found, return an error for those fields
@@ -182,7 +327,7 @@ class FormController(http.Controller):
                     result = {
                         'next_step_validated': False,
                         'prefix': False,
-                        'env_id': False,
+                        'environment_id': False,
                         'message': _('Container name already un use for this environment.') +
                         _('<br/>Please change the environment or domain prefix.')
                     }
@@ -191,7 +336,7 @@ class FormController(http.Controller):
                 # Otherwise, search for sessions that already reserved the name
                 orm_clws = request.env['clouder.web.session'].sudo()
                 result = orm_clws.search([
-                    ('environment_id', '=', int(post['env_id'])),
+                    ('environment_id', '=', int(post['environment_id'])),
                     ('prefix', '=', post['prefix'])
                 ])
                 # If there is such a session, invalidate data
@@ -199,7 +344,7 @@ class FormController(http.Controller):
                     result = {
                         'next_step_validated': False,
                         'prefix': False,
-                        'env_id': False,
+                        'environment_id': False,
                         'message': _('Container prefix already reserved for this environment.') +
                         _('<br/>Please change the environment or prefix.')
                     }
@@ -209,7 +354,7 @@ class FormController(http.Controller):
                 result = {
                     'next_step_validated': True,
                     'prefix': True,
-                    'env_id': True,
+                    'environment_id': True,
                     'message': False
                 }
                 return request.make_response(json.dumps(result), headers=HEADERS)
@@ -217,10 +362,10 @@ class FormController(http.Controller):
             else:
                 # Check that the environment prefix is not already attributed
                 orm_env = request.env['clouder.environment'].sudo()
-                result = orm_env.search([('prefix', '=', post['env_prefix'])])
+                result = orm_env.search([('prefix', '=', post['environment_prefix'])])
                 if result:
                     result = {
-                        'env_prefix': False,
+                        'environment_prefix': False,
                         'message': _('Environment prefix already in use.') +
                         _('<br/>Please use a different environment or environment prefix.')
                     }
@@ -238,11 +383,11 @@ class FormController(http.Controller):
                 result = orm_clws.search([
                     ('application_id', 'in', app_ids),
                     ('environment_id', '=', False),
-                    ('environment_prefix', '=', post['env_prefix'])
+                    ('environment_prefix', '=', post['environment_prefix'])
                 ])
                 if result:
                     result = {
-                        'env_prefix': False,
+                        'environment_prefix': False,
                         'message': _('Environment prefix already reserved.') +
                         _('<br/>Please use a different environment or environment prefix.')
                     }
@@ -251,7 +396,7 @@ class FormController(http.Controller):
                 # No problem detected
                 result = {
                     'next_step_validated': True,
-                    'env_prefix': True,
+                    'environment_prefix': True,
                     'message': False
                 }
                 return request.make_response(json.dumps(result), headers=HEADERS)
@@ -323,8 +468,28 @@ class FormController(http.Controller):
             return self.bad_request("Missing parameter login")
         if 'password' not in post:
             post['password'] = False
-        result = self.check_login(post['login'], post['password'])
-        return request.make_response(json.dumps({'result': result}), headers=HEADERS)
+        uid = self.check_login(post['login'], post['password'])
+
+        result = {'response': bool(uid)}
+
+        # Provide information to fill the form if login was successfull
+        if post['password'] and uid:
+            orm_user = request.env['res.users'].sudo()
+            user = orm_user.search([uid])[0]
+
+            result['partner_info'] = {
+                "name": user.partner_id.name,
+                "phone": user.partner_id.phone,
+                "email": user.partner_id.email,
+                "street2": user.partner_id.street2,
+                "city": user.partner_id.city,
+                "country_id": user.partner_id.country_id.id,
+                "street": user.partner_id.street,
+                "zip": user.partner_id.zip,
+                "state_id": user.partner_id.state_id.id
+            }
+
+        return request.make_response(json.dumps(result), headers=HEADERS)
 
     @http.route('/clouder_form/get_env', type='http', auth='public', methods=['POST'])
     def get_env(self, **post):
@@ -343,48 +508,18 @@ class FormController(http.Controller):
 
         uid = self.check_login(post['login'], post['password'])
         if not uid:
-            return json.dumps({'error': 'Could not login with given credentials.'})
+            return json.dumps({'error': _('Could not login with given credentials.')})
 
-        orm_clwh = request.env['clouder.web.helper'].sudo().with_context(lang=lang)
-        result = orm_clwh.get_env_ids(uid)
+        env_orm = request.env['clouder.environment'].sudo()
+        user_orm = request.env['res.users'].sudo()
+
+        user = user_orm.browse([uid])[0]
+        env_ids = env_orm.search([('partner_id', '=', user.partner_id.id)])
+
+        result = {}
+        for env in env_ids:
+            result[str(env.id)] = {
+                'name': env.name
+            }
+
         return request.make_response(json.dumps({'result': result}), headers=HEADERS)
-
-    #######################
-    #        Files        #
-    #######################
-    @http.route('/clouder_form/js/plugin.js', type='http', auth='public', methods=['GET'])
-    def plugin_js(self, **post):
-        """
-        Serves the initial javascript plugin that makes the form work
-        """
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-        js_path = os.path.join(current_dir, '../static/src/js/plugin.js')
-        js_fd = open(js_path)
-
-        response = Response(
-            wrap_file(request.httprequest.environ, js_fd),
-            headers=HEADERS,
-            direct_passthrough=True
-        )
-        return response
-
-    @http.route('/clouder_form/img/loading32x32.gif', type='http', auth='public', methods=['GET'])
-    def loading_gif(self, **post):
-        """
-        Serves the loading gif for the form
-        """
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-        gif_path = os.path.join(current_dir, '../static/src/img/loading32x32.gif')
-        gif_data = open(gif_path)
-
-        headers = [
-            ('content-type', 'image/gif'),
-            ('Access-Control-Allow-Origin', '*')
-        ]
-
-        response = Response(
-            wrap_file(request.httprequest.environ, gif_data),
-            headers=headers,
-            direct_passthrough=True
-        )
-        return response

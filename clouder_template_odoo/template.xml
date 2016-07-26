@@ -532,12 +532,6 @@
             <field name="name">/opt/odoo/files</field>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_odoo_clouder_exec_port_js" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo_clouder_exec"/>
-            <field name="name">js</field>
-            <field name="localport">8065</field>
-            <field name="expose">internet</field>
-        </record>
         <record id="image_odoo_clouder_exec_port_http" model="clouder.image.port">
             <field name="image_id" ref="image_odoo_clouder_exec"/>
             <field name="name">http</field>

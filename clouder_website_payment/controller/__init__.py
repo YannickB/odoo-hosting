@@ -19,4 +19,4 @@
 # <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-import main
+import form_controller_extend
