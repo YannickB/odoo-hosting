@@ -41,7 +41,8 @@ class ClouderApplication(models.Model):
             ('base', 'Base')
         ],
         'Web creation',
-        default='disabled'
+        default='disabled',
+        required=True
     )
 
     @api.one
