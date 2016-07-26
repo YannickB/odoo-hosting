@@ -78,7 +78,7 @@ Clouder.run = function($){
             var $passwd = $clouder_form.find("input[name='password']");
 
             Clouder.user_login($email, $passwd, function(result){
-                if (result.res){
+                if (result.response){
                     $passwd.parent().addClass('js_required');
                     $passwd.parent().show();
                 }
@@ -106,7 +106,7 @@ Clouder.run = function($){
                 Clouder.user_login($email, $passwd, function(result){
                     var $hint = Clouder.$plugin.find('.CL_hint');
 
-                    if (result.res){
+                    if (result.response){
                         $passwd.parent().removeClass('has-error');
                         $hint.hide();
                         Clouder.login_validated = true;
@@ -520,13 +520,13 @@ Clouder.user_login = function($login, $password, when_callback){
                 for(attr_name in result.partner_info){
                     // Select attributes
                     if(attr_name.match(/_id$/)){
-                        $select = Clouder.$plugin.find('select[name="'+attr_name+'"');
+                        $select = Clouder.$plugin.find('select[name="'+attr_name+'"]');
                         $select.find('option:selected').removeAttr("selected");
                         $select.val(result.partner_info[attr_name]);
                     }
                     // Other attributes
                     else {
-                        $field = Clouder.$plugin.find('input[name="'+attr_name+'"');
+                        $field = Clouder.$plugin.find('input[name="'+attr_name+'"]');
                         $field.val(result.partner_info[attr_name]);
                     }
 

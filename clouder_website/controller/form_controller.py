@@ -475,7 +475,7 @@ class FormController(http.Controller):
         # Provide information to fill the form if login was successfull
         if post['password'] and uid:
             orm_user = request.env['res.users'].sudo()
-            user = orm_user.search([uid])[0]
+            user = orm_user.browse([uid])[0]
 
             result['partner_info'] = {
                 "name": user.partner_id.name,
