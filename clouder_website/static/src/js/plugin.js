@@ -341,7 +341,7 @@ Clouder.error_regexp = function($elt, re, err_msg){
     if (elt_val == '' || !re.test(elt_val))
     {
         $elt.parent().addClass(err_class);
-        $hint.text(err_msg);
+        $hint.html(err_msg);
         return true;
     }
     $elt.parent().removeClass(err_class);
@@ -410,8 +410,8 @@ Clouder.error_step = function(step){
         }
 
         if (has_error){
-            if (!$hint.text()){
-                $hint.text("Please fill in the required fields.");
+            if (!$hint.html()){
+                $hint.html("Please fill in the required fields.");
             }
             $hint.show();
         }
@@ -420,7 +420,7 @@ Clouder.error_step = function(step){
             has_error = Clouder.add_error_to_elt($password_select) || has_error;
             has_error = !Clouder.login_validated || has_error;
             if (!Clouder.login_validated){
-                $hint.text("Invalid password for registered user.");
+                $hint.html("Invalid password for registered user.");
                 $hint.show();
             }
         }
@@ -451,7 +451,9 @@ Clouder.error_step = function(step){
             Clouder.submit_override();
         }
         else {
-            $hint.text("Please fill in the required fields.");
+            if (!$hint.html()){
+                $hint.html("Please fill in the required fields.");
+            }
             $hint.show();
         }
     }
