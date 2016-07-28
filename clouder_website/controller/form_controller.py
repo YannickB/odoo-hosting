@@ -80,9 +80,10 @@ class FormController(http.Controller):
         """
         # TODO: replace with error handling
         _logger.warning('Bad request received: {0}'.format(desc))
-        response = BadRequest(description=desc).get_response(request.httprequest.environ)
-        for (hdr, val) in HEADERS:
-            response.headers.add(hdr, val)
+        response = {
+            "error": desc
+        }
+        return request.make_response(json.dumps(response), headers=HEADERS)
         return response
 
     def hook_next(self, data):

@@ -135,9 +135,16 @@
                     </form>
 
                     <div class="CL_final_error">
-                        <span class="CL_Error_msg"/>
+                        <p class="CL_Error_msg"/>
                         <div class="clearfix"/>
                         <a class="btn pull-left mb32 a-retry">Retry<span class="fa fa-long-arrow-left"/></a>
+                    </div>
+                    <div id="CL_ERROR_MESSAGES" style="display: none;">
+                        <p id="CL_ERR_CHECK_INST">Error: could not check data with the server.</p>
+                        <p id="CL_ERR_SUB_FORM">Error: form submission to the server failed.</p>
+                        <p id="CL_ERR_GET_ENV">Error: failed to get environment information from the server.</p>
+                        <p id="CL_ERR_LOGIN">Error: failed to connect to login server.</p>
+                        <p id="CL_ERR_SERV_RESP">Error: failed to undertand server response.</p>
                     </div>
                 </body>
             </html>
