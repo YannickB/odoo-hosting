@@ -250,7 +250,7 @@ Clouder.readresponse = function(data, cleanup=true){
 
     $new_div.html(data.html);
     for (i in data.js){
-        Clouder.$.getScript(Clouder.pluginPath + data.js[i]);
+        Clouder.getScript(Clouder.pluginPath + data.js[i], function(){});
     }
     $new_div.show();
 };
