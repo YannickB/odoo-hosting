@@ -156,6 +156,15 @@
                         <p id="CL_ERR_LOGIN">Error: failed to connect to login server.</p>
                         <p id="CL_ERR_SERV_RESP">Error: failed to undertand server response.</p>
                     </div>
+                    <div id="CL_HINT_MESSAGES" style="display: none;">
+                        <p id="CL_HINT_PASSWORD">Invalid password for registered user.</p>
+                        <p id="CL_HINT_EMAIL">Please enter a valid email.</p>
+                        <p id="CL_HINT_SUFFIX">Container suffix can only contain alphanumeric characters and hyphens (-).</p>
+                        <p id="CL_HINT_ENV_PREFIX">Environment prefix can only contain alphanumeric characters.</p>
+                        <p id="CL_HINT_PREFIX">Prefix can only contain alphanumeric characters, hyphens (-) and dots (.).</p>
+                        <p id="CL_HINT_PHONE">Please enter a valid phone number.</p>
+                        <p id="CL_HINT_GENERAL">Please fill in the required fields.</p>
+                    </div>
                 </body>
             </html>
         </template>

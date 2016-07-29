@@ -121,7 +121,7 @@ Clouder.run = function($){
                         }
                         else {
                             $passwd.parent().addClass('has-error');
-                            $hint.html("Invalid password");
+                            $hint.html(Clouder.getHintMsg("CL_HINT_PASSWORD"));
                             $hint.show();
                         }
                     else if (result.error != undefined) {
@@ -296,6 +296,9 @@ Clouder.loading = function(state, $selector){
 Clouder.getErrorMsg = function(err_id){
     return Clouder.$plugin.find('#CL_ERROR_MESSAGES>#'+err_id).html();
 }
+Clouder.getHintMsg = function(hint_id){
+    return Clouder.$plugin.find('#CL_HINT_MESSAGES>#'+hint_id).html();
+}
 
 Clouder.submit_override = function(){
     var $form = Clouder.$plugin.find('#ClouderForm');
@@ -399,7 +402,7 @@ Clouder.error_step = function(step){
         has_error = Clouder.error_regexp(
             $email_select,
             Clouder.email_re,
-            'Please enter a valid email.'
+            Clouder.getHintMsg("CL_HINT_EMAIL"),
         ) || has_error;
 
         if ($app_select.find('option:selected').attr('inst_type')==='container'){
@@ -410,7 +413,7 @@ Clouder.error_step = function(step){
             has_error = Clouder.error_regexp(
                 $suffix,
                 Clouder.cont_suff_re,
-                'Container suffix can only contain alphanumeric characters and hyphens (-).'
+                Clouder.getHintMsg("CL_HINT_SUFFIX"),
             ) || has_error;
 
             if (!$env_id.val() && !$env_prefix.val()){
@@ -423,7 +426,7 @@ Clouder.error_step = function(step){
                 has_error = Clouder.error_regexp(
                     $env_prefix,
                     Clouder.env_pref_re,
-                    'Environment prefix can only contain alphanumeric characters.'
+                    Clouder.getHintMsg("CL_HINT_ENV_PREFIX"),
                 ) || has_error;
             }
             else {
@@ -439,7 +442,7 @@ Clouder.error_step = function(step){
             has_error = Clouder.error_regexp(
                 $prefix_input,
                 Clouder.base_pref_re,
-                'Prefix can only contain alphanumeric characters, hyphens (-) and dots (.).'
+                Clouder.getHintMsg("CL_HINT_PREFIX"),
             ) || has_error;
 
             has_error = Clouder.add_error_to_elt($title_input) || has_error;
@@ -448,7 +451,7 @@ Clouder.error_step = function(step){
 
         if (has_error){
             if (!$hint.html()){
-                $hint.html("Please fill in the required fields.");
+                $hint.html(Clouder.getHintMsg("CL_HINT_GENERAL"));
             }
             $hint.show();
         }
@@ -457,7 +460,7 @@ Clouder.error_step = function(step){
             has_error = Clouder.add_error_to_elt($password_select) || has_error;
             has_error = !Clouder.login_validated || has_error;
             if (!Clouder.login_validated){
-                $hint.html("Invalid password for registered user.");
+                $hint.html(Clouder.getHintMsg("CL_HINT_PASSWORD"));
                 $hint.show();
             }
         }
@@ -478,7 +481,7 @@ Clouder.error_step = function(step){
         has_error = Clouder.error_regexp(
             $phone_select,
             Clouder.phone_re,
-            'Please enter a valid phone number.'
+            Clouder.getHintMsg("CL_HINT_PHONE"),
         ) || has_error;
         has_error = Clouder.add_error_to_elt($street2_select) || has_error;
         has_error = Clouder.add_error_to_elt($city_select) || has_error;
@@ -489,7 +492,7 @@ Clouder.error_step = function(step){
         }
         else {
             if (!$hint.html()){
-                $hint.html("Please fill in the required fields.");
+                $hint.html(Clouder.getHintMsg("CL_HINT_GENERAL"));
             }
             $hint.show();
         }
@@ -706,9 +709,7 @@ Clouder.getJqueryUi = function() {
 };
 
 
-
 // The following part launches the bootstrap sequence
-
 // Loads jQuery if it's not loaded already
 if (typeof jQuery == 'undefined') {
     Clouder.getScript('//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js', function() {
