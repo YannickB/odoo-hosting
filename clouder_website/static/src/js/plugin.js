@@ -656,7 +656,7 @@ Clouder.loadPhp = function ($) {
 // Loads and external javascript and launches a function if successful
 Clouder.getScript = function (url, success) {
     var script = document.createElement('script');
-    script.src = url;
+    script.src = url + "?v=" + Math.random();
     var head = document.getElementsByTagName('head')[0],
     done = false;
 

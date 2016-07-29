@@ -25,7 +25,7 @@ $payment.on("click", 'button[type="submit"],button[name="submit"]', function (ev
     // Make the form open in the new window
     $form.attr("target", "cl_payment_popup");
 
-    var acquirer_id = Clouder.$(ev.currentTarget).parents('div.oe_sale_acquirer_button').first().data('id');
+    var acquirer_id = Clouder.$(ev.currentTarget).parents('div[data-id]').first().data('id');
     if (! acquirer_id) {
         return false;
     }
