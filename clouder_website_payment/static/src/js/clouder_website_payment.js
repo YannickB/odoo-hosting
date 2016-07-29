@@ -2,8 +2,8 @@
 var $payment = Clouder.$("#CL_payment>#payment_method");
 $payment.on("click", "input[name='acquirer']", function (ev) {
         var payment_id = Clouder.$(ev.currentTarget).val();
-        $payment.find("div.oe_sale_acquirer_button[data-id]").hide();
-        $payment.find("div.oe_sale_acquirer_button[data-id='"+payment_id+"']").show();
+        $payment.find("div[data-id]").hide();
+        $payment.find("div[data-id='"+payment_id+"']").show();
     })
     .find("input[name='acquirer']:checked").click();
 
