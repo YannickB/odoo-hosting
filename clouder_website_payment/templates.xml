@@ -4,7 +4,7 @@
         <template id="payment_buttons">
             <t t-set="additional_title">Shop - Select Payment Mode</t>
             <div class="clouder_js_payment" t-if="acquirers" id="payment_method">
-                <div class="col-lg-5 col-sm-6">
+                <div class="col-lg-5 col-sm-6" style="width:100%;">
                     <h4>Payment Method:</h4>
                     <ul class="list-unstyled">
                         <li t-foreach="acquirers or []" t-as="acquirer">
@@ -18,9 +18,10 @@
                         </li>
                     </ul>
                 </div>
-                <div class="col-lg-3 col-sm-3">
+                <div class="clearfix"/>
+                <div class="col-lg-3 col-sm-3" style="width:100%;">
                     <t t-foreach="acquirers or []" t-as="acquirer">
-                        <div t-att-data-id="acquirer.id" class="oe_sale_acquirer_button hidden pull-right">
+                        <div t-att-data-id="acquirer.id" class="pull-right">
                             <div t-raw="acquirer.button"/>
                             <div t-field="acquirer.pre_msg"/>
                         </div>

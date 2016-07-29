@@ -184,14 +184,15 @@ class FormController(http.Controller):
         ]
         instance_mandatory_fields = [
             'application_id',
-            'domain_id',
-            'prefix',
             'clouder_partner_id'
         ]
         instance_optional_fields = [
+            'suffix',
             'environment_id',
             'environment_prefix',
-            'title'
+            'title',
+            'domain_id',
+            'prefix',
         ]
         other_fields = [
             'password'
@@ -211,6 +212,10 @@ class FormController(http.Controller):
         for opt in partner_optionnal_fields:
             if opt in post:
                 partner_data[opt] = post[opt]
+
+        partner_data['country_id'] = int(partner_data['country_id'])
+        if 'state_id' in partner_data and partner_data['state_id']:
+            partner_data['state_id'] = int(partner_data['state_id'])
 
         instance_data = {}
         for mandat in instance_mandatory_fields:
@@ -263,7 +268,8 @@ class FormController(http.Controller):
         # Parsing instance data
         instance_data['clouder_partner_id'] = int(instance_data['clouder_partner_id'])
         instance_data['application_id'] = int(instance_data['application_id'])
-        instance_data['domain_id'] = int(instance_data['domain_id'])
+        if instance_data['domain_id']:
+            instance_data['domain_id'] = int(instance_data['domain_id'])
         if instance_data['environment_id']:
             instance_data['environment_id'] = int(instance_data['environment_id'])
 
@@ -300,11 +306,11 @@ class FormController(http.Controller):
         # Checking data errors for container requests
         if post['inst_type'] == 'container':
             # Check that the required data has been passed
-            if ('environment_id' not in post and 'environment_prefix' not in post) or 'prefix' not in post:
+            if ('environment_id' not in post and 'environment_prefix' not in post) or 'suffix' not in post:
                 result = {'error': _('Prefix and either environment_id or environment_prefix are required.')}
                 return request.make_response(json.dumps(result), headers=HEADERS)
             # Check that the required data is not empty
-            if (not post['environment_id'] and not post['environment_prefix']) or not post['prefix']:
+            if (not post['environment_id'] and not post['environment_prefix']) or not post['suffix']:
                 result = {'error': _('Prefix and either environment_id or environment_prefix should not be empty.')}
                 return request.make_response(json.dumps(result), headers=HEADERS)
 
@@ -318,19 +324,19 @@ class FormController(http.Controller):
                     return request.make_response(json.dumps(result), headers=HEADERS)
 
                 orm_cont = request.env['clouder.container'].sudo()
-                # Searching for existing containers with the environment and prefix
+                # Searching for existing containers with the environment and suffix
                 result = orm_cont.search([
                     ('environment_id', '=', int(post['environment_id'])),
-                    ('suffix', '=', post['prefix'])
+                    ('suffix', '=', post['suffix'])
                 ])
                 # If a container is found, return an error for those fields
                 if result:
                     result = {
                         'next_step_validated': False,
-                        'prefix': False,
+                        'suffix': False,
                         'environment_id': False,
                         'message': _('Container name already un use for this environment.') +
-                        _('<br/>Please change the environment or domain prefix.')
+                        _('<br/>Please change the environment or suffix.')
                     }
                     return request.make_response(json.dumps(result), headers=HEADERS)
 
@@ -338,23 +344,23 @@ class FormController(http.Controller):
                 orm_clws = request.env['clouder.web.session'].sudo()
                 result = orm_clws.search([
                     ('environment_id', '=', int(post['environment_id'])),
-                    ('prefix', '=', post['prefix'])
+                    ('suffix', '=', post['suffix'])
                 ])
                 # If there is such a session, invalidate data
                 if result:
                     result = {
                         'next_step_validated': False,
-                        'prefix': False,
+                        'suffix': False,
                         'environment_id': False,
-                        'message': _('Container prefix already reserved for this environment.') +
-                        _('<br/>Please change the environment or prefix.')
+                        'message': _('Container suffix already reserved for this environment.') +
+                        _('<br/>Please change the environment or suffix.')
                     }
                     return request.make_response(json.dumps(result), headers=HEADERS)
 
                 # No problem detected
                 result = {
                     'next_step_validated': True,
-                    'prefix': True,
+                    'suffix': True,
                     'environment_id': True,
                     'message': False
                 }

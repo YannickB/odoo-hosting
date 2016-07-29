@@ -31,24 +31,6 @@
                                     </t>
                                 </select>
                             </div>
-                            <div class="form-group col-lg-6">
-                                <label class="control-label" for="title">Instance title</label>
-                                <input type="text" name="title" class="form-control"/>
-                            </div>
-                            <div class="clearfix"/>
-                            <div class="form-group col-lg-6">
-                                <label class="control-label" for="prefix">Subdomain</label>
-                                <input type="text" name="prefix" class="form-control"/>
-                            </div>
-                            <div class="form-group col-lg-6">
-                                <label class="control-label" for="domain_id">Domain Name</label>
-                                <select name="domain_id" class="form-control">
-                                    <option value="">Domain...</option>
-                                    <t t-foreach="domains or []" t-as="domain">
-                                        <option t-att-value="domain.id" t-esc="domain.name"/>
-                                    </t>
-                                </select>
-                            </div>
                             <div class="clearfix"/>
                             <div class="form-group col-lg-6">
                                 <label class="control-label" for="email">Email</label>
@@ -59,7 +41,30 @@
                                 <input type="password" name="password" class="form-control"/>
                             </div>
                             <div class="clearfix"/>
-                            <div id="CL_env_form">
+
+                            <div class="CL_base_form">
+                                <div class="form-group col-lg-6">
+                                    <label class="control-label" for="prefix">Subdomain</label>
+                                    <input type="text" name="prefix" class="form-control"/>
+                                </div>
+                                <div class="form-group col-lg-6">
+                                    <label class="control-label" for="domain_id">Domain Name</label>
+                                    <select name="domain_id" class="form-control">
+                                        <option value="">Domain...</option>
+                                        <t t-foreach="domains or []" t-as="domain">
+                                            <option t-att-value="domain.id" t-esc="domain.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="clearfix"/>
+                                <div class="form-group col-lg-6">
+                                    <label class="control-label" for="title">Database title</label>
+                                    <input type="text" name="title" class="form-control"/>
+                                </div>
+                            </div>
+                            <div class="clearfix"/>
+
+                            <div class="CL_container_form">
                                 <div class="form-group col-lg-6">
                                     <label class="control-label" for="environment_prefix">New environment name</label>
                                     <input type="text" name="environment_prefix" class="form-control"/>
@@ -69,6 +74,11 @@
                                     <select name="environment_id" class="form-control">
                                         <option value="">&lt;= Use new name</option>
                                     </select>
+                                </div>
+                                <div class="clearfix"/>
+                                <div class="form-group col-lg-6">
+                                    <label class="control-label" for="prefix">Container suffix</label>
+                                    <input type="text" name="suffix" class="form-control"/>
                                 </div>
                             </div>
                         </fieldset>
