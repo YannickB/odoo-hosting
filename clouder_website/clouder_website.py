@@ -108,7 +108,7 @@ class ClouderApplication(models.Model):
         if data.application_id.web_create_type == 'container':
             return self.env['clouder.container'].create({
                 'environment_id': data.environment_id.id,
-                'suffix': data.prefix,
+                'suffix': data.suffix,
                 'application_id': data.application_id.id
             })
         elif data.application_id.web_create_type == 'base':
@@ -160,21 +160,22 @@ class ClouderWebSession(models.Model):
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)
     clouder_partner_id = fields.Many2one('res.partner', 'Sales Partner', required=True)
     application_id = fields.Many2one('clouder.application', 'Application', required=True)
-    domain_id = fields.Many2one('clouder.domain', 'Domain', required=True)
-    prefix = fields.Char('Prefix', required=True)
+    domain_id = fields.Many2one('clouder.domain', 'Domain', required=False)
+    prefix = fields.Char('Prefix', required=False)
+    suffix = fields.Char('Prefix', required=False)
     title = fields.Char('Title', required=False)
     environment_id = fields.Many2one('clouder.environment', 'Environment', required=False)
     environment_prefix = fields.Char('Environment prefix', required=False)
 
     @api.one
-    @api.constrains('environment_id', 'prefix', 'application_id')
+    @api.constrains('environment_id', 'suffix', 'application_id')
     def _check_env_and_prefix_not_used(self):
         """
-        Checks that there is no existing container using this environment with the same prefix
+        Checks that there is no existing container using this environment with the same container suffix
         """
         if self.application_id.web_create_type == 'container' and self.environment_id:
             container = self.env['clouder.container'].search([
-                ('suffix', '=', self.prefix),
+                ('suffix', '=', self.suffix),
                 ('environment_id', '=', self.environment_id.id)
             ])
 
@@ -183,12 +184,12 @@ class ClouderWebSession(models.Model):
                     _('Session duplicate error!'),
                     _('Container already exists with environment {0} and prefix {1}').format(
                         self.environment_id.prefix,
-                        self.prefix
+                        self.suffix
                     )
                 )
             session = self.search([
                 ('id', '!=', self.id),
-                ('prefix', '=', self.prefix),
+                ('suffix', '=', self.suffix),
                 ('environment_id', '=', self.environment_id.id)
             ])
             if session:
@@ -196,7 +197,7 @@ class ClouderWebSession(models.Model):
                     _('Session duplicate error!'),
                     _('Session already exists with environment {0} and prefix {1}').format(
                         self.environment_id.prefix,
-                        self.prefix
+                        self.suffix
                     )
                 )
 
@@ -278,7 +279,7 @@ class ClouderWebSession(models.Model):
                 )
 
     @api.one
-    @api.constrains('application_id', 'title', 'environment_id', 'environment_prefix')
+    @api.constrains('application_id', 'title', 'prefix', 'domain_id', 'suffix', 'environment_id', 'environment_prefix')
     def _check_complex_requirements(self):
         """
         Checks fields requirements that are dependant on others
@@ -289,7 +290,22 @@ class ClouderWebSession(models.Model):
                     _('Data error!'),
                     _("You need to specify a title when applying for a base")
                 )
+            if not self.prefix:
+                raise except_orm(
+                    _('Data error!'),
+                    _("You need to specify a prefix when applying for a base")
+                )
+            if not self.domain_id:
+                raise except_orm(
+                    _('Data error!'),
+                    _("You need to specify a domain when applying for a base")
+                )
         elif self.application_id.web_create_type == "container":
+            if not self.suffix:
+                raise except_orm(
+                    _('Data error!'),
+                    _("You need to specify a suffix when applying for a container")
+                )
             if not (self.environment_id or self.environment_prefix):
                 raise except_orm(
                     _('Data error!'),

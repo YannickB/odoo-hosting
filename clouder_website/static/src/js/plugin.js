@@ -15,13 +15,11 @@ Clouder.run = function($){
 
         // Hide hint
         $clouder_form.find('.CL_hint').hide();
-
-        // Hide instance title
-        $clouder_form.find('input[name="title"]').parent().hide();
-
-        // Env input
+        // Hide environment_id itself
         $clouder_form.find('select[name="environment_id"]').parent().hide();
-        $clouder_form.find('#CL_env_form').hide();
+        // Hide base and container specific forms until application_id is selected
+        $clouder_form.find('.CL_container_form').hide();
+        $clouder_form.find('.CL_base_form').hide();
 
         // Show step 1 by default
         Clouder.showStep(1);
@@ -40,6 +38,7 @@ Clouder.run = function($){
                 $env_prefix.attr('readonly', true);
                 $env_prefix.attr('disabled', true);
                 $env_prefix.val('');
+
             }
             else {
                 $env_prefix.attr('readonly', false);
@@ -51,19 +50,19 @@ Clouder.run = function($){
         // Controls the appearance of env/title inputs depending on application_id
         $clouder_form.on('change', "select[name='application_id']", function(){
             var $app_id = $clouder_form.find("select[name='application_id']");
-            var $env_div = $clouder_form.find('#CL_env_form');
-            var $title_input = $clouder_form.find('input[name="title"]');
+            var $container_div = $clouder_form.find('.CL_container_form');
+            var $base_div = $clouder_form.find('.CL_base_form');
             if ($app_id.find('option:selected').attr('inst_type')==='container'){
-                $env_div.show();
-                $title_input.parent().hide();
+                $container_div.show();
+                $base_div.hide();
             }
             else if ($app_id.find('option:selected').attr('inst_type')==='base'){
-                $env_div.hide();
-                $title_input.parent().show();
+                $container_div.hide();
+                $base_div.show();
             }
             else {
-                $env_div.hide();
-                $title_input.parent().hide();
+                $container_div.hide();
+                $base_div.hide();
             }
         });
         $clouder_form.find('select[name="application_id"]').change();
@@ -196,6 +195,7 @@ Clouder.check_instance_data = function(){
     inst_type = $form.find('select[name="application_id"]').find('option:selected').attr('inst_type');
     ajax_data = {
         'inst_type': inst_type,
+        'suffix': $form.find('input[name="suffix"]').val(),
         'environment_id': $form.find('select[name="environment_id"]').find('option:selected').val(),
         'environment_prefix': $form.find('input[name="environment_prefix"]').val(),
         'domain_id': $form.find('select[name="domain_id"]').find('option:selected').val(),
@@ -277,13 +277,17 @@ Clouder.submit_override = function(){
 
     Clouder.loading(true, $form);
 
-    // Empty env values if application type is not container
+    // Empty env values depending on application type
     $app_id = $form.find('select[name="application_id"]');
-    $env_id = $form.find('select[name="environment_id"]');
-    $env_prefix = $form.find('input[name="environment_prefix"]');
     if ($app_id.find('option:selected').attr('inst_type')!=='container'){
-        $env_id.val('');
-        $env_prefix.val('');
+        $form.find('select[name="suffix"]').val('');
+        $form.find('select[name="environment_id"]').val('');
+        $form.find('input[name="environment_prefix"]').val('');
+    }
+    else if ($app_id.find('option:selected').attr('inst_type')!=='base'){
+        $form.find('select[name="prefix"]').val('');
+        $form.find('select[name="title"]').val('');
+        $form.find('input[name="domain_id"]').val('');
     }
 
     Clouder.$.ajax({
@@ -356,13 +360,10 @@ Clouder.error_step = function(step){
 
     if (step == 1){
         $app_select = Clouder.$plugin.find('select[name="application_id"]');
-        $domain_select = Clouder.$plugin.find('select[name="domain_id"]');
-        $prefix_input = Clouder.$plugin.find('input[name="prefix"]');
         $password_select = Clouder.$plugin.find('input[name="password"]');
         $email_select = Clouder.$plugin.find('input[name="email"]');
         
         has_error = Clouder.add_error_to_elt($app_select) || has_error;
-        has_error = Clouder.add_error_to_elt($domain_select) || has_error;
         has_error = Clouder.error_regexp(
             $email_select,
             Clouder.email_re,
@@ -370,14 +371,14 @@ Clouder.error_step = function(step){
         ) || has_error;
 
         if ($app_select.find('option:selected').attr('inst_type')==='container'){
+            $suffix = Clouder.$plugin.find('input[name="suffix"]');
             $env_prefix = Clouder.$plugin.find('input[name="environment_prefix"]');
             $env_id = Clouder.$plugin.find('select[name="environment_id"]');
 
-            // Prefix used as container suffix
             has_error = Clouder.error_regexp(
-                $prefix_input,
+                $suffix,
                 Clouder.cont_suff_re,
-                'Prefix can only contain alphanumeric characters and hyphens (-).'
+                'Container suffix can only contain alphanumeric characters and hyphens (-).'
             ) || has_error;
 
             if (!$env_id.val() && !$env_prefix.val()){
@@ -399,14 +400,18 @@ Clouder.error_step = function(step){
             }
         }
         else if ($app_select.find('option:selected').attr('inst_type')==='base'){
-            // Prefix used as base prefix
+            $domain_select = Clouder.$plugin.find('select[name="domain_id"]');
+            $prefix_input = Clouder.$plugin.find('input[name="prefix"]');
+            $title_input = Clouder.$plugin.find('input[name="title"]');
+
             has_error = Clouder.error_regexp(
                 $prefix_input,
                 Clouder.base_pref_re,
                 'Prefix can only contain alphanumeric characters, hyphens (-) and dots (.).'
             ) || has_error;
-            $title_input = Clouder.$plugin.find('input[name="title"]');
+
             has_error = Clouder.add_error_to_elt($title_input) || has_error;
+            has_error = Clouder.add_error_to_elt($domain_select) || has_error;
         }
 
         if (has_error){
