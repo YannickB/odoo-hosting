@@ -112,7 +112,7 @@ Clouder.run = function($){
                         $clouder_form.find('select[name="environment_id"]').parent().show();
                     }
                     else {
-                        $passwd.parent().addClass('has-error');
+                        $passwd.parent().addClass('CL_has-error');
                         $hint.html("Invalid password");
                         $hint.show();
                     }
