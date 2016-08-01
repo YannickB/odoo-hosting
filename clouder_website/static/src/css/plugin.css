@@ -70,7 +70,7 @@
     /* Good browsers */
     opacity: 0.5;
 }
-#ClouderPlugin .CF_Title
+#ClouderPlugin .CL_Title
 {
     font-size: 25px;
     text-align: center;
@@ -82,23 +82,23 @@
     margin-bottom: 10px;
     margin-top: 20px;
 }
-#ClouderPlugin .mb32
+#ClouderPlugin .CL_mb32
 {
     margin-bottom: 32px !important;
 }
-#ClouderPlugin .pull-right
+#ClouderPlugin .CL_pull-right
 {
     float: right !important;
     position: relative !important;
     right: 10px;
 }
-#ClouderPlugin .pull-left
+#ClouderPlugin .CL_pull-left
 {
     float: left !important;
     position: relative !important;
     left: 10px;
 }
-#ClouderPlugin .btn:hover, #ClouderPlugin .btn:focus, #ClouderPlugin .btn:active, #ClouderPlugin .btn.active
+#ClouderPlugin .CL_btn:hover, #ClouderPlugin .CL_btn:focus, #ClouderPlugin .CL_btn:active
 {
     background-color: #e6e6e6;
     border-color: #adadad;
@@ -107,11 +107,11 @@
     border-color: #285e8e;
     color: #fff;
 }
-#ClouderPlugin .btn:active, #ClouderPlugin .btn.active
+#ClouderPlugin .CL_btn:active
 {
     background-image: none;
 }
-#ClouderPlugin .btn
+#ClouderPlugin .CL_btn
 {
     background-image: none;
     border: 1px solid transparent;
@@ -134,25 +134,25 @@
     border-color: #357ebd;
     color: #fff;
 }
-#ClouderPlugin .btn:focus, #ClouderPlugin .btn:active:focus, #ClouderPlugin .btn.active:focus
+#ClouderPlugin .CL_btn:focus, #ClouderPlugin .CL_btn:active:focus
 {
     outline: 5px auto -webkit-focus-ring-color;
     outline: thin dotted;
     outline-offset: -2px;
 }
-#ClouderPlugin .btn:hover, #ClouderPlugin .btn:focus
+#ClouderPlugin .CL_btn:hover, #ClouderPlugin .CL_btn:focus
 {
     color: #333;
     text-decoration: none;
 }
-#ClouderPlugin .btn:active, #ClouderPlugin .btn.active
+#ClouderPlugin .CL_btn:active
 {
     background-image: none;
     box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
     outline: 0;
     webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
 }
-#ClouderPlugin .form-control
+#ClouderPlugin .CL_form-control
 {
     background-color: #fff;
     background-image: none;
@@ -162,7 +162,6 @@
     color: #555;
     display: inline-block;
     font-size: 14px;
-    height: 34px;
     line-height: 1.42857143;
     o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
     padding: 6px 12px;
@@ -171,83 +170,79 @@
     webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
     width: 100%;
 }
-#ClouderPlugin input[class="form-control"]
-{
-    height: 20px;
-}
-#ClouderPlugin select[class="form-control"]
+#ClouderPlugin select[class="CL_form-control"]
 {
     width: 118%;
 }
-#ClouderPlugin .form-control:focus
+#ClouderPlugin .CL_form-control:focus
 {
     border-color: #66afe9;
     box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
     outline: 0;
     webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
 }
-#ClouderPlugin .form-control::-moz-placeholder
+#ClouderPlugin .CL_form-control::-moz-placeholder
 {
     color: #777;
     opacity: 1;
 }
-#ClouderPlugin .form-control:-ms-input-placeholder
+#ClouderPlugin .CL_form-control:-ms-input-placeholder
 {
     color: #777;
 }
-#ClouderPlugin .form-control::-webkit-input-placeholder
+#ClouderPlugin .CL_form-control::-webkit-input-placeholder
 {
     color: #777;
 }
-#ClouderPlugin .form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control
+#ClouderPlugin .CL_form-control[disabled], .CL_form-control[readonly], fieldset[disabled] .CL_form-control
 {
     background-color: #eee;
     cursor: not-allowed;
     opacity: 1;
 }
-#ClouderPlugin .has-error .form-control
+#ClouderPlugin .CL_has-error .CL_form-control
 {
     border-color: #a94442;
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
     webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
 }
-#ClouderPlugin .has-error .form-control:focus
+#ClouderPlugin .CL_has-error .CL_form-control:focus
 {
     border-color: #843534;
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
     webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
 }
-#ClouderPlugin .has-error .control-label
+#ClouderPlugin .CL_has-error .CL_control-label
 {
     color: #a94442;
 }
-#ClouderPlugin .col-lg-6
+#ClouderPlugin .CL_col-lg-6
 {
     min-height: 1px;
     padding-left: 0px;
     padding-right: 25px;
     position: relative;
 }
-#ClouderPlugin .clearfix:after, #ClouderPlugin .form-group:after
+#ClouderPlugin .CL_clearfix:after, #ClouderPlugin .CL_form-group:after
 {
     clear: both;
 }
-#ClouderPlugin .clearfix:before, #ClouderPlugin .clearfix:after, #ClouderPlugin .form-group:before, #ClouderPlugin .form-group:after
+#ClouderPlugin .CL_clearfix:before, #ClouderPlugin .CL_clearfix:after, #ClouderPlugin .CL_form-group:before, #ClouderPlugin .CL_form-group:after
 {
     content: " ";
     display: table;
 }
-#ClouderPlugin .clearfix:before, #ClouderPlugin .clearfix:after
+#ClouderPlugin .CL_clearfix:before, #ClouderPlugin .CL_clearfix:after
 {
     content: " ";
     display: table;
 }
-#ClouderPlugin .form-group
+#ClouderPlugin .CL_form-group
 {
     margin-bottom: 15px;
     width: 40%;
 }
-#ClouderPlugin .fa
+#ClouderPlugin .CL_fa
 {
     display: inline-block;
     font: normal normal normal 14px/1 FontAwesome;
