@@ -403,7 +403,7 @@ Clouder.error_step = function(step){
         has_error = Clouder.error_regexp(
             $email_select,
             Clouder.email_re,
-            Clouder.getHintMsg("CL_HINT_EMAIL"),
+            Clouder.getHintMsg("CL_HINT_EMAIL")
         ) || has_error;
 
         if ($app_select.find('option:selected').attr('inst_type')==='container'){
@@ -414,7 +414,7 @@ Clouder.error_step = function(step){
             has_error = Clouder.error_regexp(
                 $suffix,
                 Clouder.cont_suff_re,
-                Clouder.getHintMsg("CL_HINT_SUFFIX"),
+                Clouder.getHintMsg("CL_HINT_SUFFIX")
             ) || has_error;
 
             if (!$env_id.val() && !$env_prefix.val()){
@@ -427,7 +427,7 @@ Clouder.error_step = function(step){
                 has_error = Clouder.error_regexp(
                     $env_prefix,
                     Clouder.env_pref_re,
-                    Clouder.getHintMsg("CL_HINT_ENV_PREFIX"),
+                    Clouder.getHintMsg("CL_HINT_ENV_PREFIX")
                 ) || has_error;
             }
             else {
@@ -443,7 +443,7 @@ Clouder.error_step = function(step){
             has_error = Clouder.error_regexp(
                 $prefix_input,
                 Clouder.base_pref_re,
-                Clouder.getHintMsg("CL_HINT_PREFIX"),
+                Clouder.getHintMsg("CL_HINT_PREFIX")
             ) || has_error;
 
             has_error = Clouder.add_error_to_elt($title_input) || has_error;
@@ -482,7 +482,7 @@ Clouder.error_step = function(step){
         has_error = Clouder.error_regexp(
             $phone_select,
             Clouder.phone_re,
-            Clouder.getHintMsg("CL_HINT_PHONE"),
+            Clouder.getHintMsg("CL_HINT_PHONE")
         ) || has_error;
         has_error = Clouder.add_error_to_elt($street2_select) || has_error;
         has_error = Clouder.add_error_to_elt($city_select) || has_error;
