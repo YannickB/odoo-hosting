@@ -124,6 +124,7 @@ Clouder.run = function($){
                             $hint.html(Clouder.getHintMsg("CL_HINT_PASSWORD"));
                             $hint.show();
                         }
+                    }
                     else if (result.error != undefined) {
                         $form.hide();
                         $error = Clouder.$plugin.find('.CL_final_error');
@@ -333,7 +334,7 @@ Clouder.submit_override = function(){
                 $error.find('.CL_Error_msg').html(data.error);
                 $error.show();
             }
-            if (data.html != undefined){
+            else if (data.html != undefined){
                 Clouder.readresponse(data);
                 Clouder.clws_id = data.clws_id;
                 Clouder.loading(false, $form);
