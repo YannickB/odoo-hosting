@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="1">
+        <!-- Cron to prune obsolete clouder web sessions -->
+        <record model="ir.cron" id="clouder_web_session_prune">
+            <field name="name">Prune clouder web sessions</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field eval="False" name="doall"/>
+            <field eval="'clouder.web.session'" name="model"/>
+            <field eval="'prune_records'" name="function"/>
+            <field eval="'()'" name="args"/>
+        </record>
+
+
+        <!-- Cron to launch invoice creation from clouder web sessions -->
+        <record model="ir.cron" id="clouder_web_session_invoices">
+            <field name="name">Clouder create invoice from web sessions</field>
+            <field name="interval_number">10</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field eval="False" name="doall"/>
+            <field eval="'clouder.web.session'" name="model"/>
+            <field eval="'launch_update_with_invoice'" name="function"/>
+            <field eval="'()'" name="args"/>
+        </record>
+
+
+        <!-- Cron to launch instance creation from clouder web sessions -->
+        <record model="ir.cron" id="clouder_web_session_instances">
+            <field name="name">Clouder create instances from web sessions</field>
+            <field name="interval_number">15</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field eval="False" name="doall"/>
+            <field eval="'clouder.web.session'" name="model"/>
+            <field eval="'create_instances'" name="function"/>
+            <field eval="'()'" name="args"/>
+        </record>
+    </data>
+</openerp>
