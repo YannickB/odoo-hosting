@@ -6,6 +6,12 @@
             <field name="name">redis</field>
             <field name="system_user">redis</field>
         </record>
+	<record id="apptype_redis_option_db_password" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_redis"/>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+        </record>
 
         <record id="image_redis" model="clouder.image">
             <field name="name">img_redis</field>

@@ -34,12 +34,7 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
 
-        # if self.application_id.type_id.name == 'redis':
-        #     self.execute(
-        #                  ['apt-get', '-qq', 'update',],
-        #                  path='/', username='redis')
-        #     self.execute(['apt-get', '-y', 'redis-server'],
-        #                  path='/', username='redis')
-        #     self.execute(['/bin/bash', './res/configure_redis.sh'],
-        #                  path='/', username='redis')
+        if self.application_id.type_id.name == 'redis':
+            self.execute(['service', 'redis-server', 'restart'],
+		username='redis')
 
