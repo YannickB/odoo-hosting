@@ -204,7 +204,7 @@ Clouder.check_instance_data = function(){
     Clouder.$.ajax({
         url: Clouder.pluginPath + 'clouder_form/check_data',
         data: ajax_data,
-        method: 'POST',
+        method: 'POST', type: 'POST',
         cache: false,
         dataType: 'html',
         success: function(data) {
@@ -293,7 +293,7 @@ Clouder.submit_override = function(){
     Clouder.$.ajax({
         url: $form.attr('action'),
         data: $form.serialize(),
-        method: 'POST',
+        method: 'POST', type: 'POST',
         cache: false,
         dataType: 'html',
         success: function(data) {
@@ -487,7 +487,7 @@ Clouder.get_env = function($login, $password, when_callback){
                 'password': $password.val(),
                 'lang': Clouder.params['lang']
             },
-            method:'POST',
+            method:'POST', type: 'POST',
             cache: false,
             dataType: 'html',
             success: function(data) {
@@ -531,7 +531,7 @@ Clouder.user_login = function($login, $password, when_callback){
         return Clouder.$.ajax({
             url: Clouder.pluginPath + 'clouder_form/form_login',
             data: {'login': $login.val(), 'password': $password.val()},
-            method:'POST',
+            method:'POST', type: 'POST',
             cache: false,
             dataType: 'html',
             success: function(data) {
@@ -640,7 +640,7 @@ Clouder.loadPhp = function ($) {
     $.ajax({
         url: Clouder.pluginPath + 'clouder_form/request_form',
         data: Clouder.params,
-        method:'POST',
+        method: 'POST', type: 'POST',
         dataType: 'html',
         cache: false,
         success: function(data) {
