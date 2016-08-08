@@ -1,0 +1,23 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+
+<h1>Exemple de page hôte</h1>
+
+<div id="ClouderPlugin" style="width:400px;"></div>
+
+<script>
+var Clouder = {}
+Clouder.params = {
+    'partner_id': '3',
+    'lang':'fr_FR',
+};
+Clouder.pluginPath = 'http://devenv:8069/';
+(function(d,s){var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src=Clouder.pluginPath+'clouder_website/static/src/js/plugin.js';f.parentNode.insertBefore(j,f);})(document,'script');
+</script>
+</body>
+</html>

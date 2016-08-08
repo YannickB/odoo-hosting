@@ -145,7 +145,7 @@ class ClouderServer(models.Model):
 
     @api.one
     @api.constrains('name', 'ip')
-    def _validate_data(self):
+    def _check_name_ip(self):
         """
         Check that the server domain does not contain any forbidden
         characters.
@@ -476,8 +476,19 @@ class ClouderContainer(models.Model):
     ]
 
     @api.one
+    @api.constrains('environment_id')
+    def _check_environment(self):
+        """
+        Check that the environment linked to the container have a prefix.
+        """
+        if not self.environment_id.prefix:
+            raise except_orm(
+                _('Data error!'),
+                _("The environment need to have a prefix"))
+
+    @api.one
     @api.constrains('suffix')
-    def _validate_data(self):
+    def _check_suffix(self):
         """
         Check that the container name does not contain any forbidden
         characters.
@@ -1034,6 +1045,8 @@ class ClouderContainer(models.Model):
         Override write to trigger a reinstall when we change the image version,
         the ports or the volumes.
 
+        Makes it so that the suffix cannot be changed after creation
+
         :param vals: The values to update
         """
         # version_obj = self.env['clouder.image.version']
@@ -1054,6 +1067,11 @@ class ClouderContainer(models.Model):
         res = super(ClouderContainer, self).write(vals)
         # if flag:
         #     self.reinstall()
+        if 'suffix' in vals:
+            raise except_orm(
+                _('Data error!'),
+                _("You cannot modify the suffix after the container was created."))
+
         if 'autosave' in vals and self.autosave != vals['autosave']:
             self.deploy_links()
         return res

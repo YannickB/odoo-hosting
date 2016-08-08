@@ -1,0 +1,159 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+#	* clouder_website_payment
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 8.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-07-23 16:17+0000\n"
+"PO-Revision-Date: 2016-07-23 16:17+0000\n"
+"Last-Translator: <>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_form_popup_message
+msgid "A popup should be displaying the payment information."
+msgstr "Veuillez proceder au paiement sur la popup qui vient d'apparaître."
+
+#. module: clouder_website_payment
+#: field:clouder.web.session,amount:0
+msgid "Amount to pay"
+msgstr "Montant à règler"
+
+#. module: clouder_website_payment
+#: code:addons/clouder_website_payment/clouder_website_payment.py:44
+#, python-format
+msgid "Application error!"
+msgstr "Erreur d'application!"
+
+#. module: clouder_website_payment
+#: selection:clouder.web.session,state:0
+msgid "Cancelled"
+msgstr "Annulée"
+
+#. module: clouder_website_payment
+#: code:addons/clouder_website_payment/clouder_website_payment.py:159
+#, python-format
+msgid "Clouder Web Session error!"
+msgstr "Erreur de Session web Clouder!"
+
+#. module: clouder_website_payment
+#: selection:clouder.web.session,state:0
+msgid "Done"
+msgstr "Terminé"
+
+#. module: clouder_website_payment
+#: selection:clouder.web.session,state:0
+msgid "Error"
+msgstr "Erreur"
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_cancel
+msgid "Hope we meet again sometime in the future!"
+msgstr "Nous esperons vous revoir bientôt!"
+
+#. module: clouder_website_payment
+#: field:clouder.web.session,invoice_id:0
+#: model:ir.model,name:clouder_website_payment.model_account_invoice
+msgid "Invoice"
+msgstr "Facture"
+
+#. module: clouder_website_payment
+#: field:clouder.web.session,reference:0
+msgid "Invoice Reference"
+msgstr "Référence de la facture"
+
+#. module: clouder_website_payment
+#: code:addons/clouder_website_payment/controller/main.py:61
+#, python-format
+msgid "Pay Now"
+msgstr "Proceder au paiement"
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_buttons
+msgid "Payment Method:"
+msgstr "Méthode de paiement:"
+
+#. module: clouder_website_payment
+#: selection:clouder.web.session,state:0
+msgid "Payment Processed"
+msgstr "Paiement reçu"
+
+#. module: clouder_website_payment
+#: model:ir.model,name:clouder_website_payment.model_payment_transaction
+msgid "Payment Transaction"
+msgstr "Transaction"
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_cancel
+msgid "Payment cancelled"
+msgstr "Paiement annulé"
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_form_popup_message
+#: view:website:clouder_website_payment.payment_popup
+msgid "Payment processing"
+msgstr "Paiement en cours"
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_success
+msgid "Payment successful"
+msgstr "Paiement terminé"
+
+#. module: clouder_website_payment
+#: selection:clouder.web.session,state:0
+msgid "Pending"
+msgstr "En attente"
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_buttons
+msgid "Shop - Select Payment Mode"
+msgstr "Selectionnez une méthode de paiement"
+
+#. module: clouder_website_payment
+#: selection:clouder.web.session,state:0
+msgid "Started"
+msgstr "Démarré"
+
+#. module: clouder_website_payment
+#: field:clouder.web.session,state:0
+msgid "State"
+msgstr "Etat"
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_success
+msgid "Thank you for your interest in Clouder."
+msgstr "Nous vous remercions de votre intérêt pour Clouder."
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_cancel
+msgid "We're sorry to see you go."
+msgstr "Nous sommes désolé de ne pas vous avoir convaincu."
+
+#. module: clouder_website_payment
+#: code:addons/clouder_website_payment/clouder_website_payment.py:45
+#, python-format
+msgid "You cannot define a web creation type without defining price grids."
+msgstr "Vous ne pouvez pas définir un type de création web sans définir une grille de prix."
+
+#. module: clouder_website_payment
+#: code:addons/clouder_website_payment/clouder_website_payment.py:160
+#, python-format
+msgid "You cannot launch invoice creation when a session is not process or already has an invoice"
+msgstr "Vous ne pouvez pas lancer une création d'instance a partir d'une session qui n'est pas en cours ou n'as pas de facture"
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_popup
+msgid "You should be directed to the payment shortly."
+msgstr "Vous devriez bientôt être redirigé vers le paiement."
+
+#. module: clouder_website_payment
+#: view:website:clouder_website_payment.payment_success
+msgid "You should receive an email with login instructions soon."
+msgstr "Vous devriez recevoir un email avec vos informations de connection sous peu."
+

@@ -56,7 +56,7 @@ class ClouderDomain(models.Model):
 
     @api.one
     @api.constrains('name')
-    def _validate_data(self):
+    def _check_name(self):
         """
         Check that the domain name does not contain any forbidden
         characters.
@@ -206,7 +206,7 @@ class ClouderBase(models.Model):
 
     @api.one
     @api.constrains('name', 'admin_name', 'admin_email', 'poweruser_email')
-    def _validate_data(self):
+    def _check_forbidden_chars_credentials(self):
         """
         Check that the base name and some other fields does not contain any
         forbidden characters.
@@ -214,7 +214,7 @@ class ClouderBase(models.Model):
         if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits and -"))
-        if self.admin_name and not re.match("^[\w\d_]*$", self.admin_name):
+        if not re.match("^[\w\d_.@-]*$", self.admin_name):
             raise except_orm(_('Data error!'), _(
                 "Admin name can only contains letters, digits and underscore"))
         if self.admin_email\
@@ -252,8 +252,9 @@ class ClouderBase(models.Model):
                 vals['application_id'])
 
             if 'admin_name' not in vals or not vals['admin_name']:
-                vals['admin_name'] = application.admin_name
-
+                vals['admin_name'] = application.admin_name \
+                     and application.admin_name \
+                     or self.email_sysadmin
             if 'admin_email' not in vals or not vals['admin_email']:
                 vals['admin_email'] = application.admin_email \
                     and application.admin_email \
@@ -496,6 +497,7 @@ class ClouderBase(models.Model):
     def onchange_application_id(self):
         vals = {
             'application_id': self.application_id.id,
+            'container_id': self.application_id.next_container_id and self.application_id.next_container_id.id or False,
             'admin_name': self.admin_name,
             'admin_email': self.admin_email,
             'option_ids': self.option_ids,
@@ -545,6 +547,9 @@ class ClouderBase(models.Model):
             if 'domain_id' not in vals or not vals['domain_id']:
                 raise except_orm(_('Error!'), _(
                     "You need to specify the domain of the base."))
+            if 'environment_id' not in vals or not vals['environment_id']:
+                raise except_orm(_('Error!'), _(
+                    "You need to specify the environment of the base."))
             domain = domain_obj.browse(vals['domain_id'])
             container_vals = {
                 'name': vals['name'] + '-' +
@@ -552,10 +557,11 @@ class ClouderBase(models.Model):
                 'server_id': application.next_server_id.id,
                 'application_id': application.id,
                 'image_id': application.default_image_id.id,
-                'image_version_id':
-                application.default_image_id.version_ids[0].id,
+                'image_version_id': application.default_image_id.version_ids[0].id,
+                'environment_id': vals['environment_id'],
+                'suffix': vals['name']
             }
-            vals['container_id'] = container_obj.create(container_vals)
+            vals['container_id'] = container_obj.create(container_vals).id
 
         vals = self.onchange_application_id_vals(vals)
 

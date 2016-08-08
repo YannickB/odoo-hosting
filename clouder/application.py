@@ -71,7 +71,7 @@ class ClouderApplicationType(models.Model):
 
     @api.one
     @api.constrains('name', 'system_user')
-    def _validate_data(self):
+    def _check_forbidden_chars_name_sys_user(self):
         """
         Check that the application type name does not contain any forbidden
         characters.
@@ -137,6 +137,7 @@ class ClouderApplication(models.Model):
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=True)
     base = fields.Boolean('Can have base?')
+    next_container_id = fields.Many2one('clouder.container', 'Next container')
     admin_name = fields.Char('Admin name')
     admin_email = fields.Char('Admin email')
     archive_id = fields.Many2one('clouder.container', 'Archive')
@@ -175,7 +176,7 @@ class ClouderApplication(models.Model):
 
     @property
     def fullcode(self):
-        fullcode = self.type_id.name
+        fullcode = self.code
         if self.parent_id:
             fullcode = self.parent_id.fullcode + '-' + self.code
         return fullcode
@@ -241,7 +242,7 @@ class ClouderApplication(models.Model):
 
     @api.one
     @api.constrains('code', 'admin_name', 'admin_email')
-    def _validate_data(self):
+    def _check_forbidden_chars_credentials_code(self):
         """
         Check that the application name does not contain any forbidden
         characters.
