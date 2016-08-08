@@ -530,7 +530,7 @@ class ClouderModel(models.AbstractModel):
         # Pushing additional input
         if stdin_arg:
             chnl_stdin = channel.makefile('wb', -1)
-            for arg in chnl_stdin:
+            for arg in stdin_arg:
                 self.log('command : ' + arg)
                 chnl_stdin.write(arg)
                 chnl_stdin.flush()

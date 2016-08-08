@@ -110,11 +110,7 @@ class ClouderSave(models.Model):
         """
         Property returning the dumpfile name.
         """
-        return \
-            self.base_fullname \
-            and self.container_app.replace('-', '_') + '_' + \
-            self.base_name.replace('-', '_') + '_' + \
-            self.base_domain.replace('-', '_').replace('.', '_') + '.dump'
+        return self.base_fullname.replace('.', '_').replace('-','_') + '.dump'
 
     @property
     def computed_restore_to_environment(self):
