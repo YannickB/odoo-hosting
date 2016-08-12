@@ -104,6 +104,7 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'mautic':
+            return
             baseUrl = "http://" + self.name + "." + self.domain_id.name
             installerUrl = "/index.php/installer/step/"
 
