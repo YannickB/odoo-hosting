@@ -26,7 +26,7 @@ import requests, re, logging
 
 class ClouderContainer(models.Model):
     """
-    Add methods to manage the mautic specificities.
+    Add methods to manage the dolibarr specificities.
     """
 
     _inherit = 'clouder.container'
@@ -35,27 +35,25 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
 
-        if self.application_id.type_id.name == 'mautic':
-            package_name = self.image_id.current_version + '.zip'
+        if self.application_id.type_id.name == 'dolibarr':
             self.execute(
-                         ['wget', '-q', 'https://s3.amazonaws.com/mautic/releases/' + package_name,
-                         ], path='/var/www/', username='www-data')
-            self.execute(['unzip', package_name],
+                         ['wget', '-q', 'http://www.dolibarr.org/files/dolibarr.tgz',
+                          'dolibarr.tgz'], path='/var/www/', username='www-data')
+            self.execute(['tar', '-xzf', 'dolibarr.tgz'],
                          path='/var/www', username='www-data')
-            self.execute(['rm', package_name],
+            self.execute(['rm', '-rf', './*.tgz'],
                          path='/var/www', username='www-data')
-
-#INSTALLATION FROM SOURCE
-#            self.execute(
-#                         ['git', 'clone', '--branch', self.image_id.current_version, 'https://github.com/mautic/mautic.git'
-#                          ], path='/var/www/', username='www-data')
-#            self.execute(
-#                         ['composer', 'install'], path='/var/www/mautic', username='www-data')
+            self.execute(['mv', 'dolibarr-*/', 'dolibarr/'],
+                         path='/var/www', username='www-data')
+            self.execute(['touch', 'htdocs/conf/conf.php'],
+                         path='/var/www/dolibarr', username='www-data')
+            self.execute(['mkdir', 'documents'],
+                         path='/var/www/dolibarr', username='www-data')
 
 
 class ClouderBase(models.Model):
     """
-    Add methods to manage the mautic specificities.
+    Add methods to manage the shinken specificities.
     """
 
     _inherit = 'clouder.base'
@@ -66,11 +64,11 @@ class ClouderBase(models.Model):
         Configure nginx.
         """
         res = super(ClouderBase, self).deploy_build()
-        if self.application_id.type_id.name == 'mautic':
+        if self.application_id.type_id.name == 'dolibarr':
 
             config_file = '/etc/nginx/sites-available/' + self.fullname
             self.container_id.send(
-                      modules.get_module_path('clouder_template_mautic') +
+                      modules.get_module_path('clouder_template_dolibarr') +
                       '/res/nginx.config', config_file)
             self.container_id.execute(['sed', '-i', '"s/BASE/' + self.name + '/g"',
                                config_file])
@@ -90,12 +88,14 @@ class ClouderBase(models.Model):
         Purge from nginx configuration.
         """
         super(ClouderBase, self).purge_post()
-        if self.application_id.type_id.name == 'mautic':
+        if self.application_id.type_id.name == 'dolibarr':
             self.container_id.execute(['rm', '-rf',
                                '/etc/nginx/sites-enabled/' + self.fullname])
             self.container_id.execute([
+
                 'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname])
             self.container_id.execute(['/etc/init.d/nginx', 'reload'])
+
 
     @api.multi
     def deploy_post(self):
@@ -104,18 +104,20 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'mautic':
-            return
-            baseUrl = "http://" + self.name + "." + self.domain_id.name
+            baseUrl = "http://" + str(self.name) + "." + str(self.domain_id.name)
             installerUrl = "/index.php/installer/step/"
+            mysql_pswd = "5DJqJcT26FgMCqRa"
+            logging.info("-----------------")
+	    logging.info(baseUrl + " " + installerUrl + " " + mysql_pswd )
+            logging.info("-----------------")
+	    
+	    #self.link_ids
 
-            #mysql_pswd need to be updated
-
-            mysql_pswd = "mysql"
             port = str(80)
 
-            logging.info(self.link_ids)
+            #logging.info(self.link_ids)
 
-            logging.info("test connect to " + baseUrl + ":" + port + installerUrl + " using db password " + mysql_pswd)
+            #logging.info("test connect to " + baseUrl + ":" + port + installerUrl + " using db password " + mysql_pswd)
 
             headers = dict()
             headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0"
@@ -127,8 +129,13 @@ class ClouderBase(models.Model):
             # --- page 1 ---
             # if mautic.status_code == 200:
 
-            mautic = requests.get(baseUrl + ":" + port + installerUrl + "1", headers=headers)
-            """
+            #try:
+	    
+	    mautic = requests.get(baseUrl + ":" + port + installerUrl + "1", headers=headers)
+
+            #except 
+	    
+"""
             pageParser = BeautifulSoup(mautic.text, 'html.parser')
             form =  pageParser.find_all(id=re.compile("install_doctrine_step_"))
 
@@ -144,13 +151,14 @@ class ClouderBase(models.Model):
                 if arr[i] == "None":
                     arr[i] = ""
 
-            mautic = requests.post(baseUrl + ":" + port + installerUrl + "1", data=arr, headers=headers)
+            #mautic = requests.post(baseUrl + ":" + port + installerUrl + "1", data=arr, headers=headers)
 
             # mautic = requests.post(baseUrl + installerUrl + "1:" + port, data=arr)
 
             # --- page 2 ---
 
-            mautic = requests.get(baseUrl + ":" + port + installerUrl + "2", headers=headers)
+            #mautic = requests.get(baseUrl + ":" + port + installerUrl + "2", headers=headers)
+
             pageParser = BeautifulSoup(mautic.text, 'html.parser')
             form =  pageParser.find_all(id=re.compile("install_user_step_"))
 
@@ -161,23 +169,23 @@ class ClouderBase(models.Model):
             arr["install_user_step[password]"] = self.container_id.db_password
             arr["install_user_step[username]"] = "admin"
 
-            logging.info("usernames will be " + self.admin_name + " and root pswd is " + self.container_id.db_password + " and admin email is " + self.admin_email)
+            #logging.info("usernames will be " + self.admin_name + " and root pswd is " + self.container_id.db_password + " and admin email is " + self.admin_email)
 
 
-            mautic = requests.post(baseUrl + installerUrl + "2", data=arr, headers=headers)
+            #mautic = requests.post(baseUrl + installerUrl + "2", data=arr, headers=headers)
             # if mautic.headers.get("Location"):
             # --- page 3 ---
 
-            mautic = requests.get(baseUrl + installerUrl + "3", headers=headers)
+            #mautic = requests.get(baseUrl + installerUrl + "3", headers=headers)
+
             pageParser = BeautifulSoup(mautic.text, 'html.parser')
             form = pageParser.find_all(id="install_email_step_")
 
             arr = get_form(form)
 
-            mautic = requests.post(baseUrl + installerUrl + "3", data=arr, headers=headers)
+            #mautic = requests.post(baseUrl + installerUrl + "3", data=arr, headers=headers)
 
-            mautic = requests.get(baseUrl)
-            """
+            #mautic = requests.get(baseUrl)
 
 
     def get_form(form):
@@ -198,4 +206,4 @@ class ClouderBase(models.Model):
                 continue
             arr[data_name] = data_value
         return arr
-
+"""
