@@ -269,10 +269,10 @@ class ClouderModel(models.AbstractModel):
             self = self.with_context(clouder_jobs=jobs)
             job_id = job.id
 
-        if 'no_enqueue' not in self.env.context:
-            self.enqueue(name, action, job_id)
-        else:
-            getattr(self, 'do_exec')(action, job_id)
+#        if 'no_enqueue' not in self.env.context:
+#            self.enqueue(name, action, job_id)
+#        else:
+        getattr(self, 'do_exec')(action, job_id)
 
     @api.multi
     def enqueue(self, name, action, clouder_job_id):
