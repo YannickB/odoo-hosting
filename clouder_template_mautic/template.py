@@ -44,6 +44,8 @@ class ClouderContainer(models.Model):
                          path='/var/www', username='www-data')
             self.execute(['rm', package_name],
                          path='/var/www', username='www-data')
+            self.execute(['mkdir', 'app/logs'],
+                         path='/var/www', username='www-data')
 
 #INSTALLATION FROM SOURCE
 #            self.execute(
