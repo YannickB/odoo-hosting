@@ -6,66 +6,52 @@
             <field name="name">gitlab</field>
             <field name="system_user">gitlab</field>
         </record>
-        <record id="image_gitlab" model="clouder.image">
-            <field name="name">img_gitlab</field>
-            <field name="current_version">8.10.1</field>
-            <field name="parent_from">clouder/clouder-base</field>
-            <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-                
-                USER root
-                
-                # update apt-get and install needed tools for the gitlab installation
-                RUN apt-get update -y
-                RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs
-                
-                # remove old git because 2.7+ is needed
-                RUN apt-get remove -y git-core
-                RUN apt-get install -y libcurl4-openssl-dev libexpat1-dev gettext libz-dev libssl-dev build-essential
-                RUN cd /tmp
-                RUN curl -O --progress https://www.kernel.org/pub/software/scm/git/git-2.7.4.tar.gz
-                RUN echo '7104c4f5d948a75b499a954524cb281fe30c6649d8abe20982936f75ec1f275b  git-2.7.4.tar.gz' | shasum -a256 -c - && tar -xzf git-2.7.4.tar.gz
-                
-                # install git 2.7+
-                # RUN cd git-2.7.4/
-                RUN ./git-2.7.4/configure
-                RUN make prefix=/usr/local all
-                # check git version
-                RUN git --version
-                
-                # remove old ruby because 2.1 is the only supported one
-                RUN apt-get remove -y ruby1.8
-                # install ruby 2.1
-                RUN mkdir /tmp/ruby && cd /tmp/ruby
-                RUN curl -O --progress https://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.8.tar.gz
-                RUN echo 'c7e50159357afd87b13dc5eaf4ac486a70011149  ruby-2.1.8.tar.gz' | shasum -c - && tar xzf ruby-2.1.8.tar.gz
-                # RUN cd ruby-2.1.8
-                RUN ./ruby-2.1.8/configure --disable-install-rdoc
-                RUN make
-                RUN sudo make install
-                RUN gem install bundler --no-ri --no-doc
-                
-                # install go1.5
-                RUN curl -O --progress https://storage.googleapis.com/golang/go1.5.3.linux-amd64.tar.gz
-                RUN echo '43afe0c5017e502630b1aea4d44b8a7f059bf60d7f29dfd58db454d4e4e0ae53  go1.5.3.linux-amd64.tar.gz' | shasum -a256 -c - && sudo tar -C /usr/local -xzf go1.5.3.linux-amd64.tar.gz
-                RUN sudo ln -sf /usr/local/go/bin/{go,godoc,gofmt} /usr/local/bin/
-                RUN rm go1.5.3.linux-amd64.tar.gz
-                
-                # create a user for gitlab
-                RUN adduser --disabled-login --gecos 'GitLab' git
-                
-                ]]>
-            </field>
-        </record>
+
         <!-- image "data" repository -->
         <record id="image_gitlab_data" model="clouder.image">
             <field name="name">img_gitlab_data</field>
             <field name="type_id" ref="apptype_gitlab"/>
-            <field name="current_version">8.10.1</field>
-            <field name="parent_from">gitlab/gitlab-ce:8.10.1-ce.0</field>
+            <field name="current_version">1</field>
+            <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
-            <field name="dockerfile"/>
+            <field name="dockerfile">
+                <![CDATA[
+
+                # create the odoo user
+                RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+                RUN touch /home/git/.pgpass
+
+                RUN mkdir -p /opt/gitlab/data
+                RUN mkdir -p /opt/gitlab/etc
+                RUN mkdir -p /opt/gitlab/extra-addons
+                RUN mkdir -p /opt/gitlab/var/run
+                RUN mkdir -p /opt/gitlab/var/log
+                RUN mkdir -p /opt/gitlab/var/egg-cache
+                ADD sources/gitlab.yml /opt/gitlab/config/gitlab.yml
+                ADD sources/secrets.yml /opt/gitlab/config/secrets.yml
+                ADD sources/resque.yml /opt/gitlab/config/resque.yml
+                ADD sources/database.yml /opt/gitlab/config/database.yml
+                RUN chmod 0600 /opt/odoo/config/secrets.yml
+                ADD sources/unicorn.rb /opt/gitlab/config/unicorn.rb
+                ADD sources/rack_attack.rb /opt/gitlab/config/initializers/rack_attack.rb
+                ADD sources/resque.yml /opt/gitlab/config/resque.yml
+
+                RUN chown -R git:git /opt/gitlab
+
+                USER git
+
+                # Configure Git global settings for git user
+                # 'autocrlf' is needed for the web editor
+                RUN git config --global core.autocrlf input
+
+                # Disable 'git gc --auto' because GitLab already runs 'git gc' when needed
+                git config --global gc.auto 0
+
+                #CMD tail -f /opt/gitlab/etc/gitlab.conf
+
+                ]]>
+            </field>
+
         </record>
         <!-- image's volumes -->
         <record id="image_gitlab_data_volume_data" model="clouder.image.volume">
@@ -81,9 +67,25 @@
             <field name="name">img_gitlab_files</field>
             <field name="type_id" ref="apptype_gitlab"/>
             <field name="current_version">8.0</field>
-            <field name="parent_from">clouder/clouder-gitlab-files</field>
+            <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
-            <field name="dockerfile"/>
+            <field name="dockerfile">
+                <![CDATA[
+
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git
+
+                RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+
+                RUN mkdir -p /opt/gitlab/files
+                RUN chown git:git /opt/git
+
+                USER git
+
+                # Clone GitLab repository
+                RUN git clone https://gitlab.com/gitlab-org/gitlab-ce.git -b 8-11-stable gitlab
+
+                ]]>
+            </field>
         </record>
         <!-- image's volumes -->
         <record id="image_gitlab_files_volume_files" model="clouder.image.volume">
@@ -96,9 +98,56 @@
             <field name="name">img_gitlab_exec</field>
             <field name="type_id" ref="apptype_gitlab"/>
             <field name="current_version">8.0</field>
-            <field name="parent_from">clouder/clouder-gitlab-exec</field>
+            <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
-            <field name="dockerfile"/>
+            <field name="dockerfile">
+                <![CDATA[
+
+                USER root
+
+                # update apt-get and install needed tools for the gitlab installation
+                RUN apt-get update -y
+                RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby golang
+
+                # remove old git because 2.7+ is needed
+                #RUN apt-get remove -y git-core
+                #RUN apt-get install -y libcurl4-openssl-dev libexpat1-dev gettext libz-dev libssl-dev build-essential
+                #RUN cd /tmp
+                #RUN curl -O --progress https://www.kernel.org/pub/software/scm/git/git-2.7.4.tar.gz
+                #RUN echo '7104c4f5d948a75b499a954524cb281fe30c6649d8abe20982936f75ec1f275b  git-2.7.4.tar.gz' | shasum -a256 -c - && tar -xzf git-2.7.4.tar.gz
+
+                # install git 2.7+
+                # RUN cd git-2.7.4/
+                #RUN ./git-2.7.4/configure
+                #RUN make prefix=/usr/local all
+                # check git version
+                #RUN git --version
+
+                # remove old ruby because 2.1 is the only supported one
+                #RUN apt-get remove -y ruby1.8
+                # install ruby 2.1
+                #RUN mkdir /tmp/ruby && cd /tmp/ruby
+                #RUN curl -O --progress https://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.8.tar.gz
+                #RUN echo 'c7e50159357afd87b13dc5eaf4ac486a70011149  ruby-2.1.8.tar.gz' | shasum -c - && tar xzf ruby-2.1.8.tar.gz
+                # RUN cd ruby-2.1.8
+                #RUN ./ruby-2.1.8/configure --disable-install-rdoc
+                #RUN make
+                #RUN sudo make install
+                #RUN gem install bundler --no-ri --no-doc
+
+                # install go1.5
+                #RUN curl -O --progress https://storage.googleapis.com/golang/go1.5.3.linux-amd64.tar.gz
+                #RUN echo '43afe0c5017e502630b1aea4d44b8a7f059bf60d7f29dfd58db454d4e4e0ae53  go1.5.3.linux-amd64.tar.gz' | shasum -a256 -c - && sudo tar -C /usr/local -xzf go1.5.3.linux-amd64.tar.gz
+                #RUN sudo ln -sf /usr/local/go/bin/{go,godoc,gofmt} /usr/local/bin/
+                #RUN rm go1.5.3.linux-amd64.tar.gz
+
+                # create a user for gitlab
+                RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+
+
+
+                ]]>
+            </field>
         </record>
         <!-- imag's volumes -->
         <record id="image_gitlab_exec_volume_var" model="clouder.image.volume">
@@ -149,7 +198,6 @@
             <field name="type_id" ref="apptype_gitlab"/>
             <field name="default_image_id" ref="image_gitlab_data"/>
             <field name="base" eval="True"/>
-            <field name="current_version">8.10.1</field>
         </record>
         <!-- links to templates -->
         <!-- bind to bind -->
@@ -195,12 +243,6 @@
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <!-- bind to piwik -->
-        <record id="app_gitlab_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_gitlab"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
-            <field name="base" eval="True"/>
-        </record>
         <!-- bind to redis -->
         <record id="app_gitlab_link_redis" model="clouder.application.link">
             <field name="application_id" ref="app_gitlab"/>
@@ -237,6 +279,16 @@
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
+        </record>
+        <!-- app "files" -->
+        <record id="app_gitlab_files" model="clouder.application">
+            <field name="name">Gitlab Files</field>
+            <field name="code">files</field>
+            <field name="type_id" ref="apptype_gitlab"/>
+            <field name="parent_id" ref="app_gitlab"/>
+            <field name="default_image_id" ref="image_gitlab_files"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
         </record>
         <!-- app "exec" -->
         <record id="app_gitlab_exec" model="clouder.application">
