@@ -6,10 +6,10 @@ production:
   encoding: unicode
   database: gitlabhq_production
   pool: 10
-  # username: git
-  # password:
-  # host: localhost
-  # port: 5432
+  username: DB_USER
+  password: DB_PASSWORD
+  host: DB_SERVER
+  #port: 5432
 
 #
 # Development specific
@@ -17,7 +17,7 @@ production:
 development:
   adapter: postgresql
   encoding: unicode
-  database: gitlabhq_development
+  database : gitlabhq_development
   pool: 5
   username: postgres
   password:
@@ -28,7 +28,7 @@ development:
 staging:
   adapter: postgresql
   encoding: unicode
-  database: gitlabhq_staging
+  database : gitlabhq_staging
   pool: 5
   username: postgres
   password:
@@ -39,7 +39,7 @@ staging:
 test: &test
   adapter: postgresql
   encoding: unicode
-  database: gitlabhq_test
+  database : gitlabhq_test
   pool: 5
   username: postgres
   password:

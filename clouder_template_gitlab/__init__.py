@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-from clouder_template_gitlab import template
+import template

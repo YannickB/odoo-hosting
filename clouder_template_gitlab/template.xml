@@ -4,7 +4,21 @@
         <!-- apptype -->
         <record id="apptype_gitlab" model="clouder.application.type">
             <field name="name">gitlab</field>
-            <field name="system_user">gitlab</field>
+            <field name="system_user">git</field>
+        </record>
+        <record id="apptype_gitlab_option_db_password" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_gitlab"/>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="apptype_gitlab_option_secret" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_gitlab"/>
+            <field name="name">secret</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
         </record>
 
         <!-- image "data" repository -->
@@ -16,13 +30,18 @@
             <field name="parent_id"/>
             <field name="dockerfile">
                 <![CDATA[
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git nginx logrotate
 
                 # create the odoo user
                 RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
                 RUN touch /home/git/.pgpass
 
+                ADD sources/default /etc/default/gitlab
+                RUN rm /etc/nginx/sites-enabled/default
+                ADD sources/logrotate /etc/logrotate.d/gitlab
+
                 RUN mkdir -p /opt/gitlab/data
-                RUN mkdir -p /opt/gitlab/etc
+                RUN mkdir -p /opt/gitlab/config
                 RUN mkdir -p /opt/gitlab/extra-addons
                 RUN mkdir -p /opt/gitlab/var/run
                 RUN mkdir -p /opt/gitlab/var/log
@@ -31,21 +50,22 @@
                 ADD sources/secrets.yml /opt/gitlab/config/secrets.yml
                 ADD sources/resque.yml /opt/gitlab/config/resque.yml
                 ADD sources/database.yml /opt/gitlab/config/database.yml
-                RUN chmod 0600 /opt/odoo/config/secrets.yml
+                RUN chmod 0600 /opt/gitlab/config/secrets.yml
                 ADD sources/unicorn.rb /opt/gitlab/config/unicorn.rb
-                ADD sources/rack_attack.rb /opt/gitlab/config/initializers/rack_attack.rb
-                ADD sources/resque.yml /opt/gitlab/config/resque.yml
+                ADD sources/rack_attack.rb /opt/gitlab/config/rack_attack.rb
 
                 RUN chown -R git:git /opt/gitlab
 
                 USER git
+
+		RUN mkdir /home/git/repositories
 
                 # Configure Git global settings for git user
                 # 'autocrlf' is needed for the web editor
                 RUN git config --global core.autocrlf input
 
                 # Disable 'git gc --auto' because GitLab already runs 'git gc' when needed
-                git config --global gc.auto 0
+                RUN git config --global gc.auto 0
 
                 #CMD tail -f /opt/gitlab/etc/gitlab.conf
 
@@ -54,9 +74,21 @@
 
         </record>
         <!-- image's volumes -->
+        <record id="image_gitlab_data_volume_home" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_data"/>
+            <field name="name">/home/git</field>
+        </record>
+        <record id="image_gitlab_data_volume_nginx" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_data"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_gitlab_data_volume_logrotate" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_data"/>
+            <field name="name">/etc/logrotate</field>
+        </record>
         <record id="image_gitlab_data_volume_data" model="clouder.image.volume">
             <field name="image_id" ref="image_gitlab_data"/>
-            <field name="name">/etc/gitlab</field>
+            <field name="name">/opt/gitlab</field>
         </record>
         <record id="image_gitlab_data_volume_opt" model="clouder.image.volume">
             <field name="image_id" ref="image_gitlab_data"/>
@@ -72,25 +104,58 @@
             <field name="dockerfile">
                 <![CDATA[
 
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git build-essential zlib1g-dev libyaml-dev libssl-dev libpq-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby ruby-dev golang
 
                 RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
 
                 RUN mkdir -p /opt/gitlab/files
-                RUN chown git:git /opt/git
-
-                USER git
+                RUN chown -R git:git /opt/gitlab
 
                 # Clone GitLab repository
-                RUN git clone https://gitlab.com/gitlab-org/gitlab-ce.git -b 8-11-stable gitlab
+                RUN cd /opt/gitlab/files
+                RUN git clone https://gitlab.com/gitlab-org/gitlab-ce.git /opt/gitlab/files -b 8-11-stable
+
+                RUN gem install bundler --no-ri --no-rdoc
+		RUN cd /opt/gitlab/files; bundle install --deployment --without development test mysql aws kerberos
+
+		RUN git clone https://gitlab.com/gitlab-org/gitlab-workhorse.git /opt/gitlab/gitlab-workhorse
+		RUN cd /opt/gitlab/gitlab-workhorse; git checkout v0.7.8
+		RUN cd /opt/gitlab/gitlab-workhorse; make
+
+		RUN ln -s /opt/gitlab/config/gitlab.yml /opt/gitlab/files/config/gitlab.yml
+                RUN ln -s /opt/gitlab/config/secrets.yml /opt/gitlab/files/config/secrets.yml
+                RUN ln -s /opt/gitlab/config/resque.yml /opt/gitlab/files/config/resque.yml
+                RUN ln -s /opt/gitlab/config/database.yml /opt/gitlab/files/config/database.yml
+                RUN ln -s /opt/gitlab/config/unicorn.rb /opt/gitlab/files/config/unicorn.rb
+                RUN ln -s /opt/gitlab/config/rack_attack.rb /opt/gitlab/files/config/initializers/rack_attack.rb
+
+		RUN chown -R git:git /opt/gitlab
+		USER git
 
                 ]]>
             </field>
         </record>
         <!-- image's volumes -->
+        <record id="image_gitlab_files_volume_home" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_files"/>
+            <field name="from_code">data</field>
+            <field name="name">/home/git</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_gitlab_files_volume_config" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_files"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/gitlab</field>
+            <field name="nosave" eval="True"/>
+        </record>
         <record id="image_gitlab_files_volume_files" model="clouder.image.volume">
             <field name="image_id" ref="image_gitlab_files"/>
             <field name="name">/opt/gitlab/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_gitlab_files_volume_workhorse" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_files"/>
+            <field name="name">/opt/gitlab/gitlab-workhorse</field>
             <field name="nosave" eval="True"/>
         </record>
         <!-- image "exec" repository -->
@@ -107,7 +172,9 @@
 
                 # update apt-get and install needed tools for the gitlab installation
                 RUN apt-get update -y
-                RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby golang
+                RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libpq-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby ruby-dev golang git supervisor postgresql-client nginx
+
+		ADD sources/default /etc/default/gitlab
 
                 # remove old git because 2.7+ is needed
                 #RUN apt-get remove -y git-core
@@ -135,6 +202,8 @@
                 #RUN sudo make install
                 #RUN gem install bundler --no-ri --no-doc
 
+                RUN gem install bundler --no-ri --no-rdoc
+
                 # install go1.5
                 #RUN curl -O --progress https://storage.googleapis.com/golang/go1.5.3.linux-amd64.tar.gz
                 #RUN echo '43afe0c5017e502630b1aea4d44b8a7f059bf60d7f29dfd58db454d4e4e0ae53  go1.5.3.linux-amd64.tar.gz' | shasum -a256 -c - && sudo tar -C /usr/local -xzf go1.5.3.linux-amd64.tar.gz
@@ -143,40 +212,39 @@
 
                 # create a user for gitlab
                 RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+		RUN adduser git sudo
 
+		RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
+		RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
+		RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+		RUN echo "[program:gitlab]" >> /etc/supervisor/conf.d/supervisord.conf
+		RUN echo "command=/opt/gitlab/files/lib/support/init.d/gitlab restart" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "command=/etc/init.d/nginx restart" >> /etc/supervisor/conf.d/supervisord.conf
 
+                CMD ["/usr/bin/supervisord"]
 
                 ]]>
             </field>
         </record>
         <!-- imag's volumes -->
-        <record id="image_gitlab_exec_volume_var" model="clouder.image.volume">
+        <record id="image_gitlab_exec_volume_home" model="clouder.image.volume">
             <field name="image_id" ref="image_gitlab_exec"/>
             <field name="from_code">data</field>
-            <field name="name">/opt/gitlab/var</field>
+            <field name="name">/home/git</field>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_gitlab_exec_volume_etc" model="clouder.image.volume">
             <field name="image_id" ref="image_gitlab_exec"/>
             <field name="from_code">data</field>
-            <field name="name">/opt/gitlab/etc</field>
+            <field name="name">/etc</field>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_gitlab_exec_volume_extra_addons" model="clouder.image.volume">
+        <record id="image_gitlab_exec_volume_opt" model="clouder.image.volume">
             <field name="image_id" ref="image_gitlab_exec"/>
             <field name="from_code">data</field>
-            <field name="name">/opt/gitlab/extra-addons</field>
+            <field name="name">/opt/gitlab</field>
             <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_gitlab_exec_volume_data" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/gitlab/data</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_gitlab_exec_volume_home" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_exec"/>
-            <field name="name">/home/gitlab</field>
         </record>
         <record id="image_gitlab_exec_volume_files" model="clouder.image.volume">
             <field name="image_id" ref="image_gitlab_exec"/>
