@@ -62,7 +62,7 @@ class ClouderImageVersion(models.Model):
                 'echo "' + dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
             server.execute(
-                ['docker', 'build', '--pull', '--no-cache', '-t', self.fullname, tmp_dir])
+                ['docker', 'build', '--pull', '-t', self.fullname, tmp_dir])
             server.execute(['docker', 'tag', self.fullname,
                             self.fullpath])
             server.execute(

@@ -61,11 +61,12 @@ class ClouderContainer(models.Model):
                     secrets_file])
             if self.application_id.code == 'exec':
                 self.execute(['bundle', 'exec', 'rake', 'gitlab:shell:install', 'REDIS_URL=unix:/var/run/redis/redis.sock', 'RAILS_ENV=production'], path='/opt/gitlab/files')
+                self.execute(['chown', '-R', 'git:git', '/home/git/'])
                 self.execute(['bundle', 'exec', 'rake', 'assets:precompile', 'RAILS_ENV=production'], path='/opt/gitlab/files')
 
 class ClouderBase(models.Model):
     """
-    Add methods to manage the odoo base specificities.
+    Add methods to manage the gitlab base specificities.
     """
 
     _inherit = 'clouder.base'
