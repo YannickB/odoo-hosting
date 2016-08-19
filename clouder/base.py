@@ -710,7 +710,7 @@ class ClouderBase(models.Model):
         """
         Deploy the base.
         """
-        self.purge()
+        super(ClouderBase, self).deploy()
 
         if 'base_restoration' in self.env.context:
             return
@@ -765,6 +765,8 @@ class ClouderBase(models.Model):
         """
         self.purge_database()
         self.purge_post()
+        super(ClouderBase, self).purge()
+        
 
     @api.multi
     def update_base(self):
