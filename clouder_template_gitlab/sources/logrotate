@@ -19,7 +19,7 @@
     copytruncate
 }
 
-/home/git/gitlab-shell/gitlab-shell.log {
+/opt/gitlab/gitlab-shell/gitlab-shell.log {
     daily
     missingok
     rotate 90

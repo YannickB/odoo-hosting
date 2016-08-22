@@ -227,6 +227,11 @@
             <field name="base" eval="True"/>
             <field name="current_version">8.0</field>
         </record>
+        <record id="app_odoo_link_gitlab" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo"/>
+            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
+            <field name="container" eval="True"/>
+        </record>
         <record id="app_odoo_link_bind" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
             <field name="name" ref="clouder_template_bind.app_bind"/>
@@ -361,6 +366,11 @@
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="base" eval="True"/>
             <field name="current_version">9.0</field>
+        </record>
+        <record id="app_odoo9_link_gitlab" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo9"/>
+            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
+            <field name="container" eval="True"/>
         </record>
         <record id="app_odoo9_link_bind" model="clouder.application.link">
             <field name="application_id" ref="app_odoo9"/>
@@ -553,6 +563,11 @@
             <field name="base" eval="True"/>
             <field name="current_version">8.0</field>
         </record>
+        <record id="app_odoo_clouder_link_gitlab" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo_clouder"/>
+            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
+            <field name="container" eval="True"/>
+        </record>
         <record id="app_odoo_clouder_link_bind" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder"/>
             <field name="name" ref="clouder_template_bind.app_bind"/>
@@ -693,6 +708,11 @@
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="base" eval="True"/>
             <field name="current_version">9.0</field>
+        </record>
+        <record id="app_odoo9_clouder_link_gitlab" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo9_clouder"/>
+            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
+            <field name="container" eval="True"/>
         </record>
         <record id="app_odoo9_clouder_link_bind" model="clouder.application.link">
             <field name="application_id" ref="app_odoo9_clouder"/>

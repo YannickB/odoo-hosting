@@ -35,6 +35,7 @@ import copy_reg
 import errno
 import random
 import re
+import requests
 import time
 import select
 
@@ -735,6 +736,19 @@ class ClouderModel(models.AbstractModel):
         f = open(localfile, 'a')
         f.write(value)
         f.close()
+
+    def request(self, url, method='get', headers={}, data={}, params={}):
+        self.log('request ' + method + ' ' + url)
+        if headers:
+            self.log('headers ' + str(headers))
+        if data:
+            self.log('data ' + str(data))
+        if params:
+            self.log('params ' + str(params))
+        result = requests.request(method, url, headers=headers, data=data, params=params, verify=False)
+        self.log('status ' + str(result.status_code) + ' ' + result.reason)
+        self.log('result ' + str(result.json()))
+        return result
 
 
 def generate_random_password(size):

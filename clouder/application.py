@@ -108,9 +108,9 @@ class ClouderApplicationTypeOption(models.Model):
          'Options name must be unique per apptype!'),
     ]
 
-    @property
-    def get_default(self):
-        res = self.default
+    @api.multi
+    def generate_default(self):
+        res = ''
         if self.name == 'db_password':
             res = model.generate_random_password(20)
         if self.name == 'secret':
@@ -120,6 +120,13 @@ class ClouderApplicationTypeOption(models.Model):
         if self.name == 'ssh_publickey':
             res = self.env['clouder.server']._default_public_key()
         return res
+
+    @property
+    def get_default(self):
+        if self.default:
+            return self.default
+        else:
+            return self.generate_default()
 
 
 class ClouderApplication(models.Model):

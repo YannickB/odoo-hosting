@@ -20,6 +20,12 @@
             <field name="app_code">data</field>
             <field name="auto" eval="True"/>
         </record>
+        <record id="apptype_gitlab_option_token" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_gitlab"/>
+            <field name="name">token</field>
+            <field name="type">base</field>
+            <field name="auto" eval="True"/>
+        </record>
 
         <!-- image "data" repository -->
         <record id="image_gitlab_data" model="clouder.image">
@@ -40,6 +46,7 @@
                 ADD sources/logrotate /etc/logrotate.d/gitlab
 
                 RUN mkdir -p /opt/gitlab/data/uploads
+                RUN chmod -R 700 /opt/gitlab/data/uploads
                 RUN mkdir -p /opt/gitlab/data/builds
                 RUN mkdir -p /opt/gitlab/data/artifacts
                 RUN mkdir -p /opt/gitlab/config
@@ -59,6 +66,8 @@
                 USER git
 
 		RUN mkdir /home/git/repositories
+		RUN chmod -R 770 /home/git/repositories
+		RUN chmod -R ug-s /home/git/repositories/
 
                 # Configure Git global settings for git user
                 # 'autocrlf' is needed for the web editor
@@ -181,6 +190,7 @@
                 RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libpq-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby ruby-dev golang git supervisor postgresql-client nginx
 
 		ADD sources/default /etc/default/gitlab
+		RUN gem install bundler --no-ri --no-rdoc
 
                 # create a user for gitlab
                 RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
@@ -193,6 +203,9 @@
 		RUN echo "command=/opt/gitlab/files/lib/support/init.d/gitlab restart" >> /etc/supervisor/conf.d/supervisord.conf
                 RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
                 RUN echo "command=/etc/init.d/nginx restart" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "command=/etc/init.d/ssh start" >> /etc/supervisor/conf.d/supervisord.conf
+
 
                 CMD ["/usr/bin/supervisord"]
 
@@ -225,10 +238,22 @@
             <field name="nosave" eval="True"/>
         </record>
         <!-- imag's ports to expose -->
+        <record id="image_gitlab_exec_port_ssh" model="clouder.image.port">
+            <field name="image_id" ref="image_gitlab_exec"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
         <record id="image_gitlab_exec_port_http" model="clouder.image.port">
             <field name="image_id" ref="image_gitlab_exec"/>
             <field name="name">http</field>
             <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_gitlab_exec_port_https" model="clouder.image.port">
+            <field name="image_id" ref="image_gitlab_exec"/>
+            <field name="name">https</field>
+            <field name="localport">443</field>
             <field name="expose">internet</field>
         </record>
 
