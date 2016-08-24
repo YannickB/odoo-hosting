@@ -47,6 +47,14 @@
             <field name="default_image_id" ref="image_proxy"/>
         </record>
 
+        <record id="app_registry_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="clouder.app_registry"/>
+            <field name="name" ref="app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+
 
     </data>
 </openerp>

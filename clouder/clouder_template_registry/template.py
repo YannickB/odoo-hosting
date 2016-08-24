@@ -35,7 +35,7 @@ class ClouderImageVersion(models.Model):
         """
         Block the default deploy function for the registry.
         """
-        if self.image_id.name != 'img_registry':
+        if self.image_id.name not in ['img_registry_data','img_registry_exec']:
             return super(ClouderImageVersion, self).deploy()
         else:
             return True
@@ -50,17 +50,24 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def hook_deploy_source(self):
-        if self.image_id.name == 'img_registry':
+        if self.image_id.name in ['img_registry_data','img_registry_exec']:
             return self.image_version_id.fullname
         else:
             return super(ClouderContainer, self).hook_deploy_source()
+
+    @api.multi
+    def hook_deploy_special_args(self, cmd):
+        cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)
+        if self.image_id.name == 'img_registry_exec':
+            cmd.extend([' -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt', '-e REGISTRY_HTTP_TLS_KEY=/certs/domain.key'])
+        return cmd
 
     @api.multi
     def deploy(self):
         """
         Build the registry image directly when we deploy the container.
         """
-        if self.image_id.name == 'img_registry':
+        if self.image_id.name in ['img_registry_data','img_registry_exec']:
             # ssh = self.connect(self.server_id.name)
             tmp_dir = '/tmp/' + self.image_id.name + '_' + \
                 self.image_version_id.fullname
@@ -68,7 +75,7 @@ class ClouderContainer(models.Model):
             server.execute(['rm', '-rf', tmp_dir])
             server.execute(['mkdir', '-p', tmp_dir])
             server.execute([
-                'echo "' + self.image_id.dockerfile.replace('"', '\\"') +
+                'echo "' + self.image_version_id.computed_dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
             server.execute(['docker', 'rmi',
                             self.image_version_id.fullname])
@@ -82,10 +89,10 @@ class ClouderContainer(models.Model):
         """
         Regenerate the ssl certs after the registry deploy.
         """
-        if self.application_id.type_id.name == 'registry':
+        if self.application_id.type_id.name == 'registry' and self.application_id.code == 'data':
 
-            certfile = '/etc/ssl/certs/docker-registry.crt'
-            keyfile = '/etc/ssl/private/docker-registry.key'
+            certfile = '/certs/domain.crt'
+            keyfile = '/certs/domain.key'
 
             self.execute(['rm', certfile])
             self.execute(['rm', keyfile])
@@ -97,3 +104,29 @@ class ClouderContainer(models.Model):
                 self.server_id.name + '"'])
 
         return super(ClouderContainer, self).deploy_post()
+
+
+class ClouderBaseLink(models.Model):
+    """
+    Add methods to manage the registry specificities.
+    """
+
+    _inherit = 'clouder.base.link'
+
+    @api.multi
+    def deploy_link(self):
+        """
+        Configure postfix to redirect incoming mail to odoo.
+        """
+        super(ClouderBaseLink, self).deploy_link()
+
+        if self.name.name.code == 'proxy' \
+                and self.base_id.application_id.type_id.name == 'registry':
+            registry = self.base_id.container_id.childs['exec']
+            if self.base_id.cert_cert and self.base_id.cert_key:
+                registry.execute([
+                    'echo', '"' + self.base_id.cert_cert + '"', '>', '/certs/domain.crt'
+                ], executor='sh')
+                registry.execute([
+                    'echo', '"' + self.base_id.cert_key + '"', '>', '/certs/domain.key'], executor='sh')
+                registry.start()

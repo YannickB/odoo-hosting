@@ -487,7 +487,7 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def execute(self, cmd, stdin_arg=False,
-                path=False, ssh=False, username=False):
+                path=False, ssh=False, username=False, executor='bash'):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -515,7 +515,7 @@ class ClouderModel(models.AbstractModel):
                 cmd_temp.append(c)
             cmd = cmd_temp
             cmd.append('"')
-            cmd.insert(0, self.name + ' bash -c ')
+            cmd.insert(0, self.name + ' ' + executor + ' -c ')
             if username:
                 cmd.insert(0, '-u ' + username)
             cmd.insert(0, 'docker exec')

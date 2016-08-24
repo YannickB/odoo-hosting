@@ -710,7 +710,7 @@
                     <group col="4">
                         <field name="parent_version_id" domain="[('image_id','=',parent_id)]" attrs="{'invisible': [('parent_id','=',False)],'required': [('parent_id','!=',False)]}"/>
                         <field name="parent_from" attrs="{'invisible': [('parent_id','!=',False)],'required': [('parent_id','=',False)]}"/>
-                        <field name="registry_id" attrs="{'invisible': [('name','=','img_registry')],'required': [('name','!=','img_registry')]}" domain="[('application_id.type_id.role_ids.name','=','registry')]"/>
+                        <field name="registry_id" attrs="{'invisible': [('name','in',['img_registry_data','img_registry_exec'])],'required': [('name','not in',['img_registry_data','img_registry_exec'])]}" domain="[('application_id.type_id.role_ids.name','=','registry'),('application_id.child_ids','!=',False)]"/>
                     </group>
                     <button name="build" string="Build" type="object"/>
                     <field name="version_ids" colspan="4"/>

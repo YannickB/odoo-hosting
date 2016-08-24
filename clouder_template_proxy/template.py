@@ -23,6 +23,7 @@
 from openerp import modules
 from openerp import models, api
 from datetime import datetime, timedelta
+import os
 
 
 class ClouderBase(models.Model):
@@ -134,11 +135,20 @@ class ClouderBaseLink(models.Model):
             else:
                 configfile = 'proxy-sslonly.config'
             target = self.target
-            target.send(
-                modules.get_module_path(
-                    'clouder_template_' +
-                    self.base_id.application_id.type_id.name
-                ) + '/res/' + configfile, self.base_id.nginx_configfile)
+            module_path = modules.get_module_path('clouder_template_' + self.base_id.application_id.type_id.name)
+            flag = True
+            if module_path:
+                configtemplate = module_path + '/res/' + configfile
+                if os.path.isfile(configtemplate):
+                    target.send(
+                        configtemplate, self.base_id.nginx_configfile)
+                    flag = False
+            if flag:
+                target.send(
+                    modules.get_module_path(
+                        'clouder_template_proxy'
+                    ) + '/res/' + configfile, self.base_id.nginx_configfile)
+
             if self.base_id.is_root:
                 target.send(
                     modules.get_module_path(

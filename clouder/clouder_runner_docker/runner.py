@@ -65,9 +65,9 @@ class ClouderImageVersion(models.Model):
             server.execute(
                 ['docker', 'build', '--pull', '-t', self.fullname, tmp_dir])
             server.execute(['docker', 'tag', self.fullname,
-                            self.fullpath])
+                            self.fullpath_localhost])
             server.execute(
-                ['docker', 'push', self.fullpath])
+                ['docker', 'push', self.fullpath_localhost])
             # TODO
             # server.execute(['docker', 'rmi', self.fullname])
             # server.execute(['docker', 'rmi', self.fullpath_localhost])
@@ -109,18 +109,18 @@ class ClouderContainer(models.Model):
             return res
         else:
             if self.server_id == self.image_version_id.registry_id.server_id:
-                return self.image_version_id.fullpath
+                return self.image_version_id.fullpath_localhost
             else:
-                folder = '/etc/docker/certs.d/' +\
-                         self.image_version_id.registry_address
-                certfile = folder + '/ca.crt'
-                tmp_file = '/tmp/' + self.fullname
-                self.server_id.execute(['rm', certfile])
-                self.image_version_id.registry_id.get(
-                    '/etc/ssl/certs/docker-registry.crt', tmp_file)
-                self.server_id.execute(['mkdir', '-p', folder])
-                self.server_id.send(tmp_file, certfile)
-                self.server_id.execute_local(['rm', tmp_file])
+                # folder = '/etc/docker/certs.d/' +\
+                #          self.image_version_id.registry_address
+                # certfile = folder + '/ca.crt'
+                # tmp_file = '/tmp/' + self.fullname
+                # self.server_id.execute(['rm', certfile])
+                # self.image_version_id.registry_id.get(
+                #     '/etc/ssl/certs/docker-registry.crt', tmp_file)
+                # self.server_id.execute(['mkdir', '-p', folder])
+                # self.server_id.send(tmp_file, certfile)
+                # self.server_id.execute_local(['rm', tmp_file])
                 return self.image_version_id.fullpath
 
     @api.multi
@@ -141,9 +141,12 @@ class ClouderContainer(models.Model):
 
             cmd = ['docker', 'run', '-d', '-t', '--restart=always']
             for port in ports:
+                ip = ''
+                if self.server_id.public_ip and self.application_id.type_id.name != 'registry':
+                    ip = self.server_id.ip + ':'
                 cmd.extend(
                     ['-p', 
-                     (self.server_id.public_ip and self.server_id.ip + ':' or '') \
+                     ip
                      + str(port.hostport) + ':' + port.localport \
                      + (port.udp and '/udp' or '')])
             volumes_from = {}

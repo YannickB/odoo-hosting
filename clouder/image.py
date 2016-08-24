@@ -81,7 +81,7 @@ class ClouderImage(models.Model):
         Method to generate a new image version.
         """
 
-        if not self.registry_id and self.name != 'img_registry':
+        if not self.registry_id and self.name not in ['img_registry_data','img_registry_exec']:
             raise except_orm(
                 _('Date error!'),
                 _("You need to specify the registry "
@@ -176,7 +176,7 @@ class ClouderImageVersion(models.Model):
         the image version.
         """
         return self.registry_id and self.registry_id.server_id.ip + ':' + \
-            self.registry_id.ports['registry-ssl']['hostport']
+            self.registry_id.ports['http']['hostport']
 
     @property
     def fullpath(self):
@@ -193,8 +193,40 @@ class ClouderImageVersion(models.Model):
         registry is on the same server.
         """
         return self.registry_id and 'localhost:' + \
-            self.registry_id.ports['registry']['hostport'] +\
+            self.registry_id.ports['http']['hostport'] +\
             '/' + self.fullname
+
+    @property
+    def computed_dockerfile(self):
+        dockerfile = 'FROM '
+        if self.image_id.parent_id and self.parent_id:
+            if self.registry_id.server_id == \
+                    self.parent_id.registry_id.server_id:
+                dockerfile += self.parent_id.fullpath_localhost
+            else:
+                dockerfile += self.parent_id.fullpath
+        elif self.image_id.parent_from:
+            dockerfile += self.image_id.parent_from
+        else:
+            raise except_orm(_('Data error!'),
+                             _("You need to specify the image to inherit!"))
+
+        dockerfile += '\nMAINTAINER ' + self.email_sysadmin + '\n'
+
+        dockerfile += self.image_id.dockerfile or ''
+        volumes = ''
+        for volume in self.image_id.volume_ids:
+            volumes += volume.name + ' '
+        if volumes:
+            dockerfile += '\nVOLUME ' + volumes
+
+        ports = ''
+        for port in self.image_id.port_ids:
+            ports += port.localport + ' '
+        if ports:
+            dockerfile += '\nEXPOSE ' + ports
+
+        return dockerfile
 
     _order = 'create_date desc'
 
@@ -251,35 +283,7 @@ class ClouderImageVersion(models.Model):
         Build a new image and store it to the registry.
         """
 
-        dockerfile = 'FROM '
-        if self.image_id.parent_id and self.parent_id:
-            if self.registry_id.server_id == \
-                    self.parent_id.registry_id.server_id:
-                dockerfile += self.parent_id.fullpath_localhost
-            else:
-                dockerfile += self.parent_id.fullpath
-        elif self.image_id.parent_from:
-            dockerfile += self.image_id.parent_from
-        else:
-            raise except_orm(_('Data error!'),
-                             _("You need to specify the image to inherit!"))
-
-        dockerfile += '\nMAINTAINER ' + self.email_sysadmin + '\n'
-
-        dockerfile += self.image_id.dockerfile or ''
-        volumes = ''
-        for volume in self.image_id.volume_ids:
-            volumes += volume.name + ' '
-        if volumes:
-            dockerfile += '\nVOLUME ' + volumes
-
-        ports = ''
-        for port in self.image_id.port_ids:
-            ports += port.localport + ' '
-        if ports:
-            dockerfile += '\nEXPOSE ' + ports
-
-        self.hook_build(dockerfile)
+        self.hook_build(self.computed_dockerfile)
 
         return
 
