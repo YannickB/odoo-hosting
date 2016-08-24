@@ -84,6 +84,12 @@ class ClouderContainer(models.Model):
                 self.execute(['bundle', 'exec', 'rake', 'assets:precompile', 'RAILS_ENV=production'], path='/opt/gitlab/files', username='git')
                 self.execute(['cp', '/opt/gitlab/files/lib/support/init.d/gitlab', '/etc/init.d/gitlab'])
 
+        if self.application_id.type_id.name == 'gitlabci':
+            if self.application_id.code == 'exec':
+                self.execute(['sed', '-i', '"s/concurrent = [0-9]*/concurrent = ' + self.options['concurrent']['value'] + '/g"',
+                             '/etc/gitlab-runner/config.toml'])
+
+
 class ClouderContainerLink(models.Model):
     """
     Add methods to manage the gitlab specificities.
@@ -125,7 +131,13 @@ class ClouderContainerLink(models.Model):
                     group = self.request('https://' + base.fulldomain + '/api/v3/groups', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'name': self.container_id.environment_id.name, 'path': self.container_id.environment_id.prefix})
                     group_id = group.json()['id']
                 if self.request('https://' + base.fulldomain + '/api/v3/projects/' + self.container_id.environment_id.prefix + '%2F' + self.container_id.name, headers={'PRIVATE-TOKEN' :base.options['token']['value']}, params={'name': self.container_id.fullname}).status_code != 200:
-                    self.request('https://' + base.fulldomain + '/api/v3/projects', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'name': self.container_id.name, 'namespace_id': group_id})
+                    project = self.request('https://' + base.fulldomain + '/api/v3/projects', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'name': self.container_id.name, 'namespace_id': group_id}).json()
+                    with open(modules.get_module_path('clouder_template_' + self.container_id.application_id.type_id.name) +'/res/gitignore', 'rb') as file:
+                        self.request('https://' + base.fulldomain + '/api/v3/projects/' + str(project['id']) + '/repository/files', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'file_path': '.gitignore', 'branch_name': 'master', 'commit_message': 'Add .gitignore', 'content': file.read()})
+                    with open(modules.get_module_path('clouder_template_' + self.container_id.application_id.type_id.name) +'/res/Dockerfile', 'rb') as file:
+                        self.request('https://' + base.fulldomain + '/api/v3/projects/' + str(project['id']) + '/repository/files', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'file_path': 'Dockerfile', 'branch_name': 'master', 'commit_message': 'Add Dockerfile', 'content': file.read()})
+                    with open(modules.get_module_path('clouder_template_' + self.container_id.application_id.type_id.name) +'/res/gitlab-ci.yml', 'rb') as file:
+                        self.request('https://' + base.fulldomain + '/api/v3/projects/' + str(project['id']) + '/repository/files', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'file_path': '.gitlab-ci.yml', 'branch_name': 'master', 'commit_message': 'Add .gitlab-ci.yml', 'content': file.read()})
 
 
     @api.multi

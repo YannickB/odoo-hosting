@@ -6,6 +6,14 @@
             <field name="name">gitlabci</field>
             <field name="system_user">git</field>
         </record>
+        <record id="apptype_gitlab_option_concurrent" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_gitlabci"/>
+            <field name="name">concurrent</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="default">2</field>
+        </record>
 
         <!-- image "data" repository -->
         <record id="image_gitlabci_data" model="clouder.image">

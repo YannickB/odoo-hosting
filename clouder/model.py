@@ -737,7 +737,7 @@ class ClouderModel(models.AbstractModel):
         f.write(value)
         f.close()
 
-    def request(self, url, method='get', headers={}, data={}, params={}):
+    def request(self, url, method='get', headers={}, data={}, params={}, files={}):
         self.log('request ' + method + ' ' + url)
         if headers:
             self.log('headers ' + str(headers))
@@ -745,7 +745,9 @@ class ClouderModel(models.AbstractModel):
             self.log('data ' + str(data))
         if params:
             self.log('params ' + str(params))
-        result = requests.request(method, url, headers=headers, data=data, params=params, verify=False)
+        if files:
+            self.log('files ' + str(files))
+        result = requests.request(method, url, headers=headers, data=data, params=params, files=files, verify=False)
         self.log('status ' + str(result.status_code) + ' ' + result.reason)
         self.log('result ' + str(result.json()))
         return result
