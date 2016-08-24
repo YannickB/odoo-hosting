@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <!-- apptype -->
+        <record id="apptype_gitlabci" model="clouder.application.type">
+            <field name="name">gitlabci</field>
+            <field name="system_user">git</field>
+        </record>
+        <record id="apptype_gitlab_option_concurrent" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_gitlabci"/>
+            <field name="name">concurrent</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+            <field name="default">2</field>
+        </record>
+
+        <!-- image "data" repository -->
+        <record id="image_gitlabci_data" model="clouder.image">
+            <field name="name">img_gitlabci_data</field>
+            <field name="type_id" ref="apptype_gitlabci"/>
+            <field name="current_version">1</field>
+            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_id"/>
+            <field name="dockerfile">
+                <![CDATA[
+
+		RUN mkdir -p /etc/gitlab-runner
+
+                ]]>
+            </field>
+        </record>
+        <!-- image's volumes -->
+        <record id="image_gitlabci_data_volume_etc" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlabci_data"/>
+            <field name="name">/etc/gitlab-runner</field>
+        </record>
+        <!-- image "exec" repository -->
+        <record id="image_gitlabci_exec" model="clouder.image">
+            <field name="name">img_gitlabci_exec</field>
+            <field name="type_id" ref="apptype_gitlabci"/>
+            <field name="current_version">1</field>
+            <field name="parent_from">gitlab/gitlab-runner:latest</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+        <!-- image's volumes -->
+        <record id="image_gitlabci_exec_volume_etc" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlabci_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/etc/gitlab-runner</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_gitlabci_exec_volume_docker" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlabci_exec"/>
+            <field name="name">/var/run/docker.sock</field>
+            <field name="hostpath">/var/run/docker.sock</field>
+            <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
+        </record>
+
+
+        <!-- app -->
+        <record id="app_gitlabci" model="clouder.application">
+            <field name="name">Gitlab CI</field>
+            <field name="code">gitlabci</field>
+            <field name="type_id" ref="apptype_gitlabci"/>
+            <field name="default_image_id" ref="image_gitlabci_data"/>
+        </record>
+        <!-- links to templates -->
+        <record id="app_gitlabci_link_gitlab" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlabci"/>
+            <field name="name" ref="app_gitlab"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
+        <!-- bind to shinken -->
+<!--        <record id="app_gitlabci_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlabci"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>-->
+        <!-- app "data" -->
+        <record id="app_gitlabci_data" model="clouder.application">
+            <field name="name">Gitlab CI Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="apptype_gitlabci"/>
+            <field name="parent_id" ref="app_gitlabci"/>
+            <field name="default_image_id" ref="image_gitlabci_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
+        </record>
+        <!-- links to templates -->
+        <!-- bind to shinken -->
+<!--        <record id="app_gitlabci_data_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlabci_data"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>-->
+        <!-- app "exec" -->
+        <record id="app_gitlabci_exec" model="clouder.application">
+            <field name="name">Gitlab CI Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="apptype_gitlabci"/>
+            <field name="parent_id" ref="app_gitlabci"/>
+            <field name="default_image_id" ref="image_gitlabci_exec"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+        </record>
+
+    </data>
+</openerp>
+

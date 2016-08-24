@@ -40,7 +40,7 @@
 Clouder Template GitLab
 """,
     'demo': [],
-    'data': ['template.xml'],
+    'data': ['template_gitlab.xml','template_gitlabci.xml'],
     'installable': True,
     'application': True,
 }

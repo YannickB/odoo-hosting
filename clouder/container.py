@@ -316,7 +316,7 @@ class ClouderContainer(models.Model):
     image_id = fields.Many2one('clouder.image', 'Image', required=True)
     server_id = fields.Many2one('clouder.server', 'Server', required=True)
     image_version_id = fields.Many2one('clouder.image.version',
-                                       'Image version', required=True)
+                                       'Image version', required=False)
     time_between_save = fields.Integer('Minutes between each save')
     save_expiration = fields.Integer('Days before save expiration')
     date_next_save = fields.Datetime('Next save planned')
@@ -459,6 +459,17 @@ class ClouderContainer(models.Model):
         return options
 
     @property
+    def links(self):
+        """
+        Property returning a dictionary containing the value of all links
+        for this container.
+        """
+        links = {}
+        for link in self.link_ids:
+            links[link.name.name.code] = link
+        return links
+
+    @property
     def childs(self):
         """
         Property returning a dictionary containing childs.
@@ -516,7 +527,7 @@ class ClouderContainer(models.Model):
         Check that a the image of the image version is the same than the image
         of the container.
         """
-        if self.image_id.id != self.image_version_id.image_id.id:
+        if self.image_version_id and self.image_id.id != self.image_version_id.image_id.id:
             raise except_orm(
                 _('Data error!'),
                 _("The image of image version must be "
@@ -779,14 +790,11 @@ class ClouderContainer(models.Model):
         if 'image_id' in vals and vals['image_id']:
             image = self.env['clouder.image'].browse(vals['image_id'])
 
-            if 'image_version_id' not in vals or not vals['image_version_id']:
-                if not image.version_ids:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("You need to build a version for the image " +
-                          image.name))
-                else:
-                    vals['image_version_id'] = image.version_ids[0].id
+            if 'application_id' in vals and vals['application_id']:
+                application = self.env['clouder.application'].browse(vals['application_id'])
+                if 'image_version_id' not in vals or not vals['image_version_id']:
+                    if application.next_image_version_id:
+                        vals['image_version_id'] = application.next_image_version_id.id
 
             ports = []
             nextport = server.start_port

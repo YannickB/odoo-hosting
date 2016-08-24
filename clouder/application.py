@@ -108,9 +108,9 @@ class ClouderApplicationTypeOption(models.Model):
          'Options name must be unique per apptype!'),
     ]
 
-    @property
-    def get_default(self):
-        res = self.default
+    @api.multi
+    def generate_default(self):
+        res = ''
         if self.name == 'db_password':
             res = model.generate_random_password(20)
         if self.name == 'secret':
@@ -120,6 +120,13 @@ class ClouderApplicationTypeOption(models.Model):
         if self.name == 'ssh_publickey':
             res = self.env['clouder.server']._default_public_key()
         return res
+
+    @property
+    def get_default(self):
+        if self.default:
+            return self.default
+        else:
+            return self.generate_default()
 
 
 class ClouderApplication(models.Model):
@@ -137,6 +144,7 @@ class ClouderApplication(models.Model):
     next_server_id = fields.Many2one('clouder.server', 'Next server')
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=True)
+    next_image_version_id = fields.Many2one('clouder.image.version', 'Next Image Version')
     base = fields.Boolean('Can have base?')
     next_container_id = fields.Many2one('clouder.container', 'Next container')
     admin_name = fields.Char('Admin name')

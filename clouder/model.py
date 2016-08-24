@@ -35,6 +35,7 @@ import copy_reg
 import errno
 import random
 import re
+import requests
 import time
 import select
 
@@ -486,7 +487,7 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def execute(self, cmd, stdin_arg=False,
-                path=False, ssh=False, username=False):
+                path=False, ssh=False, username=False, executor='bash'):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -514,7 +515,7 @@ class ClouderModel(models.AbstractModel):
                 cmd_temp.append(c)
             cmd = cmd_temp
             cmd.append('"')
-            cmd.insert(0, self.name + ' bash -c ')
+            cmd.insert(0, self.name + ' ' + executor + ' -c ')
             if username:
                 cmd.insert(0, '-u ' + username)
             cmd.insert(0, 'docker exec')
@@ -735,6 +736,21 @@ class ClouderModel(models.AbstractModel):
         f = open(localfile, 'a')
         f.write(value)
         f.close()
+
+    def request(self, url, method='get', headers={}, data={}, params={}, files={}):
+        self.log('request ' + method + ' ' + url)
+        if headers:
+            self.log('headers ' + str(headers))
+        if data:
+            self.log('data ' + str(data))
+        if params:
+            self.log('params ' + str(params))
+        if files:
+            self.log('files ' + str(files))
+        result = requests.request(method, url, headers=headers, data=data, params=params, files=files, verify=False)
+        self.log('status ' + str(result.status_code) + ' ' + result.reason)
+        self.log('result ' + str(result.json()))
+        return result
 
 
 def generate_random_password(size):

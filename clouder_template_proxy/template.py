@@ -134,11 +134,20 @@ class ClouderBaseLink(models.Model):
             else:
                 configfile = 'proxy-sslonly.config'
             target = self.target
-            target.send(
-                modules.get_module_path(
-                    'clouder_template_' +
-                    self.base_id.application_id.type_id.name
-                ) + '/res/' + configfile, self.base_id.nginx_configfile)
+            module_path = modules.get_module_path('clouder_template_' + self.base_id.application_id.type_id.name)
+            flag = True
+            if module_path:
+                configtemplate = module_path + '/res/' + configfile
+                if self.local_dir_exist(configtemplate):
+                    target.send(
+                        configtemplate, self.base_id.nginx_configfile)
+                    flag = False
+            if flag:
+                target.send(
+                    modules.get_module_path(
+                        'clouder_template_proxy'
+                    ) + '/res/' + configfile, self.base_id.nginx_configfile)
+
             if self.base_id.is_root:
                 target.send(
                     modules.get_module_path(
@@ -157,10 +166,20 @@ class ClouderBaseLink(models.Model):
                 self.base_id.container_id.server_id.ip + '/g"',
                 self.base_id.nginx_configfile])
             if 'http' in self.base_id.container_id.ports:
-                target.execute([
-                    'sed', '-i', '"s/PORT/' +
-                    self.base_id.container_id.ports['http']['hostport'] +
-                    '/g"', self.base_id.nginx_configfile])
+                protocol = 'http'
+                port = self.base_id.container_id.ports['http']['hostport']
+            if 'https' in self.base_id.container_id.ports:
+                protocol = 'https'
+                port = self.base_id.container_id.ports['https']['hostport']
+            target.execute([
+                'sed', '-i', '"s/PORT/' +
+                port +
+                '/g"', self.base_id.nginx_configfile])
+            target.execute([
+                'sed', '-i', '"s/PROTOCOL/' +
+                protocol +
+                '/g"', self.base_id.nginx_configfile])
+
             self.nginx_config_update(target)
             # self.deploy_prepare_apache(cr, uid, vals, context)
             cert_file = '/etc/ssl/certs/' + self.base_id.fulldomain + '.crt'

@@ -42,5 +42,13 @@
             <field name="default_image_id" ref="image_bind"/>
         </record>
 
+        <record id="app_registry_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="clouder.app_registry"/>
+            <field name="name" ref="app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+
     </data>
 </openerp>

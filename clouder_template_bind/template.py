@@ -139,6 +139,12 @@ class ClouderBaseLink(models.Model):
                 self.deploy_bind_config('@')
             self.deploy_bind_config(self.base_id.name)
 
+            proxy_link = self.search([
+                ('base_id', '=', self.base_id.id),
+                ('name.name.code', '=', 'proxy')])
+            if proxy_link and proxy_link.target and not self.base_id.cert_key and not self.base_id.cert_cert:
+                self.base_id.generate_cert_exec()
+
     @api.multi
     def purge_link(self):
         """
