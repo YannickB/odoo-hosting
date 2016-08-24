@@ -97,6 +97,45 @@ class ClouderContainerLink(models.Model):
 
     _inherit = 'clouder.container.link'
 
+    @property
+    def gitlab_url(self):
+        return 'https://' + self.target.base_ids[0].fulldomain + '/api/v3'
+
+    @property
+    def gitlab_headers(self):
+        return {'PRIVATE-TOKEN' : self.target.base_ids[0].options['token']['value']}
+
+
+    def gitlab_ressource(self, type, name, project_id='', data={}):
+
+        path = ''
+        if type == 'group':
+            path = '/groups'
+
+        if type == 'group':
+            flag = False
+            data['prefix'] = name
+            groups = self.request(self.gitlab_url + path, headers=self.gitlab_headers).json()
+            for group in groups:
+                if group['path'] == name:
+                    res = group
+                    flag = True
+            if not flag:
+                res = self.request(self.gitlab_url + path, headers=self.gitlab_headers, method='post', data=data)
+
+        if type == 'variable':
+            data['key'] = name
+            if self.request(self.gitlab_url + '/projects/' + project_id + '/variables/' + name, headers=self.gitlab_headers).status_code != 200:
+                res = self.request(self.gitlab_url + '/projects/' + project_id + '/variables', headers=self.gitlab_headers, method='post', data=data).json()
+            else:
+                res = self.request(self.gitlab_url + '/projects/' + project_id + '/variables/' + name, headers=self.gitlab_headers, method='put', data=data).json()
+
+        if type == 'file':
+            with open(modules.get_module_path('clouder_template_' + self.container_id.application_id.type_id.name) +'/res/' + name, 'rb') as file:
+                res = self.request(self.gitlab_url + '/projects/' + project_id + '/repository/files', headers=self.gitlab_headers, method='post', data={'file_path': name, 'branch_name': 'master', 'commit_message': 'Add ' + name, 'content': file.read()})
+
+        return res
+
     @api.multi
     def deploy_link(self):
         """
@@ -116,29 +155,31 @@ class ClouderContainerLink(models.Model):
                     '-r', token.replace('\n',''),
                     '--name', self.container_id.fullname,
                     '--executor', 'docker',
-                    '--docker-image', 'clouder/clouder-base'
+                    '--docker-image', 'docker:latest',
+                    # '--docker-privileged'
+                    '--docker-volumes /var/run/docker.sock:/var/run/docker.sock'
                 ])
         elif self.name.name.code == 'gitlab':
             if self.target.base_ids:
-                base = self.target.base_ids[0]
-                flag = False
-                groups = self.request('https://' + base.fulldomain + '/api/v3/groups', headers={'PRIVATE-TOKEN' :base.options['token']['value']}).json()
-                for group in groups:
-                    if group['path'] == self.container_id.environment_id.prefix:
-                        group_id = group['id']
-                        flag = True
-                if not flag:
-                    group = self.request('https://' + base.fulldomain + '/api/v3/groups', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'name': self.container_id.environment_id.name, 'path': self.container_id.environment_id.prefix})
-                    group_id = group.json()['id']
-                if self.request('https://' + base.fulldomain + '/api/v3/projects/' + self.container_id.environment_id.prefix + '%2F' + self.container_id.name, headers={'PRIVATE-TOKEN' :base.options['token']['value']}, params={'name': self.container_id.fullname}).status_code != 200:
-                    project = self.request('https://' + base.fulldomain + '/api/v3/projects', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'name': self.container_id.name, 'namespace_id': group_id}).json()
-                    with open(modules.get_module_path('clouder_template_' + self.container_id.application_id.type_id.name) +'/res/gitignore', 'rb') as file:
-                        self.request('https://' + base.fulldomain + '/api/v3/projects/' + str(project['id']) + '/repository/files', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'file_path': '.gitignore', 'branch_name': 'master', 'commit_message': 'Add .gitignore', 'content': file.read()})
-                    with open(modules.get_module_path('clouder_template_' + self.container_id.application_id.type_id.name) +'/res/Dockerfile', 'rb') as file:
-                        self.request('https://' + base.fulldomain + '/api/v3/projects/' + str(project['id']) + '/repository/files', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'file_path': 'Dockerfile', 'branch_name': 'master', 'commit_message': 'Add Dockerfile', 'content': file.read()})
-                    with open(modules.get_module_path('clouder_template_' + self.container_id.application_id.type_id.name) +'/res/gitlab-ci.yml', 'rb') as file:
-                        self.request('https://' + base.fulldomain + '/api/v3/projects/' + str(project['id']) + '/repository/files', headers={'PRIVATE-TOKEN' :base.options['token']['value']}, method='post', data={'file_path': '.gitlab-ci.yml', 'branch_name': 'master', 'commit_message': 'Add .gitlab-ci.yml', 'content': file.read()})
 
+                group_id = self.gitlab_ressource('group', self.container_id.environment_id.prefix, data={'name': self.container_id.environment_id.name})['id']
+
+                project = self.request(self.gitlab_url + '/projects/' + self.container_id.environment_id.prefix + '%2F' + self.container_id.name, headers=self.gitlab_headers, params={'name': self.container_id.fullname})
+                if project.status_code != 200:
+                    project = self.request(self.gitlab_url + '/projects', headers=self.gitlab_headers, method='post', data={'name': self.container_id.name, 'namespace_id': group_id}).json()
+                    self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
+                    self.gitlab_ressource('variable', 'REGISTRY_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
+                    self.gitlab_ressource('file', '.gitignore', project_id=str(project['id']))
+                    self.gitlab_ressource('file', 'Dockerfile', project_id=str(project['id']))
+                    self.gitlab_ressource('file', '.gitlab-ci.yml', project_id=str(project['id']))
+                else:
+                    project = project.json()
+                    self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
+                    self.gitlab_ressource('variable', 'REGISTRY_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
+
+        if self.name.name.code == 'registry':
+            if 'gitlab' in self.container_id.links:
+                self.container_id.links['gitlab'].deploy_link()
 
     @api.multi
     def purge_link(self):

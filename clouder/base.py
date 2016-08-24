@@ -195,6 +195,17 @@ class ClouderBase(models.Model):
                                          'value': option.value}
         return options
 
+    @property
+    def links(self):
+        """
+        Property returning a dictionary containing the value of all links
+        for this base.
+        """
+        links = {}
+        for link in self.link_ids:
+            links[link.name.name.code] = link
+        return links
+
     _sql_constraints = [
         ('name_uniq', 'unique (name,domain_id)',
          'Name must be unique per domain !')

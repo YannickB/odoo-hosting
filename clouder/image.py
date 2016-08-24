@@ -64,6 +64,34 @@ class ClouderImage(models.Model):
                 return True
         return False
 
+    @property
+    def computed_dockerfile(self):
+        dockerfile = 'FROM '
+        if self.parent_id and self.parent_version_id:
+            dockerfile += self.parent_version_id.fullpath
+        elif self.parent_from:
+            dockerfile += self.parent_from
+        else:
+            raise except_orm(_('Data error!'),
+                             _("You need to specify the image to inherit!"))
+
+        dockerfile += '\nMAINTAINER ' + self.env['clouder.model'].email_sysadmin + '\n'
+
+        dockerfile += self.dockerfile or ''
+        volumes = ''
+        for volume in self.volume_ids:
+            volumes += volume.name + ' '
+        if volumes:
+            dockerfile += '\nVOLUME ' + volumes
+
+        ports = ''
+        for port in self.port_ids:
+            ports += port.localport + ' '
+        if ports:
+            dockerfile += '\nEXPOSE ' + ports
+
+        return dockerfile
+
     @api.one
     @api.constrains('name')
     def _check_name(self):
@@ -76,12 +104,18 @@ class ClouderImage(models.Model):
                 "Name can only contains letters, digits and underscore"))
 
     @api.multi
+    def build_image(self, runner=False):
+        """
+        """
+        return
+
+    @api.multi
     def build(self):
         """
         Method to generate a new image version.
         """
 
-        if not self.registry_id and self.name not in ['img_registry_data','img_registry_exec']:
+        if not self.registry_id:
             raise except_orm(
                 _('Date error!'),
                 _("You need to specify the registry "
@@ -175,7 +209,7 @@ class ClouderImageVersion(models.Model):
         Property returning the address of the registry where is hosted
         the image version.
         """
-        return self.registry_id and self.registry_id.server_id.ip + ':' + \
+        return self.registry_id and self.registry_id.base_ids[0].fulldomain + ':' + \
             self.registry_id.ports['http']['hostport']
 
     @property
@@ -195,38 +229,6 @@ class ClouderImageVersion(models.Model):
         return self.registry_id and 'localhost:' + \
             self.registry_id.ports['http']['hostport'] +\
             '/' + self.fullname
-
-    @property
-    def computed_dockerfile(self):
-        dockerfile = 'FROM '
-        if self.image_id.parent_id and self.parent_id:
-            if self.registry_id.server_id == \
-                    self.parent_id.registry_id.server_id:
-                dockerfile += self.parent_id.fullpath_localhost
-            else:
-                dockerfile += self.parent_id.fullpath
-        elif self.image_id.parent_from:
-            dockerfile += self.image_id.parent_from
-        else:
-            raise except_orm(_('Data error!'),
-                             _("You need to specify the image to inherit!"))
-
-        dockerfile += '\nMAINTAINER ' + self.email_sysadmin + '\n'
-
-        dockerfile += self.image_id.dockerfile or ''
-        volumes = ''
-        for volume in self.image_id.volume_ids:
-            volumes += volume.name + ' '
-        if volumes:
-            dockerfile += '\nVOLUME ' + volumes
-
-        ports = ''
-        for port in self.image_id.port_ids:
-            ports += port.localport + ' '
-        if ports:
-            dockerfile += '\nEXPOSE ' + ports
-
-        return dockerfile
 
     _order = 'create_date desc'
 
@@ -266,7 +268,7 @@ class ClouderImageVersion(models.Model):
         return super(ClouderImageVersion, self).unlink()
 
     @api.multi
-    def hook_build(self, dockerfile):
+    def hook_build(self):
         return
 
     @api.multi
@@ -283,7 +285,7 @@ class ClouderImageVersion(models.Model):
         Build a new image and store it to the registry.
         """
 
-        self.hook_build(self.computed_dockerfile)
+        self.hook_build()
 
         return
 

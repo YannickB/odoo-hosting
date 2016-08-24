@@ -23,7 +23,6 @@
 from openerp import modules
 from openerp import models, api
 from datetime import datetime, timedelta
-import os
 
 
 class ClouderBase(models.Model):
@@ -139,7 +138,7 @@ class ClouderBaseLink(models.Model):
             flag = True
             if module_path:
                 configtemplate = module_path + '/res/' + configfile
-                if os.path.isfile(configtemplate):
+                if self.local_dir_exist(configtemplate):
                     target.send(
                         configtemplate, self.base_id.nginx_configfile)
                     flag = False

@@ -15,9 +15,15 @@
             <field name="parent_id"/>
             <field name="dockerfile">
                 <![CDATA[
+                    RUN mkdir -p /auth
+                    RUN touch /auth/htpasswd
                     RUN mkdir -p /certs
                 ]]>
             </field>
+        </record>
+        <record id="image_registry_data_volume_auth" model="clouder.image.volume">
+            <field name="image_id" ref="image_registry_data"/>
+            <field name="name">/auth</field>
         </record>
         <record id="image_registry_data_volume_certs" model="clouder.image.volume">
             <field name="image_id" ref="image_registry_data"/>
@@ -33,6 +39,12 @@
             <field name="parent_from">registry:2</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
+        </record>
+        <record id="image_registry_exec_volume_auth" model="clouder.image.volume">
+            <field name="image_id" ref="image_registry_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/auth</field>
+            <field name="nosave" eval="True"/>
         </record>
         <record id="image_registry_exec_volume_certs" model="clouder.image.volume">
             <field name="image_id" ref="image_registry_exec"/>

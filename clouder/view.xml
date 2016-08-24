@@ -597,11 +597,13 @@
                         <field name="name"/>
                         <field name="code"/>
                         <field name="type_id"/>
-                        <field name="default_image_id"/>
-                        <field name="next_server_id"/>
-                        <newline/>
                         <field name="base"/>
+                        <field name="default_image_id"/>
+                        <field name="next_image_version_id" domain="[('image_id','=',default_image_id)]"/>
+                        <newline/>
+                        <field name="next_server_id"/>
                         <field name="next_container_id" attrs="{'invisible': [('base','!=',True)]}" domain="[('application_id','=',id)]"/>
+                        <newline/>
                         <newline/>
                         <field name="admin_name"/>
                         <field name="admin_email"/>
