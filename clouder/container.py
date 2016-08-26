@@ -253,7 +253,6 @@ class ClouderServer(models.Model):
 
     @api.multi
     def oneclick_deploy_exec(self):
-        getattr(self, self.oneclick_id.function + '_purge')()
         getattr(self, self.oneclick_id.function + '_deploy')()
 
     @api.multi

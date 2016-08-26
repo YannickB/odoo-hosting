@@ -34,7 +34,7 @@ class ClouderApplicationTypeOption(models.Model):
     @api.multi
     def generate_default(self):
         res = super(ClouderApplicationTypeOption, self).generate_default()
-        if self.name == 'token' and self.type_id.name == 'gitlab':
+        if self.name == 'token' and self.apptype_id.name == 'gitlab':
             res = model.generate_random_password(20)
         return res
 

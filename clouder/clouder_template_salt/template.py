@@ -45,7 +45,6 @@ class ClouderServer(models.Model):
                 'suffix': 'salt-master',
                 'application_id': application.id,
                 'server_id': self.id,
-                'image_id': application.default_image_id.id
             })
             self.env.ref('clouder.clouder_settings').salt_master_id = master.id
         else:
@@ -57,7 +56,6 @@ class ClouderServer(models.Model):
             'suffix': 'salt-minion',
             'application_id': application.id,
             'server_id': self.id,
-            'image_id': application.default_image_id.id
         })
         self.salt_minion_id = minion.id
         master.execute(['salt-key', '-y', '--accept=' + self.name])
