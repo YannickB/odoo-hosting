@@ -199,6 +199,7 @@
                                     <field name="hostport"/>
                                     <field name="expose"/>
                                     <field name="udp"/>
+                                    <field name="use_hostport"/>
                                 </tree>
                             </field>
                             <field name="volume_ids" colspan="4" attrs="{'invisible': [('child_ids','!=', [])]}">
@@ -319,6 +320,7 @@
                         <field name="runner_id" widget="selection"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
+                    <button name="purge" string="Purge" type="object"/>
                     <button name="test_connection" string="Test connection" type="object"/>
                     <button name="start_containers" string="Restart Containers" type="object"/>
                     <button name="stop_containers" string="Stop Containers" type="object"/>
@@ -707,6 +709,7 @@
                             <field name="localport"/>
                             <field name="expose"/>
                             <field name="udp"/>
+                            <field name="use_hostport"/>
                         </tree>
                     </field>
                     <group col="4">
@@ -776,6 +779,8 @@
                 <form string="Application" version="7.0">
                     <group col="4">
                         <field name="email_sysadmin" required="1"/>
+                        <field name="salt_host" required="1"/>
+                        <field name="salt_port" required="1"/>
                         <newline/>
                         <field name="end_save_all"/>
                         <field name="end_reset_bases"/>

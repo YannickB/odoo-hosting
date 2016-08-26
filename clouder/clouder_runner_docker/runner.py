@@ -36,9 +36,9 @@ class ClouderImage(models.Model):
 
     _inherit = 'clouder.image'
 
-    def build_image(self, model, server, runner=False):
+    def build_image(self, model, server, runner=False, expose_ports=[]):
 
-        res = super(ClouderImage, self).build_image(runner=runner)
+        res = super(ClouderImage, self).build_image(model, server, runner=runner, expose_ports=expose_ports)
 
         if not runner or runner.application_id.type_id.name == 'docker':
 
@@ -67,6 +67,11 @@ class ClouderImage(models.Model):
             server.execute([
                 'echo "' + self.computed_dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
+
+            if expose_ports:
+                server.execute([
+                    'echo "' + 'EXPOSE ' + ' '.join(expose_ports) +
+                    '" >> ' + tmp_dir + '/Dockerfile'])
 
             server.execute(
                 ['docker', 'build', '--pull', '-t', name, tmp_dir])
@@ -162,6 +167,7 @@ class ClouderContainer(models.Model):
                 == 'docker':
 
             cmd = ['docker', 'run', '-d', '-t', '--restart=always']
+            expose_ports = []
             for port in ports:
                 ip = ''
                 if self.server_id.public_ip and self.application_id.type_id.name != 'registry':
@@ -171,6 +177,8 @@ class ClouderContainer(models.Model):
                      ip
                      + str(port.hostport) + ':' + port.localport \
                      + (port.udp and '/udp' or '')])
+                if port.use_hostport:
+                    expose_ports.append(port.hostport)
             volumes_from = {}
             for volume in volumes:
                 if volume.hostpath:
@@ -191,7 +199,7 @@ class ClouderContainer(models.Model):
             cmd.extend(['--name', self.name])
 
             if not self.image_version_id:
-                cmd.extend([self.image_id.build_image(self, self.server_id)])
+                cmd.extend([self.image_id.build_image(self, self.server_id, expose_ports=expose_ports)])
             else:
                 cmd.extend([self.hook_deploy_source()])
 

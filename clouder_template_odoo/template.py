@@ -61,6 +61,15 @@ class ClouderContainer(models.Model):
                     'sed', '-i', 's/DB_PASSWORD/' +
                     self.db_password + '/g',
                     config_file])
+
+            if self.application_id.code == 'salt':
+                self.execute(['sed', '-i', '"s/#publish_port: 4505/publish_port ' +
+                             self.ports['salt']['hostport'] + '/g"',
+                             '/etc/salt/master'])
+                self.execute(['sed', '-i', '"s/#ret_port: 4506/ret_port ' +
+                             self.ports['saltret']['hostport'] + '/g"',
+                             '/etc/salt/master'])
+
             if self.application_id.code == 'exec':
                 addons_path = \
                     '/opt/odoo/files/odoo/addons,/opt/odoo/extra-addons,'
@@ -73,7 +82,27 @@ class ClouderContainer(models.Model):
                     'sed', '-i', '"s/ADDONS_PATH/' +
                     addons_path.replace('/', '\/') + '/g"',
                     config_file])
-            if self.application_id.code == 'ssh':                
+                if 'salt' in self.parent_id.container_id.childs:
+                    salt = self.parent_id.container_id.childs['salt']
+                    self.execute(['ssh-keygen', '-t', 'rsa', '-b', '4096', '-C', self.email_sysadmin, '-f', '~/.ssh/salt-master'])
+                    key = self.execute(['cat', '~/.ssh/salt-master.pub'])
+                    salt.execute(['mkdir', '-p', '/root/.ssh'])
+                    salt.execute([
+                        'echo', '"' + key + '"', '>>', '/root/.ssh/authorized_keys'
+                    ])
+                    self.execute(['chmod', '700', '~/.ssh/salt-master'])
+                    self.execute([
+                        'sed', '-i',
+                        "'/Host\ssalt-master\"/,/END\ssalt-master/d'",
+                        '~/.ssh/config'])
+                    self.execute(['echo', '"Host salt-master"', '>>', '~/.ssh/config'])
+                    self.execute(['echo', '"  HostName ' + salt.server_id.ip + '"', '>>', '~/.ssh/config'])
+                    self.execute(['echo', '"  Port ' + salt.ports['ssh']['hostport'] + '"', '>>', '~/.ssh/config'])
+                    self.execute(['echo', '"  User root"', '>>', '~/.ssh/config'])
+                    self.execute(['echo', '"  IdentityFile ~/.ssh/salt-master"', '>>', '~/.ssh/config'])
+                    self.execute(['echo', '"#END salt-master\n"', '>>', '~/.ssh/config'])
+
+            if self.application_id.code == 'ssh':
                 self.execute(['mkdir /root/.ssh'])
                 self.execute(['echo "' + self.options['ssh_publickey']['value'] + '" > /root/.ssh/authorized_keys'])
 

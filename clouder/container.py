@@ -236,6 +236,7 @@ class ClouderServer(models.Model):
         """
         Remove the keys from the filesystem and the ssh config.
         """
+
         self.execute_local([modules.get_module_path('clouder') +
                             '/res/sed.sh', self.name,
                             self.home_directory + '/.ssh/config'])
@@ -812,7 +813,8 @@ class ClouderContainer(models.Model):
                             'hostport': port[2].get('hostport', False),
                             'localport': port[2].get('localport', False),
                             'expose': port[2].get('expose', False),
-                            'udp': port[2].get('udp', False)
+                            'udp': port[2].get('udp', False),
+                            'use_hostport': port[2].get('use_hostport', False)
                         }
                     else:
                         port = {
@@ -820,7 +822,8 @@ class ClouderContainer(models.Model):
                             'hostport': getattr(port, 'hostport', False),
                             'localport': getattr(port, 'localport', False),
                             'expose': getattr(port, 'expose', False),
-                            'udp': getattr(port, 'udp', False)
+                            'udp': getattr(port, 'udp', False),
+                            'use_hostport': getattr(port, 'use_hostport', False)
                         }
                     # Keeping the port if there is a match with the sources
                     if port['name'] in port_sources:
@@ -838,6 +841,7 @@ class ClouderContainer(models.Model):
                     'localport': getattr(port_sources[def_key_port], 'localport', False),
                     'expose': getattr(port_sources[def_key_port], 'expose', False),
                     'udp': getattr(port_sources[def_key_port], 'udp', False),
+                    'use_hostport': getattr(port_sources[def_key_port], 'use_hostport', False),
                     'source': port_sources[def_key_port]
                 }
                 ports_to_process.append(port)
@@ -869,10 +873,13 @@ class ClouderContainer(models.Model):
                           " fill the port range in the server configuration, and "
                           "that all ports in that range are not already used."))
                 if port['expose'] != 'none':
+                    localport = port['localport']
+                    if port['use_hostport']:
+                        localport = port['hostport']
                     ports.append(((0, 0, {
-                        'name': port['name'], 'localport': port['localport'],
+                        'name': port['name'], 'localport': localport,
                         'hostport': port['hostport'],
-                        'expose': port['expose'], 'udp': port['udp']})))
+                        'expose': port['expose'], 'udp': port['udp'], 'use_hostport': port['use_hostport']})))
             vals['port_ids'] = ports
 
             volumes = []
@@ -1278,6 +1285,7 @@ class ClouderContainerPort(models.Model):
         [('internet', 'Internet'), ('local', 'Local')], 'Expose?',
         required=True, default='local')
     udp = fields.Boolean('UDP?')
+    use_hostport = fields.Boolean('Use hostpost?')
 
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)',

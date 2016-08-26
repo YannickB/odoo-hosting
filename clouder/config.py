@@ -51,6 +51,8 @@ class ClouderConfigSettings(models.Model):
 
     name = fields.Char('Name')
     email_sysadmin = fields.Char('Email SysAdmin')
+    salt_host = fields.Char('Salt Host')
+    salt_port = fields.Integer('Salt Port')
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')
     end_reset_bases = fields.Datetime('Last Reset Bases ended at')
