@@ -318,6 +318,8 @@
                         <field name="public"/>
                         <field name="supervision_id"/>
                         <field name="runner_id" widget="selection"/>
+                        <newline/>
+                        <field name="salt_minion_id"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
                     <button name="purge" string="Purge" type="object"/>
@@ -779,8 +781,7 @@
                 <form string="Application" version="7.0">
                     <group col="4">
                         <field name="email_sysadmin" required="1"/>
-                        <field name="salt_host" required="1"/>
-                        <field name="salt_port" required="1"/>
+                        <field name="salt_master_id"/>
                         <newline/>
                         <field name="end_save_all"/>
                         <field name="end_reset_bases"/>

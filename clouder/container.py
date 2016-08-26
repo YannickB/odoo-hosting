@@ -134,6 +134,7 @@ class ClouderServer(models.Model):
     public = fields.Boolean('Public?')
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
     runner_id = fields.Many2one('clouder.container', 'Runner')
+    salt_minion_id = fields.Many2one('clouder.container', 'Salt Minion', readonly=True)
     oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
     oneclick_domain = fields.Char('Domain')
     oneclick_ports = fields.Boolean('Assign critical ports?')
@@ -202,6 +203,7 @@ class ClouderServer(models.Model):
         """
         ssh = self.connect()
         ssh['ssh'].close()
+        self.raise_error('Connection successful!')
 
     @api.multi
     def deploy(self):

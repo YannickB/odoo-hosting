@@ -521,53 +521,6 @@
         </record>
 
 
-        <record id="image_odoo_clouder_salt" model="clouder.image">
-            <field name="name">img_odoo_clouder_salt</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="current_version">1.0</field>
-            <field name="parent_from">clouder/clouder-base</field>
-            <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-
-                RUN wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
-                RUN echo "deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest xenial main" > /etc/apt/sources.list.d/saltstack.list
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install ssh salt-master salt-ssh supervisor
-
-                RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "[program:salt]" >> /etc/supervisor/conf.d/supervisord.conf
-		        RUN echo "command=salt-master" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "command=/etc/init.d/ssh start" >> /etc/supervisor/conf.d/supervisord.conf
-
-                CMD ["/usr/bin/supervisord"]
-
-                ]]>
-            </field>
-        </record>
-        <record id="image_odoo_clouder_salt_port_ssh" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo_clouder_salt"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_odoo_clouder_salt_port_salt" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo_clouder_salt"/>
-            <field name="name">salt</field>
-            <field name="localport">4505</field>
-            <field name="expose">internet</field>
-            <field name="use_hostport" eval="True"/>
-        </record>
-        <record id="image_odoo_clouder_salt_port_saltret" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo_clouder_salt"/>
-            <field name="name">saltret</field>
-            <field name="localport">4506</field>
-            <field name="expose">internet</field>
-            <field name="use_hostport" eval="True"/>
-        </record>
-
         <record id="image_odoo_clouder_exec" model="clouder.image">
             <field name="name">img_odoo_clouder_exec</field>
             <field name="type_id" ref="apptype_odoo"/>
@@ -882,23 +835,13 @@
             <field name="required" eval="True"/>
         </record>
 
-        <record id="app_odoo9_clouder_salt" model="clouder.application">
-            <field name="name">Clouder 9 Salt</field>
-            <field name="code">salt</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo9_clouder"/>
-            <field name="default_image_id" ref="image_odoo_clouder_salt"/>
-            <field name="sequence">3</field>
-            <field name="required" eval="True"/>
-        </record>
-
         <record id="app_odoo9_clouder_exec" model="clouder.application">
             <field name="name">Clouder 9 Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="apptype_odoo"/>
             <field name="parent_id" ref="app_odoo9_clouder"/>
             <field name="default_image_id" ref="image_odoo_clouder_exec"/>
-            <field name="sequence">4</field>
+            <field name="sequence">3</field>
             <field name="required" eval="True"/>
         </record>
         <record id="app_odoo9_clouder_exec_link_postgres" model="clouder.application.link">

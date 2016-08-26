@@ -219,7 +219,7 @@ class ClouderContainer(models.Model):
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
-            self.server_id.execute(['docker', 'rm', self.name])
+            self.server_id.execute(['docker', 'rm', '-v', self.name])
 
         return res
 

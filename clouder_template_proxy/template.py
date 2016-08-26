@@ -138,7 +138,7 @@ class ClouderBaseLink(models.Model):
             flag = True
             if module_path:
                 configtemplate = module_path + '/res/' + configfile
-                if self.local_dir_exist(configtemplate):
+                if self.local_file_exist(configtemplate):
                     target.send(
                         configtemplate, self.base_id.nginx_configfile)
                     flag = False
