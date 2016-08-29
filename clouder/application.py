@@ -162,6 +162,8 @@ class ClouderApplication(models.Model):
     child_ids = fields.One2many('clouder.application', 'parent_id', 'Childs')
     container_ids = fields.One2many('clouder.container', 'application_id',
                                     'Containers')
+    update_strategy = fields.Selection([('never','Never'),('manual','Manual'),('auto','Automatic')], string='Container Update Strategy', required=True, default='never')
+    update_bases = fields.Boolean('Update bases?')
     autosave = fields.Boolean('Save?')
     container_backup_ids = fields.Many2many(
         'clouder.container', 'clouder_application_container_backup_rel',

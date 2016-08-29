@@ -777,14 +777,20 @@ class ClouderBase(models.Model):
         self.purge_database()
         self.purge_post()
         super(ClouderBase, self).purge()
-        
 
     @api.multi
-    def update_base(self):
+    def update(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('update', 'update_exec')
+
+    @api.multi
+    def update_exec(self):
         """
         Hook which can be called by submodules to execute commands when we
         want to update a base.
         """
+        self = self.with_context(save_comment='Before update')
+        self.save_exec(no_enqueue=True)
         return
 
     @api.multi

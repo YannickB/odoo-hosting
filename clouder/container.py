@@ -1065,9 +1065,38 @@ class ClouderContainer(models.Model):
         """
         if 'save_comment' not in self.env.context:
             self = self.with_context(save_comment='Before reinstall')
-        self.save_exec(no_enqueue=True, forcesave=True)
+        self.save_exec(no_enqueue=True)
         self = self.with_context(nosave=True)
         super(ClouderContainer, self).reinstall()
+        if self.parent_id:
+            childs = self.env['clouder.container.child'].search([('container_id', '=', self.parent_id.container_id.id), ('sequence', '>', self.parent_id.sequence)])
+            for child in childs:
+                if child.child_id:
+                    child.child_id.start()
+
+    @api.multi
+    def update(self):
+        self.do('update', 'update_exec')
+
+    @api.multi
+    def update_exec(self):
+        containers = [self]
+        for child in self.child_ids:
+            if child.child_id:
+                containers.append(child.child_id)
+
+        bases = {}
+        for container in containers:
+            if container.application_id.update_strategy != 'never':
+                container.reinstall()
+                if container.application_id.update_bases:
+                    for base in self.base_ids:
+                        bases[base.id] = base
+                    if self.parent_id:
+                        for base in self.parent_id.container_id.base_ids:
+                            bases[base.id] = base
+        for base_id, base in bases.iteritems():
+            base.update_exec()
 
     @api.multi
     def save(self):

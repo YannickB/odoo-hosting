@@ -385,11 +385,11 @@ class ClouderBase(models.Model):
         return res
 
     @api.multi
-    def update_base(self):
+    def update_exec(self):
         """
         Update base module to update all others modules.
         """
-        res = super(ClouderBase, self).update_base()
+        res = super(ClouderBase, self).update_exec()
         if self.application_id.type_id.name == 'odoo':
             try:
                 self.log("client = erppeek.Client('http://" +

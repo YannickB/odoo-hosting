@@ -126,6 +126,7 @@
                             <newline/>
                             <button name="reinstall" string="Reinstall" type="object"/>
                             <button name="purge" string="Purge" type="object"/>
+                            <button name="update" string="Update" type="object"/>
                             <field name="job_ids" colspan="4"/>
                         </page>
                         <page string="Save">
@@ -234,6 +235,7 @@
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
                             <button name="purge" string="Purge" type="object"/>
+                            <button name="update" string="Update" type="object"/>
                             <newline/>
                             <button name="start" string="Restart" type="object"/>
                             <button name="stop" string="Stop" type="object"/>
@@ -615,6 +617,8 @@
                         <field name="partner_id"/>
                         <field name="sequence"/>
                         <field name="required"/>
+                        <field name="update_strategy"/>
+                        <field name="update_bases"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -784,12 +788,14 @@
                         <field name="salt_master_id"/>
                         <newline/>
                         <field name="end_save_all"/>
+                        <field name="end_update_containers"/>
                         <field name="end_reset_bases"/>
                         <field name="end_certs_renewal"/>
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
                     <button name="save_all" string="Save All" type="object"/>
                     <button name="purge_expired_saves" string="Purge expired Saves" type="object"/>
+                    <button name="update_containers" string="Update containers" type="object"/>
                     <button name="reset_bases" string="Reset Bases" type="object"/>
                     <button name="certs_renewal" string="Certs Renewal" type="object"/>
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
