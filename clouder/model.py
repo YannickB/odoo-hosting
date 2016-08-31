@@ -143,6 +143,13 @@ class ClouderModel(models.AbstractModel):
         return self.env.ref('clouder.clouder_settings').email_sysadmin
 
     @property
+    def salt_master(self):
+        """
+        Property returning the salt master of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').salt_master_id
+
+    @property
     def user_partner(self):
         """
         Property returning the full name of the server.

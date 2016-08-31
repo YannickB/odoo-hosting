@@ -47,9 +47,10 @@ class ClouderDomain(models.Model):
         """
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
             self.dns_id.execute([
-                'sed', '-i', '"s/[0-9]* ;serial/' + datetime.now().strftime('%Y%m%d%H') + ' ;serial/g"',
+                'sed', '-i', '"s/[0-9]* ;serial/' + datetime.now().strftime('%m%d%H%M%S') + ' ;serial/g"',
                 self.configfile])
-            self.dns_id.execute(['/etc/init.d/bind9 reload'])
+            self.dns_id.start()
+            # self.dns_id.execute(['/etc/init.d/bind9 reload'])
 
     @api.multi
     def deploy(self):

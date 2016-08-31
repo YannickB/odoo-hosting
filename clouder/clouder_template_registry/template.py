@@ -45,13 +45,13 @@ class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
 
     @api.multi
-    def hook_deploy_special_args(self, cmd):
-        cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)
+    def get_container_res(self):
+        res = super(ClouderContainer, self).get_container_res()
         if self.image_id.name == 'img_registry_exec':
-            cmd.extend([' -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt', '-e REGISTRY_HTTP_TLS_KEY=/certs/domain.key','-e "REGISTRY_AUTH=htpasswd"',
-                        '-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm"',
-                        '-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd'])
-        return cmd
+            res['environment'].update({'REGISTRY_HTTP_TLS_CERTIFICATE': '/certs/domain.crt', 'REGISTRY_HTTP_TLS_KEY': '/certs/domain.key','REGISTRY_AUTH': 'htpasswd',
+                        'REGISTRY_AUTH_HTPASSWD_REALM': 'Registry Realm',
+                        'REGISTRY_AUTH_HTPASSWD_PATH': '/auth/htpasswd'})
+        return res
 
 
     def deploy_post(self):

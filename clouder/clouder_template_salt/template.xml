@@ -2,10 +2,14 @@
 <openerp>
     <data>
 
+        <record id="role_no_salt" model="clouder.application.role">
+            <field name="name">no-salt</field>
+        </record>
+
         <record id="apptype_salt_master" model="clouder.application.type">
             <field name="name">salt-master</field>
             <field name="system_user">root</field>
-            <field name="role_ids" eval="[(6, 0, [ref('role_no_backup')])]"/>
+            <field name="role_ids" eval="[(6, 0, [ref('role_no_backup'),ref('role_no_salt')])]"/>
         </record>
 
         <record id="image_salt_master" model="clouder.image">
@@ -20,6 +24,8 @@
                 RUN wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
                 RUN echo "deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest xenial main" > /etc/apt/sources.list.d/saltstack.list
                 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install ssh salt-master salt-ssh supervisor
+
+                ADD sources/salt-master/* /srv/salt/
 
                 RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
                 RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
@@ -55,6 +61,7 @@
             <field name="use_hostport" eval="True"/>
         </record>
 
+
         <record id="app_salt_master" model="clouder.application">
             <field name="name">Salt Master</field>
             <field name="code">salt-master</field>
@@ -66,7 +73,7 @@
         <record id="apptype_salt_minion" model="clouder.application.type">
             <field name="name">salt-minion</field>
             <field name="system_user">root</field>
-            <field name="role_ids" eval="[(6, 0, [ref('role_no_backup')])]"/>
+            <field name="role_ids" eval="[(6, 0, [ref('role_no_backup'),ref('role_no_salt')])]"/>
         </record>
         <record id="image_salt_minion" model="clouder.image">
             <field name="name">img_salt_minion</field>
@@ -78,12 +85,19 @@
 
                 RUN wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
                 RUN echo "deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest xenial main" > /etc/apt/sources.list.d/saltstack.list
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install salt-minion
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install salt-minion python-docker
 
                 CMD salt-minion
 
                 ]]>
             </field>
+        </record>
+        <record id="image_salt_minion_volume_docker" model="clouder.image.volume">
+            <field name="image_id" ref="image_salt_minion"/>
+            <field name="name">/var/run/docker.sock</field>
+            <field name="hostpath">/var/run/docker.sock</field>
+            <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
         </record>
 
         <record id="app_salt_minion" model="clouder.application">

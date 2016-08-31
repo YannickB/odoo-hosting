@@ -31,26 +31,37 @@ class ClouderServer(models.Model):
     _inherit = 'clouder.server'
 
     @api.multi
-    def oneclick_deploy_element(self, type, code, container=False, domain=False):
+    def oneclick_deploy_element(self, type, code, container=False, domain=False, ports=[]):
 
         application_obj = self.env['clouder.application']
         container_obj = self.env['clouder.container']
+        port_obj = self.env['clouder.container.port']
         base_obj = self.env['clouder.base']
 
         application = application_obj.search([('code', '=', code)])
 
         if type == 'container':
-            if not container_obj.search([('environment_id', '=', self.environment_id.id), ('suffix', '=', code)]):
+            container = container_obj.search([('environment_id', '=', self.environment_id.id), ('suffix', '=', code)])
+            if not container:
+                # ports = []
+                # if self.oneclick_ports:
+                #     ports = [(0,0,{'name':'bind', 'localport': 53, 'hostport': 53, 'expose': 'internet', 'udp': True})]
                 container = container_obj.create({
                     'suffix': code,
                     'environment_id': self.environment_id.id,
                     'server_id': self.id,
                     'application_id': application.id,
                 })
-                return container
+                if self.oneclick_ports and ports:
+                    for port in ports:
+                        port_record = port_obj.search([('container_id', '=', container.id),('localport','=',port)])
+                        port_record.write({'hostport': port})
+                    container.reinstall()
+            return container
 
         if type == 'base':
-            if not base_obj.search([('name', '=', code), ('domain_id', '=', domain.id)]):
+            base = base_obj.search([('name', '=', code), ('domain_id', '=', domain.id)])
+            if not base:
                 base = base_obj.create({
                     'name': code,
                     'domain_id': domain.id,
@@ -59,64 +70,33 @@ class ClouderServer(models.Model):
                     'application_id': application.id,
                     'container_id': container.id,
                     'admin_name': 'admin',
-                    'admin_password': 'admin',
+                    'admin_password': 'adminadmin',
                 })
-                return base
+            return base
 
 
     @api.multi
     def oneclick_clouder_deploy(self):
         self = self.with_context(no_enqueue=True)
-        # TODO
-        # container_ports={'nginx':80,'nginx-ssl':443,'bind':53})
-
-        image_obj = self.env['clouder.image']
-        image_version_obj = self.env['clouder.image.version']
-
-        port_obj = self.env['clouder.container.port']
-        base_obj = self.env['clouder.base']
-        application_obj = self.env['clouder.application']
 
         self.oneclick_deploy_element('container', 'backup-bup')
 
         self.oneclick_deploy_element('container', 'spamassassin')
 
-        ports = []
-        if self.oneclick_ports:
-            ports = [(0,0,{'name':'postfix', 'localport': 25, 'hostport': 25, 'expose': 'internet'})]
-        postfix = self.oneclick_deploy_element('container', 'postfix')
-        if self.oneclick_ports:
-            port = port_obj.search([('container_id', '=', postfix.id),('name','=','postfix')])
-            port.write({'hostport': 25})
-            postfix.reinstall()
+        self.oneclick_deploy_element('container', 'postfix', ports=[25])
 
-        ports = []
-        if self.oneclick_ports:
-            ports = [(0,0,{'name':'bind', 'localport': 53, 'hostport': 53, 'expose': 'internet', 'udp': True})]
-        bind = self.oneclick_deploy_element('container', 'bind')
-        if self.oneclick_ports:
-            port = port_obj.search([('container_id', '=', bind.id),('name','=','bind')])
-            port.write({'hostport': 53})
-            bind.reinstall()
+        bind = self.oneclick_deploy_element('container', 'bind', ports=[53])
 
         domain_obj = self.env['clouder.domain']
-        domain = domain_obj.create({
-            'name': self.oneclick_domain,
-            'organisation': self.oneclick_domain,
-            'dns_id': bind.id
-        })
+        domain = domain_obj.search([('name', '=', self.oneclick_domain)])
+        if not domain:
+            domain = domain_obj.create({
+                'name': self.oneclick_domain,
+                'organisation': self.oneclick_domain,
+                'dns_id': bind.id
+            })
 
-        ports = []
-        if self.oneclick_ports:
-            ports = [(0,0,{'name':'nginx', 'localport': 80, 'hostport': 80, 'expose': 'internet'}),
-                     (0,0,{'name':'nginx-ssl', 'localport': 443, 'hostport': 443, 'expose': 'internet'})]
-        proxy = self.oneclick_deploy_element('container', 'proxy')
-        if self.oneclick_ports:
-            port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx')])
-            port.write({'hostport': 80})
-            port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx-ssl')])
-            port.write({'hostport': 443})
-            proxy.reinstall()
+        self.oneclick_deploy_element('container', 'proxy', ports=[80, 443])
 
         container = self.oneclick_deploy_element('container', 'shinken')
         self.oneclick_deploy_element('base', 'shinken', container=container, domain=domain)
@@ -131,7 +111,7 @@ class ClouderServer(models.Model):
         self.oneclick_deploy_element('container', 'redis')
 
         container = self.oneclick_deploy_element('container', 'gitlab')
-        self.oneclick_deploy_element('base', 'shinken', container=container, domain=domain)
+        self.oneclick_deploy_element('base', 'gitlab', container=container, domain=domain)
 
         self.oneclick_deploy_element('container', 'gitlabci')
 

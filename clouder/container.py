@@ -213,6 +213,12 @@ class ClouderServer(models.Model):
 
         super(ClouderServer, self).deploy()
 
+        self.execute_local([modules.get_module_path('clouder') +
+                            '/res/sed.sh', self.name,
+                            self.home_directory + '/.ssh/config'])
+        self.execute_local(['rm', '-rf', self.home_directory +
+                            '/.ssh/keys/' + self.name])
+
         self.execute_local(['mkdir', '-p', self.home_directory + '/.ssh/keys'])
         key_file = self.home_directory + '/.ssh/keys/' + self.name
         self.execute_write_file(key_file, self.private_key)
@@ -233,17 +239,12 @@ class ClouderServer(models.Model):
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.name + '\n')
 
+
     @api.multi
     def purge(self):
         """
         Remove the keys from the filesystem and the ssh config.
         """
-
-        self.execute_local([modules.get_module_path('clouder') +
-                            '/res/sed.sh', self.name,
-                            self.home_directory + '/.ssh/config'])
-        self.execute_local(['rm', '-rf', self.home_directory +
-                            '/.ssh/keys/' + self.name])
         super(ClouderServer, self).purge()
 
     @api.multi
@@ -1156,12 +1157,40 @@ class ClouderContainer(models.Model):
         return
 
     @api.multi
-    def hook_deploy(self, ports, volumes):
+    def hook_deploy(self):
         """
         Hook which can be called by submodules to execute commands to
         deploy a container.
         """
         return
+
+    def get_container_res(self):
+        ports = []
+        expose_ports = []
+        for port in self.port_ids:
+            ip = ''
+            if self.server_id.public_ip and self.application_id.type_id.name != 'registry':
+                ip = self.server_id.ip + ':'
+            ports.append(ip + str(port.hostport) + ':' + port.localport + (port.udp and '/udp' or ''))
+            if port.use_hostport:
+                expose_ports.append(port.hostport)
+        volumes = []
+        volumes_from = {}
+        for volume in self.volume_ids:
+            if volume.hostpath:
+                arg = volume.hostpath + ':' + volume.name
+                if volume.readonly:
+                    arg += ':ro'
+                volumes.append(arg)
+            if volume.from_id:
+                volumes_from[volume.from_id.name] = volume.from_id.name
+        volumes_from = volumes_from.values()
+        links = []
+        for link in self.link_ids:
+            if link.name.make_link \
+                    and link.target.server_id == self.server_id:
+                links.append(link.target.name + ':' + link.name.name.code)
+        return {'ports': ports, 'expose_ports': expose_ports, 'volumes': volumes, 'volumes_from': volumes_from, 'links': links, 'environment': {}}
 
     @api.multi
     def deploy_post(self):
@@ -1184,14 +1213,7 @@ class ClouderContainer(models.Model):
                 child.create_child_exec()
             return
 
-        ports = []
-        volumes = []
-        for port in self.port_ids:
-            ports.append(port)
-        for volume in self.volume_ids:
-            volumes.append(volume)
-
-        self.hook_deploy(ports, volumes)
+        self.hook_deploy()
 
         time.sleep(3)
 

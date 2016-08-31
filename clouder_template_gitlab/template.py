@@ -84,11 +84,6 @@ class ClouderContainer(models.Model):
                 self.execute(['bundle', 'exec', 'rake', 'assets:precompile', 'RAILS_ENV=production'], path='/opt/gitlab/files', username='git')
                 self.execute(['cp', '/opt/gitlab/files/lib/support/init.d/gitlab', '/etc/init.d/gitlab'])
 
-        if self.application_id.type_id.name == 'gitlabci':
-            if self.application_id.code == 'exec':
-                self.execute(['sed', '-i', '"s/concurrent = [0-9]*/concurrent = ' + self.options['concurrent']['value'] + '/g"',
-                             '/etc/gitlab-runner/config.toml'])
-
 
 class ClouderContainerLink(models.Model):
     """
@@ -114,14 +109,14 @@ class ClouderContainerLink(models.Model):
 
         if type == 'group':
             flag = False
-            data['prefix'] = name
+            data['path'] = name
             groups = self.request(self.gitlab_url + path, headers=self.gitlab_headers).json()
             for group in groups:
                 if group['path'] == name:
                     res = group
                     flag = True
             if not flag:
-                res = self.request(self.gitlab_url + path, headers=self.gitlab_headers, method='post', data=data)
+                res = self.request(self.gitlab_url + path, headers=self.gitlab_headers, method='post', data=data).json()
 
         if type == 'variable':
             data['key'] = name
@@ -159,6 +154,9 @@ class ClouderContainerLink(models.Model):
                     # '--docker-privileged'
                     '--docker-volumes /var/run/docker.sock:/var/run/docker.sock'
                 ])
+                self.container_id.execute(['sed', '-i', '"s/concurrent = [0-9]*/concurrent = ' + self.container_id.options['concurrent']['value'] + '/g"',
+                             '/etc/gitlab-runner/config.toml'])
+
         elif self.name.name.code == 'gitlab':
             if self.target.base_ids:
 

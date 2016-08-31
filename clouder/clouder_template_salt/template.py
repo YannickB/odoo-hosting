@@ -21,7 +21,7 @@
 ##############################################################################
 
 from openerp import models, api
-from .. import model
+import yaml
 
 
 class ClouderServer(models.Model):
@@ -47,8 +47,10 @@ class ClouderServer(models.Model):
                 'server_id': self.id,
             })
             self.env.ref('clouder.clouder_settings').salt_master_id = master.id
+            master.execute(['mkdir', '/srv/pillar'])
+            master.execute(['echo "base:" >> /srv/pillar/top.sls'])
         else:
-            master = self.env.ref('clouder.clouder_settings').salt_master_id
+            master = self.salt_master
 
         application = self.env.ref('clouder.app_salt_minion')
         minion = self.env['clouder.container'].create({
@@ -60,15 +62,24 @@ class ClouderServer(models.Model):
         self.salt_minion_id = minion.id
         master.execute(['salt-key', '-y', '--accept=' + self.name])
 
+        master.execute(['echo "  \'' + self.name + '\':\n#END ' + self.name + '" >> /srv/pillar/top.sls'])
+
     @api.multi
     def purge(self):
         """
         """
-        master = self.env.ref('clouder.clouder_settings').salt_master_id
+        master = self.salt_master
         if master:
-            master.execute(['rm', '/etc/salt/pki/master/minions/' + self.name])
-            minion = self.env['clouder.container'].search([('environment_id', '=', self.environment_id.id), ('server_id', '=', self.id), ('suffix', '=', 'salt-minion')])
-            minion.unlink()
+            try:
+                master.execute([
+                    'sed', '-i',
+                    '"/  \'' + self.name + '\'/,/END\s' + self.name + '/d"',
+                    '/srv/pillar/top.sls'])
+                master.execute(['rm', '/etc/salt/pki/master/minions/' + self.name])
+                minion = self.env['clouder.container'].search([('environment_id', '=', self.environment_id.id), ('server_id', '=', self.id), ('suffix', '=', 'salt-minion')])
+                minion.unlink()
+            except:
+                pass
 
         super(ClouderServer, self).purge()
 
@@ -77,6 +88,33 @@ class ClouderContainer(models.Model):
     """
 
     _inherit = 'clouder.container'
+
+    @api.multi
+    def hook_deploy_special_args(self, cmd):
+        cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)
+        if self.application_id.type_id.name == 'salt-minion':
+            cmd.extend(['--pid host'])
+        return cmd
+
+    @api.multi
+    def deploy_salt(self):
+
+        self.purge_salt()
+
+        res = self.get_container_res()
+        self.image_id.build_image(self, self.salt_master, expose_ports=res['expose_ports'])
+
+        data = {
+            'name': self.name,
+            'image':self.name,
+            'variables': []
+        }
+        data.update(self.get_container_res())
+        data = yaml.safe_dump({self.name: data}, default_flow_style=False)
+        self.salt_master.execute(['echo "' + data + '" > /srv/pillar/containers/' + self.name + '.sls'])
+        self.salt_master.execute(['sed', '-i', '"/' + self.server_id.name + '\':/a +++    - containers/' + self.name + '"',  '/srv/pillar/top.sls'])
+        self.salt_master.execute(['sed', '-i', '"s/+++//g"', '/srv/pillar/top.sls'])
+        self.salt_master.execute(['salt', self.server_id.name, 'saltutil.refresh_pillar'])
 
     @api.multi
     def deploy_post(self):
@@ -116,3 +154,15 @@ class ClouderContainer(models.Model):
             self.execute(['sed', '-i', '"s/#master: salt/master: ' + self.env.ref('clouder.clouder_settings').salt_master_id.server_id.ip + '/g"', config_file])
             self.execute(['sed', '-i', '"s/#master_port: 4506/master_port: ' + str(self.env.ref('clouder.clouder_settings').salt_master_id.ports['saltret']['hostport']) + '/g"', config_file])
             self.execute(['sed', '-i', '"s/#id:/id: ' + self.server_id.name + '/g"', config_file])
+
+    @api.multi
+    def purge_salt(self):
+        self.salt_master.execute([
+            'sed', '-i', '"/' + self.name + '/d"', '/srv/pillar/top.sls'])
+        self.salt_master.execute(['rm', '-rf', '/srv/pillar/containers/build_' + self.name])
+        self.salt_master.execute(['rm', '-rf', '/srv/pillar/containers/' + self.name])
+
+    @api.multi
+    def purge(self):
+        self.purge_salt()
+        super(ClouderContainer, self).purge()

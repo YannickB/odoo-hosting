@@ -104,7 +104,7 @@ class ClouderImage(models.Model):
                 "Name can only contains letters, digits and underscore"))
 
     @api.multi
-    def build_image(self, model, server, runner=False, expose_ports=[]):
+    def build_image(self, model, server, runner=False, expose_ports=[], salt=True):
         """
         """
         return
