@@ -1,254 +1,618 @@
-/* Elements */
-#ClouderPlugin a
-{
-    color: #428bca;
-    text-decoration: none;
-    background: transparent;
+/* **** *
+ * TAGS *
+ * **** */
+
+#ClouderPlugin {
+    font-family: sans-serif;
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%
 }
-#ClouderPlugin a:active, a:hover
-{
-    outline: 0;
+
+#ClouderPlugin a {
+    background-color: transparent
 }
-#ClouderPlugin a:hover, a:focus
-{
-    color: #2a6496;
-    text-decoration: underline;
+
+#ClouderPlugin a:active, #ClouderPlugin a:hover {
+    outline: 0
 }
-#ClouderPlugin a:focus
-{
-    outline: 5px auto -webkit-focus-ring-color;
-    outline: thin dotted;
-    outline-offset: -2px;
+
+#ClouderPlugin img {
+    border: 0
 }
-#ClouderPlugin input
-{
-    line-height: normal;
-}
-#ClouderPlugin input[disabled]
-{
-    cursor: default;
-}
-#ClouderPlugin select
-{
-    text-transform: none;
-}
-#ClouderPlugin input, #ClouderPlugin select
-{
-    font-family: inherit;
-    font-size: inherit;
-    line-height: inherit;
+
+#ClouderPlugin button, #ClouderPlugin input, #ClouderPlugin optgroup, #ClouderPlugin select, #ClouderPlugin textarea {
     color: inherit;
     font: inherit;
+    margin: 0
+}
+
+
+#ClouderPlugin button {
+    overflow: visible
+}
+
+#ClouderPlugin button, #ClouderPlugin select {
+    text-transform: none
+}
+
+
+#ClouderPlugin button, #ClouderPlugin html input[type="button"], #ClouderPlugin input[type="reset"], #ClouderPlugin input[type="submit"] {
+    -webkit-appearance: button;
+    cursor: pointer
+}
+
+#ClouderPlugin button[disabled], #ClouderPlugin html input[disabled] {
+    cursor: default
+}
+
+#ClouderPlugin button::-moz-focus-inner, #ClouderPlugin input::-moz-focus-inner {
+    border: 0;
+    padding: 0
+}
+
+#ClouderPlugin input {
+    line-height: normal
+}
+
+#ClouderPlugin input[type="checkbox"], #ClouderPlugin input[type="radio"] {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    padding: 0
+}
+
+#ClouderPlugin input[type="number"]::-webkit-inner-spin-button, #ClouderPlugin input[type="number"]::-webkit-outer-spin-button {
+    height: auto
+}
+
+#ClouderPlugin input[type="search"] {
+    -webkit-appearance: textfield;
+    -moz-box-sizing: content-box;
+    -webkit-box-sizing: content-box;
+    box-sizing: content-box
+}
+
+#ClouderPlugin input[type="search"]::-webkit-search-cancel-button, #ClouderPlugin input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none
+}
+
+#ClouderPlugin fieldset {
+    border: 1px solid #c0c0c0;
+    margin: 0 2px;
+    padding: 0.35em 0.625em 0.75em
+}
+
+#ClouderPlugin textarea {
+    overflow: auto
+}
+
+#ClouderPlugin optgroup {
+    font-weight: bold
+}
+
+#ClouderPlugin * {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box
+}
+
+#ClouderPlugin *:before, #ClouderPlugin *:after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box
+}
+
+#ClouderPlugin html {
+    font-size: 10px;
+    -webkit-tap-highlight-color: rgba(0,0,0,0)
+}
+
+#ClouderPlugin body {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    line-height: 1.42857143;
+    color: #333;
+    background-color: #fff
+}
+
+#ClouderPlugin input, #ClouderPlugin button, #ClouderPlugin select, #ClouderPlugin textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit
+}
+
+#ClouderPlugin a {
+    color: #337ab7;
+    text-decoration: none
+}
+
+#ClouderPlugin a:hover {
+    text-decoration: underline
+}
+
+#ClouderPlugin a:focus {
+    outline: thin dotted;
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: -2px
+}
+
+#ClouderPlugin img {
+    vertical-align: middle
+}
+
+
+#ClouderPlugin input:-ms-input-placeholder, #ClouderPlugin input:-webkit-input-placeholder, #ClouderPlugin input:-moz-input-placeholder {
+    color: silver;
+}
+
+#ClouderPlugin input[type="text"]:disabled, #ClouderPlugin input[type="password"]:disabled, #ClouderPlugin select:disabled {
+    background-color: #F0F0F0;
+    cursor: not-allowed;
+    color: silver;
+}
+
+#ClouderPlugin button {
+    outline: 0;
+}
+
+#ClouderPlugin label {
+    vertical-align: middle;
+}
+
+#ClouderPlugin label input {
+    vertical-align: middle;
+    margin-right: 3px;
+}
+
+#ClouderPlugin label span {
+    vertical-align: middle;
+}
+
+#ClouderPlugin html {
+    background-color: #F0F0F0;
+}
+
+#ClouderPlugin body {
+    background-color: #F0F0F0;
+    padding: 0;
+    color: gray;
+    font-smoothing: antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-font-smoothing: antialiased;
+    -ms-font-smoothing: antialiased;
+    -o-font-smoothing: antialiased;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    overflow-scrolling: touch;
+    -webkit-overflow-scrolling: touch;
+    -moz-overflow-scrolling: touch;
+    -ms-overflow-scrolling: touch;
+    -o-overflow-scrolling: touch;
+}
+
+#ClouderPlugin form {
+    padding: 0;
     margin: 0;
 }
-#ClouderPlugin label
-{
-    display: inline-block;
-    font-weight: bold;
-    margin-bottom: 5px;
-    max-width: 100%;
+
+#ClouderPlugin p {
+    margin: 0;
 }
 
-/* Classes */
-#ClouderPlugin .CL_hint
-{
-    color: red;
-    text-align: center;
-}
-#ClouderPlugin .CL_Loading
-{
-    position:relative;
 
-    /* IE 8 */
-    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
-    /* IE 5-7 */
-    filter: alpha(opacity=50);
-    /* Netscape */
-    -moz-opacity: 0.5;
-    /* Safari 1.x */
-    -khtml-opacity: 0.5;
-    /* Good browsers */
-    opacity: 0.5;
+/* ******* *
+ * CLASSES *
+ * ******* */
+
+
+#ClouderPlugin .padding {
+    padding: 25px;
 }
-#ClouderPlugin .CL_Title
-{
-    font-size: 25px;
-    text-align: center;
-    margin: .67em 0;
-    color: inherit;
-    font-family: inherit;
-    font-weight: 500;
-    line-height: 1.1;
-    margin-bottom: 10px;
-    margin-top: 20px;
+
+#ClouderPlugin .bg-smoke {
+    background-color: #F8F8F8;
 }
-#ClouderPlugin .CL_mb32
-{
-    margin-bottom: 32px !important;
-}
-#ClouderPlugin .CL_pull-right
-{
-    float: right !important;
-    position: relative !important;
-    right: 10px;
-}
-#ClouderPlugin .CL_pull-left
-{
-    float: left !important;
-    position: relative !important;
-    left: 10px;
-}
-#ClouderPlugin .CL_btn:hover, #ClouderPlugin .CL_btn:focus, #ClouderPlugin .CL_btn:active
-{
-    background-color: #e6e6e6;
-    border-color: #adadad;
-    color: #333;
-    background-color: #3071a9;
-    border-color: #285e8e;
-    color: #fff;
-}
-#ClouderPlugin .CL_btn:active
-{
-    background-image: none;
-}
-#ClouderPlugin .CL_btn
-{
-    background-image: none;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    cursor: pointer;
-    display: inline-block;
-    font-size: 14px;
-    font-weight: normal;
-    line-height: 1.42857143;
-    margin-bottom: 0;
-    moz-user-select: none;
-    ms-user-select: none;
-    padding: 6px 12px;
-    text-align: center;
-    user-select: none;
-    vertical-align: middle;
-    webkit-user-select: none;
-    white-space: nowrap;
-    background-color: #428bca;
-    border-color: #357ebd;
-    color: #fff;
-}
-#ClouderPlugin .CL_btn:focus, #ClouderPlugin .CL_btn:active:focus
-{
-    outline: 5px auto -webkit-focus-ring-color;
-    outline: thin dotted;
-    outline-offset: -2px;
-}
-#ClouderPlugin .CL_btn:hover, #ClouderPlugin .CL_btn:focus
-{
-    color: #333;
-    text-decoration: none;
-}
-#ClouderPlugin .CL_btn:active
-{
-    background-image: none;
-    box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
-    outline: 0;
-    webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
-}
-#ClouderPlugin .CL_form-control
-{
-    background-color: #fff;
-    background-image: none;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
-    color: #555;
-    display: inline-block;
-    font-size: 14px;
-    line-height: 1.42857143;
-    o-transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
-    padding: 6px 12px;
-    transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
-    webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
-    webkit-transition: border-color ease-in-out .15s, -webkit-box-shadow ease-in-out .15s;
-    width: 100%;
-}
-#ClouderPlugin select[class="CL_form-control"]
-{
-    width: 118%;
-}
-#ClouderPlugin .CL_form-control:focus
-{
-    border-color: #66afe9;
-    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
-    outline: 0;
-    webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(102, 175, 233, .6);
-}
-#ClouderPlugin .CL_form-control::-moz-placeholder
-{
-    color: #777;
-    opacity: 1;
-}
-#ClouderPlugin .CL_form-control:-ms-input-placeholder
-{
-    color: #777;
-}
-#ClouderPlugin .CL_form-control::-webkit-input-placeholder
-{
-    color: #777;
-}
-#ClouderPlugin .CL_form-control[disabled], .CL_form-control[readonly], fieldset[disabled] .CL_form-control
-{
-    background-color: #eee;
-    cursor: not-allowed;
-    opacity: 1;
-}
-#ClouderPlugin .CL_has-error .CL_form-control
-{
-    border-color: #a94442;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
-    webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
-}
-#ClouderPlugin .CL_has-error .CL_form-control:focus
-{
-    border-color: #843534;
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
-    webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px #ce8483;
-}
-#ClouderPlugin .CL_has-error .CL_control-label
-{
-    color: #a94442;
-}
-#ClouderPlugin .CL_col-lg-6
-{
+
+#ClouderPlugin .col-md-6 {
+    position: relative;
     min-height: 1px;
-    padding-left: 0px;
-    padding-right: 25px;
+    padding-left: 15px;
+    padding-right: 15px
+}
+
+@media (min-width: 992px) {
+    #ClouderPlugin .col-md-6 {
+        float:left;
+        width: 50%
+    }
+}
+
+#ClouderPlugin .nmt {
+    margin-top: 0;
+}
+
+#ClouderPlugin .m {
+    margin-bottom: 15px;
+}
+
+#ClouderPlugin .row {
+    margin-left: -15px;
+    margin-right: -15px
+}
+
+#ClouderPlugin .row:before,.row:after {
+    content: " ";
+    display: table
+}
+
+#ClouderPlugin .row:after {
+    clear: both
+}
+
+#ClouderPlugin .ui-textbox-container * {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+
+
+#ClouderPlugin .ui-textbox-label {
+    margin-bottom: 5px;
+    font-size: 12px;
+    text-align: left;
+}
+
+#ClouderPlugin .ui-textbox-label .fa {
+    width: 14px;
+}
+
+#ClouderPlugin .ui-textbox-label-required:before {
+    color: red;
+    content: '***';
+    margin-right: 5px;
+}
+
+#ClouderPlugin .ui-textbox {
+    border: 2px solid #E0E0E0;
+    padding: 5px 2px 5px 5px;
+    border-radius: 2px;
+    position: relative;
+    width: 100%;
+    background-color: white;
+    display: table;
+}
+
+#ClouderPlugin .ui-textbox input {
+    display: table-cell;
+    border: 0;
+    outline: 0;
+    font: normal 14px Arial;
+    color: black;
+    width: 100%;
+    background-color: white;
+    padding: 0;
+}
+
+#ClouderPlugin .ui-textbox div {
+    width: 1%;
+    position: relative;
+    vertical-align: middle;
+    display: table-cell;
+    text-align: center;
+    white-space: nowrap;
+    text-overflow: clip;
+    border-left: 1px solid #E0E0E0;
+    width: 30px;
+    color: silver;
+    user-select: none;
+}
+
+#ClouderPlugin .ui-textbox ul {
+    margin: 20px 0 0 -5px;
+    padding: 0;
+    list-style-type: none;
+    position: absolute;
+    width: 100%;
+    background-color: white;
+    z-index: 5;
+    border: 1px solid #E0E0E0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: none;
+}
+
+#ClouderPlugin .ui-textbox li {
+    display: block;
+    padding: 5px 10px;
+    border-top: 1px solid #E0E0E0;
+    cursor: pointer;
+}
+
+#ClouderPlugin .ui-textbox li:first-child {
+    border-top: 0;
+}
+
+#ClouderPlugin .ui-textbox li.selected {
+    background-color: #F0F0F0;
+}
+
+#ClouderPlugin .ui-textbox button {
+    background-color: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+#ClouderPlugin .ui-textbox .fa-caret-up, .ui-textbox .fa-caret-down {
+    display: block;
+    line-height: 9px;
+    cursor: pointer;
+}
+
+#ClouderPlugin .ui-textbox-invalid {
+    border-color: #E7B8B8 !important;
+    background-color: #FFF3F3 !important;
+}
+
+#ClouderPlugin .ui-textbox-invalid input {
+    background-color: #FFF3F3 !important;
+}
+
+#ClouderPlugin .ui-dropdown {
+    border: 2px solid #E0E0E0;
+    padding: 0 10px;
+    border-radius: 2px;
+    outline: 0;
+    height: 34px;
+    overflow: hidden;
+    float: left;
+    width: 100%;
+    background-color: white;
     position: relative;
 }
-#ClouderPlugin .CL_clearfix:after, #ClouderPlugin .CL_form-group:after
-{
-    clear: both;
+
+#ClouderPlugin .ui-dropdown select {
+    width: 120%;
+    outline: 0;
+    border: 0;
+    height: 26px;
+    background-color: white;
+    font-size: 14px;
+    float: left;
+    cursor: pointer;
+    padding: 0;
+    margin: 2px 0 0 -3px;
+    color: black;
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
 }
-#ClouderPlugin .CL_clearfix:before, #ClouderPlugin .CL_clearfix:after, #ClouderPlugin .CL_form-group:before, #ClouderPlugin .CL_form-group:after
-{
-    content: " ";
-    display: table;
+
+#ClouderPlugin .ui-dropdown .fa {
+    position: absolute;
+    right: 8px;
+    top: 8px;
 }
-#ClouderPlugin .CL_clearfix:before, #ClouderPlugin .CL_clearfix:after
-{
-    content: " ";
-    display: table;
+
+#ClouderPlugin .ui-dropdown select:disabled {
+    background-color: #F0F0F0;
+    cursor: not-allowed;
+    color: gray;
 }
-#ClouderPlugin .CL_form-group
-{
-    margin-bottom: 15px;
-    width: 40%;
+
+#ClouderPlugin .ui-dropdown-container * {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
 }
-#ClouderPlugin .CL_fa
-{
+
+#ClouderPlugin .ui-dropdown-values {
+    position: relative;
+    display: block;
+    height: 34px;
+    text-align: left;
+}
+
+#ClouderPlugin .ui-dropdown-invalid {
+    border-color: #E7B8B8 !important;
+    background-color: #FFF3F3 !important;
+}
+
+#ClouderPlugin .ui-dropdown-invalid select {
+    background-color: #FFF3F3 !important;
+}
+
+#ClouderPlugin .ui-dropdown-label {
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+#ClouderPlugin .ui-dropdown-label .fa {
+    width: 14px;
+}
+
+#ClouderPlugin .ui-dropdown-label-required:before {
+    color: red;
+    content: '***';
+    margin-right: 5px;
+}
+
+#ClouderPlugin .ui-textarea-label .fa {
+    width: 14px;
+}
+
+#ClouderPlugin .ui-checkbox .fa {
+    display: none;
+}
+
+#ClouderPlugin .ui-checkbox-checked .fa {
+    display: block !important;
+}
+
+#ClouderPlugin .ui-error li .fa {
+    width: 14px;
+}
+
+#ClouderPlugin .ui-message .fa {
+    position: absolute;
+    margin: -75px 0 0 -35px;
+    width: 70px;
+    left: 50%;
+    height: 70px;
+    padding-top: 15px;
+    border-radius: 100px;
+    font-size: 30px;
+    border-width: 5px;
+    border-style: solid;
+    text-align: center;
+}
+
+
+#ClouderPlugin .ui-message-warning .fa {
+    background-color: #ED5565;
+    border-color: #DA4453;
+}
+
+#ClouderPlugin .ui-message-success .fa {
+    background-color: #A0D468;
+    border-color: #8CC152;
+}
+
+#ClouderPlugin .categories .fa {
+    margin-right: 5px;
+}
+
+#ClouderPlugin .subcategories .fa {
+    margin-right: 5px;
+}
+
+#ClouderPlugin .breadcrumb li .fa {
+    margin: 0 6px 0 10px;
+}
+
+#ClouderPlugin .newsletter-button .fa {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+#ClouderPlugin .checkoutbutton-label .fa {
+    margin-right: 5px;
+}
+
+#ClouderPlugin .linkbutton .fa {
+    margin-right: 5px;
+}
+
+#ClouderPlugin .quicknavigation .fa {
+    margin-right: 5px;
+}
+
+#ClouderPlugin .button {
+    position: relative;
     display: inline-block;
-    font: normal normal normal 14px/1 FontAwesome;
-    font-family: FontAwesome !important;
-    font-size: inherit;
-    moz-osx-font-smoothing: grayscale;
-    text-rendering: auto;
-    webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0;
+    border: 2px solid #D0D0D0;
+    border-radius: 4px;
+    background-color: white;
+    background: linear-gradient(white,#F0F0F0);
+    padding: 20px 0;
+    font: normal normal 14px Arial;
+    vertical-align: middle;
+    color: gray;
+    width: 100%;
+}
+
+#ClouderPlugin .button:hover {
+    border-color: silver;
+}
+
+#ClouderPlugin .button:active {
+    background: white;
+    color: #A4A4A4;
+}
+
+#ClouderPlugin .button:disabled {
+    color: silver;
+    border-color: #E0E0E0;
+    cursor: not-allowed;
+    background: white;
+}
+
+#ClouderPlugin .button {
+    padding: 20px 0;
+    width: 100%;
+    font-size: 16px;
+}
+
+#ClouderPlugin .button-small {
+    padding: 13px 0;
+}
+
+#ClouderPlugin .button-small {
+    padding: 10px 0;
+    font-size: 14px;
+}
+
+#ClouderPlugin .ui-error {
+    margin: 15px 0;
+    padding: 0;
+    list-style-type: none;
+    border: 2px solid #BE3A48;
+    border-left-width: 0;
+    border-right-width: 0;
+    padding: 10px 0;
+    color: #BE3A48;
+}
+
+#ClouderPlugin .ui-error li {
+    display: block;
+}
+
+#ClouderPlugin .ui-error li .fa {
+    width: 14px;
+}
+
+#ClouderPlugin .hidden {
+    display: none !important;
+    visibility: hidden !important
+}
+
+#ClouderPlugin .hidden {
+    display: none;
+}
+
+#ClouderPlugin .b {
+    font-weight: bold;
+}
+
+#ClouderPlugin .ui-checkbox {
+    margin-bottom: 5px;
+    line-height: 10px;
+    font-size: 12px;
+}
+
+#ClouderPlugin .ui-checkbox span {
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+#ClouderPlugin .ui-checkbox div {
+    position: relative;
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #E0E0E0;
+    margin-right: 8px;
+    vertical-align: middle;
+    cursor: pointer;
+    color: white;
+    font-size: 11px;
+    text-align: center;
+    padding: 1px 0 0 1px;
+    background-color: white;
+    border-radius: 3px;
+}
+
+#ClouderPlugin .ui-checkbox .fa {
+    display: none;
 }
