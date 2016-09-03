@@ -23,17 +23,26 @@
 
                 RUN wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
                 RUN echo "deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest xenial main" > /etc/apt/sources.list.d/saltstack.list
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install ssh salt-master salt-ssh supervisor
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install salt-master salt-api salt-ssh supervisor python-pip
 
+                RUN pip install --upgrade pip cherrypy
+
+                ADD sources/salt-api.conf /etc/salt/master.d/salt-api.conf
+                ADD sources/reactor.conf /etc/salt/master.d/reactor.conf
+                RUN mkdir -p /srv/salt/_modules
                 ADD sources/salt-master/* /srv/salt/
+                ADD sources/_modules/clouder.py /srv/salt/_modules/
+                RUN mkdir -p /srv/pillar/containers
+                RUN mkdir -p /srv/pillar/bases
+                RUN echo "base:" > /srv/pillar/top.sls
 
                 RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
                 RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
                 RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
                 RUN echo "[program:salt]" >> /etc/supervisor/conf.d/supervisord.conf
 		        RUN echo "command=salt-master" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "command=/etc/init.d/ssh start" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "[program:salt-api]" >> /etc/supervisor/conf.d/supervisord.conf
+		        RUN echo "command=salt-api" >> /etc/supervisor/conf.d/supervisord.conf
 
                 CMD ["/usr/bin/supervisord"]
 
@@ -60,6 +69,12 @@
             <field name="expose">internet</field>
             <field name="use_hostport" eval="True"/>
         </record>
+        <record id="image_salt_master_port_api" model="clouder.image.port">
+            <field name="image_id" ref="image_salt_master"/>
+            <field name="name">api</field>
+            <field name="localport">8080</field>
+            <field name="expose">internet</field>
+        </record>
 
 
         <record id="app_salt_master" model="clouder.application">
@@ -85,7 +100,9 @@
 
                 RUN wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
                 RUN echo "deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest xenial main" > /etc/apt/sources.list.d/saltstack.list
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install salt-minion python-docker
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install salt-minion python-docker python-pip
+
+                RUN pip install --upgrade pip erppeek
 
                 CMD salt-minion
 

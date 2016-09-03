@@ -5,6 +5,6 @@ purge:
   module.run:
     - name: dockerng.rm
     - args:
-      - {{ pillar['name'] }}
+      - {{ pillar['container_name'] }}
     - kargs:
       - volumes = True

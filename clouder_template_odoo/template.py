@@ -391,22 +391,24 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).update_exec()
         if self.application_id.type_id.name == 'odoo':
-            try:
-                self.log("client = erppeek.Client('http://" +
-                         self.container_id.server_id.ip + ":" +
-                         self.odoo_port + "," +
-                         "db=" + self.fullname_ + "," + "user=" +
-                         self.admin_name + ", password=$$$" +
-                         self.admin_password + "$$$)")
-                client = erppeek.Client(
-                    'http://' + self.container_id.server_id.ip +
-                    ':' + self.odoo_port,
-                    db=self.fullname_, user=self.admin_name,
-                    password=self.admin_password)
-                self.log("client.upgrade('base')")
-                client.upgrade('base')
-            except:
-                pass
+            # try:
+            #     self.log("client = erppeek.Client('http://" +
+            #              self.container_id.server_id.ip + ":" +
+            #              self.odoo_port + "," +
+            #              "db=" + self.fullname_ + "," + "user=" +
+            #              self.admin_name + ", password=$$$" +
+            #              self.admin_password + "$$$)")
+            #     client = erppeek.Client(
+            #         'http://' + self.container_id.server_id.ip +
+            #         ':' + self.odoo_port,
+            #         db=self.fullname_, user=self.admin_name,
+            #         password=self.admin_password)
+            #     self.log("client.upgrade('base')")
+            #     client.upgrade('base')
+            # except:
+            #     pass
+
+            self.salt_master.execute(['salt', self.container_id.server_id.name, 'state.apply', 'base_update', "pillar=\"{'base_name': '" + self.fullname_ + "'}\""])
 
         return res
 

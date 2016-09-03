@@ -55,6 +55,7 @@
             <field name="apptype_id" ref="apptype_odoo"/>
             <field name="name">registry_password</field>
             <field name="type">container</field>
+            <field name="app_code">files</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="apptype_odoo_option_ssh_privatekey" model="clouder.application.type.option">
@@ -852,6 +853,19 @@
             <field name="required" eval="True"/>
             <field name="update_strategy">manual</field>
             <field name="update_bases" eval="True"/>
+        </record>
+        <record id="app_odoo9_clouder_link_gitlab" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo9_clouder_files"/>
+            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
+            <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="app_odoo9_clouder_link_registry" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo9_clouder_files"/>
+            <field name="name" ref="clouder.app_registry"/>
+            <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
         </record>
 
         <record id="app_odoo9_clouder_exec" model="clouder.application">

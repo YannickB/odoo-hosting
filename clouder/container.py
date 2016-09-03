@@ -1248,6 +1248,7 @@ class ClouderContainer(models.Model):
                 child.delete_child_exec()
         else:
             self.stop()
+            self.purge_salt()
             self.hook_purge()
         super(ClouderContainer, self).purge()
 

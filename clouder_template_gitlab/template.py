@@ -157,7 +157,7 @@ class ClouderContainerLink(models.Model):
                 self.container_id.execute(['sed', '-i', '"s/concurrent = [0-9]*/concurrent = ' + self.container_id.options['concurrent']['value'] + '/g"',
                              '/etc/gitlab-runner/config.toml'])
 
-        elif self.name.name.code == 'gitlab':
+        elif self.name.name.type_id.name == 'gitlab' and self.container_id.application_id.code == 'files':
             if self.target.base_ids:
 
                 group_id = self.gitlab_ressource('group', self.container_id.environment_id.prefix, data={'name': self.container_id.environment_id.name})['id']
@@ -167,6 +167,8 @@ class ClouderContainerLink(models.Model):
                     project = self.request(self.gitlab_url + '/projects', headers=self.gitlab_headers, method='post', data={'name': self.container_id.name, 'namespace_id': group_id}).json()
                     self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
                     self.gitlab_ressource('variable', 'REGISTRY_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
+                    self.gitlab_ressource('variable', 'SALT_DOMAIN', project_id=str(project['id']), data={'value': self.salt_master.server_id.name + ':'  + self.salt_master.ports['api']['hostport']})
+                    self.gitlab_ressource('variable', 'PRODUCTION_SERVER', project_id=str(project['id']), data={'value': self.container_id.server_id.name})
                     self.gitlab_ressource('file', '.gitignore', project_id=str(project['id']))
                     self.gitlab_ressource('file', 'Dockerfile', project_id=str(project['id']))
                     self.gitlab_ressource('file', '.gitlab-ci.yml', project_id=str(project['id']))

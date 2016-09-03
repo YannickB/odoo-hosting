@@ -5,4 +5,4 @@ start:
   module.run:
     - name: dockerng.start
     - args:
-      - {{ pillar['name'] }}
+      - {{ pillar['container_name'] }}

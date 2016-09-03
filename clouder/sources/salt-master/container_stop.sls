@@ -1,3 +1,3 @@
 stop:
   dockerng.stopped:
-    - name: {{ pillar['name'] }}
+    - name: {{ pillar['container_name'] }}
