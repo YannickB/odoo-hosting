@@ -36,23 +36,6 @@ class ClouderApplicationTypeOption(models.Model):
             res = model.generate_random_password(20)
         return res
 
-# class ClouderImageVersion(models.Model):
-#     """
-#     Avoid build an image if the application type if a registry.
-#     """
-#
-#     _inherit = 'clouder.image.version'
-#
-#     @api.multi
-#     def deploy(self):
-#         """
-#         Block the default deploy function for the registry.
-#         """
-#         if self.image_id.name not in ['img_registry_data','img_registry_exec']:
-#             return super(ClouderImageVersion, self).deploy()
-#         else:
-#             return True
-
 
 class ClouderContainer(models.Model):
     """
@@ -61,44 +44,15 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
-    # @api.multi
-    # def hook_deploy_source(self):
-    #     if self.image_id.name in ['img_registry_data','img_registry_exec']:
-    #         return self.image_version_id.fullname
-    #     else:
-    #         return super(ClouderContainer, self).hook_deploy_source()
-
     @api.multi
-    def hook_deploy_special_args(self, cmd):
-        cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)
+    def get_container_res(self):
+        res = super(ClouderContainer, self).get_container_res()
         if self.image_id.name == 'img_registry_exec':
-            cmd.extend([' -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt', '-e REGISTRY_HTTP_TLS_KEY=/certs/domain.key','-e "REGISTRY_AUTH=htpasswd"',
-                        '-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm"',
-                        '-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd'])
-        return cmd
+            res['environment'].update({'REGISTRY_HTTP_TLS_CERTIFICATE': '/certs/domain.crt', 'REGISTRY_HTTP_TLS_KEY': '/certs/domain.key','REGISTRY_AUTH': 'htpasswd',
+                        'REGISTRY_AUTH_HTPASSWD_REALM': 'Registry Realm',
+                        'REGISTRY_AUTH_HTPASSWD_PATH': '/auth/htpasswd'})
+        return res
 
-    # @api.multi
-    # def deploy(self):
-    #     """
-    #     Build the registry image directly when we deploy the container.
-    #     """
-    #     if self.image_id.name in ['img_registry_data','img_registry_exec']:
-    #         # ssh = self.connect(self.server_id.name)
-    #         tmp_dir = '/tmp/' + self.image_id.name + '_' + \
-    #             self.image_version_id.fullname
-    #         server = self.server_id
-    #         server.execute(['rm', '-rf', tmp_dir])
-    #         server.execute(['mkdir', '-p', tmp_dir])
-    #         server.execute([
-    #             'echo "' + self.image_version_id.computed_dockerfile.replace('"', '\\"') +
-    #             '" >> ' + tmp_dir + '/Dockerfile'])
-    #         server.execute(['docker', 'rmi',
-    #                         self.image_version_id.fullname])
-    #         server.execute(['docker', 'build', '-t',
-    #                         self.image_version_id.fullname, tmp_dir])
-    #         server.execute(['rm', '-rf', tmp_dir])
-    #
-    #     return super(ClouderContainer, self).deploy()
 
     def deploy_post(self):
         """

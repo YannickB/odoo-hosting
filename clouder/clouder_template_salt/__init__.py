@@ -20,28 +20,4 @@
 #
 ##############################################################################
 
-{
-    'name': 'Clouder',
-    'version': '1.0',
-    'category': 'Clouder',
-    'depends': ['base', 'connector'],
-    'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
-    'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder
-    """,
-    'demo': [],
-    'data': [
-        'view.xml',
-        'data/data.xml',
-        'security/security.xml',
-        'security/ir.model.access.csv',
-        'clouder_template_backup/template.xml',
-        'clouder_template_registry/template.xml',
-        'clouder_template_salt/template.xml',
-        'clouder_runner_docker/template.xml',
-    ],
-    'installable': True,
-    'application': True,
-}
+from . import template

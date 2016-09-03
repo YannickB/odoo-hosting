@@ -34,7 +34,7 @@ class ClouderApplicationTypeOption(models.Model):
     @api.multi
     def generate_default(self):
         res = super(ClouderApplicationTypeOption, self).generate_default()
-        if self.name == 'token' and self.type_id.name == 'gitlab':
+        if self.name == 'token' and self.apptype_id.name == 'gitlab':
             res = model.generate_random_password(20)
         return res
 
@@ -84,11 +84,6 @@ class ClouderContainer(models.Model):
                 self.execute(['bundle', 'exec', 'rake', 'assets:precompile', 'RAILS_ENV=production'], path='/opt/gitlab/files', username='git')
                 self.execute(['cp', '/opt/gitlab/files/lib/support/init.d/gitlab', '/etc/init.d/gitlab'])
 
-        if self.application_id.type_id.name == 'gitlabci':
-            if self.application_id.code == 'exec':
-                self.execute(['sed', '-i', '"s/concurrent = [0-9]*/concurrent = ' + self.options['concurrent']['value'] + '/g"',
-                             '/etc/gitlab-runner/config.toml'])
-
 
 class ClouderContainerLink(models.Model):
     """
@@ -114,14 +109,14 @@ class ClouderContainerLink(models.Model):
 
         if type == 'group':
             flag = False
-            data['prefix'] = name
+            data['path'] = name
             groups = self.request(self.gitlab_url + path, headers=self.gitlab_headers).json()
             for group in groups:
                 if group['path'] == name:
                     res = group
                     flag = True
             if not flag:
-                res = self.request(self.gitlab_url + path, headers=self.gitlab_headers, method='post', data=data)
+                res = self.request(self.gitlab_url + path, headers=self.gitlab_headers, method='post', data=data).json()
 
         if type == 'variable':
             data['key'] = name
@@ -159,7 +154,10 @@ class ClouderContainerLink(models.Model):
                     # '--docker-privileged'
                     '--docker-volumes /var/run/docker.sock:/var/run/docker.sock'
                 ])
-        elif self.name.name.code == 'gitlab':
+                self.container_id.execute(['sed', '-i', '"s/concurrent = [0-9]*/concurrent = ' + self.container_id.options['concurrent']['value'] + '/g"',
+                             '/etc/gitlab-runner/config.toml'])
+
+        elif self.name.name.type_id.name == 'gitlab' and self.container_id.application_id.code == 'files':
             if self.target.base_ids:
 
                 group_id = self.gitlab_ressource('group', self.container_id.environment_id.prefix, data={'name': self.container_id.environment_id.name})['id']
@@ -169,6 +167,8 @@ class ClouderContainerLink(models.Model):
                     project = self.request(self.gitlab_url + '/projects', headers=self.gitlab_headers, method='post', data={'name': self.container_id.name, 'namespace_id': group_id}).json()
                     self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
                     self.gitlab_ressource('variable', 'REGISTRY_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
+                    self.gitlab_ressource('variable', 'SALT_DOMAIN', project_id=str(project['id']), data={'value': self.salt_master.server_id.name + ':'  + self.salt_master.ports['api']['hostport']})
+                    self.gitlab_ressource('variable', 'PRODUCTION_SERVER', project_id=str(project['id']), data={'value': self.container_id.server_id.name})
                     self.gitlab_ressource('file', '.gitignore', project_id=str(project['id']))
                     self.gitlab_ressource('file', 'Dockerfile', project_id=str(project['id']))
                     self.gitlab_ressource('file', '.gitlab-ci.yml', project_id=str(project['id']))

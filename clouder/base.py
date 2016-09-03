@@ -178,6 +178,11 @@ class ClouderBase(models.Model):
         return ','.join([d for k, d in self.databases.iteritems()])
 
     @property
+    def http_port(self):
+        return self.container_id.childs['exec'] and \
+            self.container_id.childs['exec'].ports['http']['hostport']
+
+    @property
     def options(self):
         """
         Property returning a dictionary containing the value of all options
@@ -731,6 +736,8 @@ class ClouderBase(models.Model):
                 child.create_child_exec()
             return
 
+        self.deploy_salt()
+
         self.deploy_database()
         self.log('Database created')
 
@@ -754,6 +761,13 @@ class ClouderBase(models.Model):
         self = self.with_context(save_comment='First save')
         self.save_exec(no_enqueue=True)
 
+        if self.application_id.update_bases:
+            self.container_id.deploy_salt()
+        for key, child in self.container_id.childs.iteritems():
+            if child.application_id.update_bases:
+                child.deploy_salt()
+
+
     @api.multi
     def purge_post(self):
         """
@@ -776,15 +790,29 @@ class ClouderBase(models.Model):
         """
         self.purge_database()
         self.purge_post()
+        self.purge_salt()
+
+        if self.application_id.update_bases:
+            self.container_id.deploy_salt()
+        for key, child in self.container_id.childs.iteritems():
+            if child.application_id.update_bases:
+                child.deploy_salt()
+
         super(ClouderBase, self).purge()
-        
 
     @api.multi
-    def update_base(self):
+    def update(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('update', 'update_exec')
+
+    @api.multi
+    def update_exec(self):
         """
         Hook which can be called by submodules to execute commands when we
         want to update a base.
         """
+        self = self.with_context(save_comment='Before update')
+        self.save_exec(no_enqueue=True)
         return
 
     @api.multi

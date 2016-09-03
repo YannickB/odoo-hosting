@@ -55,6 +55,7 @@
             <field name="apptype_id" ref="apptype_odoo"/>
             <field name="name">registry_password</field>
             <field name="type">container</field>
+            <field name="app_code">files</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="apptype_odoo_option_ssh_privatekey" model="clouder.application.type.option">
@@ -237,6 +238,7 @@
             <field name="application_id" ref="app_odoo"/>
             <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
             <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
         </record>
         <record id="app_odoo_link_registry" model="clouder.application.link">
             <field name="application_id" ref="app_odoo"/>
@@ -323,6 +325,8 @@
             <field name="default_image_id" ref="image_odoo_files8"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">manual</field>
+            <field name="update_bases" eval="True"/>
         </record>
 
         <record id="app_odoo_exec" model="clouder.application">
@@ -333,6 +337,7 @@
             <field name="default_image_id" ref="image_odoo_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
         </record>
         <record id="app_odoo_exec_link_postgres" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_exec"/>
@@ -356,6 +361,7 @@
             <field name="parent_id" ref="app_odoo"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
             <field name="sequence">4</field>
+            <field name="update_strategy">auto</field>
         </record>
 
         <record id="image_odoo_files9" model="clouder.image">
@@ -384,6 +390,7 @@
             <field name="application_id" ref="app_odoo9"/>
             <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
             <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
         </record>
         <record id="app_odoo9_link_registry" model="clouder.application.link">
             <field name="application_id" ref="app_odoo9"/>
@@ -470,6 +477,8 @@
             <field name="default_image_id" ref="image_odoo_files9"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">manual</field>
+            <field name="update_bases" eval="True"/>
         </record>
 
         <record id="app_odoo9_exec" model="clouder.application">
@@ -480,6 +489,7 @@
             <field name="default_image_id" ref="image_odoo_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
         </record>
         <record id="app_odoo9_exec_link_postgres" model="clouder.application.link">
             <field name="application_id" ref="app_odoo9_exec"/>
@@ -503,6 +513,7 @@
             <field name="parent_id" ref="app_odoo9"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
             <field name="sequence">4</field>
+            <field name="update_strategy">auto</field>
         </record>
 
 
@@ -520,6 +531,7 @@
             <field name="nosave" eval="True"/>
         </record>
 
+
         <record id="image_odoo_clouder_exec" model="clouder.image">
             <field name="name">img_odoo_clouder_exec</field>
             <field name="type_id" ref="apptype_odoo"/>
@@ -527,6 +539,7 @@
             <field name="parent_from">clouder/clouder-odoo-clouder-exec</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
+            <field name="update_strategy">auto</field>
         </record>
         <record id="image_odoo_clouder_exec_volume_var" model="clouder.image.volume">
             <field name="image_id" ref="image_odoo_clouder_exec"/>
@@ -575,6 +588,7 @@
             <field name="expose">internet</field>
         </record>
 
+
         <record id="app_odoo_clouder" model="clouder.application">
             <field name="name">Clouder</field>
             <field name="code">clouder</field>
@@ -587,6 +601,7 @@
             <field name="application_id" ref="app_odoo_clouder"/>
             <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
             <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
         </record>
         <record id="app_odoo_clouder_link_registry" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder"/>
@@ -678,6 +693,8 @@
             <field name="default_image_id" ref="image_odoo_clouder_files8"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">manual</field>
+            <field name="update_bases" eval="True"/>
         </record>
 
         <record id="app_odoo_clouder_exec" model="clouder.application">
@@ -688,6 +705,7 @@
             <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
         </record>
         <record id="app_odoo_clouder_exec_link_postgres" model="clouder.application.link">
             <field name="application_id" ref="app_odoo_clouder_exec"/>
@@ -711,6 +729,7 @@
             <field name="parent_id" ref="app_odoo_clouder"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
             <field name="sequence">4</field>
+            <field name="update_strategy">auto</field>
         </record>
 
 
@@ -740,6 +759,7 @@
             <field name="application_id" ref="app_odoo9_clouder"/>
             <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
             <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
         </record>
         <record id="app_odoo9_clouder_link_registry" model="clouder.application.link">
             <field name="application_id" ref="app_odoo9_clouder"/>
@@ -831,6 +851,21 @@
             <field name="default_image_id" ref="image_odoo9_clouder_files"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">manual</field>
+            <field name="update_bases" eval="True"/>
+        </record>
+        <record id="app_odoo9_clouder_link_gitlab" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo9_clouder_files"/>
+            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
+            <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="app_odoo9_clouder_link_registry" model="clouder.application.link">
+            <field name="application_id" ref="app_odoo9_clouder_files"/>
+            <field name="name" ref="clouder.app_registry"/>
+            <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
         </record>
 
         <record id="app_odoo9_clouder_exec" model="clouder.application">
@@ -841,6 +876,7 @@
             <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
         </record>
         <record id="app_odoo9_clouder_exec_link_postgres" model="clouder.application.link">
             <field name="application_id" ref="app_odoo9_clouder_exec"/>
@@ -864,6 +900,7 @@
             <field name="parent_id" ref="app_odoo9_clouder"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
             <field name="sequence">4</field>
+            <field name="update_strategy">auto</field>
         </record>
 
 

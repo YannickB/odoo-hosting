@@ -104,7 +104,7 @@ class ClouderImage(models.Model):
                 "Name can only contains letters, digits and underscore"))
 
     @api.multi
-    def build_image(self, runner=False):
+    def build_image(self, model, server, runner=False, expose_ports=[], salt=True):
         """
         """
         return
@@ -169,6 +169,7 @@ class ClouderImagePort(models.Model):
         [('internet', 'Internet'), ('local', 'Local'), ('none', 'None')],
         'Expose?', required=True, default='local')
     udp = fields.Boolean('UDP?')
+    use_hostport = fields.Boolean('Use hostport?')
 
     _sql_constraints = [
         ('name_uniq', 'unique(image_id,name)',

@@ -38,7 +38,9 @@
                 <![CDATA[
                 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git nginx logrotate
 
-                RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+                RUN useradd -d /home/git  -s /bin/bash git
+                RUN mkdir /home/git
+                RUN chown git:git /home/git
                 RUN touch /home/git/.pgpass
 
                 ADD sources/default /etc/default/gitlab
@@ -109,7 +111,9 @@
 
                 RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git build-essential zlib1g-dev libyaml-dev libssl-dev libpq-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby ruby-dev golang
 
-                RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+                RUN useradd -d /home/git  -s /bin/bash git
+                RUN mkdir /home/git
+                RUN chown git:git /home/git
 
                 RUN mkdir -p /opt/gitlab/files
                 RUN chown -R git:git /opt/gitlab
@@ -193,21 +197,23 @@
 		RUN gem install bundler --no-ri --no-rdoc
 
                 # create a user for gitlab
-                RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+                RUN useradd -d /home/git  -s /bin/bash git
+                RUN mkdir /home/git
+                RUN chown git:git /home/git
 		RUN adduser git sudo
 
 		RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
 		RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
 		RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
 		RUN echo "[program:gitlab]" >> /etc/supervisor/conf.d/supervisord.conf
-		RUN echo "command=/opt/gitlab/files/lib/support/init.d/gitlab restart" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo 'command=/opt/gitlab/files/lib/support/init.d/gitlab restart' >> /etc/supervisor/conf.d/supervisord.conf
                 RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "command=/etc/init.d/nginx restart" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo 'command=/etc/init.d/nginx restart' >> /etc/supervisor/conf.d/supervisord.conf
                 RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "command=/etc/init.d/ssh start" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo 'command=/etc/init.d/ssh start' >> /etc/supervisor/conf.d/supervisord.conf
 
+                CMD /usr/bin/supervisord
 
-                CMD ["/usr/bin/supervisord"]
 
                 ]]>
             </field>

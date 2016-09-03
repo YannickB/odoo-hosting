@@ -134,6 +134,7 @@ class ClouderServer(models.Model):
     public = fields.Boolean('Public?')
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
     runner_id = fields.Many2one('clouder.container', 'Runner')
+    salt_minion_id = fields.Many2one('clouder.container', 'Salt Minion', readonly=True)
     oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
     oneclick_domain = fields.Char('Domain')
     oneclick_ports = fields.Boolean('Assign critical ports?')
@@ -202,6 +203,7 @@ class ClouderServer(models.Model):
         """
         ssh = self.connect()
         ssh['ssh'].close()
+        self.raise_error('Connection successful!')
 
     @api.multi
     def deploy(self):
@@ -210,6 +212,12 @@ class ClouderServer(models.Model):
         """
 
         super(ClouderServer, self).deploy()
+
+        self.execute_local([modules.get_module_path('clouder') +
+                            '/res/sed.sh', self.name,
+                            self.home_directory + '/.ssh/config'])
+        self.execute_local(['rm', '-rf', self.home_directory +
+                            '/.ssh/keys/' + self.name])
 
         self.execute_local(['mkdir', '-p', self.home_directory + '/.ssh/keys'])
         key_file = self.home_directory + '/.ssh/keys/' + self.name
@@ -231,16 +239,12 @@ class ClouderServer(models.Model):
         self.execute_write_file(self.home_directory + '/.ssh/config',
                                 '\n#END ' + self.name + '\n')
 
+
     @api.multi
     def purge(self):
         """
         Remove the keys from the filesystem and the ssh config.
         """
-        self.execute_local([modules.get_module_path('clouder') +
-                            '/res/sed.sh', self.name,
-                            self.home_directory + '/.ssh/config'])
-        self.execute_local(['rm', '-rf', self.home_directory +
-                            '/.ssh/keys/' + self.name])
         super(ClouderServer, self).purge()
 
     @api.multi
@@ -250,7 +254,6 @@ class ClouderServer(models.Model):
 
     @api.multi
     def oneclick_deploy_exec(self):
-        getattr(self, self.oneclick_id.function + '_purge')()
         getattr(self, self.oneclick_id.function + '_deploy')()
 
     @api.multi
@@ -812,7 +815,8 @@ class ClouderContainer(models.Model):
                             'hostport': port[2].get('hostport', False),
                             'localport': port[2].get('localport', False),
                             'expose': port[2].get('expose', False),
-                            'udp': port[2].get('udp', False)
+                            'udp': port[2].get('udp', False),
+                            'use_hostport': port[2].get('use_hostport', False)
                         }
                     else:
                         port = {
@@ -820,7 +824,8 @@ class ClouderContainer(models.Model):
                             'hostport': getattr(port, 'hostport', False),
                             'localport': getattr(port, 'localport', False),
                             'expose': getattr(port, 'expose', False),
-                            'udp': getattr(port, 'udp', False)
+                            'udp': getattr(port, 'udp', False),
+                            'use_hostport': getattr(port, 'use_hostport', False)
                         }
                     # Keeping the port if there is a match with the sources
                     if port['name'] in port_sources:
@@ -838,6 +843,7 @@ class ClouderContainer(models.Model):
                     'localport': getattr(port_sources[def_key_port], 'localport', False),
                     'expose': getattr(port_sources[def_key_port], 'expose', False),
                     'udp': getattr(port_sources[def_key_port], 'udp', False),
+                    'use_hostport': getattr(port_sources[def_key_port], 'use_hostport', False),
                     'source': port_sources[def_key_port]
                 }
                 ports_to_process.append(port)
@@ -869,10 +875,13 @@ class ClouderContainer(models.Model):
                           " fill the port range in the server configuration, and "
                           "that all ports in that range are not already used."))
                 if port['expose'] != 'none':
+                    localport = port['localport']
+                    if port['use_hostport']:
+                        localport = port['hostport']
                     ports.append(((0, 0, {
-                        'name': port['name'], 'localport': port['localport'],
+                        'name': port['name'], 'localport': localport,
                         'hostport': port['hostport'],
-                        'expose': port['expose'], 'udp': port['udp']})))
+                        'expose': port['expose'], 'udp': port['udp'], 'use_hostport': port['use_hostport']})))
             vals['port_ids'] = ports
 
             volumes = []
@@ -1057,9 +1066,38 @@ class ClouderContainer(models.Model):
         """
         if 'save_comment' not in self.env.context:
             self = self.with_context(save_comment='Before reinstall')
-        self.save_exec(no_enqueue=True, forcesave=True)
+        self.save_exec(no_enqueue=True)
         self = self.with_context(nosave=True)
         super(ClouderContainer, self).reinstall()
+        if self.parent_id:
+            childs = self.env['clouder.container.child'].search([('container_id', '=', self.parent_id.container_id.id), ('sequence', '>', self.parent_id.sequence)])
+            for child in childs:
+                if child.child_id:
+                    child.child_id.start()
+
+    @api.multi
+    def update(self):
+        self.do('update', 'update_exec')
+
+    @api.multi
+    def update_exec(self):
+        containers = [self]
+        for child in self.child_ids:
+            if child.child_id:
+                containers.append(child.child_id)
+
+        bases = {}
+        for container in containers:
+            if container.application_id.update_strategy != 'never':
+                container.reinstall()
+                if container.application_id.update_bases:
+                    for base in self.base_ids:
+                        bases[base.id] = base
+                    if self.parent_id:
+                        for base in self.parent_id.container_id.base_ids:
+                            bases[base.id] = base
+        for base_id, base in bases.iteritems():
+            base.update_exec()
 
     @api.multi
     def save(self):
@@ -1119,12 +1157,40 @@ class ClouderContainer(models.Model):
         return
 
     @api.multi
-    def hook_deploy(self, ports, volumes):
+    def hook_deploy(self):
         """
         Hook which can be called by submodules to execute commands to
         deploy a container.
         """
         return
+
+    def get_container_res(self):
+        ports = []
+        expose_ports = []
+        for port in self.port_ids:
+            ip = ''
+            if self.server_id.public_ip and self.application_id.type_id.name != 'registry':
+                ip = self.server_id.ip + ':'
+            ports.append(ip + str(port.hostport) + ':' + port.localport + (port.udp and '/udp' or ''))
+            if port.use_hostport:
+                expose_ports.append(port.hostport)
+        volumes = []
+        volumes_from = {}
+        for volume in self.volume_ids:
+            if volume.hostpath:
+                arg = volume.hostpath + ':' + volume.name
+                if volume.readonly:
+                    arg += ':ro'
+                volumes.append(arg)
+            if volume.from_id:
+                volumes_from[volume.from_id.name] = volume.from_id.name
+        volumes_from = volumes_from.values()
+        links = []
+        for link in self.link_ids:
+            if link.name.make_link \
+                    and link.target.server_id == self.server_id:
+                links.append(link.target.name + ':' + link.name.name.code)
+        return {'ports': ports, 'expose_ports': expose_ports, 'volumes': volumes, 'volumes_from': volumes_from, 'links': links, 'environment': {}}
 
     @api.multi
     def deploy_post(self):
@@ -1147,14 +1213,7 @@ class ClouderContainer(models.Model):
                 child.create_child_exec()
             return
 
-        ports = []
-        volumes = []
-        for port in self.port_ids:
-            ports.append(port)
-        for volume in self.volume_ids:
-            volumes.append(volume)
-
-        self.hook_deploy(ports, volumes)
+        self.hook_deploy()
 
         time.sleep(3)
 
@@ -1189,6 +1248,7 @@ class ClouderContainer(models.Model):
                 child.delete_child_exec()
         else:
             self.stop()
+            self.purge_salt()
             self.hook_purge()
         super(ClouderContainer, self).purge()
 
@@ -1278,6 +1338,7 @@ class ClouderContainerPort(models.Model):
         [('internet', 'Internet'), ('local', 'Local')], 'Expose?',
         required=True, default='local')
     udp = fields.Boolean('UDP?')
+    use_hostport = fields.Boolean('Use hostpost?')
 
     _sql_constraints = [
         ('name_uniq', 'unique(container_id,name)',

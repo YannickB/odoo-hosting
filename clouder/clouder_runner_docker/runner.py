@@ -36,9 +36,9 @@ class ClouderImage(models.Model):
 
     _inherit = 'clouder.image'
 
-    def build_image(self, model, server, runner=False):
+    def build_image(self, model, server, runner=False, expose_ports=[], salt=True):
 
-        res = super(ClouderImage, self).build_image(runner=runner)
+        res = super(ClouderImage, self).build_image(model, server, runner=runner, expose_ports=expose_ports, salt=salt)
 
         if not runner or runner.application_id.type_id.name == 'docker':
 
@@ -48,12 +48,17 @@ class ClouderImage(models.Model):
             else:
                 name = model.fullpath
 
-            tmp_dir = '/tmp/' + name
-            server.execute(['rm', '-rf', tmp_dir])
-            server.execute(['mkdir', '-p', tmp_dir])
+            if salt:
+                build_dir = '/srv/salt/containers/build_' + model.name
+                server = model.salt_master
+            else:
+                build_dir = '/tmp/' + name
+
+            server.execute(['rm', '-rf', build_dir])
+            server.execute(['mkdir', '-p', build_dir])
 
             if self.type_id:
-                if self.type_id.name == 'backup':
+                if self.type_id.name in ['backup', 'salt-master']:
                     sources_path = \
                         modules.get_module_path('clouder') + '/sources'
                 else:
@@ -62,15 +67,22 @@ class ClouderImage(models.Model):
                     )
                     sources_path = module_path and module_path + '/sources'
                 if sources_path and self.env['clouder.model'].local_dir_exist(sources_path):
-                    server.send_dir(sources_path, tmp_dir + '/sources')
+                    server.send_dir(sources_path, build_dir + '/sources')
 
             server.execute([
                 'echo "' + self.computed_dockerfile.replace('"', '\\"') +
-                '" >> ' + tmp_dir + '/Dockerfile'])
+                '" >> ' + build_dir + '/Dockerfile'])
 
-            server.execute(
-                ['docker', 'build', '--pull', '-t', name, tmp_dir])
-            server.execute(['rm', '-rf', tmp_dir])
+            if expose_ports:
+                server.execute([
+                    'echo "' + 'EXPOSE ' + ' '.join(expose_ports) +
+                    '" >> ' + build_dir + '/Dockerfile'])
+
+            if not salt:
+                server.execute(
+                    ['docker', 'build', '--pull', '-t', name, build_dir])
+                server.execute(['rm', '-rf', build_dir])
+
             return name
         return res
 
@@ -150,53 +162,49 @@ class ClouderContainer(models.Model):
         return cmd
 
     @api.multi
-    def hook_deploy(self, ports, volumes):
+    def hook_deploy(self):
         """
         Deploy the container in the server.
         """
 
-        res = super(ClouderContainer, self).hook_deploy(ports, volumes)
+        res = super(ClouderContainer, self).hook_deploy()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name \
                 == 'docker':
 
-            cmd = ['docker', 'run', '-d', '-t', '--restart=always']
-            for port in ports:
-                ip = ''
-                if self.server_id.public_ip and self.application_id.type_id.name != 'registry':
-                    ip = self.server_id.ip + ':'
-                cmd.extend(
-                    ['-p', 
-                     ip
-                     + str(port.hostport) + ':' + port.localport \
-                     + (port.udp and '/udp' or '')])
-            volumes_from = {}
-            for volume in volumes:
-                if volume.hostpath:
-                    arg = volume.hostpath + ':' + volume.name
-                    if volume.readonly:
-                        arg += ':ro'
-                    cmd.extend(['-v', arg])
-                if volume.from_id:
-                    volumes_from[volume.from_id.name] = volume.from_id.name
-            for key, volume in volumes_from.iteritems():
-                cmd.extend(['--volumes-from', volume])
-            for link in self.link_ids:
-                if link.name.make_link \
-                        and link.target.server_id == self.server_id:
-                    cmd.extend(['--link', link.target.name +
-                                ':' + link.name.name.code])
-            cmd = self.hook_deploy_special_args(cmd)
-            cmd.extend(['--name', self.name])
+            res = self.get_container_res()
 
-            if not self.image_version_id:
-                cmd.extend([self.image_id.build_image(self, self.server_id)])
+            if not self.application_id.check_role('no-salt'):
+
+                self.deploy_salt()
+                self.salt_master.execute(['rm', '-rf', '/var/cache/salt/master/file_lists/roots/'])
+                self.salt_master.execute(['salt', self.server_id.name, 'state.apply', 'container_deploy', "pillar=\"{'container_name': '" + self.name + "', 'image': '" + self.name + '-' + datetime.now().strftime('%Y%m%d.%H%M%S') + "', 'build': True}\""])
+
             else:
-                cmd.extend([self.hook_deploy_source()])
 
-            # Run container
-            self.server_id.execute(cmd)
+                cmd = ['docker', 'run', '-d', '-t', '--restart=always']
+
+                for port in res['ports']:
+                    cmd.extend(['-p', port])
+                for volume in res['volumes']:
+                    cmd.extend(['-v', volume])
+                for volume in res['volumes_from']:
+                    cmd.extend(['--volumes-from', volume])
+                for link in res['links']:
+                    cmd.extend(['--link', link])
+                for key, environment in res['environment'].iteritems():
+                    cmd.extend(['-e', '"' + key + '"="' + environment + '"'])
+                cmd = self.hook_deploy_special_args(cmd)
+                cmd.extend(['--name', self.name])
+
+                if not self.image_version_id:
+                    cmd.extend([self.image_id.build_image(self, self.server_id, expose_ports=res['expose_ports'], salt=False)])
+                else:
+                    cmd.extend([self.hook_deploy_source()])
+
+                # Run container
+                self.server_id.execute(cmd)
 
         return res
 
@@ -211,7 +219,10 @@ class ClouderContainer(models.Model):
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
-            self.server_id.execute(['docker', 'rm', self.name])
+            if not self.application_id.check_role('no-salt'):
+                self.salt_master.execute(['salt', self.server_id.name, 'state.apply', 'container_purge', "pillar=\"{'container_name': '" + self.name + "'}\""])
+            else:
+                self.server_id.execute(['docker', 'rm', '-v', self.name])
 
         return res
 
@@ -226,8 +237,10 @@ class ClouderContainer(models.Model):
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
-
-            self.server_id.execute(['docker', 'stop', self.name])
+            if not self.application_id.check_role('no-salt'):
+                self.salt_master.execute(['salt', self.server_id.name, 'state.apply', 'container_stop', "pillar=\"{'container_name': '" + self.name + "'}\""])
+            else:
+                self.server_id.execute(['docker', 'stop', self.name])
 
         return res
 
@@ -243,7 +256,10 @@ class ClouderContainer(models.Model):
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
-            self.server_id.execute(['docker', 'start', self.name])
+            if not self.application_id.check_role('no-salt'):
+                self.salt_master.execute(['salt', self.server_id.name, 'state.apply', 'container_start', "pillar=\"{'container_name': '" + self.name + "'}\""])
+            else:
+                self.server_id.execute(['docker', 'start', self.name])
 
             time.sleep(3)
 

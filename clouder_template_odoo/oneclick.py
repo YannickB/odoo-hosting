@@ -31,246 +31,94 @@ class ClouderServer(models.Model):
     _inherit = 'clouder.server'
 
     @api.multi
-    def oneclick_clouder_deploy(self):
-        self = self.with_context(no_enqueue=True)
-        # TODO
-        # container_ports={'nginx':80,'nginx-ssl':443,'bind':53})
+    def oneclick_deploy_element(self, type, code, container=False, domain=False, ports=[]):
 
-        image_obj = self.env['clouder.image']
-        image_version_obj = self.env['clouder.image.version']
-
+        application_obj = self.env['clouder.application']
         container_obj = self.env['clouder.container']
         port_obj = self.env['clouder.container.port']
-        application_obj = self.env['clouder.application']
+        base_obj = self.env['clouder.base']
 
-        image = image_obj.search([('name', '=', 'img_registry')])
-        image.build()
+        application = application_obj.search([('code', '=', code)])
 
-        application = application_obj.search([('code', '=', 'registry')])
-        registry = container_obj.create({
-            'suffix': 'registry',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-        })
+        if type == 'container':
+            container = container_obj.search([('environment_id', '=', self.environment_id.id), ('suffix', '=', code)])
+            if not container:
+                # ports = []
+                # if self.oneclick_ports:
+                #     ports = [(0,0,{'name':'bind', 'localport': 53, 'hostport': 53, 'expose': 'internet', 'udp': True})]
+                container = container_obj.create({
+                    'suffix': code,
+                    'environment_id': self.environment_id.id,
+                    'server_id': self.id,
+                    'application_id': application.id,
+                })
+                if self.oneclick_ports and ports:
+                    for port in ports:
+                        port_record = port_obj.search([('container_id', '=', container.id),('localport','=',port)])
+                        port_record.write({'hostport': port})
+                    container.reinstall()
+            return container
 
-
-        image = image_obj.search([('name', '=', 'img_base')])
-        if not image.has_version:
-            image = image_obj.search([('name', '=', 'img_base')])
-            image.registry_id = registry.id
-            image.build()
-        base = image_version_obj.search([('image_id', '=', image.id)])
-
-        image = image_obj.search([('name', '=', 'img_backup_bup')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_spamassassin')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_postfix')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_bind')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_nginx')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-        nginx = image_version_obj.search([('image_id', '=', image.id)])
-
-        image = image_obj.search([('name', '=', 'img_proxy')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = nginx.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_shinken')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_glances')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_postgres')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_odoo_data')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_odoo_clouder_files8')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        image = image_obj.search([('name', '=', 'img_odoo_clouder_exec')])
-        if not image.has_version:
-            image.registry_id = registry.id
-            image.parent_version_id = base.id
-            image.build()
-
-        application = application_obj.search([('code', '=', 'backup-bup')])
-        container_obj.create({
-            'suffix': 'backup',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-        })
-
-        application = application_obj.search([('code', '=', 'spamassassin')])
-        container_obj.create({
-            'suffix': 'spamassassin',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-        })
-
-        application = application_obj.search([('code', '=', 'postfix')])
-        ports = []
-        if self.oneclick_ports:
-            ports = [(0,0,{'name':'postfix', 'localport': 25, 'hostport': 25, 'expose': 'internet'})]
-        postfix = container_obj.create({
-            'suffix': 'postfix',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-#            'port_ids': ports
-        })
-        if self.oneclick_ports:
-            port = port_obj.search([('container_id', '=', postfix.id),('name','=','postfix')])
-            port.write({'hostport': 25})
-            postfix.reinstall()
-
-        application = application_obj.search([('code', '=', 'bind')])
-        ports = []
-        if self.oneclick_ports:
-            ports = [(0,0,{'name':'bind', 'localport': 53, 'hostport': 53, 'expose': 'internet', 'udp': True})]
-        bind = container_obj.create({
-            'suffix': 'bind',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-#            'port_ids': ports
-        })
-        if self.oneclick_ports:
-            port = port_obj.search([('container_id', '=', bind.id),('name','=','bind')])
-            port.write({'hostport': 53})
-            bind.reinstall()
+        if type == 'base':
+            base = base_obj.search([('name', '=', code), ('domain_id', '=', domain.id)])
+            if not base:
+                base = base_obj.create({
+                    'name': code,
+                    'domain_id': domain.id,
+                    'environment_id': self.environment_id.id,
+                    'title': application.name,
+                    'application_id': application.id,
+                    'container_id': container.id,
+                    'admin_name': 'admin',
+                    'admin_password': 'adminadmin',
+                })
+            return base
 
 
-        application = application_obj.search([('code', '=', 'proxy')])
-        ports = []
-        if self.oneclick_ports:
-            ports = [(0,0,{'name':'nginx', 'localport': 80, 'hostport': 80, 'expose': 'internet'}),
-                     (0,0,{'name':'nginx-ssl', 'localport': 443, 'hostport': 443, 'expose': 'internet'})]
-        proxy = container_obj.create({
-            'suffix': 'proxy',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-#            'port_ids': ports
-        })
-        if self.oneclick_ports:
-            port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx')])
-            port.write({'hostport': 80})
-            port = port_obj.search([('container_id', '=', proxy.id),('name','=','nginx-ssl')])
-            port.write({'hostport': 443})
-            proxy.reinstall()
+    @api.multi
+    def oneclick_clouder_deploy(self):
+        self = self.with_context(no_enqueue=True)
 
+        self.oneclick_deploy_element('container', 'backup-bup')
 
-        application = application_obj.search([('code', '=', 'shinken')])
-        shinken = container_obj.create({
-            'suffix': 'shinken',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-        })
+        self.oneclick_deploy_element('container', 'spamassassin')
 
-        application = application_obj.search([('code', '=', 'glances')])
-        container_obj.create({
-            'suffix': 'glances',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-        })
+        self.oneclick_deploy_element('container', 'postfix', ports=[25])
 
-        application = application_obj.search([('code', '=', 'postgres')])
-        container_obj.create({
-            'suffix': 'postgres',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-        })
-
-        application = application_obj.search([('code', '=', 'clouder')])
-        clouder = container_obj.create({
-            'suffix': 'clouder',
-            'environment_id': self.environment_id.id,
-            'server_id': self.id,
-            'application_id': application.id,
-            'subservice_name': 'test'
-        })
+        bind = self.oneclick_deploy_element('container', 'bind', ports=[53])
 
         domain_obj = self.env['clouder.domain']
-        domain = domain_obj.create({
-            'name': self.oneclick_domain,
-            'organisation': self.oneclick_domain,
-            'dns_id': bind.id
-        })
+        domain = domain_obj.search([('name', '=', self.oneclick_domain)])
+        if not domain:
+            domain = domain_obj.create({
+                'name': self.oneclick_domain,
+                'organisation': self.oneclick_domain,
+                'dns_id': bind.id
+            })
 
-        base_obj = self.env['clouder.base']
-        application = application_obj.search([('code', '=', 'shinken')])
-        base_obj.create({
-            'name': 'shinken',
-            'domain_id': domain.id,
-            'environment_id': self.environment_id.id,
-            'title': 'Shinken',
-            'application_id': application.id,
-            'container_id': shinken.id,
-            'admin_name': 'admin',
-            'admin_password': 'admin',
-        })
+        self.oneclick_deploy_element('container', 'proxy', ports=[80, 443])
 
-        application = application_obj.search([('code', '=', 'clouder')])
-        base_obj.create({
-            'name': 'clouder',
-            'domain_id': domain.id,
-            'environment_id': self.environment_id.id,
-            'title': 'My Clouder',
-            'application_id': application.id,
-            'container_id': clouder.id,
-            'admin_name': 'admin',
-            'admin_password': 'admin',
-            'test': True
-        })
+        container = self.oneclick_deploy_element('container', 'shinken')
+        self.oneclick_deploy_element('base', 'shinken', container=container, domain=domain)
 
-#        clouder.install_subservice()
+        self.oneclick_deploy_element('container', 'glances')
+
+        container = self.oneclick_deploy_element('container', 'registry')
+        self.oneclick_deploy_element('base', 'registry', container=container, domain=domain)
+
+        self.oneclick_deploy_element('container', 'postgres')
+
+        self.oneclick_deploy_element('container', 'redis')
+
+        container = self.oneclick_deploy_element('container', 'gitlab')
+        self.oneclick_deploy_element('base', 'gitlab', container=container, domain=domain)
+
+        self.oneclick_deploy_element('container', 'gitlabci')
+
+        container = self.oneclick_deploy_element('container', 'clouder9')
+        self.oneclick_deploy_element('base', 'clouder9', container=container, domain=domain)
+
+#        container.install_subservice()
 
     @api.multi
     def oneclick_clouder_purge(self):
@@ -282,10 +130,22 @@ class ClouderServer(models.Model):
                               ('suffix', '=', 'clouder-test')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'clouder')]).unlink()
+                              ('suffix', '=', 'clouder9')]).unlink()
+
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('suffix', '=', 'gitlabci')]).unlink()
+
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('suffix', '=', 'gitlab')]).unlink()
+
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('suffix', '=', 'redis')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'postgres')]).unlink()
+
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('suffix', '=', 'registry')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'glances')]).unlink()
@@ -293,10 +153,10 @@ class ClouderServer(models.Model):
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'shinken')]).unlink()
 
-        self.env['clouder.domain'].search([('name', '=', self.oneclick_domain)]).unlink()
-
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'proxy')]).unlink()
+
+        self.env['clouder.domain'].search([('name', '=', self.oneclick_domain)]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'bind')]).unlink()
@@ -308,7 +168,4 @@ class ClouderServer(models.Model):
                               ('suffix', '=', 'spamassassin')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'backup')]).unlink()
-
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'registry')]).unlink()
+                              ('suffix', '=', 'backup-bup')]).unlink()
