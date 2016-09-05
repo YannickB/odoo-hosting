@@ -52,17 +52,18 @@ class ClouderImageVersion(models.Model):
                     sources_path = \
                         modules.get_module_path('clouder') + '/sources'
                 else:
-                    sources_path = modules.get_module_path(
+                    module_path = modules.get_module_path(
                         'clouder_template_' + self.image_id.type_id.name
-                    ) + '/sources'
-                if self.local_dir_exist(sources_path):
+                    )
+                    sources_path = module_path and module_path + '/sources'
+                if sources_path and self.local_dir_exist(sources_path):
                     server.send_dir(sources_path, tmp_dir + '/sources')
 
             server.execute([
                 'echo "' + dockerfile.replace('"', '\\"') +
                 '" >> ' + tmp_dir + '/Dockerfile'])
             server.execute(
-                ['docker', 'build', '--pull', '--no-cache', '-t', self.fullname, tmp_dir])
+                ['docker', 'build', '--pull', '-t', self.fullname, tmp_dir])
             server.execute(['docker', 'tag', self.fullname,
                             self.fullpath])
             server.execute(

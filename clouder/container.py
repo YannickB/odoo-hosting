@@ -1158,8 +1158,6 @@ class ClouderContainer(models.Model):
         self = self.with_context(save_comment='First save')
         self.save_exec(no_enqueue=True)
 
-        self.deploy_links()
-
         return
 
     @api.multi

@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <!-- apptype -->
+        <record id="apptype_gitlab" model="clouder.application.type">
+            <field name="name">gitlab</field>
+            <field name="system_user">git</field>
+        </record>
+        <record id="apptype_gitlab_option_db_password" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_gitlab"/>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="apptype_gitlab_option_secret" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_gitlab"/>
+            <field name="name">secret</field>
+            <field name="type">container</field>
+            <field name="app_code">data</field>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="apptype_gitlab_option_token" model="clouder.application.type.option">
+            <field name="apptype_id" ref="apptype_gitlab"/>
+            <field name="name">token</field>
+            <field name="type">base</field>
+            <field name="auto" eval="True"/>
+        </record>
+
+        <!-- image "data" repository -->
+        <record id="image_gitlab_data" model="clouder.image">
+            <field name="name">img_gitlab_data</field>
+            <field name="type_id" ref="apptype_gitlab"/>
+            <field name="current_version">1</field>
+            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_id"/>
+            <field name="dockerfile">
+                <![CDATA[
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git nginx logrotate
+
+                RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+                RUN touch /home/git/.pgpass
+
+                ADD sources/default /etc/default/gitlab
+                RUN rm /etc/nginx/sites-enabled/default
+                ADD sources/logrotate /etc/logrotate.d/gitlab
+
+                RUN mkdir -p /opt/gitlab/data/uploads
+                RUN chmod -R 700 /opt/gitlab/data/uploads
+                RUN mkdir -p /opt/gitlab/data/builds
+                RUN mkdir -p /opt/gitlab/data/artifacts
+                RUN mkdir -p /opt/gitlab/config
+                RUN mkdir -p /opt/gitlab/var/log
+                RUN mkdir -p /opt/gitlab/var/tmp
+
+                ADD sources/gitlab.yml /opt/gitlab/config/gitlab.yml
+                ADD sources/secrets.yml /opt/gitlab/config/secrets.yml
+                ADD sources/resque.yml /opt/gitlab/config/resque.yml
+                ADD sources/database.yml /opt/gitlab/config/database.yml
+                RUN chmod 0600 /opt/gitlab/config/secrets.yml
+                ADD sources/unicorn.rb /opt/gitlab/config/unicorn.rb
+                ADD sources/rack_attack.rb /opt/gitlab/config/rack_attack.rb
+
+                RUN chown -R git:git /opt/gitlab
+
+                USER git
+
+		RUN mkdir /home/git/repositories
+		RUN chmod -R 770 /home/git/repositories
+		RUN chmod -R ug-s /home/git/repositories/
+
+                # Configure Git global settings for git user
+                # 'autocrlf' is needed for the web editor
+                RUN git config --global core.autocrlf input
+
+                # Disable 'git gc --auto' because GitLab already runs 'git gc' when needed
+                RUN git config --global gc.auto 0
+
+                ]]>
+            </field>
+        </record>
+        <!-- image's volumes -->
+        <record id="image_gitlab_data_volume_home" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_data"/>
+            <field name="name">/home/git</field>
+        </record>
+        <record id="image_gitlab_data_volume_nginx" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_data"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_gitlab_data_volume_logrotate" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_data"/>
+            <field name="name">/etc/logrotate</field>
+        </record>
+        <record id="image_gitlab_data_volume_data" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_data"/>
+            <field name="name">/opt/gitlab</field>
+        </record>
+
+        <!-- image "files" repository -->
+        <record id="image_gitlab_files" model="clouder.image">
+            <field name="name">img_gitlab_files</field>
+            <field name="type_id" ref="apptype_gitlab"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_id"/>
+            <field name="dockerfile">
+                <![CDATA[
+
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git build-essential zlib1g-dev libyaml-dev libssl-dev libpq-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby ruby-dev golang
+
+                RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+
+                RUN mkdir -p /opt/gitlab/files
+                RUN chown -R git:git /opt/gitlab
+
+                # Clone GitLab repository
+                RUN cd /opt/gitlab/files
+                RUN git clone https://gitlab.com/gitlab-org/gitlab-ce.git /opt/gitlab/files -b 8-11-stable
+
+                RUN gem install bundler --no-ri --no-rdoc
+		RUN cd /opt/gitlab/files; bundle install --deployment --without development test mysql aws kerberos
+
+		RUN git clone https://gitlab.com/gitlab-org/gitlab-workhorse.git /opt/gitlab/gitlab-workhorse
+		RUN cd /opt/gitlab/gitlab-workhorse; git checkout v0.7.8
+		RUN cd /opt/gitlab/gitlab-workhorse; make
+
+		RUN ln -s /opt/gitlab/config/gitlab.yml /opt/gitlab/files/config/gitlab.yml
+                RUN ln -s /opt/gitlab/config/secrets.yml /opt/gitlab/files/config/secrets.yml
+                RUN ln -s /opt/gitlab/config/resque.yml /opt/gitlab/files/config/resque.yml
+                RUN ln -s /opt/gitlab/config/database.yml /opt/gitlab/files/config/database.yml
+                RUN ln -s /opt/gitlab/config/unicorn.rb /opt/gitlab/files/config/unicorn.rb
+                RUN ln -s /opt/gitlab/config/rack_attack.rb /opt/gitlab/files/config/initializers/rack_attack.rb
+
+                RUN rm -rf /opt/gitlab/files/log
+                RUN rm -rf /opt/gitlab/files/tmp
+                RUN rm -rf /opt/gitlab/files/public/uploads
+                RUN rm -rf /opt/gitlab/files/builds
+                RUN rm -rf /opt/gitlab/files/shared/artifacts
+                RUN ln -s /opt/gitlab/var/log /opt/gitlab/files/log
+                RUN ln -s /opt/gitlab/var/tmp /opt/gitlab/files/tmp
+                RUN ln -s /opt/gitlab/data/uploads /opt/gitlab/files/public/uploads
+                RUN ln -s /opt/gitlab/data/builds /opt/gitlab/files/builds
+                RUN ln -s /opt/gitlab/data/artifacts /opt/gitlab/files/shared/artifacts
+
+		RUN chown -R git:git /opt/gitlab
+		USER git
+
+                ]]>
+            </field>
+        </record>
+        <!-- image's volumes -->
+        <record id="image_gitlab_files_volume_home" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_files"/>
+            <field name="from_code">data</field>
+            <field name="name">/home/git</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_gitlab_files_volume_config" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_files"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/gitlab</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_gitlab_files_volume_files" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_files"/>
+            <field name="name">/opt/gitlab/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_gitlab_files_volume_workhorse" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_files"/>
+            <field name="name">/opt/gitlab/gitlab-workhorse</field>
+            <field name="nosave" eval="True"/>
+        </record>
+
+        <!-- image "exec" repository -->
+        <record id="image_gitlab_exec" model="clouder.image">
+            <field name="name">img_gitlab_exec</field>
+            <field name="type_id" ref="apptype_gitlab"/>
+            <field name="current_version">8.0</field>
+            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_id"/>
+            <field name="dockerfile">
+                <![CDATA[
+
+                USER root
+
+                # update apt-get and install needed tools for the gitlab installation
+                RUN apt-get update -y
+                RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libpq-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby ruby-dev golang git supervisor postgresql-client nginx
+
+		ADD sources/default /etc/default/gitlab
+		RUN gem install bundler --no-ri --no-rdoc
+
+                # create a user for gitlab
+                RUN adduser --home=/home/git --disabled-password --gecos "" --shell=/bin/bash git
+		RUN adduser git sudo
+
+		RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
+		RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
+		RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+		RUN echo "[program:gitlab]" >> /etc/supervisor/conf.d/supervisord.conf
+		RUN echo "command=/opt/gitlab/files/lib/support/init.d/gitlab restart" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "command=/etc/init.d/nginx restart" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "command=/etc/init.d/ssh start" >> /etc/supervisor/conf.d/supervisord.conf
+
+
+                CMD ["/usr/bin/supervisord"]
+
+                ]]>
+            </field>
+        </record>
+        <!-- imag's volumes -->
+        <record id="image_gitlab_exec_volume_home" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/home/git</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_gitlab_exec_volume_etc" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/etc</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_gitlab_exec_volume_opt" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_exec"/>
+            <field name="from_code">data</field>
+            <field name="name">/opt/gitlab</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_gitlab_exec_volume_files" model="clouder.image.volume">
+            <field name="image_id" ref="image_gitlab_exec"/>
+            <field name="from_code">files</field>
+            <field name="name">/opt/gitlab/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <!-- imag's ports to expose -->
+        <record id="image_gitlab_exec_port_ssh" model="clouder.image.port">
+            <field name="image_id" ref="image_gitlab_exec"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_gitlab_exec_port_http" model="clouder.image.port">
+            <field name="image_id" ref="image_gitlab_exec"/>
+            <field name="name">http</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_gitlab_exec_port_https" model="clouder.image.port">
+            <field name="image_id" ref="image_gitlab_exec"/>
+            <field name="name">https</field>
+            <field name="localport">443</field>
+            <field name="expose">internet</field>
+        </record>
+
+
+        <!-- app -->
+        <record id="app_gitlab" model="clouder.application">
+            <field name="name">Gitlab</field>
+            <field name="code">gitlab</field>
+            <field name="type_id" ref="apptype_gitlab"/>
+            <field name="default_image_id" ref="image_gitlab_data"/>
+            <field name="base" eval="True"/>
+        </record>
+        <!-- links to templates -->
+        <!-- bind to bind -->
+        <record id="app_gitlab_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab"/>
+            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <!-- bind to shinken -->
+        <record id="app_gitlab_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <!-- bind to postgres -->
+        <record id="app_gitlab_link_postgres" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
+        <!-- bind to postfix -->
+        <record id="app_gitlab_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <!-- bind to proxy -->
+        <record id="app_gitlab_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab"/>
+            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+        <!-- bind to redis -->
+        <record id="app_gitlab_link_redis" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab"/>
+            <field name="name" ref="clouder_template_redis.app_redis"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
+
+        <!-- app "data" -->
+        <record id="app_gitlab_data" model="clouder.application">
+            <field name="name">Gitlab Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="apptype_gitlab"/>
+            <field name="parent_id" ref="app_gitlab"/>
+            <field name="default_image_id" ref="image_gitlab_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
+        </record>
+        <!-- links to templates -->
+        <!-- bind to postgres -->
+        <record id="app_gitlab_data_link_postgres" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab_data"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+        <!-- bind to shinken -->
+        <record id="app_gitlab_data_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab_data"/>
+            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
+
+        <!-- app "files" -->
+        <record id="app_gitlab_files" model="clouder.application">
+            <field name="name">Gitlab Files</field>
+            <field name="code">files</field>
+            <field name="type_id" ref="apptype_gitlab"/>
+            <field name="parent_id" ref="app_gitlab"/>
+            <field name="default_image_id" ref="image_gitlab_files"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+        </record>
+
+        <!-- app "exec" -->
+        <record id="app_gitlab_exec" model="clouder.application">
+            <field name="name">Gitlab Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="apptype_gitlab"/>
+            <field name="parent_id" ref="app_gitlab"/>
+            <field name="default_image_id" ref="image_gitlab_exec"/>
+            <field name="sequence">3</field>
+            <field name="required" eval="True"/>
+        </record>
+        <!-- links to templates -->
+        <!-- bind to postgres -->
+        <record id="app_gitlab_exec_link_postgres" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab_exec"/>
+            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+        <!-- bind to postfix -->
+        <record id="app_gitlab_exec_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab_exec"/>
+            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+        <!-- bind to redis -->
+        <record id="app_gitlab_exec_link_redis" model="clouder.application.link">
+            <field name="application_id" ref="app_gitlab_exec"/>
+            <field name="name" ref="clouder_template_redis.app_redis"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+    </data>
+</openerp>
+
