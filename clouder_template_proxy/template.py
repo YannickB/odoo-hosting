@@ -157,10 +157,20 @@ class ClouderBaseLink(models.Model):
                 self.base_id.container_id.server_id.ip + '/g"',
                 self.base_id.nginx_configfile])
             if 'http' in self.base_id.container_id.ports:
-                target.execute([
-                    'sed', '-i', '"s/PORT/' +
-                    self.base_id.container_id.ports['http']['hostport'] +
-                    '/g"', self.base_id.nginx_configfile])
+                protocol = 'http'
+                port = self.base_id.container_id.ports['http']['hostport']
+            if 'https' in self.base_id.container_id.ports:
+                protocol = 'https'
+                port = self.base_id.container_id.ports['https']['hostport']
+            target.execute([
+                'sed', '-i', '"s/PORT/' +
+                port +
+                '/g"', self.base_id.nginx_configfile])
+            target.execute([
+                'sed', '-i', '"s/PROTOCOL/' +
+                protocol +
+                '/g"', self.base_id.nginx_configfile])
+
             self.nginx_config_update(target)
             # self.deploy_prepare_apache(cr, uid, vals, context)
             cert_file = '/etc/ssl/certs/' + self.base_id.fulldomain + '.crt'

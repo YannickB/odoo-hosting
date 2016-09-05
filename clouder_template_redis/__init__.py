@@ -19,31 +19,3 @@
 # <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-
-{
-    'name': 'Clouder Template Odoo',
-    'version': '1.0',
-    'category': 'Clouder',
-    'depends': [
-        'clouder_template_bind',
-        'clouder_template_gitlab',
-        'clouder_template_glances',
-        'clouder_template_shinken',
-        'clouder_template_postfix',
-        'clouder_template_proxy',
-        'clouder_template_postgres',
-        'clouder_template_piwik'
-    ],
-    'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
-    'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder Odoo
-    """,
-    'demo': [],
-    'data': [
-        'template.xml'
-    ],
-    'installable': True,
-    'application': True,
-}

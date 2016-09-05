@@ -20,4 +20,28 @@
 #
 ##############################################################################
 
-from __unfinished__.clouder_template_git import clouder_template_git
+{
+    'name': 'Clouder Template GitLab',
+    'version': '1.0',
+    'category': 'Clouder',
+    'depends': [
+        'clouder_template_bind',
+        'clouder_template_shinken',
+        'clouder_template_postfix',
+        'clouder_template_proxy',
+        'clouder_template_postgres',
+        'clouder_template_redis',
+        'clouder_template_piwik'
+    ],
+    'author': 'Yannick Buron (Clouder)',
+    'license': 'Other OSI approved licence',
+    'website': 'https://github.com/clouder-community/clouder',
+    'description': """
+Clouder Template GitLab
+""",
+    'demo': [],
+    'data': ['template_gitlab.xml','template_gitlabci.xml'],
+    'installable': True,
+    'application': True,
+}
+
