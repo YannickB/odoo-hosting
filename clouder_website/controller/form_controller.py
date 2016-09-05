@@ -23,8 +23,11 @@
 from openerp import http, api, _
 from openerp.http import request
 from werkzeug.exceptions import HTTPException, NotFound, BadRequest
+from werkzeug.wsgi import wrap_file
+from werkzeug.wrappers import Response
 from xmlrpclib import ServerProxy
 from unicodedata import normalize
+import os
 import json
 import logging
 import copy
@@ -112,6 +115,24 @@ class FormController(http.Controller):
         return request.make_response(json.dumps(resp), headers=HEADERS)
 
     #######################
+    #        Files        #
+    #######################
+    @http.route('/clouder_form/fontawesome/<string:path>',
+                type='http', auth='public', method=['GET'])
+    def request_font_awesome(self, path, **post):
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        ressource_path = os.path.join(
+            current_dir,
+            "../static/lib/fontawesome/fonts",
+            path)
+        response = Response(
+            wrap_file(request.httprequest.environ, open(ressource_path)),
+            headers=HEADERS,
+            direct_passthrough=True
+        )
+        return response
+
+    #######################
     #        Pages        #
     #######################
     @http.route('/clouder_form/request_form', type='http', auth='public', methods=['POST'])
@@ -136,13 +157,31 @@ class FormController(http.Controller):
         countries = country_orm.search([])
         states = state_orm.search([])
 
+        font_awesome = """
+@font-face {
+    font-family: 'FontAwesome';
+    src: url('%(path)s.eot?v=4.2.0');
+    src: url('%(path)s.eot?#iefix&v=4.2.0') format('embedded-opentype'),
+         url('%(path)s.woff?v=4.2.0') format('woff'),
+         url('%(path)s.ttf?v=4.2.0') format('truetype'),
+         url('%(path)s.svg?v=4.2.0#fontawesomeregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+        """ % {
+            'path':
+                request.httprequest.url_root.rstrip('/') +
+                "/clouder_form/fontawesome/fontawesome-webfont",
+        }
+
         # Render the form
         qweb_context = {
             'applications': applications.sorted(key=lambda r: self.uni_norm(r.name)),
             'domains': domains.sorted(key=lambda r: self.uni_norm(r.name)),
             'countries': countries.sorted(key=lambda r: self.uni_norm(r.name)),
             'states': states.sorted(key=lambda r: self.uni_norm(r.name)),
-            'hostname': request.httprequest.url_root
+            'hostname': request.httprequest.url_root.rstrip('/'),
+            'font_awesome_definition': font_awesome
         }
         html = request.env.ref('clouder_website.plugin_form').render(
             qweb_context,

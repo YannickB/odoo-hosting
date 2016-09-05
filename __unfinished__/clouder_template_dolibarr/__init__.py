@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
@@ -20,19 +21,5 @@
 #
 ##############################################################################
 
-{
-    'name': 'Clouder Template Git',
-    'version': '1.0',
-    'category': 'Clouder',
-    'depends': ['base'],
-    'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
-    'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-Clouder Template Git
-""",
-    'demo': [],
-    'data': ['clouder_template_git_data.xml'],
-    'installable': True,
-    'application': True,
-}
+import template
+

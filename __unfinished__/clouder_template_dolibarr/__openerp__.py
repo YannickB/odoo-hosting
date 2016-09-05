@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Author: Yannick Buron, Nicolas Petit
+# Author: Yannick Buron
 # Copyright 2015, TODAY Clouder SASU
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,23 +21,28 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Website',
+    'name': 'Clouder Template Dolibarr',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['base', 'auth_signup', 'clouder'],
-    'author': 'Yannick Buron (Clouder), Nicolas Petit',
+    'depends': [
+        'clouder_template_bind',
+        'clouder_template_postgres',
+        'clouder_template_shinken',
+        'clouder_template_postfix',
+        'clouder_template_proxy',
+        'clouder_template_piwik'
+    ],
+    'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
-    Creates an HTTP controller that serves a form to create new clouder instances from an external website
-
-    Uses Font Awesome by Dave Gandy - http://fontawesome.io
+    Clouder Mautic
     """,
     'demo': [],
     'data': [
-        'clouder_website_view.xml',
-        'templates.xml'
+        'template.xml'
     ],
     'installable': True,
     'application': True,
 }
+
