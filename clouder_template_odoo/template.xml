@@ -191,6 +191,7 @@
             <field name="parent_from">clouder/clouder-odoo-exec</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
+            <field name="volumes_from">data,files</field>
         </record>
 
         <record id="image_odoo_clouder_exec" model="clouder.image">

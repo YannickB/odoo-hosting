@@ -43,14 +43,9 @@
             <field name="parent_from">gitlab/gitlab-runner:latest</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
         </record>
         <!-- image's volumes -->
-        <record id="image_gitlabci_exec_volume_etc" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlabci_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/etc/gitlab-runner</field>
-            <field name="nosave" eval="True"/>
-        </record>
         <record id="image_gitlabci_exec_volume_docker" model="clouder.image.volume">
             <field name="image_id" ref="image_gitlabci_exec"/>
             <field name="name">/var/run/docker.sock</field>

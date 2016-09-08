@@ -184,6 +184,7 @@
                         <field name="image_id"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
                         <newline/>
+                        <field name="volumes_from_ids" widget="many2many_tags"/>
                         <field name="public"/>
                     </group>
                     <notebook>
@@ -207,7 +208,6 @@
                             <field name="volume_ids" colspan="4" attrs="{'invisible': [('child_ids','!=', [])]}">
                                 <tree string="Volumes" editable="bottom">
                                     <field name="name"/>
-                                    <field name="from_id"/>
                                     <field name="hostpath"/>
                                     <field name="user"/>
                                     <field name="readonly"/>
@@ -747,7 +747,6 @@
                     <field name="volume_ids" colspan="4">
                         <tree string="Volumes" editable="bottom">
                             <field name="name"/>
-                            <field name="from_code"/>
                             <field name="hostpath"/>
                             <field name="user"/>
                             <field name="readonly"/>
@@ -803,7 +802,6 @@
                     <field name="volume_ids" colspan="4">
                         <tree string="Volumes" editable="bottom">
                             <field name="name"/>
-                            <field name="from_code"/>
                             <field name="hostpath"/>
                             <field name="user"/>
                             <field name="readonly"/>

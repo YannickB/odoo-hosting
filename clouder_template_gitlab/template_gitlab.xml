@@ -152,20 +152,9 @@
 
                 ]]>
             </field>
+            <field name="volumes_from">data</field>
         </record>
         <!-- image's volumes -->
-        <record id="image_gitlab_files_volume_home" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_files"/>
-            <field name="from_code">data</field>
-            <field name="name">/home/git</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_gitlab_files_volume_config" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_files"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/gitlab</field>
-            <field name="nosave" eval="True"/>
-        </record>
         <record id="image_gitlab_files_volume_files" model="clouder.image.volume">
             <field name="image_id" ref="image_gitlab_files"/>
             <field name="name">/opt/gitlab/files</field>
@@ -217,31 +206,7 @@
 
                 ]]>
             </field>
-        </record>
-        <!-- imag's volumes -->
-        <record id="image_gitlab_exec_volume_home" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/home/git</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_gitlab_exec_volume_etc" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/etc</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_gitlab_exec_volume_opt" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/gitlab</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_gitlab_exec_volume_files" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_exec"/>
-            <field name="from_code">files</field>
-            <field name="name">/opt/gitlab/files</field>
-            <field name="nosave" eval="True"/>
+            <field name="volumes_from">data,files</field>
         </record>
         <!-- imag's ports to expose -->
         <record id="image_gitlab_exec_port_ssh" model="clouder.image.port">

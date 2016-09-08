@@ -39,24 +39,7 @@
             <field name="parent_from">registry:2</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
-        </record>
-        <record id="image_registry_exec_volume_auth" model="clouder.image.volume">
-            <field name="image_id" ref="image_registry_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/auth</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_registry_exec_volume_certs" model="clouder.image.volume">
-            <field name="image_id" ref="image_registry_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/certs</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_registry_exec_volume_var" model="clouder.image.volume">
-            <field name="image_id" ref="image_registry_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/var/lib/registry</field>
-            <field name="nosave" eval="True"/>
+            <field name="volumes_from">data</field>
         </record>
         <record id="image_registry_exec_port_http" model="clouder.image.port">
             <field name="image_id" ref="image_registry_exec"/>

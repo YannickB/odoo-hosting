@@ -343,6 +343,9 @@ class ClouderContainer(models.Model):
     backup_ids = fields.Many2many(
         'clouder.container', 'clouder_container_backup_rel',
         'container_id', 'backup_id', 'Backup containers')
+    volumes_from_ids = fields.Many2many(
+        'clouder.container', 'clouder_container_volumes_from_rel',
+        'container_id', 'from_id', 'Volumes from')
     public = fields.Boolean('Public?')
 
     @property
@@ -938,15 +941,8 @@ class ClouderContainer(models.Model):
                 volumes_to_process.append(volume)
 
             for volume in volumes_to_process:
-                from_id = False
-                if 'parent_id' in vals and vals['parent_id']:
-                    parent = self.env['clouder.container.child'].browse(
-                        vals['parent_id'])
-                    if volume['source'].from_code in parent.container_id.childs:
-                        from_id = parent.container_id.childs[volume['source'].from_code].id
                 volumes.append(((0, 0, {
                     'name': volume['name'],
-                    'from_id': from_id,
                     'hostpath': volume['hostpath'],
                     'user': volume['user'],
                     'readonly': volume['readonly'],
@@ -969,6 +965,18 @@ class ClouderContainer(models.Model):
             [('container_id', '=', self.id)]).unlink()
         self.env['clouder.container.volume'].search(
             [('container_id', '=', self.id)]).unlink()
+
+        image = self.env('clouder.image').browse(vals['image_id'])
+        if vals['parent_id'] and image.volume_from:
+            image = self.env('clouder.image').browse(vals['image_id'])
+            volumes_from = ','.split(image.volume_from)
+            targets = []
+            for child in self.env('clouder.container.child').browse(vals['parent_id']).container_id.child_ids:
+                for code in volumes_from:
+                    if child.name.check_tag([code]):
+                        targets.append(child.target)
+            vals['volumes_from_ids'] = [(6, 0, [c.id for c in targets])]
+
         for key, value in vals.iteritems():
             setattr(self, key, value)
 
@@ -1183,16 +1191,15 @@ class ClouderContainer(models.Model):
             if port.use_hostport:
                 expose_ports.append(port.hostport)
         volumes = []
-        volumes_from = {}
         for volume in self.volume_ids:
             if volume.hostpath:
                 arg = volume.hostpath + ':' + volume.name
                 if volume.readonly:
                     arg += ':ro'
                 volumes.append(arg)
-            if volume.from_id:
-                volumes_from[volume.from_id.name] = volume.from_id.name
-        volumes_from = volumes_from.values()
+        volumes_from = []
+        for volume_from in self.volume_from_ids:
+            volumes_from.append(volume_from.name)
         links = []
         for link in self.link_ids:
             if link.name.make_link \
@@ -1365,7 +1372,6 @@ class ClouderContainerVolume(models.Model):
 
     container_id = fields.Many2one(
         'clouder.container', 'Container', ondelete="cascade", required=True)
-    from_id = fields.Many2one('clouder.container', 'From')
     name = fields.Char('Path', required=True)
     hostpath = fields.Char('Host path')
     user = fields.Char('System User')
