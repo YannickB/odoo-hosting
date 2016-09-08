@@ -10,7 +10,7 @@
             <field name="apptype_id" ref="apptype_gitlabci"/>
             <field name="name">concurrent</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">2</field>
         </record>
@@ -60,35 +60,11 @@
         </record>
 
 
-        <!-- app -->
-        <record id="app_gitlabci" model="clouder.application">
-            <field name="name">Gitlab CI</field>
-            <field name="code">gitlabci</field>
-            <field name="type_id" ref="apptype_gitlabci"/>
-            <field name="default_image_id" ref="image_gitlabci_data"/>
-        </record>
-        <!-- links to templates -->
-        <record id="app_gitlabci_link_gitlab" model="clouder.application.link">
-            <field name="application_id" ref="app_gitlabci"/>
-            <field name="name" ref="app_gitlab"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-        <!-- bind to shinken -->
-<!--        <record id="app_gitlabci_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_gitlabci"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>-->
         <!-- app "data" -->
-        <record id="app_gitlabci_data" model="clouder.application">
+        <record id="application_gitlabci_data" model="clouder.application">
             <field name="name">Gitlab CI Data</field>
             <field name="code">data</field>
             <field name="type_id" ref="apptype_gitlabci"/>
-            <field name="parent_id" ref="app_gitlabci"/>
             <field name="default_image_id" ref="image_gitlabci_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
@@ -96,23 +72,46 @@
         </record>
         <!-- links to templates -->
         <!-- bind to shinken -->
-<!--        <record id="app_gitlabci_data_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_gitlabci_data"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+<!--        <record id="application_gitlabci_data_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_gitlabci_data"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
         </record>-->
         <!-- app "exec" -->
-        <record id="app_gitlabci_exec" model="clouder.application">
+        <record id="application_gitlabci_exec" model="clouder.application">
             <field name="name">Gitlab CI Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="apptype_gitlabci"/>
-            <field name="parent_id" ref="app_gitlabci"/>
             <field name="default_image_id" ref="image_gitlabci_exec"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
         </record>
+        <!-- app -->
+        <record id="application_gitlabci" model="clouder.application">
+            <field name="name">Gitlab CI</field>
+            <field name="code">gitlabci</field>
+            <field name="type_id" ref="apptype_gitlabci"/>
+            <field name="default_image_id" ref="image_gitlabci_data"/>
+            <field name="child_ids" eval="[(4, [ref('application_gitlabci_data'),ref('application_gitlabci_exec')])]"/>
+        </record>
+        <!-- links to templates -->
+        <record id="application_gitlabci_link_gitlab" model="clouder.application.link">
+            <field name="application_id" ref="application_gitlabci"/>
+            <field name="name" ref="application_gitlab"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
+        <!-- bind to shinken -->
+<!--        <record id="application_gitlabci_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_gitlabci"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>-->
 
     </data>
 </openerp>

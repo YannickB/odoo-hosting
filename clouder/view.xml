@@ -563,7 +563,7 @@
                         <tree string="Options" editable="bottom">
                             <field name="name"/>
                             <field name="type"/>
-                            <field name="app_code"/>
+                            <field name="application_code"/>
                             <field name="auto"/>
                             <field name="required"/>
                             <field name="default"/>

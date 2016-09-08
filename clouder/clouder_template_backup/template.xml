@@ -46,7 +46,7 @@
             <field name="nosave" eval="True"/>
         </record>
 
-        <record id="app_backup_upload" model="clouder.application">
+        <record id="application_backup_upload" model="clouder.application">
             <field name="name">Backup Upload</field>
             <field name="code">backup-upl</field>
             <field name="current_version">1</field>
@@ -81,21 +81,21 @@
             <field name="nosave" eval="True"/>
         </record>
 
-        <record id="app_backup_simple" model="clouder.application">
+        <record id="application_backup_simple" model="clouder.application">
             <field name="name">Backup Simple</field>
             <field name="code">backup-sim</field>
             <field name="current_version">1</field>
             <field name="type_id" ref="apptype_backup"/>
             <field name="default_image_id" ref="image_backup_simple"/>
         </record>
-        <record id="app_backup_option_method_simple" model="clouder.application.option">
-            <field name="application_id" ref="app_backup_simple"/>
+        <record id="application_backup_option_method_simple" model="clouder.application.option">
+            <field name="application_id" ref="application_backup_simple"/>
             <field name="name" ref="apptype_backup_option_method"/>
             <field name="value">simple</field>
         </record>
-        <record id="app_backup_simple_link_upload" model="clouder.application.link">
-            <field name="application_id" ref="app_backup_simple"/>
-            <field name="name" ref="app_backup_upload"/>
+        <record id="application_backup_simple_link_upload" model="clouder.application.link">
+            <field name="application_id" ref="application_backup_simple"/>
+            <field name="name" ref="application_backup_upload"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
@@ -128,20 +128,20 @@
             <field name="expose">internet</field>
         </record>
 
-        <record id="app_backup_bup" model="clouder.application">
+        <record id="application_backup_bup" model="clouder.application">
             <field name="name">Backup Bup</field>
             <field name="code">backup-bup</field>
             <field name="type_id" ref="apptype_backup"/>
             <field name="default_image_id" ref="image_backup_bup"/>
         </record>
-        <record id="app_backup_option_method_bup" model="clouder.application.option">
-            <field name="application_id" ref="app_backup_bup"/>
+        <record id="application_backup_option_method_bup" model="clouder.application.option">
+            <field name="application_id" ref="application_backup_bup"/>
             <field name="name" ref="apptype_backup_option_method"/>
             <field name="value">bup</field>
         </record>
-        <record id="app_backup_bup_link_upload" model="clouder.application.link">
-            <field name="application_id" ref="app_backup_bup"/>
-            <field name="name" ref="app_backup_upload"/>
+        <record id="application_backup_bup_link_upload" model="clouder.application.link">
+            <field name="application_id" ref="application_backup_bup"/>
+            <field name="name" ref="application_backup_upload"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
         </record>

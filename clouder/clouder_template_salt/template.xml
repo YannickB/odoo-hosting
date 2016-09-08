@@ -77,7 +77,7 @@
         </record>
 
 
-        <record id="app_salt_master" model="clouder.application">
+        <record id="application_salt_master" model="clouder.application">
             <field name="name">Salt Master</field>
             <field name="code">salt-master</field>
             <field name="type_id" ref="apptype_salt_master"/>
@@ -117,7 +117,7 @@
             <field name="nosave" eval="True"/>
         </record>
 
-        <record id="app_salt_minion" model="clouder.application">
+        <record id="application_salt_minion" model="clouder.application">
             <field name="name">Salt Minion</field>
             <field name="code">salt-minion</field>
             <field name="type_id" ref="apptype_salt_minion"/>

@@ -98,7 +98,7 @@ class ClouderApplicationTypeOption(models.Model):
     type = fields.Selection(
         [('application', 'Application'), ('container', 'Container'),
          ('service', 'Service'), ('base', 'Base')], 'Type', required=True)
-    app_code = fields.Char('Application Code')
+    application_code = fields.Char('Application Code')
     auto = fields.Boolean('Auto?')
     required = fields.Boolean('Required?')
     default = fields.Text('Default value')

@@ -42,7 +42,7 @@
 
 
 
-        <record id="app_docker" model="clouder.application">
+        <record id="application_docker" model="clouder.application">
             <field name="name">Docker</field>
             <field name="code">docker</field>
             <field name="type_id" ref="apptype_docker"/>

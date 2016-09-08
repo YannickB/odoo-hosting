@@ -51,15 +51,15 @@
             <field name="localport">3306</field>
         </record>
 
-        <record id="app_mysql" model="clouder.application">
+        <record id="application_mysql" model="clouder.application">
             <field name="name">Mysql</field>
             <field name="code">mysql</field>
             <field name="type_id" ref="apptype_mysql"/>
             <field name="default_image_id" ref="image_mysql"/>
         </record>
-        <record id="app_mysql_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_mysql"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_mysql_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_mysql"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="container" eval="True"/>
             <field name="auto" eval="True"/>
         </record>

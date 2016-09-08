@@ -26,15 +26,15 @@
     	    <field name="localport">6379</field>
 	</record>
 
-        <record id="app_redis" model="clouder.application">
+        <record id="application_redis" model="clouder.application">
             <field name="name">Redis</field>
             <field name="code">redis</field>
             <field name="type_id" ref="apptype_redis"/>
             <field name="default_image_id" ref="image_redis"/>
         </record>
-        <record id="app_redis_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_redis"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_redis_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_redis"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
         </record>

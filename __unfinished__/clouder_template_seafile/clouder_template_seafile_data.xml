@@ -92,7 +92,7 @@ VOLUME /base-backup
         </record>
 
 
-        <record id="app_seafile" model="clouder.application">
+        <record id="application_seafile" model="clouder.application">
             <field name="name">Seafile</field>
             <field name="code">seafile</field>
             <field name="type_id" ref="apptype_seafile"/>
@@ -108,39 +108,39 @@ VOLUME /base-backup
             <field name="base_saverepo_expiration">90</field>
             <field name="base_save_expiration">5</field>
         </record>
-        <record id="app_seafile_link1" model="clouder.application.link">
-            <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_bind.app_bind"/>
+        <record id="application_seafile_link1" model="clouder.application.link">
+            <field name="application_id" ref="application_seafile"/>
+            <field name="name" ref="clouder_bind.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_seafile_link2" model="clouder.application.link">
-            <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_shinken.app_shinken"/>
+        <record id="application_seafile_link2" model="clouder.application.link">
+            <field name="application_id" ref="application_seafile"/>
+            <field name="name" ref="clouder_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_seafile_link3" model="clouder.application.link">
-            <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_mysql.app_mysql"/>
+        <record id="application_seafile_link3" model="clouder.application.link">
+            <field name="application_id" ref="application_seafile"/>
+            <field name="name" ref="clouder_mysql.application_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="service" eval="True"/>
         </record>
-        <record id="app_seafile_link4" model="clouder.application.link">
-            <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_postfix.app_postfix"/>
+        <record id="application_seafile_link4" model="clouder.application.link">
+            <field name="application_id" ref="application_seafile"/>
+            <field name="name" ref="clouder_postfix.application_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
-        <record id="app_seafile_link5" model="clouder.application.link">
-            <field name="application_id" ref="app_seafile"/>
-            <field name="name" ref="clouder_proxy.app_proxy"/>
+        <record id="application_seafile_link5" model="clouder.application.link">
+            <field name="application_id" ref="application_seafile"/>
+            <field name="name" ref="clouder_proxy.application_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>

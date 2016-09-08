@@ -47,15 +47,15 @@
             <field name="localport">5432</field>
         </record>
 
-        <record id="app_postgres" model="clouder.application">
+        <record id="application_postgres" model="clouder.application">
             <field name="name">Postgresql</field>
             <field name="code">postgres</field>
             <field name="type_id" ref="apptype_postgres"/>
             <field name="default_image_id" ref="image_postgres"/>
         </record>
-        <record id="app_postgres_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_postgres"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_postgres_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_postgres"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="container" eval="True"/>
             <field name="auto" eval="True"/>
         </record>

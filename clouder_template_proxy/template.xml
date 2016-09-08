@@ -40,16 +40,16 @@
             <field name="expose">internet</field>
         </record>
 
-        <record id="app_proxy" model="clouder.application">
+        <record id="application_proxy" model="clouder.application">
             <field name="name">Proxy</field>
             <field name="code">proxy</field>
             <field name="type_id" ref="apptype_proxy"/>
             <field name="default_image_id" ref="image_proxy"/>
         </record>
 
-        <record id="app_registry_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="clouder.app_registry"/>
-            <field name="name" ref="app_proxy"/>
+        <record id="application_registry_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="clouder.application_registry"/>
+            <field name="name" ref="application_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>

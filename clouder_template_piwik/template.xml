@@ -54,45 +54,45 @@
         </record>
 
 
-        <record id="app_piwik" model="clouder.application">
+        <record id="application_piwik" model="clouder.application">
             <field name="name">Piwik</field>
             <field name="code">piwik</field>
             <field name="type_id" ref="apptype_piwik"/>
             <field name="default_image_id" ref="image_piwik"/>
         </record>
-        <record id="app_piwik_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
+        <record id="application_piwik_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="application_piwik"/>
+            <field name="name" ref="clouder_template_bind.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_piwik_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_piwik_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_piwik"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_piwik_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+        <record id="application_piwik_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="application_piwik"/>
+            <field name="name" ref="clouder_template_mysql.application_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="service" eval="True"/>
         </record>
-        <record id="app_piwik_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+        <record id="application_piwik_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="application_piwik"/>
+            <field name="name" ref="clouder_template_postfix.application_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
-        <record id="app_piwik_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_piwik"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+        <record id="application_piwik_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="application_piwik"/>
+            <field name="name" ref="clouder_template_proxy.application_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>

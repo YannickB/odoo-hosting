@@ -34,15 +34,15 @@
             <field name="expose">internet</field>
         </record>
 
-        <record id="app_glances" model="clouder.application">
+        <record id="application_glances" model="clouder.application">
             <field name="name">Glances</field>
             <field name="code">glances</field>
             <field name="type_id" ref="apptype_glances"/>
             <field name="default_image_id" ref="image_glances"/>
         </record>
-        <record id="app_glances_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_glances"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_glances_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_glances"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
         </record>

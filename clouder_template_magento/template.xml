@@ -15,7 +15,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>
@@ -23,7 +23,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">locale</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">en_US</field>
             <field name="required" eval="True"/>
@@ -32,7 +32,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">timezone</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">America/Chicago</field>
             <field name="required" eval="True"/>
@@ -41,7 +41,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">currency</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">USD</field>
             <!--TODO: Re-add when an automated default value has been implemented
@@ -52,7 +52,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">admin_firstname</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">Magento</field>
             <!--TODO: Re-add when an automated default value has been implemented
@@ -63,7 +63,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">admin_lastname</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">User</field>
             <!--TODO: Re-add when an automated default value has been implemented
@@ -74,7 +74,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">admin_email</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <!--TODO: Re-add when an automated default value has been implemented
             <field name="required" eval="True"/>
@@ -84,7 +84,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">admin_user</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">admin</field>
             <!--TODO: Re-add when an automated default value has been implemented
@@ -95,7 +95,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">admin_password</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <!--TODO: Re-add when an automated default value has been implemented
             <field name="required" eval="True"/>
@@ -105,7 +105,7 @@
             <field name="apptype_id" ref="apptype_magento"/>
             <field name="name">use_rewrites</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">1</field>
             <!--TODO: Re-add when an automated default value has been implemented
@@ -219,7 +219,7 @@
         </record>
 
 
-        <record id="app_magento" model="clouder.application">
+        <record id="application_magento" model="clouder.application">
             <field name="name">Magento</field>
             <field name="code">magento</field>
             <field name="type_id" ref="apptype_magento"/>
@@ -227,101 +227,101 @@
             <field name="base" eval="True"/>
             <field name="current_version">8.0</field>
         </record>
-        <record id="app_magento_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_magento"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
+        <record id="application_magento_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="application_magento"/>
+            <field name="name" ref="clouder_template_bind.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_magento_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_magento"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_magento_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_magento"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_magento_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="app_magento"/>
-            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+        <record id="application_magento_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="application_magento"/>
+            <field name="name" ref="clouder_template_mysql.application_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="service" eval="True"/>
         </record>
-        <record id="app_magento_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_magento"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+        <record id="application_magento_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="application_magento"/>
+            <field name="name" ref="clouder_template_postfix.application_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_magento_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_magento"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+        <record id="application_magento_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="application_magento"/>
+            <field name="name" ref="clouder_template_proxy.application_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_magento_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_magento"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+        <record id="application_magento_link_piwik" model="clouder.application.link">
+            <field name="application_id" ref="application_magento"/>
+            <field name="name" ref="clouder_template_piwik.application_piwik"/>
             <field name="base" eval="True"/>
         </record>
 
-        <record id="app_magento_data" model="clouder.application">
+        <record id="application_magento_data" model="clouder.application">
             <field name="name">Magento Data</field>
             <field name="code">data</field>
             <field name="type_id" ref="apptype_magento"/>
-            <field name="parent_id" ref="app_magento"/>
+            <field name="parent_id" ref="application_magento"/>
             <field name="default_image_id" ref="image_magento_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
             <field name="autosave" eval="True"/>
         </record>
-        <record id="app_magento_data_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_data"/>
-            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+        <record id="application_magento_data_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_data"/>
+            <field name="name" ref="clouder_template_mysql.application_mysql"/>
             <field name="container" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
 
-        <record id="app_magento_files" model="clouder.application">
+        <record id="application_magento_files" model="clouder.application">
             <field name="name">Magento Files</field>
             <field name="code">files</field>
             <field name="type_id" ref="apptype_magento"/>
-            <field name="parent_id" ref="app_magento"/>
+            <field name="parent_id" ref="application_magento"/>
             <field name="default_image_id" ref="image_magento_files1_9"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
         </record>
 
-        <record id="app_magento_exec" model="clouder.application">
+        <record id="application_magento_exec" model="clouder.application">
             <field name="name">Magento Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="apptype_magento"/>
-            <field name="parent_id" ref="app_magento"/>
+            <field name="parent_id" ref="application_magento"/>
             <field name="default_image_id" ref="image_magento_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
         </record>
-        <record id="app_magento_exec_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_exec"/>
-            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+        <record id="application_magento_exec_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_exec"/>
+            <field name="name" ref="clouder_template_mysql.application_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
 
-        <record id="app_magento_ssh" model="clouder.application">
+        <record id="application_magento_ssh" model="clouder.application">
             <field name="name">Magento SSH</field>
             <field name="code">ssh</field>
             <field name="type_id" ref="apptype_magento"/>
-            <field name="parent_id" ref="app_magento"/>
+            <field name="parent_id" ref="application_magento"/>
             <field name="default_image_id" ref="image_magento_ssh"/>
             <field name="sequence">4</field>
         </record>
@@ -345,7 +345,7 @@
             <field name="nosave" eval="True"/>
         </record>
         
-        <record id="app_magento_odoo" model="clouder.application">
+        <record id="application_magento_odoo" model="clouder.application">
             <field name="name">Clouder</field>
             <field name="code">clouder</field>
             <field name="type_id" ref="apptype_magento"/>
@@ -353,101 +353,101 @@
             <field name="base" eval="True"/>
             <field name="current_version">8.0</field>
         </record>
-        <record id="app_magento_odoo_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_odoo"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
+        <record id="application_magento_odoo_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_odoo"/>
+            <field name="name" ref="clouder_template_bind.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_magento_odoo_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_odoo"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_magento_odoo_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_odoo"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_magento_odoo_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_odoo"/>
-            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+        <record id="application_magento_odoo_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_odoo"/>
+            <field name="name" ref="clouder_template_mysql.application_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="service" eval="True"/>
         </record>
-        <record id="app_magento_odoo_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_odoo"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+        <record id="application_magento_odoo_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_odoo"/>
+            <field name="name" ref="clouder_template_postfix.application_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_magento_odoo_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_odoo"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+        <record id="application_magento_odoo_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_odoo"/>
+            <field name="name" ref="clouder_template_proxy.application_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_magento_odoo_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_odoo"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+        <record id="application_magento_odoo_link_piwik" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_odoo"/>
+            <field name="name" ref="clouder_template_piwik.application_piwik"/>
             <field name="base" eval="True"/>
         </record>
 
-        <record id="app_magento_odoo_data" model="clouder.application">
+        <record id="application_magento_odoo_data" model="clouder.application">
             <field name="name">Clouder Data</field>
             <field name="code">data</field>
             <field name="type_id" ref="apptype_magento"/>
-            <field name="parent_id" ref="app_magento_odoo"/>
+            <field name="parent_id" ref="application_magento_odoo"/>
             <field name="default_image_id" ref="image_magento_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
             <field name="autosave" eval="True"/>
         </record>
-        <record id="app_magento_odoo_data_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_odoo_data"/>
-            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+        <record id="application_magento_odoo_data_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_odoo_data"/>
+            <field name="name" ref="clouder_template_mysql.application_mysql"/>
             <field name="container" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
 
-        <record id="app_magento_odoo_files" model="clouder.application">
+        <record id="application_magento_odoo_files" model="clouder.application">
             <field name="name">Clouder Files</field>
             <field name="code">files</field>
             <field name="type_id" ref="apptype_magento"/>
-            <field name="parent_id" ref="app_magento_odoo"/>
+            <field name="parent_id" ref="application_magento_odoo"/>
             <field name="default_image_id" ref="image_magento_odoo_files8"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
         </record>
 
-        <record id="app_magento_odoo_exec" model="clouder.application">
+        <record id="application_magento_odoo_exec" model="clouder.application">
             <field name="name">Clouder Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="apptype_magento"/>
-            <field name="parent_id" ref="app_magento_odoo"/>
+            <field name="parent_id" ref="application_magento_odoo"/>
             <field name="default_image_id" ref="image_magento_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
         </record>
-        <record id="app_magento_odoo_exec_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="app_magento_odoo_exec"/>
-            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+        <record id="application_magento_odoo_exec_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="application_magento_odoo_exec"/>
+            <field name="name" ref="clouder_template_mysql.application_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
 
-        <record id="app_magento_odoo_ssh" model="clouder.application">
+        <record id="application_magento_odoo_ssh" model="clouder.application">
             <field name="name">Clouder SSH</field>
             <field name="code">ssh</field>
             <field name="type_id" ref="apptype_magento"/>
-            <field name="parent_id" ref="app_magento_odoo"/>
+            <field name="parent_id" ref="application_magento_odoo"/>
             <field name="default_image_id" ref="image_magento_ssh"/>
             <field name="sequence">4</field>
         </record>

@@ -55,15 +55,15 @@
             <field name="expose">internet</field>
         </record>
 
-        <record id="app_postfix" model="clouder.application">
+        <record id="application_postfix" model="clouder.application">
             <field name="name">Postfix</field>
             <field name="code">postfix</field>
             <field name="type_id" ref="apptype_postfix"/>
             <field name="default_image_id" ref="image_postfix"/>
         </record>
-        <record id="app_postfix_link_spamassassin" model="clouder.application.link">
-            <field name="application_id" ref="app_postfix"/>
-            <field name="name" ref="clouder_template_spamassassin.app_spamassassin"/>
+        <record id="application_postfix_link_spamassassin" model="clouder.application.link">
+            <field name="application_id" ref="application_postfix"/>
+            <field name="name" ref="clouder_template_spamassassin.application_spamassassin"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="container" eval="True"/>

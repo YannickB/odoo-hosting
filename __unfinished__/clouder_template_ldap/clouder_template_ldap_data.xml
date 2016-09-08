@@ -77,7 +77,7 @@ RUN echo "command=/bin/bash -c 'source /etc/apache2/envvars && exec /usr/sbin/ap
         </record>
 
 
-        <record id="app_openldap" model="clouder.application">
+        <record id="application_openldap" model="clouder.application">
             <field name="name">openldap</field>
             <field name="code">openldap</field>
             <field name="current_version">1</field>
@@ -92,9 +92,9 @@ RUN echo "command=/bin/bash -c 'source /etc/apache2/envvars && exec /usr/sbin/ap
             <field name="base_saverepo_expiration">90</field>
             <field name="base_save_expiration">5</field>
         </record>
-        <record id="app_openldap_link1" model="clouder.application.link">
-            <field name="application_id" ref="app_openldap"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_openldap_link1" model="clouder.application.link">
+            <field name="application_id" ref="application_openldap"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="container" eval="True"/>
             <field name="auto" eval="True"/>
         </record>

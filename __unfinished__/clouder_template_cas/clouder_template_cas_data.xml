@@ -83,7 +83,7 @@ RUN echo "command=/etc/init.d/tomcat6 start" >> /etc/supervisor/conf.d/superviso
         </record>
 
 
-        <record id="app_cas" model="clouder.application">
+        <record id="application_cas" model="clouder.application">
             <field name="name">Cas</field>
             <field name="code">cas</field>
             <field name="current_version">1</field>

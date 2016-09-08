@@ -48,28 +48,28 @@
             <field name="apptype_id" ref="application_type_odoo"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="application_code">data</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_registry_password" model="clouder.application.type.option">
             <field name="apptype_id" ref="application_type_odoo"/>
             <field name="name">registry_password</field>
             <field name="type">container</field>
-            <field name="app_code">files</field>
+            <field name="application_code">files</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_ssh_privatekey" model="clouder.application.type.option">
             <field name="apptype_id" ref="application_type_odoo"/>
             <field name="name">ssh_privatekey</field>
             <field name="type">container</field>
-            <field name="app_code">ssh</field>
+            <field name="application_code">ssh</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_ssh_publickey" model="clouder.application.type.option">
             <field name="apptype_id" ref="application_type_odoo"/>
             <field name="name">ssh_publickey</field>
             <field name="type">container</field>
-            <field name="app_code">ssh</field>
+            <field name="application_code">ssh</field>
             <field name="auto" eval="True"/>
         </record>
 
@@ -225,14 +225,14 @@
         </record>
         <record id="application_template_odoo_link_bind" model="clouder.application.link">
             <field name="template_id" ref="application_template_odoo"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
+            <field name="name" ref="clouder_template_bind.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="application_template_odoo_link_shinken" model="clouder.application.link">
             <field name="template_id" ref="application_template_odoo"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
@@ -240,7 +240,7 @@
         </record>
         <record id="application_template_odoo_link_postfix" model="clouder.application.link">
             <field name="template_id" ref="application_template_odoo"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="name" ref="clouder_template_postfix.application_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
@@ -248,14 +248,14 @@
         </record>
         <record id="application_template_odoo_link_proxy" model="clouder.application.link">
             <field name="template_id" ref="application_template_odoo"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+            <field name="name" ref="clouder_template_proxy.application_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="application_template_odoo_link_piwik" model="clouder.application.link">
             <field name="template_id" ref="application_template_odoo"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+            <field name="name" ref="clouder_template_piwik.application_piwik"/>
             <field name="base" eval="True"/>
         </record>
 
@@ -265,7 +265,7 @@
         </record>
         <record id="application_template_odoo_data_link_postgres" model="clouder.application.link">
             <field name="template_id" ref="application_template_odoo_data"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="name" ref="clouder_template_postgres.application_postgres"/>
             <field name="container" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
@@ -273,7 +273,7 @@
         </record>
         <record id="application_template_odoo_data_link_shinken" model="clouder.application.link">
             <field name="template_id" ref="application_template_odoo_data"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
@@ -285,14 +285,14 @@
         </record>
         <record id="application_template_odoo_exec_link_postgres" model="clouder.application.link">
             <field name="template_id" ref="application_template_odoo_exec"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+            <field name="name" ref="clouder_template_postgres.application_postgres"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
         <record id="application_template_odoo_exec_link_postfix" model="clouder.application.link">
             <field name="template_id" ref="application_template_odoo_exec"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+            <field name="name" ref="clouder_template_postfix.application_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>

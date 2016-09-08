@@ -65,33 +65,33 @@
             <field name="expose">internet</field>
         </record>
 
-        <record id="app_registry" model="clouder.application">
-            <field name="name">Registry</field>
-            <field name="code">registry</field>
-            <field name="type_id" ref="apptype_registry"/>
-            <field name="default_image_id" ref="image_registry_data"/>
-            <field name="base" eval="True"/>
-        </record>
+
         <!-- app "data" -->
-        <record id="app_registry_data" model="clouder.application">
+        <record id="application_registry_data" model="clouder.application">
             <field name="name">Registry Data</field>
             <field name="code">data</field>
             <field name="type_id" ref="apptype_registry"/>
-            <field name="parent_id" ref="app_registry"/>
             <field name="default_image_id" ref="image_registry_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
             <field name="autosave" eval="True"/>
         </record>
         <!-- app "exec" -->
-        <record id="app_registry_exec" model="clouder.application">
+        <record id="application_registry_exec" model="clouder.application">
             <field name="name">Registry Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="apptype_registry"/>
-            <field name="parent_id" ref="app_registry"/>
             <field name="default_image_id" ref="image_registry_exec"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
+        </record>
+        <record id="application_registry" model="clouder.application">
+            <field name="name">Registry</field>
+            <field name="code">registry</field>
+            <field name="type_id" ref="apptype_registry"/>
+            <field name="default_image_id" ref="image_registry_data"/>
+            <field name="child_ids" eval="[(4, [ref('application_registry_data'),ref('application_registry_exec')])]"/>
+            <field name="base" eval="True"/>
         </record>
 
     </data>

@@ -24,7 +24,7 @@
             <field name="expose">internet</field>
         </record>
 
-        <record id="app_spamassassin" model="clouder.application">
+        <record id="application_spamassassin" model="clouder.application">
             <field name="name">spamassassin</field>
             <field name="code">spamassassin</field>
             <field name="type_id" ref="apptype_spamassassin"/>

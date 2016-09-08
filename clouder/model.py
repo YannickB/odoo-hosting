@@ -793,7 +793,8 @@ class ClouderTemplateOne2many(models.Model):
                 for field in self._template_fields:
                     vals[field] = getattr(self, field)
                 if childs:
-                    childs.write(vals)
+                    for child in childs:
+                        child.write(vals)
                 else:
                     vals.update({self._template_parent_many2one: object.id, 'name': name})
                     self.create(vals)

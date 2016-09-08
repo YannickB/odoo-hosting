@@ -57,7 +57,7 @@
         </record>
 
 
-        <record id="app_drupal" model="clouder.application">
+        <record id="application_drupal" model="clouder.application">
             <field name="name">Drupal</field>
             <field name="code">drupal</field>
             <field name="type_id" ref="apptype_drupal"/>
@@ -65,51 +65,51 @@
             <field name="current_version">8.0</field>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_drupal_option_install_modules" model="clouder.application.option">
-            <field name="application_id" ref="app_drupal"/>
+        <record id="application_drupal_option_install_modules" model="clouder.application.option">
+            <field name="application_id" ref="application_drupal"/>
             <field name="name" ref="apptype_drupal_option_install_modules"/>
             <field name="value">piwik,admin_menu_toolbar</field>
         </record>
-        <record id="app_drupal_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
+        <record id="application_drupal_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="application_drupal"/>
+            <field name="name" ref="clouder_template_bind.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_drupal_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_drupal_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_drupal"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_drupal_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
+        <record id="application_drupal_link_postgres" model="clouder.application.link">
+            <field name="application_id" ref="application_drupal"/>
+            <field name="name" ref="clouder_template_postgres.application_postgres"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="container" eval="True"/>
         </record>
-        <record id="app_drupal_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+        <record id="application_drupal_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="application_drupal"/>
+            <field name="name" ref="clouder_template_postfix.application_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
         </record>
-        <record id="app_drupal_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+        <record id="application_drupal_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="application_drupal"/>
+            <field name="name" ref="clouder_template_proxy.application_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_drupal_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+        <record id="application_drupal_link_piwik" model="clouder.application.link">
+            <field name="application_id" ref="application_drupal"/>
+            <field name="name" ref="clouder_template_piwik.application_piwik"/>
             <field name="base" eval="True"/>
         </record>
 

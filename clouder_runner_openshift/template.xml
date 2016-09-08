@@ -62,7 +62,7 @@
 
 
 
-        <record id="app_openshift" model="clouder.application">
+        <record id="application_openshift" model="clouder.application">
             <field name="name">openshift</field>
             <field name="code">openshift</field>
             <field name="current_version">1</field>
