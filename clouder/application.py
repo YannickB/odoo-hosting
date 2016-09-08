@@ -29,9 +29,9 @@ import re
 import model
 
 
-class ClouderApplicationRole(models.Model):
+class ClouderApplicationTag(models.Model):
 
-    _name = 'clouder.application.role'
+    _name = 'clouder.application.tag'
 
     name = fields.Char('Name', required=True)
 
@@ -60,9 +60,9 @@ class ClouderApplicationType(models.Model):
     )
     symlink = fields.Boolean('Use Symlink by default?')
     multiple_databases = fields.Char('Multiples databases?')
-    role_ids = fields.Many2many(
-        'clouder.application.role', 'clouder_application_type_role_rel',
-        'type_id', 'role_id', 'Roles')
+    tag_ids = fields.Many2many(
+        'clouder.application.tag', 'clouder_application_type_tag_rel',
+        'type_id', 'tag_id', 'Tags')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
@@ -162,6 +162,9 @@ class ClouderApplication(models.Model):
                                        required=True)
     next_image_version_id = fields.Many2one('clouder.image.version', 'Next Image Version')
     base = fields.Boolean('Can have base?')
+    tag_ids = fields.Many2many(
+        'clouder.application.tag', 'clouder_application_tag_rel',
+        'application_id', 'tag_id', 'Tags')
     next_container_id = fields.Many2one('clouder.container', 'Next container')
     admin_name = fields.Char('Admin name')
     admin_email = fields.Char('Admin email')
@@ -321,11 +324,17 @@ class ClouderApplication(models.Model):
             self.option_ids = options
 
     @api.multi
-    def check_role(self, role):
-        for app_role in self.type_id.role_ids:
-            if app_role.name == role:
-                return True
-        return False
+    def check_tags(self, needed_tags):
+        tags = {}
+        for tag in self.type_id.tag_ids:
+            tags[tag.name] = tag.name
+        for tag in self.tag_ids:
+            tags[tag.name] = tag.name
+
+        for needed_tag in needed_tags:
+            if needed_tag not in tags:
+                return False
+        return True
 
     @api.model
     def create(self, vals):

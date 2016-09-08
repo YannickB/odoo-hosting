@@ -6,7 +6,7 @@
         <record id="application_type_backup_upload" model="clouder.application.type">
             <field name="name">backup-upload</field>
             <field name="system_user">backup</field>
-            <field name="role_ids" eval="[(6, 0, [ref('role_no_backup')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_no_backup')])]"/>
         </record>
         <record id="application_type_backup_upload_option_protocol" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_backup_upload"/>

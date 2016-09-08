@@ -560,7 +560,7 @@
                         <field name="localpath"/>
                         <field name="localpath_services"/>
                         <field name="multiple_databases"/>
-                        <field name="role_ids" widget="many2many_tags"/>
+                        <field name="tag_ids" widget="many2many_tags"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
@@ -581,7 +581,7 @@
             <field name="arch" type="xml">
                 <tree string="Application types">
                     <field name="name"/>
-                    <field name="role_ids"/>
+                    <field name="tag_ids"/>
                 </tree>
             </field>
         </record>
@@ -653,6 +653,7 @@
                         <field name="type_id"/>
                         <field name="template_id"/>
                         <field name="base"/>
+                        <field name="tag_ids" widget="many2many_tags"/>
                         <newline/>
                         <field name="default_image_id"/>
                         <field name="next_image_version_id" domain="[('image_id','=',default_image_id)]"/>
@@ -721,6 +722,7 @@
                 <tree string="Applications" default_order="name">
                     <field name="name"/>
                     <field name="code"/>
+                    <field name="tag_ids" widget="many2many_tags"/>
                 </tree>
             </field>
         </record>

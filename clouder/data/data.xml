@@ -1,20 +1,32 @@
 <openerp>
     <data>
 
-        <record id="role_registry" model="clouder.application.role">
+        <record id="tag_registry" model="clouder.application.tag">
             <field name="name">registry</field>
         </record>
-        <record id="role_backup" model="clouder.application.role">
+        <record id="tag_backup" model="clouder.application.tag">
             <field name="name">backup</field>
         </record>
-        <record id="role_no_backup" model="clouder.application.role">
+        <record id="tag_no_backup" model="clouder.application.tag">
             <field name="name">no-backup</field>
         </record>
-        <record id="role_database" model="clouder.application.role">
+        <record id="tag_database" model="clouder.application.tag">
             <field name="name">database</field>
         </record>
-        <record id="role_dns" model="clouder.application.role">
+        <record id="tag_dns" model="clouder.application.tag">
             <field name="name">dns</field>
+        </record>
+        <record id="tag_data" model="clouder.application.tag">
+            <field name="name">data</field>
+        </record>
+        <record id="tag_files" model="clouder.application.tag">
+            <field name="name">files</field>
+        </record>
+        <record id="tag_exec" model="clouder.application.tag">
+            <field name="name">exec</field>
+        </record>
+        <record id="tag_ssh" model="clouder.application.tag">
+            <field name="name">ssh</field>
         </record>
 
         <record id="image_base" model="clouder.image">

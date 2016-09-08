@@ -5,7 +5,7 @@
         <record id="application_type_registry" model="clouder.application.type">
             <field name="name">registry</field>
             <field name="system_user">registry</field>
-            <field name="role_ids" eval="[(6, 0, [ref('role_registry'),ref('role_no_backup')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_registry'),ref('tag_no_backup')])]"/>
         </record>
 
         <record id="image_registry_data" model="clouder.image">
@@ -71,6 +71,7 @@
             <field name="name">Registry Data</field>
             <field name="code">registry-data</field>
             <field name="type_id" ref="application_type_registry"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_registry_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
@@ -81,6 +82,7 @@
             <field name="name">Registry Exec</field>
             <field name="code">registry-exec</field>
             <field name="type_id" ref="application_type_registry"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_registry_exec"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>

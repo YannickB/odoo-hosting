@@ -65,6 +65,7 @@
             <field name="name">Gitlab CI Data</field>
             <field name="code">gitlabci-data</field>
             <field name="type_id" ref="application_type_gitlabci"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_gitlabci_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
@@ -84,6 +85,7 @@
             <field name="name">Gitlab CI Exec</field>
             <field name="code">gitlabci-exec</field>
             <field name="type_id" ref="application_type_gitlabci"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_gitlabci_exec"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>

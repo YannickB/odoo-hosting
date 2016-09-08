@@ -303,6 +303,7 @@
             <field name="code">odoo-data</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_id" ref="application_template_odoo_data"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
@@ -313,6 +314,7 @@
             <field name="name">Odoo 8 Files</field>
             <field name="code">odoo8-files</field>
             <field name="type_id" ref="application_type_odoo"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_odoo8_files"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -324,6 +326,7 @@
             <field name="name">Odoo 9 Files</field>
             <field name="code">odoo9-files</field>
             <field name="type_id" ref="application_type_odoo"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_odoo9_files"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -335,6 +338,7 @@
             <field name="name">Clouder 8 Files</field>
             <field name="code">clouder8-files</field>
             <field name="type_id" ref="application_type_odoo"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_odoo8_clouder_files"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -346,6 +350,7 @@
             <field name="name">Clouder 9 Files</field>
             <field name="code">clouder9-files</field>
             <field name="type_id" ref="application_type_odoo"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_odoo9_clouder_files"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -357,6 +362,7 @@
             <field name="name">Odoo Exec</field>
             <field name="code">odoo-exec</field>
             <field name="type_id" ref="application_type_odoo"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="template_id" ref="application_template_odoo_data"/>
             <field name="default_image_id" ref="image_odoo_exec"/>
             <field name="sequence">3</field>
@@ -368,6 +374,7 @@
             <field name="name">Clouder Exec</field>
             <field name="code">clouder-exec</field>
             <field name="type_id" ref="application_type_odoo"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
@@ -378,6 +385,7 @@
             <field name="name">Odoo SSH</field>
             <field name="code">odoo-ssh</field>
             <field name="type_id" ref="application_type_odoo"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_ssh')])]"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
             <field name="sequence">4</field>
             <field name="update_strategy">auto</field>

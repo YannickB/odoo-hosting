@@ -2,14 +2,14 @@
 <openerp>
     <data>
 
-        <record id="role_no_salt" model="clouder.application.role">
+        <record id="tag_no_salt" model="clouder.application.tag">
             <field name="name">no-salt</field>
         </record>
 
         <record id="application_type_salt_master" model="clouder.application.type">
             <field name="name">salt-master</field>
             <field name="system_user">root</field>
-            <field name="role_ids" eval="[(6, 0, [ref('role_no_backup'),ref('role_no_salt')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_no_backup'),ref('tag_no_salt')])]"/>
         </record>
 
         <record id="image_salt_master" model="clouder.image">

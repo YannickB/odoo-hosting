@@ -387,7 +387,7 @@ class ClouderBase(models.Model):
                             ('parent_id', '=', False)])
                         if target_ids:
                             next_id = target_ids[0].id
-                    links.append((0, 0, {'name': link['source'].id,
+                    links.append((0, 0, {'name': link['source'].name.id,
                                          'required': link['required'],
                                          'target': next_id}))
             # Replacing old links

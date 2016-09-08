@@ -6,7 +6,7 @@
         <record id="application_type_bind" model="clouder.application.type">
             <field name="name">bind</field>
             <field name="system_user">bind</field>
-            <field name="role_ids" eval="[(6, 0, [ref('clouder.role_dns')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_dns')])]"/>
         </record>
         <record id="application_type_bind_option_slaveip" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_bind"/>
