@@ -24,8 +24,7 @@ from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 from openerp import modules
 
-import model
-
+import socket
 import re
 
 import time
@@ -115,19 +114,71 @@ class ClouderServer(models.Model):
             self._destroy_key()
         return key
 
-    name = fields.Char('Domain name', required=True)
+    @api.multi
+    @api.depends('private_key')
+    def _get_private_key(self):
+        for server in self:
+            key_file = server.home_directory + '/.ssh/keys/' + server.fulldomain
+            server.private_key = self.execute_local(['cat', key_file])
+
+    @api.multi
+    @api.depends('public_key')
+    def _get_public_key(self):
+        for server in self:
+            key_file = server.home_directory + '/.ssh/keys/' + server.fulldomain
+            server.public_key = self.execute_local(['cat', key_file + '.pub'])
+
+    @api.multi
+    def _write_private_key(self):
+        """
+        """
+        for server in self:
+            name = server.fulldomain
+            self.execute_local([modules.get_module_path('clouder') +
+                                '/res/sed.sh', name,
+                                self.home_directory + '/.ssh/config'])
+
+            self.execute_local(['mkdir', '-p', server.home_directory + '/.ssh/keys'])
+            key_file = server.home_directory + '/.ssh/keys/' + name
+            self.execute_write_file(key_file, server.private_key, operator='w')
+            self.execute_local(['chmod', '700', key_file])
+            self.execute_write_file(self.home_directory +
+                                    '/.ssh/config', 'Host ' + name)
+            self.execute_write_file(server.home_directory +
+                                    '/.ssh/config', '\n  HostName ' + server.ip)
+            self.execute_write_file(server.home_directory +
+                                    '/.ssh/config', '\n  Port ' +
+                                    str(server.ssh_port))
+            self.execute_write_file(server.home_directory +
+                                    '/.ssh/config', '\n  User ' + (server.login or 'root'))
+            self.execute_write_file(server.home_directory + '/.ssh/config',
+                                    '\n  IdentityFile ~/.ssh/keys/' + name)
+            self.execute_write_file(server.home_directory + '/.ssh/config',
+                                    '\n#END ' + name + '\n')
+
+    @api.multi
+    def _write_public_key(self):
+        """
+        """
+        for server in self:
+            key_file = server.home_directory + '/.ssh/keys/' + server.fulldomain
+            self.execute_write_file(key_file + '.pub', server.public_key, operator='w')
+            self.execute_local(['chmod', '700', key_file + '.pub'])
+
+    name = fields.Char('Prefix', required=True)
+    domain_id = fields.Many2one('clouder.domain', 'Domain', required=True)
+    ip = fields.Char('IP')
     environment_id = fields.Many2one('clouder.environment', 'Environment',
                                      required=True)
-    ip = fields.Char('IP')
     login = fields.Char('Login')
     ssh_port = fields.Integer('SSH port')
 
     private_key = fields.Text(
         'SSH Private Key',
-        default=_default_private_key)
+        default=_default_private_key, compute='_get_private_key', inverse='_write_private_key')
     public_key = fields.Text(
         'SSH Public Key',
-        default=_default_public_key)
+        default=_default_public_key, compute='_get_public_key', inverse='_write_public_key')
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
     public_ip = fields.Boolean('Assign ports with public ip?', help="This is especially useful if you want to have several infrastructures on the same server, by using same ports but different ips. Otherwise the ports will be bind to all interfaces.")
@@ -136,11 +187,24 @@ class ClouderServer(models.Model):
     runner_id = fields.Many2one('clouder.container', 'Runner')
     salt_minion_id = fields.Many2one('clouder.container', 'Salt Minion', readonly=True)
     oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
-    oneclick_domain = fields.Char('Domain')
     oneclick_ports = fields.Boolean('Assign critical ports?')
 
+    @property
+    def fulldomain(self):
+        """
+        """
+
+        fulldomain = self.name + '.' + self.domain_id.name
+        if self.domain_id.dns_id:
+            ip = socket.gethostbyname(fulldomain)
+            if ip != self.ip:
+                self.raise_error("Couldn't resolve hostname of the server " + fulldomain)
+        return fulldomain
+
     _sql_constraints = [
-        ('name_uniq', 'unique(ip, ssh_port)',
+        ('name_uniq', 'unique(name, domain_id)',
+         'Name must be unique!'),
+        ('ip_uniq', 'unique(ip, ssh_port)',
          'IP/SSH must be unique!'),
     ]
 
@@ -151,10 +215,10 @@ class ClouderServer(models.Model):
         Check that the server domain does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d.-]*$", self.name):
+        if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(
                 _('Data error!'),
-                _("Name can only contains letters, digits, - and ."))
+                _("Name can only contains letters, digits, -"))
         if not re.match("^[\d:.]*$", self.ip):
             raise except_orm(
                 _('Data error!'),
@@ -201,49 +265,18 @@ class ClouderServer(models.Model):
         """
         Test connection to the server.
         """
-        ssh = self.connect()
-        ssh['ssh'].close()
+        self.connect()
         self.raise_error('Connection successful!')
 
     @api.multi
     def deploy(self):
         """
-        Add the keys in the filesystem and the ssh config.
         """
-
         super(ClouderServer, self).deploy()
-
-        self.execute_local([modules.get_module_path('clouder') +
-                            '/res/sed.sh', self.name,
-                            self.home_directory + '/.ssh/config'])
-        self.execute_local(['rm', '-rf', self.home_directory +
-                            '/.ssh/keys/' + self.name])
-
-        self.execute_local(['mkdir', '-p', self.home_directory + '/.ssh/keys'])
-        key_file = self.home_directory + '/.ssh/keys/' + self.name
-        self.execute_write_file(key_file, self.private_key)
-        self.execute_write_file(key_file + '.pub', self.public_key)
-        self.execute_local(['chmod', '700', key_file])
-        self.execute_local(['chmod', '700', key_file + '.pub'])
-        self.execute_write_file(self.home_directory +
-                                '/.ssh/config', 'Host ' + self.name)
-        self.execute_write_file(self.home_directory +
-                                '/.ssh/config', '\n  HostName ' + self.ip)
-        self.execute_write_file(self.home_directory +
-                                '/.ssh/config', '\n  Port ' +
-                                str(self.ssh_port))
-        self.execute_write_file(self.home_directory +
-                                '/.ssh/config', '\n  User ' + (self.login or 'root'))
-        self.execute_write_file(self.home_directory + '/.ssh/config',
-                                '\n  IdentityFile ~/.ssh/keys/' + self.name)
-        self.execute_write_file(self.home_directory + '/.ssh/config',
-                                '\n#END ' + self.name + '\n')
-
 
     @api.multi
     def purge(self):
         """
-        Remove the keys from the filesystem and the ssh config.
         """
         super(ClouderServer, self).purge()
 

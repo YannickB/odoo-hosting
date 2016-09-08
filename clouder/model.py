@@ -749,14 +749,14 @@ class ClouderModel(models.AbstractModel):
         return os.path.isdir(localdir)
 
     @api.multi
-    def execute_write_file(self, localfile, value):
+    def execute_write_file(self, localfile, value, operator='a'):
         """
         Method which write in a file on the local system.
 
         :param localfile: The path to the file we need to write.
         :param value: The value we need to write in the file.
         """
-        f = open(localfile, 'a')
+        f = open(localfile, operator)
         f.write(value)
         f.close()
 
