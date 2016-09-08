@@ -129,6 +129,19 @@ class ClouderApplicationTypeOption(models.Model):
             return self.generate_default()
 
 
+class ClouderApplicationTemplate(models.Model):
+    """
+    """
+
+    _name = 'clouder.application.template'
+
+    name = fields.Char('Name', required=True)
+    type_id = fields.Many2one('clouder.application.type', 'Type',
+                              required=True)
+    link_ids = fields.One2many('clouder.application.link', 'template_id',
+                               'Links')
+
+
 class ClouderApplication(models.Model):
     """
     Define the application object, which represent the software which will be
@@ -141,6 +154,7 @@ class ClouderApplication(models.Model):
     code = fields.Char('Code', size=20, required=True)
     type_id = fields.Many2one('clouder.application.type', 'Type',
                               required=True)
+    template_id = fields.Many2one('clouder.application.template', 'Template')
     next_server_id = fields.Many2one('clouder.server', 'Next server')
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=True)
@@ -156,10 +170,11 @@ class ClouderApplication(models.Model):
                                'Links')
     link_target_ids = fields.One2many('clouder.application.link', 'name',
                                       'Links Targets')
-    parent_id = fields.Many2one('clouder.application', 'Parent')
     required = fields.Boolean('Required?')
     sequence = fields.Integer('Sequence')
-    child_ids = fields.One2many('clouder.application', 'parent_id', 'Childs')
+    child_ids = fields.Many2many(
+        'clouder.application', 'clouder_application_parent_child_rel',
+        'parent_id', 'child_id', 'Childs')
     container_ids = fields.One2many('clouder.container', 'application_id',
                                     'Containers')
     update_strategy = fields.Selection([('never','Never'),('manual','Manual'),('auto','Automatic')], string='Container Update Strategy', required=True, default='never')
@@ -298,6 +313,16 @@ class ClouderApplication(models.Model):
                 return True
         return False
 
+    @api.model
+    def create(self, vals):
+        """
+        """
+        res = super(ClouderApplication, self).create(vals)
+        if 'template_id' in vals and vals['template_id']:
+            for link in self.env['clouder.application.link'].search([('template_id', '=', vals['template_id'])]):
+                link.reset_template(objects=[self])
+        return res
+
     @api.multi
     def write(self, vals):
         """
@@ -308,7 +333,11 @@ class ClouderApplication(models.Model):
         if 'code' in vals and vals['code'] != self.code:
             raise except_orm(_('Data error!'), _(
                 "It's too dangerous to modify the application code!"))
-        return super(ClouderApplication, self).write(vals)
+        res = super(ClouderApplication, self).write(vals)
+        if 'template_id' in vals and vals['template_id']:
+            for link in self.env['clouder.application.link'].search([('template_id', '=', vals['template_id'])]):
+                link.reset_template(objects=[self])
+        return res
 
 
 class ClouderApplicationOption(models.Model):
@@ -320,13 +349,15 @@ class ClouderApplicationOption(models.Model):
     _name = 'clouder.application.option'
 
     application_id = fields.Many2one('clouder.application', 'Application',
-                                     ondelete="cascade", required=True)
+                                     ondelete="cascade", required=False)
+    template_id = fields.Many2one('clouder.application.template', 'Template',
+                                     ondelete="cascade")
     name = fields.Many2one('clouder.application.type.option', 'Option',
                            required=True)
     value = fields.Text('Value')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(application_id,name)',
+        ('name_uniq', 'unique(application_id,template_id,name)',
          'Option name must be unique per application!'),
     ]
 
@@ -339,18 +370,25 @@ class ClouderApplicationLink(models.Model):
 
     _name = 'clouder.application.link'
 
+    _inherit = ['clouder.template.one2many']
+
+    _template_parent_model = 'clouder.application'
+    _template_parent_many2one = 'application_id'
+    _template_fields = ['required', 'auto', 'make_link', 'container', 'base']
+
     application_id = fields.Many2one('clouder.application', 'Application',
-                                     ondelete="cascade", required=True)
+                                     ondelete="cascade", required=False)
+    template_id = fields.Many2one('clouder.application.template', 'Template',
+                                     ondelete="cascade", required=False)
     name = fields.Many2one('clouder.application', 'Application', required=True)
     required = fields.Boolean('Required?')
     auto = fields.Boolean('Auto?')
     make_link = fields.Boolean('Make docker link?')
     container = fields.Boolean('Container?')
-    service = fields.Boolean('Service?')
     base = fields.Boolean('Base?')
     next = fields.Many2one('clouder.container', 'Next')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(application_id,name)',
+        ('name_uniq', 'unique(application_id,template_id,name)',
          'Links must be unique per application!'),
     ]

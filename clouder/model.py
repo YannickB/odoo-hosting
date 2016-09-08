@@ -776,6 +776,45 @@ class ClouderModel(models.AbstractModel):
         return result
 
 
+class ClouderTemplateOne2many(models.Model):
+
+    _name = 'clouder.template.one2many'
+
+    @api.multi
+    def reset_template(self, objects=[]):
+        if self.template_id:
+            if not objects:
+                objects = self.env[self._template_parent_model].search([('template_id', '=', self.template_id.id)])
+            _logger.info('objects %s', objects)
+            for object in objects:
+                name = hasattr(self.name, 'id') and self.name.id or self.name
+                childs = self.search([(self._template_parent_many2one, '=', object.id),('name','=', name)])
+                vals = {}
+                for field in self._template_fields:
+                    vals[field] = getattr(self, field)
+                if childs:
+                    childs.write(vals)
+                else:
+                    vals.update({self._template_parent_many2one: object.id, 'name': name})
+                    self.create(vals)
+
+    @api.model
+    def create(self, vals):
+        """
+        """
+        res = super(ClouderTemplateOne2many, self).create(vals)
+        self.reset_template()
+        return res
+
+    @api.multi
+    def write(self, vals):
+        """
+        """
+        res = super(ClouderTemplateOne2many, self).write(vals)
+        self.reset_template()
+        return res
+
+
 def generate_random_password(size):
     """
     Method which can be used to generate a random password.

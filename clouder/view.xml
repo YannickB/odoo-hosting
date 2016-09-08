@@ -584,11 +584,56 @@
         </record>
 
 
+        <record id="action_clouder_application_template_form" model="ir.actions.act_window">
+            <field name="name">Application Templates</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">clouder.application.template</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_clouder_application_template_form" id="menu_action_clouder_application_template_form" parent="menu_clouder_configuration"/>
+
+        <record id="view_clouder_application_template_form" model="ir.ui.view">
+            <field name="name">clouder.application.template.form</field>
+            <field name="model">clouder.application.template</field>
+            <field name="arch" type="xml">
+                <form string="Application Template" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="type_id"/>
+                    </group>
+                    <notebook>
+                        <page string="General">
+                            <field name="link_ids" colspan="4">
+                                <tree string="Links" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="required"/>
+                                    <field name="auto"/>
+                                    <field name="make_link"/>
+                                    <field name="container"/>
+                                    <field name="base"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </form>
+            </field>
+        </record>
+        <record id="view_clouder_application_template_tree" model="ir.ui.view">
+            <field name="name">clouder.application.template.tree</field>
+            <field name="model">clouder.application.template</field>
+            <field name="arch" type="xml">
+                <tree string="Application Templates">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+
         <record id="action_clouder_application_form" model="ir.actions.act_window">
             <field name="name">Applications</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">clouder.application</field>
-            <field name="domain">[('parent_id', '=', False)]</field>
             <field name="view_type">form</field>
         </record>
 
@@ -603,7 +648,9 @@
                         <field name="name"/>
                         <field name="code"/>
                         <field name="type_id"/>
+                        <field name="template_id"/>
                         <field name="base"/>
+                        <newline/>
                         <field name="default_image_id"/>
                         <field name="next_image_version_id" domain="[('image_id','=',default_image_id)]"/>
                         <newline/>
@@ -635,7 +682,6 @@
                                     <field name="auto"/>
                                     <field name="make_link"/>
                                     <field name="container"/>
-                                    <field name="service"/>
                                     <field name="base"/>
                                     <field name="next" domain="[('application_id','=',name)]"/>
                                 </tree>
@@ -675,6 +721,54 @@
             </field>
         </record>
 
+        <record id="action_clouder_image_template_form" model="ir.actions.act_window">
+            <field name="name">Images Templates</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">clouder.image.template</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_clouder_image_template_form" id="menu_action_clouder_image_template_form" parent="menu_clouder_configuration"/>
+
+        <record id="view_clouder_image_template_form" model="ir.ui.view">
+            <field name="name">clouder.image.template.form</field>
+            <field name="model">clouder.image.template</field>
+            <field name="arch" type="xml">
+                <form string="Image" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                    </group>
+                    <field name="volume_ids" colspan="4">
+                        <tree string="Volumes" editable="bottom">
+                            <field name="name"/>
+                            <field name="from_code"/>
+                            <field name="hostpath"/>
+                            <field name="user"/>
+                            <field name="readonly"/>
+                            <field name="nosave"/>
+                        </tree>
+                    </field>
+                    <field name="port_ids" colspan="4">
+                        <tree string="Ports" editable="bottom">
+                            <field name="name"/>
+                            <field name="localport"/>
+                            <field name="expose"/>
+                            <field name="udp"/>
+                            <field name="use_hostport"/>
+                        </tree>
+                    </field>
+                </form>
+            </field>
+        </record>
+        <record id="view_clouder_image_template_tree" model="ir.ui.view">
+            <field name="name">clouder.image.template.tree</field>
+            <field name="model">clouder.image.template</field>
+            <field name="arch" type="xml">
+                <tree string="Images">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
 
         <record id="action_clouder_image_form" model="ir.actions.act_window">
             <field name="name">Images</field>
@@ -697,6 +791,7 @@
                         <field name="parent_id"/>
                         <field name="public"/>
                         <field name="partner_id"/>
+                        <field name="volumes_from"/>
                     </group>
                     <field name="dockerfile" colspan="4"/>
                     <field name="volume_ids" colspan="4">
