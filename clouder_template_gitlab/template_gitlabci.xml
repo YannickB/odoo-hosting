@@ -63,7 +63,7 @@
         <!-- app "data" -->
         <record id="application_gitlabci_data" model="clouder.application">
             <field name="name">Gitlab CI Data</field>
-            <field name="code">data</field>
+            <field name="code">gitlabci-data</field>
             <field name="type_id" ref="application_type_gitlabci"/>
             <field name="default_image_id" ref="image_gitlabci_data"/>
             <field name="sequence">1</field>
@@ -82,7 +82,7 @@
         <!-- app "exec" -->
         <record id="application_gitlabci_exec" model="clouder.application">
             <field name="name">Gitlab CI Exec</field>
-            <field name="code">exec</field>
+            <field name="code">gitlabci-exec</field>
             <field name="type_id" ref="application_type_gitlabci"/>
             <field name="default_image_id" ref="image_gitlabci_exec"/>
             <field name="sequence">2</field>

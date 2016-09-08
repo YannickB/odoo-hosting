@@ -69,7 +69,7 @@
         <!-- app "data" -->
         <record id="application_registry_data" model="clouder.application">
             <field name="name">Registry Data</field>
-            <field name="code">data</field>
+            <field name="code">registry-data</field>
             <field name="type_id" ref="application_type_registry"/>
             <field name="default_image_id" ref="image_registry_data"/>
             <field name="sequence">1</field>
@@ -79,7 +79,7 @@
         <!-- app "exec" -->
         <record id="application_registry_exec" model="clouder.application">
             <field name="name">Registry Exec</field>
-            <field name="code">exec</field>
+            <field name="code">registry-exec</field>
             <field name="type_id" ref="application_type_registry"/>
             <field name="default_image_id" ref="image_registry_exec"/>
             <field name="sequence">2</field>

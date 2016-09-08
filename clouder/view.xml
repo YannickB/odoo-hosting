@@ -104,6 +104,7 @@
                                 <tree string="Links" editable="bottom">
                                     <field name="name" domain="[('application_id','=',parent.application_id),('base','=',True)]"/>
                                     <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <field name="required"/>
                                     <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>
                                     <button name="purge_" type="object" string="Purge"/>
@@ -217,6 +218,8 @@
                                 <tree string="Links" editable="bottom">
                                     <field name="name" domain="[('application_id','=',parent.application_id),('container','=',True)]"/>
                                     <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <field name="required"/>
+                                    <field name="make_link"/>
                                     <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>
                                     <button name="purge_" type="object" string="Purge"/>
@@ -717,6 +720,7 @@
             <field name="arch" type="xml">
                 <tree string="Applications" default_order="name">
                     <field name="name"/>
+                    <field name="code"/>
                 </tree>
             </field>
         </record>

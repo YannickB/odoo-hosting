@@ -261,8 +261,20 @@ class ClouderApplication(models.Model):
                                          'value': option.value}
         return options
 
+    @property
+    def links(self):
+        """
+        """
+        links = {}
+        for child in self.child_ids:
+            for code, link in child.links.iteritems():
+                links[code] = link
+        for link in self.link_ids:
+            links[link.name.code] = link
+        return links
+
     _sql_constraints = [
-        ('code_uniq', 'unique(parent_id, code)', 'Code must be unique!'),
+        ('code_uniq', 'unique(code)', 'Code must be unique!'),
     ]
 
     _order = 'sequence, code'

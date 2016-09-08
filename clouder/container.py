@@ -597,8 +597,8 @@ class ClouderContainer(models.Model):
             for def_opt_key in sources_to_add:
                 if option_sources[def_opt_key].type == 'container' and option_sources[def_opt_key].auto and \
                         not (
-                                    option_sources[def_opt_key].app_code and
-                                    option_sources[def_opt_key].app_code != application.code
+                                    option_sources[def_opt_key].application_code and
+                                    option_sources[def_opt_key].application_code != application.code
                         ):
                     options.append((0, 0, {
                             'name': option_sources[def_opt_key].id,
@@ -609,7 +609,7 @@ class ClouderContainer(models.Model):
             vals['option_ids'] = options
 
             # Getting sources for new links
-            link_sources = {x.id: x for x in application.link_ids}
+            link_sources = {x.id: x for code, x in application.links.iteritems()}
             sources_to_add = link_sources.keys()
             links_to_process = []
             # Checking old links
@@ -619,6 +619,8 @@ class ClouderContainer(models.Model):
                     if isinstance(link, (list, tuple)):
                         link = {
                             'name': link[2].get('name', False),
+                            'required': link[2].get('required', False),
+                            'make_link': link[2].get('make_link', False),
                             'next': link[2].get('next', False)
                         }
                         # This case means we do not have an odoo recordset and need to load the link manually
@@ -627,6 +629,8 @@ class ClouderContainer(models.Model):
                     else:
                         link = {
                             'name': getattr(link, 'name', False),
+                            'required': getattr(link, 'required', False),
+                            'make_link': getattr(link, 'make_link', False),
                             'next': getattr(link, 'next', False)
                         }
                     # Keeping the link if there is a match with the sources
@@ -641,6 +645,8 @@ class ClouderContainer(models.Model):
             for def_key_link in sources_to_add:
                 link = {
                     'name': getattr(link_sources[def_key_link], 'name', False),
+                    'required': getattr(link_sources[def_key_link], 'required', False),
+                    'make_link': getattr(link_sources[def_key_link], 'make_link', False),
                     'next': getattr(link_sources[def_key_link], 'next', False),
                     'source': link_sources[def_key_link]
                 }
@@ -672,7 +678,9 @@ class ClouderContainer(models.Model):
                             ('parent_id', '=', False)])
                         if target_ids:
                             next_id = target_ids[0].id
-                    links.append((0, 0, {'name': link['source'].id,
+                    links.append((0, 0, {'name': link['source'].name.id,
+                                         'required': link['source'].required,
+                                         'make_link': link['source'].make_link,
                                          'target': next_id}))
             # Replacing old links
             vals['link_ids'] = links
@@ -1417,8 +1425,10 @@ class ClouderContainerLink(models.Model):
     container_id = fields.Many2one(
         'clouder.container', 'Container', ondelete="cascade", required=True)
     name = fields.Many2one(
-        'clouder.application.link', 'Application Link', required=True)
+        'clouder.application', 'Application', required=True)
     target = fields.Many2one('clouder.container', 'Target')
+    required = fields.Boolean('Required?')
+    make_link = fields.Boolean('Make docker link?')
     deployed = fields.Boolean('Deployed?', readonly=True)
 
     @api.one
@@ -1428,7 +1438,7 @@ class ClouderContainerLink(models.Model):
         Check that we specify a value for the link
         if this link is required.
         """
-        if self.name.required and not self.target:
+        if self.required and not self.target:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify a link to " +
@@ -1461,10 +1471,6 @@ class ClouderContainerLink(models.Model):
         """
         if not self.target:
             self.log('The target isnt configured in the link, '
-                     'skipping deploy link')
-            return False
-        if not self.name.container:
-            self.log('This application isnt for container, '
                      'skipping deploy link')
             return False
         return True

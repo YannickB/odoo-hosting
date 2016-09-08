@@ -322,7 +322,7 @@ class ClouderBase(models.Model):
             # Replacing old options
             vals['option_ids'] = options
 
-            link_sources = {x.id: x for x in application.link_ids}
+            link_sources = {x.id: x for code, x in application.links.iteritems()}
             sources_to_add = link_sources.keys()
             links_to_process = []
             # Checking old links
@@ -332,6 +332,7 @@ class ClouderBase(models.Model):
                     if isinstance(link, (list, tuple)):
                         link = {
                             'name': link[2].get('name', False),
+                            'required': link[2].get('required', False),
                             'next': link[2].get('next', False)
                         }
                         # This case means we do not have an odoo recordset and need to load the link manually
@@ -340,6 +341,7 @@ class ClouderBase(models.Model):
                     else:
                         link = {
                             'name': getattr(link, 'name', False),
+                            'required': getattr(link, 'required', False),
                             'next': getattr(link, 'next', False)
                         }
                     # Keeping the link if there is a match with the sources
@@ -354,6 +356,7 @@ class ClouderBase(models.Model):
             for def_key_link in sources_to_add:
                 link = {
                     'name': getattr(link_sources[def_key_link], 'name', False),
+                    'required': getattr(link_sources[def_key_link], 'required', False),
                     'next': getattr(link_sources[def_key_link], 'next', False),
                     'source': link_sources[def_key_link]
                 }
@@ -385,6 +388,7 @@ class ClouderBase(models.Model):
                         if target_ids:
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link['source'].id,
+                                         'required': link['required'],
                                          'target': next_id}))
             # Replacing old links
             vals['link_ids'] = links
@@ -889,6 +893,7 @@ class ClouderBaseLink(models.Model):
     name = fields.Many2one('clouder.application.link', 'Application Link',
                            required=True)
     target = fields.Many2one('clouder.container', 'Target')
+    required = fields.Boolean('Required?')
     deployed = fields.Boolean('Deployed?', readonly=True)
 
     @property
@@ -906,7 +911,7 @@ class ClouderBaseLink(models.Model):
         Check that we specify a value for the link
         if this link is required.
         """
-        if self.name.required and not self.target:
+        if self.required and not self.target:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify a link to "
@@ -940,9 +945,6 @@ class ClouderBaseLink(models.Model):
         if not self.target:
             self.log(
                 'The target isnt configured in the link, skipping deploy link')
-            return False
-        if not self.name.base:
-            self.log('This application isnt for base, skipping deploy link')
             return False
         return True
 

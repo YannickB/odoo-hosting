@@ -300,7 +300,7 @@
 
         <record id="application_odoo_data" model="clouder.application">
             <field name="name">Odoo Data</field>
-            <field name="code">data</field>
+            <field name="code">odoo-data</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_id" ref="application_template_odoo_data"/>
             <field name="default_image_id" ref="image_odoo_data"/>
@@ -311,7 +311,7 @@
 
         <record id="application_odoo8_files" model="clouder.application">
             <field name="name">Odoo 8 Files</field>
-            <field name="code">files</field>
+            <field name="code">odoo8-files</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="default_image_id" ref="image_odoo8_files"/>
             <field name="sequence">2</field>
@@ -322,7 +322,7 @@
 
         <record id="application_odoo9_files" model="clouder.application">
             <field name="name">Odoo 9 Files</field>
-            <field name="code">files</field>
+            <field name="code">odoo9-files</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="default_image_id" ref="image_odoo9_files"/>
             <field name="sequence">2</field>
@@ -333,7 +333,7 @@
 
         <record id="application_odoo8_clouder_files" model="clouder.application">
             <field name="name">Clouder 8 Files</field>
-            <field name="code">files</field>
+            <field name="code">clouder8-files</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="default_image_id" ref="image_odoo8_clouder_files"/>
             <field name="sequence">2</field>
@@ -344,7 +344,7 @@
 
         <record id="application_odoo9_clouder_files" model="clouder.application">
             <field name="name">Clouder 9 Files</field>
-            <field name="code">files</field>
+            <field name="code">clouder9-files</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="default_image_id" ref="image_odoo9_clouder_files"/>
             <field name="sequence">2</field>
@@ -355,7 +355,7 @@
 
         <record id="application_odoo_exec" model="clouder.application">
             <field name="name">Odoo Exec</field>
-            <field name="code">exec</field>
+            <field name="code">odoo-exec</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_id" ref="application_template_odoo_data"/>
             <field name="default_image_id" ref="image_odoo_exec"/>
@@ -366,7 +366,7 @@
 
         <record id="application_odoo_clouder_exec" model="clouder.application">
             <field name="name">Clouder Exec</field>
-            <field name="code">exec</field>
+            <field name="code">clouder-exec</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="sequence">3</field>
@@ -376,7 +376,7 @@
 
         <record id="application_odoo_ssh" model="clouder.application">
             <field name="name">Odoo SSH</field>
-            <field name="code">ssh</field>
+            <field name="code">odoo-ssh</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
             <field name="sequence">4</field>
