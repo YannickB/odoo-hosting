@@ -34,6 +34,9 @@ class ClouderApplicationTag(models.Model):
     _name = 'clouder.application.tag'
 
     name = fields.Char('Name', required=True)
+    application_ids = fields.Many2many(
+        'clouder.application', 'clouder_application_tag_rel',
+        'tag_id', 'application_id', 'Applications')
 
 
 class ClouderApplicationType(models.Model):
@@ -101,6 +104,9 @@ class ClouderApplicationTypeOption(models.Model):
         [('application', 'Application'), ('container', 'Container'),
          ('service', 'Service'), ('base', 'Base')], 'Type', required=True)
     application_code = fields.Char('Application Code')
+    tag_ids = fields.Many2many(
+        'clouder.application.tag', 'clouder_application_type_option_tag_rel',
+        'option_id', 'tag_id', 'Tags')
     auto = fields.Boolean('Auto?')
     required = fields.Boolean('Required?')
     default = fields.Text('Default value')

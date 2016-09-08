@@ -598,15 +598,16 @@ class ClouderContainer(models.Model):
 
             # Adding remaining options from sources
             for def_opt_key in sources_to_add:
-                if option_sources[def_opt_key].type == 'container' and option_sources[def_opt_key].auto and \
-                        not (
-                                    option_sources[def_opt_key].application_code and
-                                    option_sources[def_opt_key].application_code != application.code
-                        ):
-                    options.append((0, 0, {
-                            'name': option_sources[def_opt_key].id,
-                            'value': option_sources[def_opt_key].get_default
-                    }))
+                if option_sources[def_opt_key].type == 'container' and option_sources[def_opt_key].auto:
+                    flag = True
+                    for tag in option_sources[def_opt_key].tag_ids:
+                        if tag not in application.tag_ids:
+                            flag = False
+                    if flag:
+                        options.append((0, 0, {
+                                'name': option_sources[def_opt_key].id,
+                                'value': option_sources[def_opt_key].get_default
+                        }))
 
             # Replacing old options
             vals['option_ids'] = options
@@ -966,12 +967,11 @@ class ClouderContainer(models.Model):
         self.env['clouder.container.volume'].search(
             [('container_id', '=', self.id)]).unlink()
 
-        image = self.env('clouder.image').browse(vals['image_id'])
+        image = self.env['clouder.image'].browse(vals['image_id'])
         if vals['parent_id'] and image.volume_from:
-            image = self.env('clouder.image').browse(vals['image_id'])
             volumes_from = ','.split(image.volume_from)
             targets = []
-            for child in self.env('clouder.container.child').browse(vals['parent_id']).container_id.child_ids:
+            for child in self.env['clouder.container.child'].browse(vals['parent_id']).container_id.child_ids:
                 for code in volumes_from:
                     if child.name.check_tag([code]):
                         targets.append(child.target)

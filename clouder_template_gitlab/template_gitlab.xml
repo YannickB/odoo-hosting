@@ -10,14 +10,14 @@
             <field name="application_type_id" ref="application_type_gitlab"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
-            <field name="application_code">data</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_gitlab_option_secret" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_gitlab"/>
             <field name="name">secret</field>
             <field name="type">container</field>
-            <field name="application_code">data</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_gitlab_option_token" model="clouder.application.type.option">

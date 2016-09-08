@@ -48,28 +48,28 @@
             <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
-            <field name="application_code">data</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_registry_password" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">registry_password</field>
             <field name="type">container</field>
-            <field name="application_code">files</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_files')])]"/>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_ssh_privatekey" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">ssh_privatekey</field>
             <field name="type">container</field>
-            <field name="application_code">ssh</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_ssh')])]"/>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_ssh_publickey" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">ssh_publickey</field>
             <field name="type">container</field>
-            <field name="application_code">ssh</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_ssh')])]"/>
             <field name="auto" eval="True"/>
         </record>
 

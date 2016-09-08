@@ -10,7 +10,7 @@
             <field name="application_type_id" ref="application_type_gitlabci"/>
             <field name="name">concurrent</field>
             <field name="type">container</field>
-            <field name="application_code">data</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
             <field name="default">2</field>
         </record>
