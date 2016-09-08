@@ -76,6 +76,10 @@
         <record id="image_template_odoo_data" model="clouder.image.template">
             <field name="name">image_template_odoo_data</field>
         </record>
+        <record id="image_template_odoo_data_volume_home" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_odoo_data"/>
+            <field name="name">/home/odoo</field>
+        </record>
         <record id="image_template_odoo_data_volume_data" model="clouder.image.volume">
             <field name="template_id" ref="image_template_odoo_data"/>
             <field name="name">/opt/odoo/data</field>
@@ -91,10 +95,6 @@
         <record id="image_template_odoo_data_volume_var" model="clouder.image.volume">
             <field name="template_id" ref="image_template_odoo_data"/>
             <field name="name">/opt/odoo/var</field>
-        </record>
-        <record id="image_template_odoo_data_volume_home" model="clouder.image.volume">
-            <field name="template_id" ref="image_template_odoo_data"/>
-            <field name="name">/home/odoo</field>
         </record>
 
         <record id="image_template_odoo_files" model="clouder.image.template">

@@ -64,6 +64,12 @@
             <field name="auto" eval="True"/>
         </record>
 
+        <record id="application_salt_minion_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="clouder.application_salt_minion"/>
+            <field name="name" ref="application_shinken"/>
+            <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
+        </record>
         <record id="application_postfix_link_shinken" model="clouder.application.link">
             <field name="application_id" ref="clouder_template_postfix.application_postfix"/>
             <field name="name" ref="application_shinken"/>

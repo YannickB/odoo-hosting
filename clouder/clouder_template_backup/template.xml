@@ -58,7 +58,7 @@
         <record id="application_type_backup" model="clouder.application.type">
             <field name="name">backup</field>
             <field name="system_user">backup</field>
-            <field name="role_ids" eval="[(6, 0, [ref('role_backup'),ref('role_no_backup')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_backup'),ref('tag_no_backup')])]"/>
         </record>
         <record id="application_type_backup_option_method" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_backup"/>

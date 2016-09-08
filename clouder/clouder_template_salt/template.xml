@@ -104,10 +104,42 @@
 
                 RUN pip install --upgrade pip erppeek
 
-                CMD salt-minion
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor python-pip python-dev nagios-nrpe-server htop hddtemp lm-sensors
+
+                RUN pip install --upgrade pip setuptools
+                RUN pip install bottle pysensors batinfo pymdstat pysnmp zeroconf netifaces influxdb statsd pystache docker-py pika py-cpuinfo
+
+                RUN pip install glances
+
+                ADD sources/check_mem.pl /usr/lib/nagios/plugins/check_mem.pl
+                RUN chmod +x /usr/lib/nagios/plugins/check_mem.pl
+
+                USER root
+                RUN sed -i "s/allowed_hosts=127.0.0.1/allowed_hosts=172.17.0.0\/16/g" /etc/nagios/nrpe.cfg
+                RUN echo "command[check_mem]=/usr/lib/nagios/plugins/check_mem.pl -fC -w 20 -c 10" >> /etc/nagios/nrpe.cfg
+                RUN echo "command[check_disk]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /" >> /etc/nagios/nrpe.cfg
+
+                RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+
+                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "[program:salt]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "command=salt-minion" >> /etc/supervisor/conf.d/supervisord.conf
+
+                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "[program:nrpe]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "command=/etc/init.d/nagios-nrpe-server restart" >> /etc/supervisor/conf.d/supervisord.conf
+
+                CMD ["/usr/bin/supervisord"]
 
                 ]]>
             </field>
+        </record>
+        <record id="image_salt_minion_volume_etc" model="clouder.image.volume">
+            <field name="image_id" ref="image_salt_minion"/>
+            <field name="name">/etc/nagios</field>
+            <field name="nosave" eval="True"/>
         </record>
         <record id="image_salt_minion_volume_docker" model="clouder.image.volume">
             <field name="image_id" ref="image_salt_minion"/>
@@ -115,6 +147,12 @@
             <field name="hostpath">/var/run/docker.sock</field>
             <field name="readonly" eval="True"/>
             <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_salt_minion_port_nrpe" model="clouder.image.port">
+            <field name="image_id" ref="image_salt_minion"/>
+            <field name="name">nrpe</field>
+            <field name="localport">5666</field>
+            <field name="expose">internet</field>
         </record>
 
         <record id="application_salt_minion" model="clouder.application">

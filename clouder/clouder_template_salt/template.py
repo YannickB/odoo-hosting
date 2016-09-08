@@ -177,6 +177,32 @@ class ClouderContainer(models.Model):
             self.salt_master.execute(['rm', '-rf', '/srv/pillar/containers/' + self.name + '.sls'])
 
 
+class ClouderContainerLink(models.Model):
+    """
+    """
+
+    _inherit = 'clouder.container.link'
+
+    @api.multi
+    def deploy_link(self):
+        """
+        """
+        super(ClouderContainerLink, self).deploy_link()
+        if self.name.type_id.name == 'shinken' \
+                and self.container_id.application_id.type_id.name == 'salt-minion':
+
+            self.target.deploy_shinken_server(self.container_id)
+
+    @api.multi
+    def purge_link(self):
+        """
+        """
+        super(ClouderContainerLink, self).purge_link()
+        if self.name.type_id.name == 'shinken' \
+                and self.container_id.application_id.type_id.name == 'salt-minion':
+
+            self.target.purge_shinken_server(self.container_id)
+
 class ClouderBase(models.Model):
     """
     """

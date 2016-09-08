@@ -101,8 +101,6 @@ class ClouderServer(models.Model):
         container = self.oneclick_deploy_element('container', 'shinken')
         self.oneclick_deploy_element('base', 'shinken', container=container, domain=domain)
 
-        self.oneclick_deploy_element('container', 'glances')
-
         container = self.oneclick_deploy_element('container', 'registry')
         self.oneclick_deploy_element('base', 'registry', container=container, domain=domain)
 
@@ -146,9 +144,6 @@ class ClouderServer(models.Model):
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'registry')]).unlink()
-
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'glances')]).unlink()
 
         container_obj.search([('environment_id', '=', self.environment_id.id),
                               ('suffix', '=', 'shinken')]).unlink()

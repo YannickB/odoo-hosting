@@ -27,7 +27,6 @@
     'depends': [
         'clouder_template_bind',
         'clouder_template_gitlab',
-        'clouder_template_glances',
         'clouder_template_shinken',
         'clouder_template_postfix',
         'clouder_template_proxy',
