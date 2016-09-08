@@ -3,19 +3,19 @@
     <data>
 
 
-        <record id="apptype_postgres" model="clouder.application.type">
+        <record id="application_type_postgres" model="clouder.application.type">
             <field name="name">postgres</field>
             <field name="system_user">postgres</field>
             <field name="role_ids" eval="[(6, 0, [ref('clouder.role_database')])]"/>
         </record>
-        <record id="apptype_postgres_option_network" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_postgres"/>
+        <record id="application_type_postgres_option_network" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_postgres"/>
             <field name="name">network</field>
             <field name="type">container</field>
             <field name="default">172.17.0.0/16</field>
         </record>
-        <record id="apptype_postgres_option_listen" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_postgres"/>
+        <record id="application_type_postgres_option_listen" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_postgres"/>
             <field name="name">listen</field>
             <field name="type">container</field>
             <field name="default">*</field>
@@ -50,7 +50,7 @@
         <record id="application_postgres" model="clouder.application">
             <field name="name">Postgresql</field>
             <field name="code">postgres</field>
-            <field name="type_id" ref="apptype_postgres"/>
+            <field name="type_id" ref="application_type_postgres"/>
             <field name="default_image_id" ref="image_postgres"/>
         </record>
         <record id="application_postgres_link_shinken" model="clouder.application.link">

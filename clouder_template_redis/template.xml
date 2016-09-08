@@ -2,14 +2,14 @@
 <openerp>
     <data>
 
-        <record id="apptype_redis" model="clouder.application.type">
+        <record id="application_type_redis" model="clouder.application.type">
             <field name="name">redis</field>
             <field name="system_user">redis</field>
         </record>
 
         <record id="image_redis" model="clouder.image">
             <field name="name">img_redis</field>
-            <field name="type_id" ref="apptype_redis"/>
+            <field name="type_id" ref="application_type_redis"/>
             <field name="current_version">3.2.1</field>
             <field name="parent_from">redis:latest</field>
         </record>
@@ -29,7 +29,7 @@
         <record id="application_redis" model="clouder.application">
             <field name="name">Redis</field>
             <field name="code">redis</field>
-            <field name="type_id" ref="apptype_redis"/>
+            <field name="type_id" ref="application_type_redis"/>
             <field name="default_image_id" ref="image_redis"/>
         </record>
         <record id="application_redis_link_shinken" model="clouder.application.link">

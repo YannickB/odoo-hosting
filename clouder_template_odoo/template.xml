@@ -15,58 +15,58 @@
             <field name="localpath_services">/opt/odoo</field>
         </record>
         <record id="application_type_odoo_option_default_account_chart" model="clouder.application.type.option">
-            <field name="apptype_id" ref="application_type_odoo"/>
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">default_account_chart</field>
             <field name="type">application</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_account_chart" model="clouder.application.type.option">
-            <field name="apptype_id" ref="application_type_odoo"/>
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">account_chart</field>
             <field name="type">base</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_install_modules" model="clouder.application.type.option">
-            <field name="apptype_id" ref="application_type_odoo"/>
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">install_modules</field>
             <field name="type">application</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_test_install_modules" model="clouder.application.type.option">
-            <field name="apptype_id" ref="application_type_odoo"/>
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">test_install_modules</field>
             <field name="type">application</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_poweruser_groups" model="clouder.application.type.option">
-            <field name="apptype_id" ref="application_type_odoo"/>
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">poweruser_group</field>
             <field name="type">application</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_db_password" model="clouder.application.type.option">
-            <field name="apptype_id" ref="application_type_odoo"/>
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_registry_password" model="clouder.application.type.option">
-            <field name="apptype_id" ref="application_type_odoo"/>
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">registry_password</field>
             <field name="type">container</field>
             <field name="application_code">files</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_ssh_privatekey" model="clouder.application.type.option">
-            <field name="apptype_id" ref="application_type_odoo"/>
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">ssh_privatekey</field>
             <field name="type">container</field>
             <field name="application_code">ssh</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_odoo_option_ssh_publickey" model="clouder.application.type.option">
-            <field name="apptype_id" ref="application_type_odoo"/>
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">ssh_publickey</field>
             <field name="type">container</field>
             <field name="application_code">ssh</field>
@@ -202,7 +202,6 @@
             <field name="parent_id"/>
             <field name="dockerfile"/>
             <field name="volumes_from">data,files</field>
-            <field name="update_strategy">auto</field>
         </record>
 
         <record id="image_odoo_ssh" model="clouder.image">
@@ -392,7 +391,6 @@
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo8_files'),ref('application_odoo_exec'),ref('application_odoo_ssh')])]"/>
             <field name="base" eval="True"/>
-            <field name="current_version">8.0</field>
         </record>
 
         <record id="application_odoo9" model="clouder.application">
@@ -403,7 +401,6 @@
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo9_files'),ref('application_odoo_exec'),ref('application_odoo_ssh')])]"/>
             <field name="base" eval="True"/>
-            <field name="current_version">9.0</field>
         </record>
 
         <record id="application_odoo8_clouder" model="clouder.application">
@@ -414,7 +411,6 @@
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo8_clouder_files'),ref('application_odoo_clouder_exec'),ref('application_odoo_ssh')])]"/>
             <field name="base" eval="True"/>
-            <field name="current_version">8.0</field>
         </record>
         <record id="application_odoo8_clouder_option_install_modules" model="clouder.application.option">
             <field name="application_id" ref="application_odoo8_clouder"/>
@@ -430,7 +426,6 @@
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo9_clouder_files'),ref('application_odoo_clouder_exec'),ref('application_odoo_ssh')])]"/>
             <field name="base" eval="True"/>
-            <field name="current_version">9.0</field>
         </record>
         <record id="application_odoo9_clouder_option_install_modules" model="clouder.application.option">
             <field name="application_id" ref="application_odoo9_clouder"/>

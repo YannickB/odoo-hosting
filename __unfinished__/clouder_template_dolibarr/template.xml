@@ -3,12 +3,12 @@
     <data>
 
 
-        <record id="apptype_dolibarr" model="clouder.application.type">
+        <record id="application_type_dolibarr" model="clouder.application.type">
             <field name="name">dolibarr</field>
             <field name="system_user">www-data</field>
         </record>
-        <record id="apptype_dolibarr_option_db_password" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_dolibarr"/>
+        <record id="application_type_dolibarr_option_db_password" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_dolibarr"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
@@ -41,7 +41,7 @@
         <record id="application_dolibarr" model="clouder.application">
             <field name="name">Dolibarr</field>
             <field name="code">dolibarr</field>
-            <field name="type_id" ref="apptype_dolibarr"/>
+            <field name="type_id" ref="application_type_dolibarr"/>
             <field name="default_image_id" ref="image_dolibarr"/>
             <field name="current_version">8.0</field>
             <field name="base" eval="True"/>

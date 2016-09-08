@@ -2,19 +2,19 @@
 <openerp>
     <data>
 
-        <record id="apptype_docker" model="clouder.application.type">
+        <record id="application_type_docker" model="clouder.application.type">
             <field name="name">docker</field>
             <field name="system_user">docker</field>
         </record>
-        <record id="apptype_docker_option_ports" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_docker"/>
+        <record id="application_type_docker_option_ports" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_docker"/>
             <field name="name">ports</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>
-        <record id="apptype_docker_option_publickey" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_docker"/>
+        <record id="application_type_docker_option_publickey" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_docker"/>
             <field name="name">public_key</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
@@ -23,7 +23,6 @@
         <record id="image_docker" model="clouder.image">
             <field name="name">img_docker</field>
             <field name="current_version">1</field>
-            <field name="privileged">True</field>
             <field name="parent_from">clouder/clouder-docker</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
@@ -45,7 +44,7 @@
         <record id="application_docker" model="clouder.application">
             <field name="name">Docker</field>
             <field name="code">docker</field>
-            <field name="type_id" ref="apptype_docker"/>
+            <field name="type_id" ref="application_type_docker"/>
             <field name="default_image_id" ref="image_docker"/>
         </record>
 

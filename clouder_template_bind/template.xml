@@ -3,13 +3,13 @@
     <data>
 
 
-        <record id="apptype_bind" model="clouder.application.type">
+        <record id="application_type_bind" model="clouder.application.type">
             <field name="name">bind</field>
             <field name="system_user">bind</field>
             <field name="role_ids" eval="[(6, 0, [ref('clouder.role_dns')])]"/>
         </record>
-        <record id="apptype_bind_option_slaveip" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_bind"/>
+        <record id="application_type_bind_option_slaveip" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_bind"/>
             <field name="name">slave_ip</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
@@ -38,7 +38,7 @@
         <record id="application_bind" model="clouder.application">
             <field name="name">Bind</field>
             <field name="code">bind</field>
-            <field name="type_id" ref="apptype_bind"/>
+            <field name="type_id" ref="application_type_bind"/>
             <field name="default_image_id" ref="image_bind"/>
         </record>
 

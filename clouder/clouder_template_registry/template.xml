@@ -2,7 +2,7 @@
 <openerp>
     <data>
 
-        <record id="apptype_registry" model="clouder.application.type">
+        <record id="application_type_registry" model="clouder.application.type">
             <field name="name">registry</field>
             <field name="system_user">registry</field>
             <field name="role_ids" eval="[(6, 0, [ref('role_registry'),ref('role_no_backup')])]"/>
@@ -70,7 +70,7 @@
         <record id="application_registry_data" model="clouder.application">
             <field name="name">Registry Data</field>
             <field name="code">data</field>
-            <field name="type_id" ref="apptype_registry"/>
+            <field name="type_id" ref="application_type_registry"/>
             <field name="default_image_id" ref="image_registry_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
@@ -80,7 +80,7 @@
         <record id="application_registry_exec" model="clouder.application">
             <field name="name">Registry Exec</field>
             <field name="code">exec</field>
-            <field name="type_id" ref="apptype_registry"/>
+            <field name="type_id" ref="application_type_registry"/>
             <field name="default_image_id" ref="image_registry_exec"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -88,7 +88,7 @@
         <record id="application_registry" model="clouder.application">
             <field name="name">Registry</field>
             <field name="code">registry</field>
-            <field name="type_id" ref="apptype_registry"/>
+            <field name="type_id" ref="application_type_registry"/>
             <field name="default_image_id" ref="image_registry_data"/>
             <field name="child_ids" eval="[(4, [ref('application_registry_data'),ref('application_registry_exec')])]"/>
             <field name="base" eval="True"/>

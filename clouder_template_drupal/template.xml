@@ -3,32 +3,32 @@
     <data>
 
 
-        <record id="apptype_drupal" model="clouder.application.type">
+        <record id="application_type_drupal" model="clouder.application.type">
             <field name="name">drupal</field>
             <field name="system_user">www-data</field>
         </record>
-        <record id="apptype_drupal_option_install_modules" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_install_modules" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">install_modules</field>
             <field name="type">application</field>
         </record>
-        <record id="apptype_drupal_option_test_install_modules" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_test_install_modules" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">test_install_modules</field>
             <field name="type">application</field>
         </record>
-        <record id="apptype_drupal_option_theme" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_theme" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">theme</field>
             <field name="type">application</field>
         </record>
-        <record id="apptype_drupal_option_poweruser_group" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_poweruser_group" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">poweruser_group</field>
             <field name="type">application</field>
         </record>
-        <record id="apptype_drupal_option_db_password" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_db_password" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
@@ -60,14 +60,14 @@
         <record id="application_drupal" model="clouder.application">
             <field name="name">Drupal</field>
             <field name="code">drupal</field>
-            <field name="type_id" ref="apptype_drupal"/>
+            <field name="type_id" ref="application_type_drupal"/>
             <field name="default_image_id" ref="image_drupal"/>
             <field name="current_version">8.0</field>
             <field name="base" eval="True"/>
         </record>
         <record id="application_drupal_option_install_modules" model="clouder.application.option">
             <field name="application_id" ref="application_drupal"/>
-            <field name="name" ref="apptype_drupal_option_install_modules"/>
+            <field name="name" ref="application_type_drupal_option_install_modules"/>
             <field name="value">piwik,admin_menu_toolbar</field>
         </record>
         <record id="application_drupal_link_bind" model="clouder.application.link">

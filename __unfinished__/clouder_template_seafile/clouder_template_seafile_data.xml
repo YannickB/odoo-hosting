@@ -3,20 +3,20 @@
     <data>
 
 
-        <record id="apptype_seafile" model="clouder.application.type">
+        <record id="application_type_seafile" model="clouder.application.type">
             <field name="name">seafile</field>
             <field name="system_user">seafile</field>
             <field name="localpath">/opt/versions</field>
             <field name="localpath_services">/opt/seafile</field>
             <field name="multiple_databases">ccnet,seafile,seahub</field>
         </record>
-        <record id="apptype_seafile_option1" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_seafile"/>
+        <record id="application_type_seafile_option1" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_seafile"/>
             <field name="name">manual_install</field>
             <field name="type">base</field>
         </record>
-        <record id="apptype_seafile_option2" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_seafile"/>
+        <record id="application_type_seafile_option2" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_seafile"/>
             <field name="name">port</field>
             <field name="type">service</field>
             <field name="default">port</field>
@@ -95,7 +95,7 @@ VOLUME /base-backup
         <record id="application_seafile" model="clouder.application">
             <field name="name">Seafile</field>
             <field name="code">seafile</field>
-            <field name="type_id" ref="apptype_seafile"/>
+            <field name="type_id" ref="application_type_seafile"/>
             <field name="bdd">mysql</field>
             <field name="default_image_id" ref="image_seafile"/>
             <field name="current_version">3.1.3</field>

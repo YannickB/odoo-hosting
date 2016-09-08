@@ -53,7 +53,7 @@ class ClouderApplicationType(models.Model):
     localpath = fields.Char('Localpath')
     localpath_services = fields.Char('Localpath Services')
     option_ids = fields.One2many(
-        'clouder.application.type.option', 'apptype_id', 'Options'
+        'clouder.application.type.option', 'application_type_id', 'Options'
     )
     application_ids = fields.One2many(
         'clouder.application', 'type_id', 'Applications'
@@ -67,6 +67,8 @@ class ClouderApplicationType(models.Model):
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
+
+    _order = 'name'
 
     @api.one
     @api.constrains('name', 'system_user')
@@ -91,7 +93,7 @@ class ClouderApplicationTypeOption(models.Model):
 
     _name = 'clouder.application.type.option'
 
-    apptype_id = fields.Many2one(
+    application_type_id = fields.Many2one(
         'clouder.application.type',
         'Application Type', ondelete="cascade", required=True)
     name = fields.Char('Name', required=True)

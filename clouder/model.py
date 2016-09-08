@@ -785,7 +785,6 @@ class ClouderTemplateOne2many(models.Model):
         if self.template_id:
             if not objects:
                 objects = self.env[self._template_parent_model].search([('template_id', '=', self.template_id.id)])
-            _logger.info('objects %s', objects)
             for object in objects:
                 name = hasattr(self.name, 'id') and self.name.id or self.name
                 childs = self.search([(self._template_parent_many2one, '=', object.id),('name','=', name)])

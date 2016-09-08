@@ -3,7 +3,7 @@
     <data>
 
 
-        <record id="apptype_cas" model="clouder.application.type">
+        <record id="application_type_cas" model="clouder.application.type">
             <field name="name">cas</field>
             <field name="system_user">cas</field>
             <field name="admin_name">admin</field>
@@ -87,7 +87,7 @@ RUN echo "command=/etc/init.d/tomcat6 start" >> /etc/supervisor/conf.d/superviso
             <field name="name">Cas</field>
             <field name="code">cas</field>
             <field name="current_version">1</field>
-            <field name="type_id" ref="apptype_cas"/>
+            <field name="type_id" ref="application_type_cas"/>
             <field name="default_image_id" ref="image_cas"/>
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>

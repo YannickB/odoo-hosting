@@ -3,30 +3,30 @@
     <data>
 
 
-        <record id="apptype_postfix" model="clouder.application.type">
+        <record id="application_type_postfix" model="clouder.application.type">
             <field name="name">postfix</field>
             <field name="system_user">postfix</field>
         </record>
-         <record id="apptype_postfix_smtp_host" model="clouder.application.type.option">
-             <field name="apptype_id" ref="apptype_postfix"/>
+         <record id="application_type_postfix_smtp_host" model="clouder.application.type.option">
+             <field name="application_type_id" ref="application_type_postfix"/>
              <field name="name">smtp_host</field>
              <field name="type">container</field>
              <field name="auto" eval="True"/>
          </record>
-         <record id="apptype_postfix_smtp_relayhost" model="clouder.application.type.option">
-             <field name="apptype_id" ref="apptype_postfix"/>
+         <record id="application_type_postfix_smtp_relayhost" model="clouder.application.type.option">
+             <field name="application_type_id" ref="application_type_postfix"/>
              <field name="name">smtp_relayhost</field>
              <field name="type">container</field>
              <field name="auto" eval="True"/>
          </record>
-         <record id="apptype_postfix_smtp_username" model="clouder.application.type.option">
-             <field name="apptype_id" ref="apptype_postfix"/>
+         <record id="application_type_postfix_smtp_username" model="clouder.application.type.option">
+             <field name="application_type_id" ref="application_type_postfix"/>
              <field name="name">smtp_username</field>
              <field name="type">container</field>
              <field name="auto" eval="True"/>
          </record>
-         <record id="apptype_postfix_smtp_key" model="clouder.application.type.option">
-             <field name="apptype_id" ref="apptype_postfix"/>
+         <record id="application_type_postfix_smtp_key" model="clouder.application.type.option">
+             <field name="application_type_id" ref="application_type_postfix"/>
              <field name="name">smtp_key</field>
              <field name="type">container</field>
              <field name="auto" eval="True"/>
@@ -58,7 +58,7 @@
         <record id="application_postfix" model="clouder.application">
             <field name="name">Postfix</field>
             <field name="code">postfix</field>
-            <field name="type_id" ref="apptype_postfix"/>
+            <field name="type_id" ref="application_type_postfix"/>
             <field name="default_image_id" ref="image_postfix"/>
         </record>
         <record id="application_postfix_link_spamassassin" model="clouder.application.link">

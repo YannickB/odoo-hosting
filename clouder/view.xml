@@ -96,7 +96,7 @@
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('apptype_id.application_ids.container_ids','in',parent.container_id),('type','=','base')]"/>
+                                    <field name="name" domain="[('application_type_id.application_ids.container_ids','in',parent.container_id),('type','=','base')]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
@@ -189,7 +189,7 @@
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('apptype_id.application_ids','in',parent.application_id),('type','=','container')]"/>
+                                    <field name="name" domain="[('application_type_id.application_ids','in',parent.application_id),('type','=','container')]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
@@ -671,7 +671,7 @@
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('apptype_id','=',parent.type_id),('type','=','application')]"/>
+                                    <field name="name" domain="[('application_type_id','=',parent.type_id),('type','=','application')]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
@@ -715,7 +715,7 @@
             <field name="name">clouder.application.tree</field>
             <field name="model">clouder.application</field>
             <field name="arch" type="xml">
-                <tree string="Applications">
+                <tree string="Applications" default_order="name">
                     <field name="name"/>
                 </tree>
             </field>

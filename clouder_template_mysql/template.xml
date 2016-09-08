@@ -3,21 +3,21 @@
     <data>
 
 
-        <record id="apptype_mysql" model="clouder.application.type">
+        <record id="application_type_mysql" model="clouder.application.type">
             <field name="name">mysql</field>
             <field name="system_user">mysql</field>
             <field name="role_ids" eval="[(6, 0, [ref('clouder.role_database')])]"/>
         </record>
-        <record id="apptype_mysql_option_network" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_mysql"/>
+        <record id="application_type_mysql_option_network" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_mysql"/>
             <field name="name">network</field>
             <field name="type">container</field>
             <field name="default">172.17.0.0/16</field>
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>
-        <record id="apptype_mysql_option_root_password" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_mysql"/>
+        <record id="application_type_mysql_option_root_password" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_mysql"/>
             <field name="name">root_password</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
@@ -54,7 +54,7 @@
         <record id="application_mysql" model="clouder.application">
             <field name="name">Mysql</field>
             <field name="code">mysql</field>
-            <field name="type_id" ref="apptype_mysql"/>
+            <field name="type_id" ref="application_type_mysql"/>
             <field name="default_image_id" ref="image_mysql"/>
         </record>
         <record id="application_mysql_link_shinken" model="clouder.application.link">

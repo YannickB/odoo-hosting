@@ -2,14 +2,14 @@
 <openerp>
     <data>
 
-        <record id="apptype_glances" model="clouder.application.type">
+        <record id="application_type_glances" model="clouder.application.type">
             <field name="name">glances</field>
             <field name="system_user">glances</field>
         </record>
 
         <record id="image_glances" model="clouder.image">
             <field name="name">img_glances</field>
-            <field name="type_id" ref="apptype_glances"/>
+            <field name="type_id" ref="application_type_glances"/>
             <field name="current_version">1</field>
             <field name="parent_from">clouder/clouder-glances</field>
             <field name="parent_id"/>
@@ -37,7 +37,7 @@
         <record id="application_glances" model="clouder.application">
             <field name="name">Glances</field>
             <field name="code">glances</field>
-            <field name="type_id" ref="apptype_glances"/>
+            <field name="type_id" ref="application_type_glances"/>
             <field name="default_image_id" ref="image_glances"/>
         </record>
         <record id="application_glances_link_shinken" model="clouder.application.link">

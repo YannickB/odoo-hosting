@@ -3,24 +3,24 @@
     <data>
 
 
-        <record id="apptype_openldap" model="clouder.application.type">
+        <record id="application_type_openldap" model="clouder.application.type">
             <field name="name">openldap</field>
             <field name="system_user">openldap</field>
         </record>
-        <record id="apptype_openldap_option1" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_openldap"/>
+        <record id="application_type_openldap_option1" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_openldap"/>
             <field name="name">domain</field>
             <field name="type">container</field>
             <field name="required" eval="True"/>
         </record>
-        <record id="apptype_openldap_option2" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_openldap"/>
+        <record id="application_type_openldap_option2" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_openldap"/>
             <field name="name">password</field>
             <field name="type">container</field>
             <field name="required" eval="True"/>
         </record>
-        <record id="apptype_openldap_option3" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_openldap"/>
+        <record id="application_type_openldap_option3" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_openldap"/>
             <field name="name">organization</field>
             <field name="type">container</field>
             <field name="required" eval="True"/>
@@ -81,7 +81,7 @@ RUN echo "command=/bin/bash -c 'source /etc/apache2/envvars && exec /usr/sbin/ap
             <field name="name">openldap</field>
             <field name="code">openldap</field>
             <field name="current_version">1</field>
-            <field name="type_id" ref="apptype_openldap"/>
+            <field name="type_id" ref="application_type_openldap"/>
             <field name="default_image_id" ref="image_openldap"/>
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>

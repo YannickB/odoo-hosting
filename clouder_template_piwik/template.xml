@@ -3,14 +3,14 @@
     <data>
 
 
-        <record id="apptype_piwik" model="clouder.application.type">
+        <record id="application_type_piwik" model="clouder.application.type">
             <field name="name">piwik</field>
             <field name="system_user">www-data</field>
             <field name="localpath">/opt/versions</field>
             <field name="localpath_services">/var/www</field>
         </record>
-        <record id="apptype_piwik_option_port" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_piwik"/>
+        <record id="application_type_piwik_option_port" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_piwik"/>
             <field name="name">port</field>
             <field name="type">service</field>
             <field name="default">nginx</field>
@@ -57,7 +57,7 @@
         <record id="application_piwik" model="clouder.application">
             <field name="name">Piwik</field>
             <field name="code">piwik</field>
-            <field name="type_id" ref="apptype_piwik"/>
+            <field name="type_id" ref="application_type_piwik"/>
             <field name="default_image_id" ref="image_piwik"/>
         </record>
         <record id="application_piwik_link_bind" model="clouder.application.link">
@@ -81,7 +81,6 @@
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
         </record>
         <record id="application_piwik_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="application_piwik"/>

@@ -3,31 +3,31 @@
     <data>
 
 
-        <record id="apptype_backup_upload" model="clouder.application.type">
+        <record id="application_type_backup_upload" model="clouder.application.type">
             <field name="name">backup-upload</field>
             <field name="system_user">backup</field>
             <field name="role_ids" eval="[(6, 0, [ref('role_no_backup')])]"/>
         </record>
-        <record id="apptype_backup_upload_option_protocol" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_backup_upload"/>
+        <record id="application_type_backup_upload_option_protocol" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_backup_upload"/>
             <field name="name">protocol</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_backup_upload_option_host" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_backup_upload"/>
+        <record id="application_type_backup_upload_option_host" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_backup_upload"/>
             <field name="name">host</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_backup_upload_option_login" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_backup_upload"/>
+        <record id="application_type_backup_upload_option_login" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_backup_upload"/>
             <field name="name">login</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_backup_upload_option_password" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_backup_upload"/>
+        <record id="application_type_backup_upload_option_password" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_backup_upload"/>
             <field name="name">password</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
@@ -49,27 +49,26 @@
         <record id="application_backup_upload" model="clouder.application">
             <field name="name">Backup Upload</field>
             <field name="code">backup-upl</field>
-            <field name="current_version">1</field>
-            <field name="type_id" ref="apptype_backup_upload"/>
+            <field name="type_id" ref="application_type_backup_upload"/>
             <field name="default_image_id" ref="image_backup_upload"/>
         </record>
 
 
 
-        <record id="apptype_backup" model="clouder.application.type">
+        <record id="application_type_backup" model="clouder.application.type">
             <field name="name">backup</field>
             <field name="system_user">backup</field>
             <field name="role_ids" eval="[(6, 0, [ref('role_backup'),ref('role_no_backup')])]"/>
         </record>
-        <record id="apptype_backup_option_method" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_backup"/>
+        <record id="application_type_backup_option_method" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_backup"/>
             <field name="name">backup_method</field>
             <field name="type">application</field>
         </record>
 
         <record id="image_backup_simple" model="clouder.image">
             <field name="name">img_backup_simple</field>
-            <field name="type_id" ref="apptype_backup"/>
+            <field name="type_id" ref="application_type_backup"/>
             <field name="current_version">1</field>
             <field name="parent_from">clouder/clouder-backup-simple</field>
             <field name="parent_id"/>
@@ -84,13 +83,12 @@
         <record id="application_backup_simple" model="clouder.application">
             <field name="name">Backup Simple</field>
             <field name="code">backup-sim</field>
-            <field name="current_version">1</field>
-            <field name="type_id" ref="apptype_backup"/>
+            <field name="type_id" ref="application_type_backup"/>
             <field name="default_image_id" ref="image_backup_simple"/>
         </record>
         <record id="application_backup_option_method_simple" model="clouder.application.option">
             <field name="application_id" ref="application_backup_simple"/>
-            <field name="name" ref="apptype_backup_option_method"/>
+            <field name="name" ref="application_type_backup_option_method"/>
             <field name="value">simple</field>
         </record>
         <record id="application_backup_simple_link_upload" model="clouder.application.link">
@@ -104,7 +102,7 @@
 
         <record id="image_backup_bup" model="clouder.image">
             <field name="name">img_backup_bup</field>
-            <field name="type_id" ref="apptype_backup"/>
+            <field name="type_id" ref="application_type_backup"/>
             <field name="current_version">1</field>
             <field name="parent_from">clouder/clouder-backup-bup</field>
             <field name="parent_id"/>
@@ -131,12 +129,12 @@
         <record id="application_backup_bup" model="clouder.application">
             <field name="name">Backup Bup</field>
             <field name="code">backup-bup</field>
-            <field name="type_id" ref="apptype_backup"/>
+            <field name="type_id" ref="application_type_backup"/>
             <field name="default_image_id" ref="image_backup_bup"/>
         </record>
         <record id="application_backup_option_method_bup" model="clouder.application.option">
             <field name="application_id" ref="application_backup_bup"/>
-            <field name="name" ref="apptype_backup_option_method"/>
+            <field name="name" ref="application_type_backup_option_method"/>
             <field name="value">bup</field>
         </record>
         <record id="application_backup_bup_link_upload" model="clouder.application.link">

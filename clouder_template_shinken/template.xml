@@ -3,7 +3,7 @@
     <data>
 
 
-        <record id="apptype_shinken" model="clouder.application.type">
+        <record id="application_type_shinken" model="clouder.application.type">
             <field name="name">shinken</field>
             <field name="system_user">shinken</field>
         </record>
@@ -31,7 +31,7 @@
         <record id="application_shinken" model="clouder.application">
             <field name="name">Shinken</field>
             <field name="code">shinken</field>
-            <field name="type_id" ref="apptype_shinken"/>
+            <field name="type_id" ref="application_type_shinken"/>
             <field name="default_image_id" ref="image_shinken"/>
             <field name="base" eval="True"/>
         </record>

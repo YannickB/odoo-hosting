@@ -6,7 +6,7 @@
             <field name="name">no-salt</field>
         </record>
 
-        <record id="apptype_salt_master" model="clouder.application.type">
+        <record id="application_type_salt_master" model="clouder.application.type">
             <field name="name">salt-master</field>
             <field name="system_user">root</field>
             <field name="role_ids" eval="[(6, 0, [ref('role_no_backup'),ref('role_no_salt')])]"/>
@@ -14,7 +14,7 @@
 
         <record id="image_salt_master" model="clouder.image">
             <field name="name">img_salt_master</field>
-            <field name="type_id" ref="apptype_salt_master"/>
+            <field name="type_id" ref="application_type_salt_master"/>
             <field name="current_version">1.0</field>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
@@ -80,12 +80,12 @@
         <record id="application_salt_master" model="clouder.application">
             <field name="name">Salt Master</field>
             <field name="code">salt-master</field>
-            <field name="type_id" ref="apptype_salt_master"/>
+            <field name="type_id" ref="application_type_salt_master"/>
             <field name="default_image_id" ref="image_salt_master"/>
         </record>
 
 
-        <record id="apptype_salt_minion" model="clouder.application.type">
+        <record id="application_type_salt_minion" model="clouder.application.type">
             <field name="name">salt-minion</field>
             <field name="system_user">root</field>
             <field name="role_ids" eval="[(6, 0, [ref('role_no_backup'),ref('role_no_salt')])]"/>
@@ -120,7 +120,7 @@
         <record id="application_salt_minion" model="clouder.application">
             <field name="name">Salt Minion</field>
             <field name="code">salt-minion</field>
-            <field name="type_id" ref="apptype_salt_minion"/>
+            <field name="type_id" ref="application_type_salt_minion"/>
             <field name="default_image_id" ref="image_salt_minion"/>
         </record>
 

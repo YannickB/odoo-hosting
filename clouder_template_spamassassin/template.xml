@@ -3,7 +3,7 @@
     <data>
 
 
-        <record id="apptype_spamassassin" model="clouder.application.type">
+        <record id="application_type_spamassassin" model="clouder.application.type">
             <field name="name">spamassassin</field>
             <field name="system_user">spamassassin</field>
         </record>
@@ -27,7 +27,7 @@
         <record id="application_spamassassin" model="clouder.application">
             <field name="name">spamassassin</field>
             <field name="code">spamassassin</field>
-            <field name="type_id" ref="apptype_spamassassin"/>
+            <field name="type_id" ref="application_type_spamassassin"/>
             <field name="default_image_id" ref="image_spamassassin"/>
         </record>
 

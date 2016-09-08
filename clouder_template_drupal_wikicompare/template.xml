@@ -6,29 +6,29 @@
         <record id="application_drupal_wikicompare" model="clouder.application">
             <field name="name">Wikicompare</field>
             <field name="code">wkc</field>
-            <field name="type_id" ref="clouder_template_drupal.apptype_drupal"/>
+            <field name="type_id" ref="clouder_template_drupal.application_type_drupal"/>
             <field name="default_image_id" ref="clouder_template_drupal.image_drupal"/>
             <field name="current_version">8.0</field>
             <field name="base" eval="True"/>
         </record>
         <record id="application_drupal_wikicompare_option_install_modules" model="clouder.application.option">
             <field name="application_id" ref="application_drupal_wikicompare"/>
-            <field name="name" ref="clouder_template_drupal.apptype_drupal_option_install_modules"/>
+            <field name="name" ref="clouder_template_drupal.application_type_drupal_option_install_modules"/>
             <field name="value">piwik,admin_menu_toolbar,wikicompare,wikicompare_profiles,wikicompare_translation,wikicompare_inherit_product</field>
         </record>
         <record id="application_drupal_wikicompare_option_test_install_modules" model="clouder.application.option">
             <field name="application_id" ref="application_drupal_wikicompare"/>
-            <field name="name" ref="clouder_template_drupal.apptype_drupal_option_test_install_modules"/>
+            <field name="name" ref="clouder_template_drupal.application_type_drupal_option_test_install_modules"/>
             <field name="value">wikicompare_generate_demo</field>
         </record>
         <record id="application_drupal_wikicompare_option_theme" model="clouder.application.option">
             <field name="application_id" ref="application_drupal_wikicompare"/>
-            <field name="name" ref="clouder_template_drupal.apptype_drupal_option_theme"/>
+            <field name="name" ref="clouder_template_drupal.application_type_drupal_option_theme"/>
             <field name="value">wikicompare_theme</field>
         </record>
         <record id="application_drupal_wikicompare_option_poweruser_group" model="clouder.application.option">
             <field name="application_id" ref="application_drupal_wikicompare"/>
-            <field name="name" ref="clouder_template_drupal.apptype_drupal_option_poweruser_group"/>
+            <field name="name" ref="clouder_template_drupal.application_type_drupal_option_poweruser_group"/>
             <field name="value">wikicompare_admin</field>
         </record>
         <record id="application_drupal_wikicompare_link_bind" model="clouder.application.link">

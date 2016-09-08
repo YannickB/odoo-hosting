@@ -3,7 +3,7 @@
     <data>
 
 
-        <record id="apptype_proxy" model="clouder.application.type">
+        <record id="application_type_proxy" model="clouder.application.type">
             <field name="name">proxy</field>
             <field name="system_user">www-data</field>
         </record>
@@ -43,7 +43,7 @@
         <record id="application_proxy" model="clouder.application">
             <field name="name">Proxy</field>
             <field name="code">proxy</field>
-            <field name="type_id" ref="apptype_proxy"/>
+            <field name="type_id" ref="application_type_proxy"/>
             <field name="default_image_id" ref="image_proxy"/>
         </record>
 
