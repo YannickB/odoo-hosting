@@ -33,17 +33,20 @@
             <field name="auto" eval="True"/>
         </record>
 
+        <record id="image_template_backup_upload" model="clouder.image.template">
+            <field name="name">image_template_backup_upload</field>
+        </record>
+        <record id="image_template_backup_upload_volume_upload" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_backup_upload"/>
+            <field name="name">/opt/upload</field>
+            <field name="nosave" eval="True"/>
+        </record>
         <record id="image_backup_upload" model="clouder.image">
-            <field name="name">img_backup_upload</field>
-            <field name="current_version">1</field>
+            <field name="name">image_backup_upload</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_backup_upload')])]"/>
             <field name="parent_from">clouder/clouder-backup-upload</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
-        </record>
-        <record id="image_backup_upload_volume_upload" model="clouder.image.volume">
-            <field name="image_id" ref="image_backup_upload"/>
-            <field name="name">/opt/upload</field>
-            <field name="nosave" eval="True"/>
         </record>
 
         <record id="application_backup_upload" model="clouder.application">
@@ -66,24 +69,38 @@
             <field name="type">application</field>
         </record>
 
+        <record id="image_template_backup_simple" model="clouder.image.template">
+            <field name="name">image_template_backup_simple</field>
+        </record>
+        <record id="image_template_backup_simple_volume_backup" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_backup_simple"/>
+            <field name="name">/opt/backup</field>
+            <field name="nosave" eval="True"/>
+        </record>
         <record id="image_backup_simple" model="clouder.image">
-            <field name="name">img_backup_simple</field>
+            <field name="name">image_backup_simple</field>
             <field name="type_id" ref="application_type_backup"/>
-            <field name="current_version">1</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_backup_simple')])]"/>
             <field name="parent_from">clouder/clouder-backup-simple</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_backup_simple_volume_backup" model="clouder.image.volume">
-            <field name="image_id" ref="image_backup_simple"/>
-            <field name="name">/opt/backup</field>
-            <field name="nosave" eval="True"/>
+
+        <record id="application_template_backup" model="clouder.application.template">
+            <field name="name">Backup</field>
+        </record>
+        <record id="application_template_backup_link_upload" model="clouder.application.link">
+            <field name="template_id" ref="application_template_backup"/>
+            <field name="name" ref="application_backup_upload"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
         </record>
 
         <record id="application_backup_simple" model="clouder.application">
             <field name="name">Backup Simple</field>
             <field name="code">backup-sim</field>
             <field name="type_id" ref="application_type_backup"/>
+            <field name="template_ids" eval="[(4, [ref('application_template_backup')])]"/>
             <field name="default_image_id" ref="image_backup_simple"/>
         </record>
         <record id="application_backup_option_method_simple" model="clouder.application.option">
@@ -91,57 +108,57 @@
             <field name="name" ref="application_type_backup_option_method"/>
             <field name="value">simple</field>
         </record>
-        <record id="application_backup_simple_link_upload" model="clouder.application.link">
-            <field name="application_id" ref="application_backup_simple"/>
-            <field name="name" ref="application_backup_upload"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
 
 
-        <record id="image_backup_bup" model="clouder.image">
-            <field name="name">img_backup_bup</field>
-            <field name="type_id" ref="application_type_backup"/>
-            <field name="current_version">1</field>
-            <field name="parent_from">clouder/clouder-backup-bup</field>
-            <field name="parent_id"/>
-            <field name="dockerfile"/>
+        <record id="image_template_backup_bup" model="clouder.image.template">
+            <field name="name">image_template_backup_bup</field>
         </record>
-        <record id="image_backup_bup_volume_backup" model="clouder.image.volume">
-            <field name="image_id" ref="image_backup_bup"/>
+        <record id="image_template_backup_bup_volume_backup" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_backup_bup"/>
             <field name="name">/opt/backup</field>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_backup_bup_port_web" model="clouder.image.port">
-            <field name="image_id" ref="image_backup_bup"/>
+        <record id="image_template_backup_bup_port_web" model="clouder.image.port">
+            <field name="template_id" ref="image_template_backup_bup"/>
             <field name="name">backup-web</field>
             <field name="localport">8080</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_backup_bup_port_nrpe" model="clouder.image.port">
-            <field name="image_id" ref="image_backup_bup"/>
+        <record id="image_template_backup_bup_port_nrpe" model="clouder.image.port">
+            <field name="template_id" ref="image_template_backup_bup"/>
             <field name="name">nrpe</field>
             <field name="localport">5666</field>
             <field name="expose">internet</field>
         </record>
+        <record id="image_backup_bup" model="clouder.image">
+            <field name="name">image_backup_bup</field>
+            <field name="type_id" ref="application_type_backup"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_backup_bup')])]"/>
+            <field name="parent_from">clouder/clouder-backup-bup</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
 
+        <record id="application_template_backup_bup" model="clouder.application.template">
+            <field name="name">Backup Bup</field>
+        </record>
+        <record id="application_template_backup_bup_link_upload" model="clouder.application.link">
+            <field name="template_id" ref="application_template_backup_bup"/>
+            <field name="name" ref="application_backup_upload"/>
+            <field name="auto" eval="True"/>
+            <field name="container" eval="True"/>
+        </record>
         <record id="application_backup_bup" model="clouder.application">
             <field name="name">Backup Bup</field>
             <field name="code">backup-bup</field>
             <field name="type_id" ref="application_type_backup"/>
+            <field name="template_ids" eval="[(4, [ref('application_template_backup')])]"/>
             <field name="default_image_id" ref="image_backup_bup"/>
         </record>
         <record id="application_backup_option_method_bup" model="clouder.application.option">
             <field name="application_id" ref="application_backup_bup"/>
             <field name="name" ref="application_type_backup_option_method"/>
             <field name="value">bup</field>
-        </record>
-        <record id="application_backup_bup_link_upload" model="clouder.application.link">
-            <field name="application_id" ref="application_backup_bup"/>
-            <field name="name" ref="application_backup_upload"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
         </record>
 
     </data>

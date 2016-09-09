@@ -7,37 +7,79 @@
             <field name="system_user">redis</field>
         </record>
 
-        <record id="image_redis" model="clouder.image">
-            <field name="name">img_redis</field>
+        <record id="image_template_redis_data" model="clouder.image.template">
+            <field name="name">image_template_redis_data</field>
+        </record>
+        <record id ="image_template_redis_data_volume_data" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_redis_data"/>
+            <field name="name">/data</field>
+            <field name="user">redis</field>
+        </record>
+        <record id="image_redis_data" model="clouder.image">
+            <field name="name">image_redis_data</field>
             <field name="type_id" ref="application_type_redis"/>
-            <field name="current_version">3.2.1</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_redis_data')])]"/>
             <field name="parent_from">redis:latest</field>
         </record>
 
-	<record id ="image_redis_volume_data" model="clouder.image.volume">
-	    <field name="image_id" ref="image_redis" />
-	    <field name="name">/data</field>
-	    <field name="user">redis</field>
-	</record>
+        <record id="image_template_redis_exec" model="clouder.image.template">
+            <field name="name">image_template_redis_exec</field>
+        </record>
+        <record id="image_template_redis_exec_port_redis" model="clouder.image.port">
+            <field name="template_id" ref="image_template_redis_exec"/>
+            <field name="name">redis</field>
+            <field name="localport">6379</field>
+        </record>
+        <record id="image_redis_exec" model="clouder.image">
+            <field name="name">image_redis_exec</field>
+            <field name="type_id" ref="application_type_redis"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_redis_exec')])]"/>
+            <field name="parent_from">redis:latest</field>
+        </record>
 
-	<record id="image_redis_port_redis" model="clouder.image.port">
-	    <field name="image_id" ref="image_redis"/>
-    	    <field name="name">redis</field>
-    	    <field name="localport">6379</field>
-	</record>
+
+        <record id="application_redis_data" model="clouder.application">
+            <field name="name">Redis Data</field>
+            <field name="code">redis-data</field>
+            <field name="type_id" ref="application_type_redis"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_redis_data"/>
+            <field name="sequence">1</field>
+        </record>
+
+        <record id="application_redis_exec" model="clouder.application">
+            <field name="name">Redis Exec</field>
+            <field name="code">redis-exec</field>
+            <field name="type_id" ref="application_type_redis"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_redis_exec"/>
+            <field name="sequence">2</field>
+            <field name="update_strategy">auto</field>
+        </record>
 
         <record id="application_redis" model="clouder.application">
             <field name="name">Redis</field>
             <field name="code">redis</field>
             <field name="type_id" ref="application_type_redis"/>
-            <field name="default_image_id" ref="image_redis"/>
+            <field name="child_ids" eval="[(4, [ref('application_redis_data'),ref('application_redis_exec')])]"/>
+            <field name="default_image_id" ref="image_redis_exec"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
         </record>
-        <record id="application_redis_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="application_redis"/>
-            <field name="name" ref="clouder_template_shinken.application_shinken"/>
-            <field name="auto" eval="True"/>
+
+        <record id="application_template_container_redis" model="clouder.application.template">
+            <field name="name">Container Redis</field>
+        </record>
+        <record id="application_template_container_redis_link_redis" model="clouder.application.link">
+            <field name="template_id" ref="application_template_container_redis"/>
+            <field name="name" ref="application_redis"/>
             <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
         </record>
+
 
     </data>
 </openerp>

@@ -430,7 +430,7 @@ class ClouderModel(models.AbstractModel):
             server = self.server_id
 
         if not server_name:
-            server_name = server.name
+            server_name = server.fulldomain
 
         global ssh_connections
         host_fullname = server_name + \
@@ -781,13 +781,13 @@ class ClouderTemplateOne2many(models.Model):
     _name = 'clouder.template.one2many'
 
     @api.multi
-    def reset_template(self, objects=[]):
+    def reset_template(self, records=[]):
         if self.template_id:
-            if not objects:
-                objects = self.env[self._template_parent_model].search([('template_id', '=', self.template_id.id)])
-            for object in objects:
+            if not records:
+                records = self.env[self._template_parent_model].search([('template_ids', 'in', self.template_id.id)])
+            for record in records:
                 name = hasattr(self.name, 'id') and self.name.id or self.name
-                childs = self.search([(self._template_parent_many2one, '=', object.id),('name','=', name)])
+                childs = self.search([(self._template_parent_many2one, '=', record.id),('name','=', name)])
                 vals = {}
                 for field in self._template_fields:
                     vals[field] = getattr(self, field)
@@ -795,7 +795,7 @@ class ClouderTemplateOne2many(models.Model):
                     for child in childs:
                         child.write(vals)
                 else:
-                    vals.update({self._template_parent_many2one: object.id, 'name': name})
+                    vals.update({self._template_parent_many2one: record.id, 'name': name})
                     self.create(vals)
 
     @api.model

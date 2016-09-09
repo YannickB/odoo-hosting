@@ -7,48 +7,49 @@
             <field name="name">proxy</field>
             <field name="system_user">www-data</field>
         </record>
-
-        <record id="image_proxy" model="clouder.image">
-            <field name="name">img_proxy</field>
-            <field name="current_version">1</field>
+        
+        <record id="image_proxy_data" model="clouder.image">
+            <field name="name">image_proxy_data</field>
+            <field name="template_ids" eval="[(4, [ref('clouder.image_template_nginx_data')])]"/>
             <field name="parent_from">clouder/clouder-proxy</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_proxy_volume_etc_nginx" model="clouder.image.volume">
-            <field name="image_id" ref="image_proxy"/>
-            <field name="name">/etc/nginx</field>
+        <record id="image_proxy_exec" model="clouder.image">
+            <field name="name">image_proxy_exec</field>
+            <field name="template_ids" eval="[(4, [ref('clouder.image_template_nginx_exec')])]"/>
+            <field name="parent_from">clouder/clouder-proxy</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
-        <record id="image_proxy_volume_www" model="clouder.image.volume">
-            <field name="image_id" ref="image_proxy"/>
-            <field name="name">/var/www</field>
+>
+        <record id="application_proxy_data" model="clouder.application">
+            <field name="name">Proxy Data</field>
+            <field name="code">proxy-data</field>
+            <field name="type_id" ref="application_type_proxy"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_proxy_data"/>
+            <field name="sequence">1</field>
         </record>
-        <record id="image_proxy_volume_etc_ssl" model="clouder.image.volume">
-            <field name="image_id" ref="image_proxy"/>
-            <field name="name">/etc/ssl</field>
+        <record id="application_proxy_exec" model="clouder.application">
+            <field name="name">Proxy Exec</field>
+            <field name="code">proxy-exec</field>
+            <field name="type_id" ref="application_type_proxy"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_proxy_exec"/>
+            <field name="sequence">2</field>
+            <field name="update_strategy">auto</field>
         </record>
-        <record id="image_proxy_port_nginx" model="clouder.image.port">
-            <field name="image_id" ref="image_proxy"/>
-            <field name="name">nginx</field>
-            <field name="localport">80</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_proxy_port_nginx_ssl" model="clouder.image.port">
-            <field name="image_id" ref="image_proxy"/>
-            <field name="name">nginx-ssl</field>
-            <field name="localport">443</field>
-            <field name="expose">internet</field>
-        </record>
-
         <record id="application_proxy" model="clouder.application">
             <field name="name">Proxy</field>
             <field name="code">proxy</field>
             <field name="type_id" ref="application_type_proxy"/>
-            <field name="default_image_id" ref="image_proxy"/>
+            <field name="child_ids" eval="[(4, [ref('application_proxy_data'),ref('application_proxy_exec')])]"/>
+            <field name="default_image_id" ref="image_proxy_exec"/>
         </record>
 
-        <record id="application_registry_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="clouder.application_registry"/>
+        <record id="application_template_base_www_link_proxy" model="clouder.application.link">
+            <field name="template_id" ref="clouder.application_template_base_www"/>
             <field name="name" ref="application_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>

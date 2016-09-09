@@ -48,8 +48,10 @@ class ClouderImage(models.Model):
 
     name = fields.Char('Image name', required=True)
     type_id = fields.Many2one('clouder.application.type', 'Application Type')
-    template_id = fields.Many2one('clouder.image.template', 'Template')
-    current_version = fields.Char('Current version', required=True)
+    template_ids = fields.Many2many(
+        'clouder.image.template', 'clouder_image_template_rel',
+        'image_id', 'template_id', 'Templates')
+    current_version = fields.Char('Current version', required=False)
     parent_id = fields.Many2one('clouder.image', 'Parent image')
     parent_version_id = fields.Many2one(
         'clouder.image.version', 'Parent version')
@@ -145,11 +147,12 @@ class ClouderImage(models.Model):
         """
         """
         res = super(ClouderImage, self).create(vals)
-        if 'template_id' in vals and vals['template_id']:
-            for volume in self.env['clouder.image.volume'].search([('template_id', '=', vals['template_id'])]):
-                volume.reset_template(objects=[self])
-            for port in self.env['clouder.image.port'].search([('template_id', '=', vals['template_id'])]):
-                port.reset_template(objects=[self])
+        if 'template_ids' in vals:
+            for template in res.template_ids:
+                for volume in self.env['clouder.image.volume'].search([('template_id', '=', template.id)]):
+                    volume.reset_template(records=[self])
+                for port in self.env['clouder.image.port'].search([('template_id', '=', template.id)]):
+                    port.reset_template(records=[self])
         return res
 
     @api.multi
@@ -157,11 +160,13 @@ class ClouderImage(models.Model):
         """
         """
         res = super(ClouderImage, self).write(vals)
-        if 'template_id' in vals and vals['template_id']:
-            for volume in self.env['clouder.image.volume'].search([('template_id', '=', vals['template_id'])]):
-                volume.reset_template(objects=[self])
-            for port in self.env['clouder.image.port'].search([('template_id', '=', vals['template_id'])]):
-                port.reset_template(objects=[self])
+        if 'template_ids' in vals:
+            self = self.browse(self.id)
+            for template in self.template_ids:
+                for volume in self.env['clouder.image.volume'].search([('template_id', '=', template.id)]):
+                    volume.reset_template(records=[self])
+                for port in self.env['clouder.image.port'].search([('template_id', '=', template.id)]):
+                    port.reset_template(records=[self])
         return res
 
 

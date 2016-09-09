@@ -8,85 +8,99 @@
             <field name="system_user">shinken</field>
         </record>
 
-        <record id="image_shinken" model="clouder.image">
-            <field name="name">img_shinken</field>
-            <field name="current_version">1</field>
+        <record id="image_template_shinken_data" model="clouder.image.template">
+            <field name="name">image_template_shinken_data</field>
+        </record>
+        <record id="image_template_shinken_data_volume_shinken" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_shinken_data"/>
+            <field name="name">/usr/local/shinken/etc</field>
+            <field name="user">shinken</field>
+        </record>
+        <record id="image_shinken_data" model="clouder.image">
+            <field name="name">image_shinken_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_shinken_data')])]"/>
             <field name="parent_from">clouder/clouder-shinken</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_shinken_volume_shinken" model="clouder.image.volume">
-            <field name="image_id" ref="image_shinken"/>
-            <field name="name">/usr/local/shinken/etc</field>
-            <field name="user">shinken</field>
+        
+        <record id="image_template_shinken_exec" model="clouder.image.template">
+            <field name="name">image_template_shinken_exec</field>
         </record>
-        <record id="image_shinken_port_shinken" model="clouder.image.port">
-            <field name="image_id" ref="image_shinken"/>
+        <record id="image_template_shinken_exec_port_shinken" model="clouder.image.port">
+            <field name="template_id" ref="image_template_shinken_exec"/>
             <field name="name">http</field>
             <field name="localport">7767</field>
             <field name="expose">internet</field>
         </record>
+        <record id="image_shinken_exec" model="clouder.image">
+            <field name="name">image_shinken_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_shinken_exec')])]"/>
+            <field name="parent_from">clouder/clouder-shinken</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
 
+        <record id="application_shinken_data" model="clouder.application">
+            <field name="name">Shinken Data</field>
+            <field name="code">shinken-data</field>
+            <field name="type_id" ref="application_type_shinken"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_shinken_data"/>
+            <field name="sequence">1</field>
+        </record>
+        <record id="application_shinken_exec" model="clouder.application">
+            <field name="name">Shinken Exec</field>
+            <field name="code">shinken-exec</field>
+            <field name="type_id" ref="application_type_shinken"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_shinken_exec"/>
+            <field name="sequence">2</field>
+            <field name="update_strategy">auto</field>
+        </record>
 
         <record id="application_shinken" model="clouder.application">
             <field name="name">Shinken</field>
             <field name="code">shinken</field>
             <field name="type_id" ref="application_type_shinken"/>
-            <field name="default_image_id" ref="image_shinken"/>
+            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
+            <field name="child_ids" eval="[(4, [ref('application_shinken_data'),ref('application_shinken_exec')])]"/>
+            <field name="default_image_id" ref="image_shinken_exec"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="application_shinken_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="application_shinken"/>
-            <field name="name" ref="clouder_template_postfix.application_postfix"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="required" eval="True"/>
+
+        <record id="application_template_container_shinken" model="clouder.application.template">
+            <field name="name">Container Shinken</field>
         </record>
-        <record id="application_shinken_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="application_shinken"/>
+        <record id="application_template_container_shinken_link_shinken" model="clouder.application.link">
+            <field name="template_id" ref="application_template_container_shinken"/>
             <field name="name" ref="application_shinken"/>
-            <field name="base" eval="True"/>
             <field name="container" eval="True"/>
-            <field name="auto" eval="True"/>
-        </record>
-        <record id="application_shinken_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="application_shinken"/>
-            <field name="name" ref="clouder_template_bind.application_bind"/>
-            <field name="base" eval="True"/>
-            <field name="auto" eval="True"/>
-        </record>
-        <record id="application_shinken_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="application_shinken"/>
-            <field name="name" ref="clouder_template_proxy.application_proxy"/>
-            <field name="base" eval="True"/>
             <field name="auto" eval="True"/>
         </record>
 
-        <record id="application_salt_minion_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="clouder.application_salt_minion"/>
+        <record id="application_template_base_www_link_shinken" model="clouder.application.link">
+            <field name="template_id" ref="clouder.application_template_base_www"/>
             <field name="name" ref="application_shinken"/>
-            <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
         </record>
-        <record id="application_postfix_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="clouder_template_postfix.application_postfix"/>
-            <field name="name" ref="application_shinken"/>
-            <field name="container" eval="True"/>
-            <field name="auto" eval="True"/>
+
+        <record id="clouder.application_salt_minion" model="clouder.application">
+            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
         </record>
-        <record id="application_bind_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="clouder_template_bind.application_bind"/>
-            <field name="name" ref="application_shinken"/>
-            <field name="container" eval="True"/>
-            <field name="auto" eval="True"/>
+        <record id="application_shinken_data" model="clouder.application">
+            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
         </record>
-        <record id="application_proxy_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="clouder_template_proxy.application_proxy"/>
-            <field name="name" ref="application_shinken"/>
-            <field name="container" eval="True"/>
-            <field name="auto" eval="True"/>
+        <record id="clouder_template_postfix.application_postfix_data" model="clouder.application">
+            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
+        </record>
+        <record id="clouder_template_bind.application_bind_data" model="clouder.application">
+            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
+        </record>
+        <record id="clouder_template_proxy.application_proxy_data" model="clouder.application">
+            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
         </record>
 
     </data>

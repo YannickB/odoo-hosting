@@ -32,41 +32,96 @@
              <field name="auto" eval="True"/>
          </record>
 
-        
-        <record id="image_postfix" model="clouder.image">
-            <field name="name">img_postfix</field>
-            <field name="current_version">1</field>
+        <record id="image_template_postfix_data" model="clouder.image.template">
+            <field name="name">image_template_postfix_data</field>
+        </record>
+        <record id="image_template_postfix_data_volume_postfix" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_postfix_data"/>
+            <field name="name">/etc/postfix</field>
+        </record>
+        <record id="image_template_postfix_data_volume_aliases" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_postfix_data"/>
+            <field name="name">/etc/aliases-dir</field>
+        </record>
+        <record id="image_postfix_data" model="clouder.image">
+            <field name="name">image_postfix_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_postfix_data')])]"/>
             <field name="parent_from">clouder/clouder-postfix</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_postfix_volume_postfix" model="clouder.image.volume">
-            <field name="image_id" ref="image_postfix"/>
-            <field name="name">/etc/postfix</field>
+
+        <record id="image_template_postfix_exec" model="clouder.image.template">
+            <field name="name">image_template_postfix_exec</field>
         </record>
-        <record id="image_postfix_volume_aliases" model="clouder.image.volume">
-            <field name="image_id" ref="image_postfix"/>
-            <field name="name">/etc/aliases-dir</field>
-        </record>
-        <record id="image_postfix_port_postfix" model="clouder.image.port">
-            <field name="image_id" ref="image_postfix"/>
+        <record id="image_template_postfix_exec_port_postfix" model="clouder.image.port">
+            <field name="template_id" ref="image_template_postfix_exec"/>
             <field name="name">postfix</field>
             <field name="localport">25</field>
             <field name="expose">internet</field>
         </record>
-
-        <record id="application_postfix" model="clouder.application">
-            <field name="name">Postfix</field>
-            <field name="code">postfix</field>
-            <field name="type_id" ref="application_type_postfix"/>
-            <field name="default_image_id" ref="image_postfix"/>
+        <record id="image_postfix_exec" model="clouder.image">
+            <field name="name">image_postfix_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_postfix_exec')])]"/>
+            <field name="parent_from">clouder/clouder-postfix</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
         </record>
-        <record id="application_postfix_link_spamassassin" model="clouder.application.link">
-            <field name="application_id" ref="application_postfix"/>
+
+        <record id="application_postfix_data" model="clouder.application">
+            <field name="name">Postfix Data</field>
+            <field name="code">postfix-data</field>
+            <field name="type_id" ref="application_type_postfix"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_postfix_data"/>
+            <field name="sequence">1</field>
+        </record>
+        <record id="application_postfix_exec" model="clouder.application">
+            <field name="name">Postfix Exec</field>
+            <field name="code">postfix-exec</field>
+            <field name="type_id" ref="application_type_postfix"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_postfix_exec"/>
+            <field name="sequence">2</field>
+            <field name="update_strategy">auto</field>
+        </record>
+        <record id="application_template_postfix" model="clouder.application.template">
+            <field name="name">Postfix</field>
+        </record>
+        <record id="application_template_postfix_link_spamassassin" model="clouder.application.link">
+            <field name="template_id" ref="application_template_postfix"/>
             <field name="name" ref="clouder_template_spamassassin.application_spamassassin"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="container" eval="True"/>
+        </record>
+        <record id="application_postfix" model="clouder.application">
+            <field name="name">Postfix</field>
+            <field name="code">postfix</field>
+            <field name="type_id" ref="application_type_postfix"/>
+            <field name="template_ids" eval="[(4, [ref('application_template_postfix')])]"/>
+            <field name="child_ids" eval="[(4, [ref('application_postfix_data'),ref('application_postfix_exec')])]"/>
+            <field name="default_image_id" ref="image_postfix_exec"/>
+        </record>
+
+        <record id="application_template_container_postfix" model="clouder.application.template">
+            <field name="name">Container Postfix</field>
+        </record>
+        <record id="application_template_container_postfix_link_postfix" model="clouder.application.link">
+            <field name="template_id" ref="application_template_container_postfix"/>
+            <field name="name" ref="application_postfix"/>
+            <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
+        </record>
+
+        <record id="application_template_base_www_link_postfix" model="clouder.application.link">
+            <field name="template_id" ref="clouder.application_template_base_www"/>
+            <field name="name" ref="application_postfix"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
         </record>
 
     </data>

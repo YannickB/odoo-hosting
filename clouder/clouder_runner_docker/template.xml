@@ -22,7 +22,6 @@
 
         <record id="image_docker" model="clouder.image">
             <field name="name">img_docker</field>
-            <field name="current_version">1</field>
             <field name="parent_from">clouder/clouder-docker</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>

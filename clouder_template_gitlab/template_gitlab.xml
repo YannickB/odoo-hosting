@@ -27,11 +27,75 @@
             <field name="auto" eval="True"/>
         </record>
 
+        <record id="image_template_gitlab_data" model="clouder.image.template">
+            <field name="name">image_template_gitlab_data</field>
+        </record>
+        <record id="image_template_gitlab_data_volume_home" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_gitlab_data"/>
+            <field name="name">/home/git</field>
+        </record>
+        <record id="image_template_gitlab_data_volume_nginx" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_gitlab_data"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_template_gitlab_data_volume_logrotate" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_gitlab_data"/>
+            <field name="name">/etc/logrotate</field>
+        </record>
+        <record id="image_template_gitlab_data_volume_data" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_gitlab_data"/>
+            <field name="name">/opt/gitlab/data</field>
+        </record>
+        <record id="image_template_gitlab_data_volume_config" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_gitlab_data"/>
+            <field name="name">/opt/gitlab/config</field>
+        </record>
+        <record id="image_template_gitlab_data_volume_config" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_gitlab_data"/>
+            <field name="name">/opt/gitlab/var</field>
+        </record>
+
+        <record id="image_template_gitlab_files" model="clouder.image.template">
+            <field name="name">image_template_gitlab_files</field>
+        </record>
+        <record id="image_template_gitlab_files_volume_files" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_gitlab_files"/>
+            <field name="name">/opt/gitlab/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_template_gitlab_files_volume_workhorse" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_gitlab_files"/>
+            <field name="name">/opt/gitlab/gitlab-workhorse</field>
+            <field name="nosave" eval="True"/>
+        </record>
+
+        <record id="image_template_gitlab_exec" model="clouder.image.template">
+            <field name="name">image_template_gitlab_exec</field>
+        </record>
+        <record id="image_template_gitlab_exec_port_ssh" model="clouder.image.port">
+            <field name="template_id" ref="image_template_gitlab_exec"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_template_gitlab_exec_port_http" model="clouder.image.port">
+            <field name="template_id" ref="image_template_gitlab_exec"/>
+            <field name="name">http</field>
+            <field name="localport">80</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_template_gitlab_exec_port_https" model="clouder.image.port">
+            <field name="template_id" ref="image_template_gitlab_exec"/>
+            <field name="name">https</field>
+            <field name="localport">443</field>
+            <field name="expose">internet</field>
+        </record>
+
         <!-- image "data" repository -->
         <record id="image_gitlab_data" model="clouder.image">
-            <field name="name">img_gitlab_data</field>
+            <field name="name">image_gitlab_data</field>
             <field name="type_id" ref="application_type_gitlab"/>
-            <field name="current_version">1</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_gitlab_data')])]"/>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
             <field name="dockerfile">
@@ -81,37 +145,12 @@
                 ]]>
             </field>
         </record>
-        <!-- image's volumes -->
-        <record id="image_gitlab_data_volume_home" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_data"/>
-            <field name="name">/home/git</field>
-        </record>
-        <record id="image_gitlab_data_volume_nginx" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_data"/>
-            <field name="name">/etc/nginx</field>
-        </record>
-        <record id="image_gitlab_data_volume_logrotate" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_data"/>
-            <field name="name">/etc/logrotate</field>
-        </record>
-        <record id="image_gitlab_data_volume_data" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_data"/>
-            <field name="name">/opt/gitlab/data</field>
-        </record>
-        <record id="image_gitlab_data_volume_config" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_data"/>
-            <field name="name">/opt/gitlab/config</field>
-        </record>
-        <record id="image_gitlab_data_volume_config" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_data"/>
-            <field name="name">/opt/gitlab/var</field>
-        </record>
 
         <!-- image "files" repository -->
         <record id="image_gitlab_files" model="clouder.image">
-            <field name="name">img_gitlab_files</field>
+            <field name="name">image_gitlab_files</field>
             <field name="type_id" ref="application_type_gitlab"/>
-            <field name="current_version">8.0</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_gitlab_files')])]"/>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
             <field name="dockerfile">
@@ -162,23 +201,12 @@
             </field>
             <field name="volumes_from">data</field>
         </record>
-        <!-- image's volumes -->
-        <record id="image_gitlab_files_volume_files" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_files"/>
-            <field name="name">/opt/gitlab/files</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_gitlab_files_volume_workhorse" model="clouder.image.volume">
-            <field name="image_id" ref="image_gitlab_files"/>
-            <field name="name">/opt/gitlab/gitlab-workhorse</field>
-            <field name="nosave" eval="True"/>
-        </record>
 
         <!-- image "exec" repository -->
         <record id="image_gitlab_exec" model="clouder.image">
-            <field name="name">img_gitlab_exec</field>
+            <field name="name">image_gitlab_exec</field>
             <field name="type_id" ref="application_type_gitlab"/>
-            <field name="current_version">8.0</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_gitlab_exec')])]"/>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
             <field name="dockerfile">
@@ -216,55 +244,19 @@
             </field>
             <field name="volumes_from">data,files</field>
         </record>
-        <!-- imag's ports to expose -->
-        <record id="image_gitlab_exec_port_ssh" model="clouder.image.port">
-            <field name="image_id" ref="image_gitlab_exec"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_gitlab_exec_port_http" model="clouder.image.port">
-            <field name="image_id" ref="image_gitlab_exec"/>
-            <field name="name">http</field>
-            <field name="localport">80</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_gitlab_exec_port_https" model="clouder.image.port">
-            <field name="image_id" ref="image_gitlab_exec"/>
-            <field name="name">https</field>
-            <field name="localport">443</field>
-            <field name="expose">internet</field>
-        </record>
 
-        
         <!-- app "data" -->
         <record id="application_gitlab_data" model="clouder.application">
             <field name="name">Gitlab Data</field>
             <field name="code">gitlab-data</field>
             <field name="type_id" ref="application_type_gitlab"/>
+            <field name="template_id" ref=""/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postgres.application_template_container_postgres'),ref('clouder_template_shinken.application_template_container_shinken')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_gitlab_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
             <field name="autosave" eval="True"/>
-        </record>
-        <!-- links to templates -->
-        <!-- bind to postgres -->
-        <record id="application_gitlab_data_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab_data"/>
-            <field name="name" ref="clouder_template_postgres.application_postgres"/>
-            <field name="container" eval="True"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <!-- bind to shinken -->
-        <record id="application_gitlab_data_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab_data"/>
-            <field name="name" ref="clouder_template_shinken.application_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
         </record>
 
         <!-- app "files" -->
@@ -283,99 +275,46 @@
             <field name="name">Gitlab Exec</field>
             <field name="code">gitlab-exec</field>
             <field name="type_id" ref="application_type_gitlab"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postgres.application_template_container_postgres'),ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_redis.application_template_container_redis')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_gitlab_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
         </record>
-        <!-- links to templates -->
-        <!-- bind to postgres -->
-        <record id="application_gitlab_exec_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab_exec"/>
-            <field name="name" ref="clouder_template_postgres.application_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <!-- bind to postfix -->
-        <record id="application_gitlab_exec_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab_exec"/>
-            <field name="name" ref="clouder_template_postfix.application_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <!-- bind to redis -->
-        <record id="application_gitlab_exec_link_redis" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab_exec"/>
-            <field name="name" ref="clouder_template_redis.application_redis"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
+
         
         <!-- app -->
         <record id="application_gitlab" model="clouder.application">
             <field name="name">Gitlab</field>
             <field name="code">gitlab</field>
             <field name="type_id" ref="application_type_gitlab"/>
-            <field name="default_image_id" ref="image_gitlab_data"/>
+            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
+            <field name="default_image_id" ref="image_gitlab_exec"/>
             <field name="child_ids" eval="[(4, [ref('application_gitlab_data'),ref('application_gitlab_files'),ref('application_gitlab_exec')])]"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <!-- links to templates -->
-        <!-- bind to bind -->
-        <record id="application_gitlab_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab"/>
-            <field name="name" ref="clouder_template_bind.application_bind"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
+
+        <record id="application_gitlab_redis" model="clouder.application">
+            <field name="name">Gitlab + Redis</field>
+            <field name="code">gitlab-redis</field>
+            <field name="type_id" ref="application_type_gitlab"/>
+            <field name="default_image_id" ref="image_gitlab_exec"/>
+            <field name="child_ids" eval="[(4, [ref('clouder_template_redis.application_redis'), ref('application_gitlab')])]"/>
         </record>
-        <!-- bind to shinken -->
-        <record id="application_gitlab_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab"/>
-            <field name="name" ref="clouder_template_shinken.application_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
+
+        <record id="application_template_container_gitlab" model="clouder.application.template">
+            <field name="name">Container Gitlab</field>
+        </record>
+        <record id="application_template_container_gitlab_link_gitlab" model="clouder.application.link">
+            <field name="template_id" ref="application_template_container_gitlab"/>
+            <field name="name" ref="application_gitlab"/>
             <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <!-- bind to postgres -->
-        <record id="application_gitlab_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab"/>
-            <field name="name" ref="clouder_template_postgres.application_postgres"/>
-            <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
         </record>
-        <!-- bind to postfix -->
-        <record id="application_gitlab_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab"/>
-            <field name="name" ref="clouder_template_postfix.application_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <!-- bind to proxy -->
-        <record id="application_gitlab_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab"/>
-            <field name="name" ref="clouder_template_proxy.application_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <!-- bind to redis -->
-        <record id="application_gitlab_link_redis" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlab"/>
-            <field name="name" ref="clouder_template_redis.application_redis"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-        
+
     </data>
 </openerp>
 

@@ -36,37 +36,57 @@
             <field name="dockerfile"/>
         </record>
 
-        <record id="image_nginx" model="clouder.image">
-            <field name="name">img_nginx</field>
-            <field name="current_version">1</field>
+        <record id="image_template_nginx_data" model="clouder.image.template">
+            <field name="name">image_template_nginx_data</field>
+        </record>
+        <record id="image_template_nginx_data_volume_nginx" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_nginx_data"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_template_nginx_data_volume_www" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_nginx_data"/>
+            <field name="name">/var/www</field>
+        </record>
+        <record id="image_template_nginx_data_volume_ssl" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_nginx_data"/>
+            <field name="name">/etc/ssl</field>
+        </record>
+        <record id="image_nginx_data" model="clouder.image">
+            <field name="name">image_nginx_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_nginx_data')])]"/>
             <field name="parent_from">clouder/clouder-nginx</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_nginx_volume_etc_nginx" model="clouder.image.volume">
-            <field name="image_id" ref="image_nginx"/>
-            <field name="name">/etc/nginx</field>
+
+        <record id="image_template_nginx_exec" model="clouder.image.template">
+            <field name="name">image_template_nginx_exec</field>
         </record>
-        <record id="image_nginx_volume_www" model="clouder.image.volume">
-            <field name="image_id" ref="image_nginx"/>
-            <field name="name">/var/www</field>
-        </record>
-        <record id="image_nginx_volume_etc_ssl" model="clouder.image.volume">
-            <field name="image_id" ref="image_nginx"/>
-            <field name="name">/etc/ssl</field>
-        </record>
-        <record id="image_nginx_port_nginx" model="clouder.image.port">
-            <field name="image_id" ref="image_nginx"/>
+        <record id="image_template_nginx_exec_port_nginx" model="clouder.image.port">
+            <field name="template_id" ref="image_template_nginx_exec"/>
             <field name="name">nginx</field>
             <field name="localport">80</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_nginx_port_nginx_ssl" model="clouder.image.port">
-            <field name="image_id" ref="image_nginx"/>
+        <record id="image_template_nginx_exec_port_nginx_ssl" model="clouder.image.port">
+            <field name="template_id" ref="image_template_nginx_exec"/>
             <field name="name">nginx-ssl</field>
             <field name="localport">443</field>
             <field name="expose">internet</field>
         </record>
+        <record id="image_nginx_exec" model="clouder.image">
+            <field name="name">image_nginx_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_nginx_exec')])]"/>
+            <field name="parent_from">clouder/clouder-nginx</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+
+        <record id="application_template_base_www" model="clouder.application.template">
+            <field name="name">Base WWW</field>
+        </record>
+
+
 
 
     </data>

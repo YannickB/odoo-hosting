@@ -144,8 +144,6 @@ class ClouderApplicationTemplate(models.Model):
     _name = 'clouder.application.template'
 
     name = fields.Char('Name', required=True)
-    type_id = fields.Many2one('clouder.application.type', 'Type',
-                              required=True)
     link_ids = fields.One2many('clouder.application.link', 'template_id',
                                'Links')
 
@@ -162,7 +160,9 @@ class ClouderApplication(models.Model):
     code = fields.Char('Code', size=20, required=True)
     type_id = fields.Many2one('clouder.application.type', 'Type',
                               required=True)
-    template_id = fields.Many2one('clouder.application.template', 'Template')
+    template_ids = fields.Many2many(
+        'clouder.application.template', 'clouder_application_template_rel',
+        'application_id', 'template_id', 'Templates')
     next_server_id = fields.Many2one('clouder.server', 'Next server')
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=True)
@@ -347,9 +347,10 @@ class ClouderApplication(models.Model):
         """
         """
         res = super(ClouderApplication, self).create(vals)
-        if 'template_id' in vals and vals['template_id']:
-            for link in self.env['clouder.application.link'].search([('template_id', '=', vals['template_id'])]):
-                link.reset_template(objects=[self])
+        if 'template_ids' in vals:
+            for template in res.template_ids:
+                for link in self.env['clouder.application.link'].search([('template_id', '=', template.id)]):
+                    link.reset_template(records=[self])
         return res
 
     @api.multi
@@ -363,9 +364,11 @@ class ClouderApplication(models.Model):
             raise except_orm(_('Data error!'), _(
                 "It's too dangerous to modify the application code!"))
         res = super(ClouderApplication, self).write(vals)
-        if 'template_id' in vals and vals['template_id']:
-            for link in self.env['clouder.application.link'].search([('template_id', '=', vals['template_id'])]):
-                link.reset_template(objects=[self])
+        if 'template_id' in vals:
+            self = self.browse(self.id)
+            for template in self.template_ids:
+                for link in self.env['clouder.application.link'].search([('template_id', '=', template.id)]):
+                    link.reset_template(records=[self])
         return res
 
 
