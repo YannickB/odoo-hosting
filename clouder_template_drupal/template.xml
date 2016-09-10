@@ -2,6 +2,10 @@
 <openerp>
     <data>
 
+        <record id="oneclick_drupal" model="clouder.oneclick">
+            <field name="name">Drupal</field>
+            <field name="code">drupal</field>
+        </record>
 
         <record id="application_type_drupal" model="clouder.application.type">
             <field name="name">drupal</field>

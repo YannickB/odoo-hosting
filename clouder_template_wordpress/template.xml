@@ -2,6 +2,10 @@
 <openerp>
     <data>
 
+        <record id="oneclick_wordpress" model="clouder.oneclick">
+            <field name="name">Wordpress</field>
+            <field name="code">wordpress</field>
+        </record>
 
         <record id="application_type_wordpress" model="clouder.application.type">
             <field name="name">wordpress</field>
@@ -14,8 +18,8 @@
             <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
-        
-        
+
+
         <record id="application_wordpress_data" model="clouder.application">
             <field name="name">Wordpress Data</field>
             <field name="code">data</field>

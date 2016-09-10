@@ -344,11 +344,11 @@
                     <button name="clean" string="Clean disk space" type="object"/>
                     <newline/>
                     <group col="4">
-                        <field name="oneclick_id" widget="selection"/>
-                        <field name="oneclick_ports" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
+                        <field name="oneclick_ids" widget="many2many_tags"/>
+                        <field name="oneclick_ports" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
                         <newline/>
-                        <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
-                        <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
+                        <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
+                        <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
                     </group>
                     <field name="job_ids" colspan="4"/>
                 </form>

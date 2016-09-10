@@ -39,7 +39,7 @@ class ClouderOneclick(models.Model):
     _name = 'clouder.oneclick'
 
     name = fields.Char('Nom', required=True)
-    function = fields.Char('Function', required=True)
+    code = fields.Char('Code', required=True)
 
 
 class ClouderServer(models.Model):
@@ -187,7 +187,9 @@ class ClouderServer(models.Model):
     runner_id = fields.Many2one('clouder.container', 'Runner')
     salt_minion_id = fields.Many2one('clouder.container', 'Salt Minion', readonly=True)
     control_dns = fields.Boolean('Control DNS?')
-    oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
+    oneclick_ids = fields.Many2many(
+        'clouder.oneclick', 'clouder_server_oneclick_rel',
+        'container_id', 'oneclick_id', 'Oneclick Deployment')
     oneclick_ports = fields.Boolean('Assign critical ports?')
 
     @property
@@ -369,21 +371,21 @@ class ClouderServer(models.Model):
     @api.multi
     def oneclick_deploy(self):
         self = self.with_context(no_enqueue=True)
-        self.do('oneclick_deploy ' + self.oneclick_id.function, 'oneclick_deploy_exec') 
+        self.do('oneclick_deploy', 'oneclick_deploy_exec')
 
     @api.multi
     def oneclick_deploy_exec(self):
         #TODO check that ns record of the domain is the IP
-        getattr(self, self.oneclick_id.function + '_deploy')()
+        return
 
     @api.multi
     def oneclick_purge(self):
         self = self.with_context(no_enqueue=True)
-        self.do('oneclick_purge ' + self.oneclick_id.function, 'oneclick_purge_exec')
+        self.do('oneclick_purge', 'oneclick_purge_exec')
 
     @api.multi
     def oneclick_purge_exec(self):
-        getattr(self, self.oneclick_id.function + '_purge')()
+        return
 
     @api.multi
     def clean(self):

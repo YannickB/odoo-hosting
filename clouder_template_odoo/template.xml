@@ -2,9 +2,9 @@
 <openerp>
     <data>
 
-        <record id="oneclick_clouder" model="clouder.oneclick">
-            <field name="name">Clouder</field>
-            <field name="function">oneclick_clouder</field>
+        <record id="oneclick_odoo" model="clouder.oneclick">
+            <field name="name">Odoo</field>
+            <field name="code">odoo</field>
         </record>
 
         <record id="application_type_odoo" model="clouder.application.type">

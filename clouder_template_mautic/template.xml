@@ -2,6 +2,10 @@
 <openerp>
     <data>
 
+        <record id="oneclick_mautic" model="clouder.oneclick">
+            <field name="name">Mautic</field>
+            <field name="code">mautic</field>
+        </record>
 
         <record id="application_type_mautic" model="clouder.application.type">
             <field name="name">mautic</field>
