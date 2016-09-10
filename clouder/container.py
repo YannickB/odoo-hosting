@@ -1546,7 +1546,7 @@ class ClouderContainerLink(models.Model):
         Check that we specify a value for the link
         if this link is required.
         """
-        if self.required and not self.target:
+        if self.required and not self.target and not self.container_id.child_ids:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify a link to " +

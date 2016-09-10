@@ -35,6 +35,9 @@
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
+    'description': """
+Clouder Template Drupal
+""",
     'demo': [],
     'data': ['template.xml'],
     'installable': True,

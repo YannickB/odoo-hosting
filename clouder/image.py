@@ -51,7 +51,6 @@ class ClouderImage(models.Model):
     template_ids = fields.Many2many(
         'clouder.image.template', 'clouder_image_template_rel',
         'image_id', 'template_id', 'Templates')
-    current_version = fields.Char('Current version', required=False)
     parent_id = fields.Many2one('clouder.image', 'Parent image')
     parent_version_id = fields.Many2one(
         'clouder.image.version', 'Parent version')

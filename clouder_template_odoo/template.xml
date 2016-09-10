@@ -146,7 +146,6 @@
             <field name="name">img_odoo_files8</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
-            <field name="current_version">8.0</field>
             <field name="parent_from">clouder/clouder-odoo8-files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
@@ -156,7 +155,6 @@
             <field name="name">img_odoo_files9</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
-            <field name="current_version">9.0</field>
             <field name="parent_from">clouder/clouder-odoo9-files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
@@ -166,7 +164,6 @@
             <field name="name">img_odoo8_clouder_files</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
-            <field name="current_version">8.0</field>
             <field name="parent_from">clouder/clouder-odoo8-clouder-files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
@@ -176,7 +173,6 @@
             <field name="name">img_odoo9_clouder_files</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
-            <field name="current_version">9.0</field>
             <field name="parent_from">clouder/clouder-odoo9-clouder-files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
@@ -186,7 +182,6 @@
             <field name="name">img_odoo_exec</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_exec')])]"/>
-            <field name="current_version">8.0</field>
             <field name="parent_from">clouder/clouder-odoo-exec</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
@@ -367,28 +362,28 @@
             <field name="value">clouder</field>
         </record>
 
-        <record id="application_odoo8_postgres" model="clouder.application">
+        <record id="application_odoo8_all" model="clouder.application">
             <field name="name">Odoo 8 + Postgres</field>
             <field name="code">odoo8-all</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo8')])]"/>
         </record>
 
-        <record id="application_odoo9_postgres" model="clouder.application">
+        <record id="application_odoo9_all" model="clouder.application">
             <field name="name">Odoo 9 + Postgres</field>
             <field name="code">odoo9-all</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo9')])]"/>
         </record>
 
-        <record id="application_odoo8_clouder_postgres" model="clouder.application">
+        <record id="application_odoo8_clouder_all" model="clouder.application">
             <field name="name">Clouder 8 + Postgres</field>
             <field name="code">clouder8-all</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo8_clouder')])]"/>
         </record>
 
-        <record id="application_odoo9_clouder_postgres" model="clouder.application">
+        <record id="application_odoo9_clouder_all" model="clouder.application">
             <field name="name">Clouder 9 + Postgres</field>
             <field name="code">clouder9-all</field>
             <field name="type_id" ref="application_type_odoo"/>

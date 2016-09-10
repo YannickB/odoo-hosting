@@ -105,7 +105,7 @@ class ClouderBase(models.Model):
     build = fields.Selection(
         [('none', 'No action'), ('build', 'Build'), ('restore', 'Restore')],
         'Build?', default='build')
-    ssl_only = fields.Boolean('SSL Only?')
+    ssl_only = fields.Boolean('SSL Only?', default=True)
     test = fields.Boolean('Test?')
     lang = fields.Selection(
         [('en_US', 'en_US'), ('fr_FR', 'fr_FR')],
@@ -123,7 +123,7 @@ class ClouderBase(models.Model):
     save_expiration = fields.Integer('Days before save expiration')
     date_next_save = fields.Datetime('Next save planned')
     save_comment = fields.Text('Save Comment')
-    autosave = fields.Boolean('Save?')
+    autosave = fields.Boolean('Save?', default=True)
     reset_each_day = fields.Boolean('Reset each day?')
     cert_key = fields.Text('Cert Key')
     cert_cert = fields.Text('Cert')

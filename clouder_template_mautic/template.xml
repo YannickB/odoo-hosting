@@ -11,82 +11,54 @@
             <field name="application_type_id" ref="application_type_mautic"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
 
 
-        <record id="image_mautic" model="clouder.image">
-            <field name="name">img_mautic</field>
+        <record id="application_mautic_data" model="clouder.application">
+            <field name="name">Mautic Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="application_type_mautic"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken'),ref('clouder_template_mysql.application_template_container_mysql')])]"/>
             <field name="current_version">2.1.0</field>
-            <field name="parent_from">clouder/clouder-mautic</field>
-            <field name="parent_id"/>
-            <field name="dockerfile"/>
-        </record>
-        <record id="image_mautic_volume_www" model="clouder.image.volume">
-            <field name="image_id" ref="image_mautic"/>
-            <field name="name">/var/www</field>
-        </record>
-        <record id="image_mautic_volume_etc" model="clouder.image.volume">
-            <field name="image_id" ref="image_mautic"/>
-            <field name="name">/etc/nginx</field>
-        </record>
-        <record id="image_mautic_port_http" model="clouder.image.port">
-            <field name="image_id" ref="image_mautic"/>
-            <field name="name">http</field>
-            <field name="localport">80</field>
-            <field name="expose">internet</field>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="clouder.image_php_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
         </record>
 
+        <record id="application_mautic_exec" model="clouder.application">
+            <field name="name">Mautic Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="application_type_mautic"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_mysql.application_template_container_mysql')])]"/>
+            <field name="current_version">2.1.0</field>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="clouder.image_php_exec"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
+        </record>
 
         <record id="application_mautic" model="clouder.application">
             <field name="name">Mautic</field>
             <field name="code">mautic</field>
             <field name="type_id" ref="application_type_mautic"/>
-            <field name="default_image_id" ref="image_mautic"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="application_mautic_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="application_mautic"/>
-            <field name="name" ref="clouder_template_bind.application_bind"/>
+            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
+            <field name="current_version">2.1.0</field>
+            <field name="child_ids" eval="[(4, [ref('application_mautic_data'),ref('application_mautic_exec')])]"/>
+            <field name="sequence">2</field>
             <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="application_mautic_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="application_mautic"/>
-            <field name="name" ref="clouder_template_shinken.application_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="application_mautic_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="application_mautic"/>
-            <field name="name" ref="clouder_template_mysql.application_mysql"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="application_mautic_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="application_mautic"/>
-            <field name="name" ref="clouder_template_postfix.application_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="application_mautic_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="application_mautic"/>
-            <field name="name" ref="clouder_template_proxy.application_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="application_mautic_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="application_mautic"/>
-            <field name="name" ref="clouder_template_piwik.application_piwik"/>
-            <field name="base" eval="True"/>
+
+        <record id="application_mautic_all" model="clouder.application">
+            <field name="name">Mautic + MySQL</field>
+            <field name="code">mautic-all</field>
+            <field name="type_id" ref="application_type_mautic"/>
+            <field name="child_ids" eval="[(4, [ref('clouder_template_mysql.application_mysql'),ref('application_mautic')])]"/>
         </record>
 
     </data>

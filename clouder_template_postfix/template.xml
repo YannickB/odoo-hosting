@@ -23,7 +23,6 @@
         <record id="image_spamassassin" model="clouder.image">
             <field name="name">img_spamassassin</field>
             <field name="template_ids" eval="[(4, [ref('image_template_spamassassin')])]"/>
-            <field name="current_version">1</field>
             <field name="parent_from">dinkel/spamassassin</field>
         </record>
 

@@ -99,7 +99,7 @@ class ClouderContainer(models.Model):
         Add the general configuration files.
         """
         super(ClouderContainer, self).deploy_post()
-        if self.application_id.type_id.name == 'shinken':
+        if self.application_id.type_id.name == 'shinken' and self.application_id.check_tags(['data']):
             self.send(
                 modules.get_module_path('clouder_template_shinken') +
                 '/res/general-shinken.config',

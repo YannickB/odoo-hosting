@@ -19,7 +19,6 @@
 
         <record id="image_piwik" model="clouder.image">
             <field name="name">img_piwik</field>
-            <field name="current_version">8.0</field>
             <field name="parent_from">clouder/clouder-piwik</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>

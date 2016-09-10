@@ -51,7 +51,7 @@ class ClouderContainer(models.Model):
                              '" >> /etc/ssmtp/ssmtp.conf'], username='root')
                 self.execute(['echo "FromLineOverride=YES" >> '
                              '/etc/ssmtp/ssmtp.conf'], username='root')
-        if self.application_id.type_id.name == 'postfix':
+        if self.application_id.type_id.name == 'postfix' and self.application_id.check_tags(['exec']):
 
             # Adding boolean flag to see if all SMTP options are set
             smtp_options = False

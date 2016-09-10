@@ -102,7 +102,7 @@
                             </field>
                             <field name="link_ids" colspan="4">
                                 <tree string="Links" editable="bottom">
-                                    <field name="name" domain="[('application_id','=',parent.application_id),('base','=',True)]"/>
+                                    <field name="name"/>
                                     <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
                                     <field name="required"/>
                                     <field name="deployed"/>
@@ -216,7 +216,7 @@
                             </field>
                             <field name="link_ids" colspan="4">
                                 <tree string="Links" editable="bottom">
-                                    <field name="name" domain="[('application_id','=',parent.application_id),('container','=',True)]"/>
+                                    <field name="name"/>
                                     <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
                                     <field name="required"/>
                                     <field name="make_link"/>
@@ -653,8 +653,9 @@
                         <field name="template_ids" widget="many2many_tags"/>
                         <field name="type_id"/>
                         <field name="code"/>
-                        <field name="base"/>
+                        <field name="current_version"/>
                         <field name="tag_ids" widget="many2many_tags"/>
+                        <field name="base"/>
                         <newline/>
                         <field name="default_image_id"/>
                         <field name="next_image_version_id" domain="[('image_id','=',default_image_id)]"/>
@@ -795,7 +796,6 @@
                         <field name="name"/>
                         <field name="type_id"/>
                         <field name="template_ids" widget="many2many_tags"/>
-                        <field name="current_version"/>
                         <field name="parent_id"/>
                         <field name="public"/>
                         <field name="partner_id"/>
@@ -836,7 +836,6 @@
             <field name="arch" type="xml">
                 <tree string="Images">
                     <field name="name"/>
-                    <field name="current_version"/>
                 </tree>
             </field>
         </record>

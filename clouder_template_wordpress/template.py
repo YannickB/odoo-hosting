@@ -34,7 +34,7 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
 
-        if self.application_id.type_id.name == 'wordpress':
+        if self.application_id.type_id.name == 'wordpress' and self.application_id.check_tags(['data']):
             self.execute(
                          ['wget', '-q', 'https://wordpress.org/latest.tar.gz',
                           'latest.tar.gz'], path='/var/www/', username='www-data')

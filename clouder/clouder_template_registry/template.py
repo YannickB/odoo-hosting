@@ -47,7 +47,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def get_container_res(self):
         res = super(ClouderContainer, self).get_container_res()
-        if self.image_id.name == 'img_registry_exec':
+        if self.image_id.type_id.name == 'registry':
             res['environment'].update({'REGISTRY_HTTP_TLS_CERTIFICATE': '/certs/domain.crt', 'REGISTRY_HTTP_TLS_KEY': '/certs/domain.key','REGISTRY_AUTH': 'htpasswd',
                         'REGISTRY_AUTH_HTPASSWD_REALM': 'Registry Realm',
                         'REGISTRY_AUTH_HTPASSWD_PATH': '/auth/htpasswd'})

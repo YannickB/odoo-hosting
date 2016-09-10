@@ -250,7 +250,6 @@
             <field name="name">Gitlab Data</field>
             <field name="code">data</field>
             <field name="type_id" ref="application_type_gitlab"/>
-            <field name="template_id" ref=""/>
             <field name="template_ids" eval="[(4, [ref('clouder_template_postgres.application_template_container_postgres'),ref('clouder_template_shinken.application_template_container_shinken')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_gitlab_data"/>
@@ -295,7 +294,7 @@
             <field name="base" eval="True"/>
         </record>
 
-        <record id="application_gitlab_redis" model="clouder.application">
+        <record id="application_gitlab_all" model="clouder.application">
             <field name="name">Gitlab + Redis + Postgres</field>
             <field name="code">gitlab-all</field>
             <field name="type_id" ref="application_type_gitlab"/>

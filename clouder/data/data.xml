@@ -31,7 +31,6 @@
 
         <record id="image_base" model="clouder.image">
             <field name="name">img_base</field>
-            <field name="current_version">1.0</field>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="dockerfile"/>
         </record>
@@ -62,22 +61,34 @@
         <record id="image_template_nginx_exec" model="clouder.image.template">
             <field name="name">image_template_nginx_exec</field>
         </record>
-        <record id="image_template_nginx_exec_port_nginx" model="clouder.image.port">
+        <record id="image_template_nginx_exec_port_http" model="clouder.image.port">
             <field name="template_id" ref="image_template_nginx_exec"/>
-            <field name="name">nginx</field>
+            <field name="name">http</field>
             <field name="localport">80</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_template_nginx_exec_port_nginx_ssl" model="clouder.image.port">
-            <field name="template_id" ref="image_template_nginx_exec"/>
-            <field name="name">nginx-ssl</field>
-            <field name="localport">443</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_nginx_exec" model="clouder.image">
             <field name="name">image_nginx_exec</field>
             <field name="template_ids" eval="[(4, [ref('image_template_nginx_exec')])]"/>
             <field name="parent_from">clouder/clouder-nginx</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
+        </record>
+
+
+        <record id="image_php_data" model="clouder.image">
+            <field name="name">image_php_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_nginx_data')])]"/>
+            <field name="parent_from">clouder/clouder-php</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+
+        <record id="image_php_exec" model="clouder.image">
+            <field name="name">image_php_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_nginx_exec')])]"/>
+            <field name="parent_from">clouder/clouder-php</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
             <field name="volumes_from">data</field>
