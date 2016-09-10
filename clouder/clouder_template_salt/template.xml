@@ -2,20 +2,83 @@
 <openerp>
     <data>
 
-        <record id="role_no_salt" model="clouder.application.role">
+        <record id="tag_no_salt" model="clouder.application.tag">
             <field name="name">no-salt</field>
         </record>
 
-        <record id="apptype_salt_master" model="clouder.application.type">
+        <record id="application_type_salt_master" model="clouder.application.type">
             <field name="name">salt-master</field>
             <field name="system_user">root</field>
-            <field name="role_ids" eval="[(6, 0, [ref('role_no_backup'),ref('role_no_salt')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_no_backup'),ref('tag_no_salt')])]"/>
         </record>
 
-        <record id="image_salt_master" model="clouder.image">
-            <field name="name">img_salt_master</field>
-            <field name="type_id" ref="apptype_salt_master"/>
-            <field name="current_version">1.0</field>
+        <record id="image_template_salt_master_data" model="clouder.image.template">
+            <field name="name">image_template_salt_master_data</field>
+        </record>
+        <record id="image_template_salt_master_data_volume_salt" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_salt_master_data"/>
+            <field name="name">/srv/salt</field>
+        </record>
+        <record id="image_template_salt_master_data_volume_pillar" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_salt_master_data"/>
+            <field name="name">/srv/pillar</field>
+        </record>
+
+
+        <record id="image_template_salt_master_exec" model="clouder.image.template">
+            <field name="name">image_template_salt_master_exec</field>
+        </record>
+        <record id="image_template_salt_master_exec_port_ssh" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_master_exec"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_template_salt_master_exec_port_salt" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_master_exec"/>
+            <field name="name">salt</field>
+            <field name="localport">4505</field>
+            <field name="expose">internet</field>
+            <field name="use_hostport" eval="True"/>
+        </record>
+        <record id="image_template_salt_master_exec_port_saltret" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_master_exec"/>
+            <field name="name">saltret</field>
+            <field name="localport">4506</field>
+            <field name="expose">internet</field>
+            <field name="use_hostport" eval="True"/>
+        </record>
+        <record id="image_template_salt_master_exec_port_api" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_master_exec"/>
+            <field name="name">api</field>
+            <field name="localport">8080</field>
+            <field name="expose">internet</field>
+        </record>
+
+        <record id="image_salt_master_data" model="clouder.image">
+            <field name="name">image_salt_master_data</field>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_salt_master_data')])]"/>
+            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_id"/>
+            <field name="dockerfile">
+                <![CDATA[
+
+                RUN mkdir -p /srv/salt/_modules
+                ADD sources/salt-master/* /srv/salt/
+                ADD sources/_modules/clouder.py /srv/salt/_modules/
+                RUN mkdir -p /srv/pillar/containers
+                RUN mkdir -p /srv/pillar/bases
+                RUN echo "base:" > /srv/pillar/top.sls
+
+                ]]>
+            </field>
+        </record>
+
+        <record id="image_salt_master_exec" model="clouder.image">
+            <field name="name">image_salt_master_exec</field>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_salt_master_exec')])]"/>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
             <field name="dockerfile">
@@ -29,12 +92,6 @@
 
                 ADD sources/salt-api.conf /etc/salt/master.d/salt-api.conf
                 ADD sources/reactor.conf /etc/salt/master.d/reactor.conf
-                RUN mkdir -p /srv/salt/_modules
-                ADD sources/salt-master/* /srv/salt/
-                ADD sources/_modules/clouder.py /srv/salt/_modules/
-                RUN mkdir -p /srv/pillar/containers
-                RUN mkdir -p /srv/pillar/bases
-                RUN echo "base:" > /srv/pillar/top.sls
 
                 RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
                 RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
@@ -48,51 +105,68 @@
 
                 ]]>
             </field>
-        </record>
-        <record id="image_salt_master_port_ssh" model="clouder.image.port">
-            <field name="image_id" ref="image_salt_master"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_salt_master_port_salt" model="clouder.image.port">
-            <field name="image_id" ref="image_salt_master"/>
-            <field name="name">salt</field>
-            <field name="localport">4505</field>
-            <field name="expose">internet</field>
-            <field name="use_hostport" eval="True"/>
-        </record>
-        <record id="image_salt_master_port_saltret" model="clouder.image.port">
-            <field name="image_id" ref="image_salt_master"/>
-            <field name="name">saltret</field>
-            <field name="localport">4506</field>
-            <field name="expose">internet</field>
-            <field name="use_hostport" eval="True"/>
-        </record>
-        <record id="image_salt_master_port_api" model="clouder.image.port">
-            <field name="image_id" ref="image_salt_master"/>
-            <field name="name">api</field>
-            <field name="localport">8080</field>
-            <field name="expose">internet</field>
+            <field name="volumes_from">data</field>
         </record>
 
-
-        <record id="app_salt_master" model="clouder.application">
+        <record id="application_salt_master_data" model="clouder.application">
+            <field name="name">Salt Master Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_salt_master_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
+        </record>
+        <record id="application_salt_master_exec" model="clouder.application">
+            <field name="name">Salt Master Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_salt_master_exec"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
+        </record>
+        <record id="application_salt_master" model="clouder.application">
             <field name="name">Salt Master</field>
             <field name="code">salt-master</field>
-            <field name="type_id" ref="apptype_salt_master"/>
-            <field name="default_image_id" ref="image_salt_master"/>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="child_ids" eval="[(4, [ref('application_salt_master_data'),ref('application_salt_master_exec')])]"/>
         </record>
 
 
-        <record id="apptype_salt_minion" model="clouder.application.type">
+        <record id="application_type_salt_minion" model="clouder.application.type">
             <field name="name">salt-minion</field>
             <field name="system_user">root</field>
-            <field name="role_ids" eval="[(6, 0, [ref('role_no_backup'),ref('role_no_salt')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_no_backup'),ref('tag_no_salt')])]"/>
+        </record>
+
+        <record id="image_template_salt_minion" model="clouder.image.template">
+            <field name="name">image_template_salt_minion</field>
+        </record>
+        <record id="image_template_salt_minion_volume_etc" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_salt_minion"/>
+            <field name="name">/etc/nagios</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_template_salt_minion_volume_docker" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_salt_minion"/>
+            <field name="name">/var/run/docker.sock</field>
+            <field name="hostpath">/var/run/docker.sock</field>
+            <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_template_salt_minion_port_nrpe" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_minion"/>
+            <field name="name">nrpe</field>
+            <field name="localport">5666</field>
+            <field name="expose">internet</field>
         </record>
         <record id="image_salt_minion" model="clouder.image">
-            <field name="name">img_salt_minion</field>
-            <field name="current_version">1.0</field>
+            <field name="name">image_salt_minion</field>
+            <field name="type_id" ref="application_type_salt_minion"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_salt_minion')])]"/>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
             <field name="dockerfile">
@@ -104,24 +178,37 @@
 
                 RUN pip install --upgrade pip erppeek
 
-                CMD salt-minion
+                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor python-pip python-dev nagios-nrpe-server htop hddtemp lm-sensors
+
+                RUN pip install --upgrade pip setuptools
+                RUN pip install bottle pysensors batinfo pymdstat pysnmp zeroconf netifaces influxdb statsd pystache docker-py pika py-cpuinfo
+
+                RUN pip install glances
+
+                ADD sources/check_mem.pl /usr/lib/nagios/plugins/check_mem.pl
+                RUN chmod +x /usr/lib/nagios/plugins/check_mem.pl
+
+                USER root
+                RUN sed -i "s/allowed_hosts=127.0.0.1/allowed_hosts=172.17.0.0\/16/g" /etc/nagios/nrpe.cfg
+                RUN echo "command[check_mem]=/usr/lib/nagios/plugins/check_mem.pl -fC -w 20 -c 10" >> /etc/nagios/nrpe.cfg
+                RUN echo "command[check_disk]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /" >> /etc/nagios/nrpe.cfg
+
+                RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+
+                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "[program:salt]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "command=salt-minion" >> /etc/supervisor/conf.d/supervisord.conf
+
+                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "[program:nrpe]" >> /etc/supervisor/conf.d/supervisord.conf
+                RUN echo "command=/etc/init.d/nagios-nrpe-server restart" >> /etc/supervisor/conf.d/supervisord.conf
+
+                CMD ["/usr/bin/supervisord"]
 
                 ]]>
             </field>
-        </record>
-        <record id="image_salt_minion_volume_docker" model="clouder.image.volume">
-            <field name="image_id" ref="image_salt_minion"/>
-            <field name="name">/var/run/docker.sock</field>
-            <field name="hostpath">/var/run/docker.sock</field>
-            <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
-        </record>
-
-        <record id="app_salt_minion" model="clouder.application">
-            <field name="name">Salt Minion</field>
-            <field name="code">salt-minion</field>
-            <field name="type_id" ref="apptype_salt_minion"/>
-            <field name="default_image_id" ref="image_salt_minion"/>
         </record>
 
     </data>

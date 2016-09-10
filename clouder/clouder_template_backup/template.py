@@ -55,7 +55,7 @@ class ClouderContainerLink(models.Model):
         """
         Upload the whole backups to a distant container.
         """
-        if self.name.name.code == 'backup-upl' \
+        if self.name.type_id.name == 'backup-upl' \
                 and self.container_id.application_id.type_id.name == 'backup':
             filegz = self.container_id.fullname + '.tar.gz'
             file_destination = '/opt/upload/' + filegz
@@ -103,7 +103,7 @@ class ClouderContainerLink(models.Model):
         """
         Remove the backups on the distant container.
         """
-        if self.name.name.code == 'backup-upl' \
+        if self.name.type_id.name == 'backup-upload' \
                 and self.container_id.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.container_id.name
             self.target.execute(['rm', '-rf', directory])

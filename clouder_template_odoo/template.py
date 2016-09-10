@@ -48,7 +48,7 @@ class ClouderContainer(models.Model):
             config_file = '/opt/odoo/etc/odoo.conf'
             if self.application_id.code == 'data':
                 self.execute(['sed', '-i', '"s/APPLICATION/' +
-                             self.application_id.parent_id.fullcode
+                             self.parent_id.container_id.application_id.fullcode
                              .replace('-', '_') + '/g"', config_file])
                 self.execute(['sed', '-i', 's/DB_SERVER/' +
                              self.db_server + '/g',
@@ -408,7 +408,7 @@ class ClouderBase(models.Model):
             # except:
             #     pass
 
-            self.salt_master.execute(['salt', self.container_id.server_id.name, 'state.apply', 'base_update', "pillar=\"{'base_name': '" + self.fullname_ + "'}\""])
+            self.salt_master.execute(['salt', self.container_id.server_id.fulldomain, 'state.apply', 'base_update', "pillar=\"{'base_name': '" + self.fullname_ + "'}\""])
 
         return res
 
@@ -436,7 +436,7 @@ class ClouderBaseLink(models.Model):
     def nginx_config_update(self, target):
         res = super(ClouderBaseLink, self).nginx_config_update(target)
 
-        if self.name.name.code == 'proxy' \
+        if self.name.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'odoo':
 
             target.execute([
@@ -452,8 +452,11 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
 
-        if self.name.name.code == 'postfix' \
+        if self.name.type_id.name == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
+
+            if 'base_restoration' in self.env.context and self.env.context['base_restoration']:
+                return
 
             self.log("client = erppeek.Client('http://" +
                      self.base_id.container_id.server_id.ip +
@@ -509,7 +512,7 @@ class ClouderBaseLink(models.Model):
         Purge postfix configuration.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.name.code == 'postfix' \
+        if self.name.type_id.name == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
             self.target.execute([
                 'sed', '-i',

@@ -2,41 +2,45 @@
 <openerp>
     <data>
 
+        <record id="oneclick_drupal" model="clouder.oneclick">
+            <field name="name">Drupal</field>
+            <field name="code">drupal</field>
+        </record>
 
-        <record id="apptype_drupal" model="clouder.application.type">
+        <record id="application_type_drupal" model="clouder.application.type">
             <field name="name">drupal</field>
             <field name="system_user">www-data</field>
         </record>
-        <record id="apptype_drupal_option_install_modules" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_install_modules" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">install_modules</field>
             <field name="type">application</field>
         </record>
-        <record id="apptype_drupal_option_test_install_modules" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_test_install_modules" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">test_install_modules</field>
             <field name="type">application</field>
         </record>
-        <record id="apptype_drupal_option_theme" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_theme" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">theme</field>
             <field name="type">application</field>
         </record>
-        <record id="apptype_drupal_option_poweruser_group" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_poweruser_group" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">poweruser_group</field>
             <field name="type">application</field>
         </record>
-        <record id="apptype_drupal_option_db_password" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_drupal"/>
+        <record id="application_type_drupal_option_db_password" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
 
         <record id="image_drupal" model="clouder.image">
             <field name="name">img_drupal</field>
-            <field name="current_version">8.0</field>
             <field name="parent_from">clouder/clouder-drupal</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
@@ -55,62 +59,94 @@
             <field name="localport">80</field>
             <field name="expose">internet</field>
         </record>
+        
+        <record id="image_drupal_data" model="clouder.image">
+            <field name="name">image_drupal_data</field>
+            <field name="template_ids" eval="[(4, [ref('clouder.image_template_nginx_data')])]"/>
+            <field name="parent_from">clouder/clouder-php</field>
+            <field name="parent_id"/>
+            <field name="dockerfile">
+                <![CDATA[
+RUN curl -SL -o /tmp/drush.phar http://files.drush.org/drush.phar
+RUN mv /tmp/drush.phar /usr/local/bin/drush
+RUN chmod +x /usr/local/bin/drush
 
+USER www-data
+RUN yes | drush init
 
-        <record id="app_drupal" model="clouder.application">
+USER root
+
+                ]]>
+            </field>
+        </record>
+
+        <record id="image_drupal_exec" model="clouder.image">
+            <field name="name">image_drupal_exec</field>
+            <field name="template_ids" eval="[(4, [ref('clouder.image_template_nginx_exec')])]"/>
+            <field name="parent_from">clouder/clouder-php</field>
+            <field name="parent_id"/>
+            <field name="dockerfile">
+                <![CDATA[
+RUN curl -SL -o /tmp/drush.phar http://files.drush.org/drush.phar
+RUN mv /tmp/drush.phar /usr/local/bin/drush
+RUN chmod +x /usr/local/bin/drush
+
+USER www-data
+RUN yes | drush init
+
+USER root
+
+                ]]>
+            </field>
+            <field name="volumes_from">data</field>
+        </record>
+        
+
+        <record id="application_drupal_data" model="clouder.application">
+            <field name="name">Drupal Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="application_type_drupal"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_drupal_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
+        </record>
+
+        <record id="application_drupal_exec" model="clouder.application">
+            <field name="name">Drupal Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="application_type_drupal"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_drupal_exec"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
+        </record>
+
+        <record id="application_drupal" model="clouder.application">
             <field name="name">Drupal</field>
             <field name="code">drupal</field>
-            <field name="type_id" ref="apptype_drupal"/>
-            <field name="default_image_id" ref="image_drupal"/>
-            <field name="current_version">8.0</field>
+            <field name="type_id" ref="application_type_drupal"/>
+            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
+            <field name="child_ids" eval="[(4, [ref('application_drupal_data'),ref('application_drupal_exec')])]"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_drupal_option_install_modules" model="clouder.application.option">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="apptype_drupal_option_install_modules"/>
+        <record id="application_drupal_option_install_modules" model="clouder.application.option">
+            <field name="application_id" ref="application_drupal"/>
+            <field name="name" ref="application_type_drupal_option_install_modules"/>
             <field name="value">piwik,admin_menu_toolbar</field>
         </record>
-        <record id="app_drupal_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_drupal_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_drupal_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="app_drupal_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <record id="app_drupal_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_drupal_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_drupal"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
-            <field name="base" eval="True"/>
+
+        <record id="application_drupal_all" model="clouder.application">
+            <field name="name">Drupal + Postgres</field>
+            <field name="code">drupal-all</field>
+            <field name="type_id" ref="application_type_drupal"/>
+            <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_drupal')])]"/>
         </record>
 
     </data>

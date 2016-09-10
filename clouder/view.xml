@@ -87,8 +87,8 @@
                         <field name="cert_renewal_date" attrs="{'invisible': [('cert_renewal_date','=',False)]}"/>
                         <button name="renew_cert" string="Renewal Certs" type="object" attrs="{'invisible': [('cert_renewal_date','=',False)]}"/>
                         <newline/>
-                        <field name="parent_id"/>
-                        <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
+                        <field name="reset_id"/>
+                        <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('reset_id','=',False)]}"/>
                         <newline/>
                         <field name="public"/>
                     </group>
@@ -96,14 +96,16 @@
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('apptype_id.application_ids.container_ids','in',parent.container_id),('type','=','base')]"/>
+                                    <field name="name" domain="[('application_type_id.application_ids.container_ids','in',parent.container_id),('type','=','base')]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
                             <field name="link_ids" colspan="4">
                                 <tree string="Links" editable="bottom">
-                                    <field name="name" domain="[('application_id','=',parent.application_id),('base','=',True)]"/>
-                                    <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <field name="name"/>
+                                    <field name="target" domain="[('application_id','=',name)]"/>
+                                    <field name="required"/>
+                                    <field name="auto"/>
                                     <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>
                                     <button name="purge_" type="object" string="Purge"/>
@@ -180,16 +182,18 @@
                         <field name="suffix"/>
                         <field name="application_id"/>
                         <field name="server_id"/>
-                        <field name="image_id"/>
-                        <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
+                        <field name="image_id" attrs="{'invisible': [('child_ids','!=', [])], 'required': [('child_ids','=', [])]}"/>
+                        <field name="image_version_id" domain="[('image_id','=',image_id)]" attrs="{'invisible': [('child_ids','!=', [])]}"/>
                         <newline/>
+                        <field name="volumes_from_ids" widget="many2many_tags"/>
                         <field name="public"/>
+                        <field name="from_id" attrs="{'invisible': [('from_id','=', False)]}"/>
                     </group>
                     <notebook>
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('apptype_id.application_ids','in',parent.application_id),('type','=','container')]"/>
+                                    <field name="name" domain="[('application_type_id.application_ids','in',parent.application_id),('type','=','container'),('tag_ids.application_ids','in',parent.application_id)]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
@@ -206,7 +210,6 @@
                             <field name="volume_ids" colspan="4" attrs="{'invisible': [('child_ids','!=', [])]}">
                                 <tree string="Volumes" editable="bottom">
                                     <field name="name"/>
-                                    <field name="from_id"/>
                                     <field name="hostpath"/>
                                     <field name="user"/>
                                     <field name="readonly"/>
@@ -215,8 +218,11 @@
                             </field>
                             <field name="link_ids" colspan="4">
                                 <tree string="Links" editable="bottom">
-                                    <field name="name" domain="[('application_id','=',parent.application_id),('container','=',True)]"/>
-                                    <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <field name="name"/>
+                                    <field name="target" domain="[('application_id','=',name)]"/>
+                                    <field name="required"/>
+                                    <field name="auto"/>
+                                    <field name="make_link"/>
                                     <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>
                                     <button name="purge_" type="object" string="Purge"/>
@@ -240,11 +246,15 @@
                             <button name="start" string="Restart" type="object"/>
                             <button name="stop" string="Stop" type="object"/>
                             <newline/>
-                            <group col="4">
-                                    <field name="subservice_name"/>
-                                    <button name="install_subservice" string="Install Subservice" type="object"/>
-                            </group>
                             <field name="job_ids" colspan="4"/>
+                        </page>
+                        <page string="Reset" attrs="{'invisible': [('from_id','!=', False)]}">
+                            <group col="4">
+                                <field name="reset_base_ids"/>
+                                <newline/>
+                                <field name="subservice_name"/>
+                                <button name="install_subservice" string="Install Subservice" type="object"/>
+                            </group>
                         </page>
                         <page string="Save">
                             <group col="4">
@@ -306,9 +316,9 @@
                 <form string="Server" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <field name="environment_id"/>
+                        <field name="domain_id"/>
                         <field name="ip" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
-                        <newline/>
+                        <field name="environment_id"/>
                         <field name="login" attrs="{'invisible':[('runner_id','!=',False)]}"/>
                         <field name="ssh_port" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <newline/>
@@ -322,22 +332,23 @@
                         <field name="runner_id" widget="selection"/>
                         <newline/>
                         <field name="salt_minion_id"/>
+                        <field name="control_dns"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
                     <button name="purge" string="Purge" type="object"/>
                     <button name="test_connection" string="Test connection" type="object"/>
                     <button name="start_containers" string="Restart Containers" type="object"/>
                     <button name="stop_containers" string="Stop Containers" type="object"/>
+                    <button name="deploy_dns" string="Reinstall DNS" type="object"/>
+                    <button name="purge_dns" string="Purge DNS" type="object"/>
                     <button name="clean" string="Clean disk space" type="object"/>
                     <newline/>
                     <group col="4">
-                        <field name="oneclick_id" widget="selection"/>
+                        <field name="oneclick_ids" widget="many2many_tags"/>
+                        <field name="oneclick_ports" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
                         <newline/>
-                        <field name="oneclick_domain" attrs="{'invisible': [('oneclick_id','=',False)], 'required': [('oneclick_id','!=',False)]}"/>
-                        <field name="oneclick_ports" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
-                        <newline/>
-                        <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
-                        <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_id','=',False)]}"/>
+                        <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
+                        <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
                     </group>
                     <field name="job_ids" colspan="4"/>
                 </form>
@@ -349,6 +360,7 @@
             <field name="arch" type="xml">
                 <tree string="Servers">
                     <field name="name"/>
+                    <field name="domain_id"/>
                     <field name="runner_id"/>
                     <field name="ip"/>
                     <field name="ssh_port"/>
@@ -557,13 +569,13 @@
                         <field name="localpath"/>
                         <field name="localpath_services"/>
                         <field name="multiple_databases"/>
-                        <field name="role_ids" widget="many2many_tags"/>
+                        <field name="tag_ids" widget="many2many_tags"/>
                     </group>
                     <field name="option_ids" colspan="4">
                         <tree string="Options" editable="bottom">
                             <field name="name"/>
                             <field name="type"/>
-                            <field name="app_code"/>
+                            <field name="tag_ids" widget="many2many_tags"/>
                             <field name="auto"/>
                             <field name="required"/>
                             <field name="default"/>
@@ -578,7 +590,52 @@
             <field name="arch" type="xml">
                 <tree string="Application types">
                     <field name="name"/>
-                    <field name="role_ids"/>
+                    <field name="tag_ids"/>
+                </tree>
+            </field>
+        </record>
+
+
+        <record id="action_clouder_application_template_form" model="ir.actions.act_window">
+            <field name="name">Application Templates</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">clouder.application.template</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_clouder_application_template_form" id="menu_action_clouder_application_template_form" parent="menu_clouder_configuration"/>
+
+        <record id="view_clouder_application_template_form" model="ir.ui.view">
+            <field name="name">clouder.application.template.form</field>
+            <field name="model">clouder.application.template</field>
+            <field name="arch" type="xml">
+                <form string="Application Template" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                    </group>
+                    <notebook>
+                        <page string="General">
+                            <field name="link_ids" colspan="4">
+                                <tree string="Links" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="required"/>
+                                    <field name="auto"/>
+                                    <field name="make_link"/>
+                                    <field name="container"/>
+                                    <field name="base"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </form>
+            </field>
+        </record>
+        <record id="view_clouder_application_template_tree" model="ir.ui.view">
+            <field name="name">clouder.application.template.tree</field>
+            <field name="model">clouder.application.template</field>
+            <field name="arch" type="xml">
+                <tree string="Application Templates">
+                    <field name="name"/>
                 </tree>
             </field>
         </record>
@@ -588,7 +645,6 @@
             <field name="name">Applications</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">clouder.application</field>
-            <field name="domain">[('parent_id', '=', False)]</field>
             <field name="view_type">form</field>
         </record>
 
@@ -601,9 +657,13 @@
                 <form string="Application" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <field name="code"/>
+                        <field name="template_ids" widget="many2many_tags"/>
                         <field name="type_id"/>
+                        <field name="code"/>
+                        <field name="current_version"/>
+                        <field name="tag_ids" widget="many2many_tags"/>
                         <field name="base"/>
+                        <newline/>
                         <field name="default_image_id"/>
                         <field name="next_image_version_id" domain="[('image_id','=',default_image_id)]"/>
                         <newline/>
@@ -624,7 +684,7 @@
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('apptype_id','=',parent.type_id),('type','=','application')]"/>
+                                    <field name="name" domain="[('application_type_id','=',parent.type_id),('type','=','application')]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
@@ -635,7 +695,6 @@
                                     <field name="auto"/>
                                     <field name="make_link"/>
                                     <field name="container"/>
-                                    <field name="service"/>
                                     <field name="base"/>
                                     <field name="next" domain="[('application_id','=',name)]"/>
                                 </tree>
@@ -669,12 +728,62 @@
             <field name="name">clouder.application.tree</field>
             <field name="model">clouder.application</field>
             <field name="arch" type="xml">
-                <tree string="Applications">
+                <tree string="Applications" default_order="name">
                     <field name="name"/>
+                    <field name="type_id"/>
+                    <field name="code"/>
+                    <field name="tag_ids" widget="many2many_tags"/>
                 </tree>
             </field>
         </record>
 
+        <record id="action_clouder_image_template_form" model="ir.actions.act_window">
+            <field name="name">Images Templates</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">clouder.image.template</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_clouder_image_template_form" id="menu_action_clouder_image_template_form" parent="menu_clouder_configuration"/>
+
+        <record id="view_clouder_image_template_form" model="ir.ui.view">
+            <field name="name">clouder.image.template.form</field>
+            <field name="model">clouder.image.template</field>
+            <field name="arch" type="xml">
+                <form string="Image" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                    </group>
+                    <field name="volume_ids" colspan="4">
+                        <tree string="Volumes" editable="bottom">
+                            <field name="name"/>
+                            <field name="hostpath"/>
+                            <field name="user"/>
+                            <field name="readonly"/>
+                            <field name="nosave"/>
+                        </tree>
+                    </field>
+                    <field name="port_ids" colspan="4">
+                        <tree string="Ports" editable="bottom">
+                            <field name="name"/>
+                            <field name="localport"/>
+                            <field name="expose"/>
+                            <field name="udp"/>
+                            <field name="use_hostport"/>
+                        </tree>
+                    </field>
+                </form>
+            </field>
+        </record>
+        <record id="view_clouder_image_template_tree" model="ir.ui.view">
+            <field name="name">clouder.image.template.tree</field>
+            <field name="model">clouder.image.template</field>
+            <field name="arch" type="xml">
+                <tree string="Images">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
 
         <record id="action_clouder_image_form" model="ir.actions.act_window">
             <field name="name">Images</field>
@@ -693,16 +802,16 @@
                     <group col="4">
                         <field name="name"/>
                         <field name="type_id"/>
-                        <field name="current_version"/>
+                        <field name="template_ids" widget="many2many_tags"/>
                         <field name="parent_id"/>
                         <field name="public"/>
                         <field name="partner_id"/>
+                        <field name="volumes_from"/>
                     </group>
                     <field name="dockerfile" colspan="4"/>
                     <field name="volume_ids" colspan="4">
                         <tree string="Volumes" editable="bottom">
                             <field name="name"/>
-                            <field name="from_code"/>
                             <field name="hostpath"/>
                             <field name="user"/>
                             <field name="readonly"/>
@@ -721,7 +830,7 @@
                     <group col="4">
                         <field name="parent_version_id" domain="[('image_id','=',parent_id)]" attrs="{'invisible': [('parent_id','=',False)],'required': [('parent_id','!=',False)]}"/>
                         <field name="parent_from" attrs="{'invisible': [('parent_id','!=',False)],'required': [('parent_id','=',False)]}"/>
-                        <field name="registry_id" attrs="{'invisible': [('name','in',['img_registry_data','img_registry_exec'])],'required': [('name','not in',['img_registry_data','img_registry_exec'])]}" domain="[('application_id.type_id.role_ids.name','=','registry'),('application_id.child_ids','!=',False)]"/>
+                        <field name="registry_id" attrs="{'invisible': [('name','in',['img_registry_data','img_registry_exec'])],'required': [('name','not in',['img_registry_data','img_registry_exec'])]}" domain="[('application_id.type_id.tag_ids.name','=','registry'),('application_id.child_ids','!=',False)]"/>
                     </group>
                     <button name="build" string="Build" type="object"/>
                     <field name="version_ids" colspan="4"/>
@@ -734,7 +843,6 @@
             <field name="arch" type="xml">
                 <tree string="Images">
                     <field name="name"/>
-                    <field name="current_version"/>
                 </tree>
             </field>
         </record>

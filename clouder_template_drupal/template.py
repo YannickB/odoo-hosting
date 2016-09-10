@@ -43,7 +43,7 @@ class ClouderContainer(models.Model):
         super(ClouderContainer, self).deploy_post()
 
 
-        if self.application_id.type_id.name == 'drupal':
+        if self.application_id.type_id.name == 'drupal' and self.application_id.check_tags(['exec']):
             self.send_drush_file()
             self.execute(['drush', 'make',
                           '/var/www/drush.make', '/var/www/drupal'], username='www-data')

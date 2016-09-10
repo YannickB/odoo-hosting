@@ -1,60 +1,104 @@
 <openerp>
     <data>
 
-        <record id="role_registry" model="clouder.application.role">
+        <record id="tag_registry" model="clouder.application.tag">
             <field name="name">registry</field>
         </record>
-        <record id="role_backup" model="clouder.application.role">
+        <record id="tag_backup" model="clouder.application.tag">
             <field name="name">backup</field>
         </record>
-        <record id="role_no_backup" model="clouder.application.role">
+        <record id="tag_no_backup" model="clouder.application.tag">
             <field name="name">no-backup</field>
         </record>
-        <record id="role_database" model="clouder.application.role">
+        <record id="tag_database" model="clouder.application.tag">
             <field name="name">database</field>
         </record>
-        <record id="role_dns" model="clouder.application.role">
+        <record id="tag_dns" model="clouder.application.tag">
             <field name="name">dns</field>
+        </record>
+        <record id="tag_data" model="clouder.application.tag">
+            <field name="name">data</field>
+        </record>
+        <record id="tag_files" model="clouder.application.tag">
+            <field name="name">files</field>
+        </record>
+        <record id="tag_exec" model="clouder.application.tag">
+            <field name="name">exec</field>
+        </record>
+        <record id="tag_ssh" model="clouder.application.tag">
+            <field name="name">ssh</field>
         </record>
 
         <record id="image_base" model="clouder.image">
             <field name="name">img_base</field>
-            <field name="current_version">1.0</field>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="dockerfile"/>
         </record>
 
-        <record id="image_nginx" model="clouder.image">
-            <field name="name">img_nginx</field>
-            <field name="current_version">1</field>
+        <record id="image_template_nginx_data" model="clouder.image.template">
+            <field name="name">image_template_nginx_data</field>
+        </record>
+        <record id="image_template_nginx_data_volume_nginx" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_nginx_data"/>
+            <field name="name">/etc/nginx</field>
+        </record>
+        <record id="image_template_nginx_data_volume_www" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_nginx_data"/>
+            <field name="name">/var/www</field>
+        </record>
+        <record id="image_template_nginx_data_volume_ssl" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_nginx_data"/>
+            <field name="name">/etc/ssl</field>
+        </record>
+        <record id="image_nginx_data" model="clouder.image">
+            <field name="name">image_nginx_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_nginx_data')])]"/>
             <field name="parent_from">clouder/clouder-nginx</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_nginx_volume_etc_nginx" model="clouder.image.volume">
-            <field name="image_id" ref="image_nginx"/>
-            <field name="name">/etc/nginx</field>
+
+        <record id="image_template_nginx_exec" model="clouder.image.template">
+            <field name="name">image_template_nginx_exec</field>
         </record>
-        <record id="image_nginx_volume_www" model="clouder.image.volume">
-            <field name="image_id" ref="image_nginx"/>
-            <field name="name">/var/www</field>
-        </record>
-        <record id="image_nginx_volume_etc_ssl" model="clouder.image.volume">
-            <field name="image_id" ref="image_nginx"/>
-            <field name="name">/etc/ssl</field>
-        </record>
-        <record id="image_nginx_port_nginx" model="clouder.image.port">
-            <field name="image_id" ref="image_nginx"/>
-            <field name="name">nginx</field>
+        <record id="image_template_nginx_exec_port_http" model="clouder.image.port">
+            <field name="template_id" ref="image_template_nginx_exec"/>
+            <field name="name">http</field>
             <field name="localport">80</field>
             <field name="expose">internet</field>
         </record>
-        <record id="image_nginx_port_nginx_ssl" model="clouder.image.port">
-            <field name="image_id" ref="image_nginx"/>
-            <field name="name">nginx-ssl</field>
-            <field name="localport">443</field>
-            <field name="expose">internet</field>
+        <record id="image_nginx_exec" model="clouder.image">
+            <field name="name">image_nginx_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_nginx_exec')])]"/>
+            <field name="parent_from">clouder/clouder-nginx</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
         </record>
+
+
+        <record id="image_php_data" model="clouder.image">
+            <field name="name">image_php_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_nginx_data')])]"/>
+            <field name="parent_from">clouder/clouder-php</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+
+        <record id="image_php_exec" model="clouder.image">
+            <field name="name">image_php_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_nginx_exec')])]"/>
+            <field name="parent_from">clouder/clouder-php</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
+        </record>
+
+        <record id="application_template_base_www" model="clouder.application.template">
+            <field name="name">Base WWW</field>
+        </record>
+
+
 
 
     </data>

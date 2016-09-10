@@ -24,7 +24,7 @@
     'name': 'Clouder Template Postfix',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['clouder_template_spamassassin'],
+    'depends': ['clouder'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',

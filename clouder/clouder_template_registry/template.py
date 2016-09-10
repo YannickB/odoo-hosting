@@ -47,7 +47,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def get_container_res(self):
         res = super(ClouderContainer, self).get_container_res()
-        if self.image_id.name == 'img_registry_exec':
+        if self.image_id.type_id.name == 'registry':
             res['environment'].update({'REGISTRY_HTTP_TLS_CERTIFICATE': '/certs/domain.crt', 'REGISTRY_HTTP_TLS_KEY': '/certs/domain.key','REGISTRY_AUTH': 'htpasswd',
                         'REGISTRY_AUTH_HTPASSWD_REALM': 'Registry Realm',
                         'REGISTRY_AUTH_HTPASSWD_PATH': '/auth/htpasswd'})
@@ -58,7 +58,7 @@ class ClouderContainer(models.Model):
         """
         Regenerate the ssl certs after the registry deploy.
         """
-        if self.application_id.type_id.name == 'registry' and self.application_id.code == 'data':
+        if self.application_id.type_id.name == 'registry' and self.application_id.check_tags(['data']):
 
             certfile = '/certs/domain.crt'
             keyfile = '/certs/domain.key'
@@ -87,10 +87,10 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).deploy_link()
 
-        if self.name.name.code == 'registry':
+        if self.name.type_id.name == 'registry':
             if 'exec' in self.target.childs:
-                self.target.childs['exec'].execute(['htpasswd', '-Bbn',  self.container_id.name, self.container_id.options['registry_password']['value'], '>', 'auth/htpasswd'], executor='sh')
-                self.target.childs['exec'].start()
+                self.target.execute(['htpasswd', '-Bbn',  self.container_id.name, self.container_id.options['registry_password']['value'], '>', 'auth/htpasswd'], executor='sh')
+                self.target.start()
 
 
     @api.multi
@@ -99,11 +99,11 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).purge_link()
 
-        if self.name.name.code == 'registry':
+        if self.name.type_id.name == 'registry':
             if 'exec' in self.target.childs:
-                self.target.childs['exec'].execute([
+                self.target.execute([
                 'sed', '-i', '"/' + self.container_id.name + '/d"', 'auth/htpasswd'], executor='sh')
-                self.target.childs['exec'].start()
+                self.target.start()
 
 
 class ClouderBaseLink(models.Model):
@@ -119,7 +119,7 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
 
-        if self.name.name.code == 'proxy' \
+        if self.name.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'registry':
             registry = self.base_id.container_id.childs['exec']
             if self.base_id.cert_cert and self.base_id.cert_key:

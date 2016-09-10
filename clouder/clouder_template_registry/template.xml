@@ -2,15 +2,30 @@
 <openerp>
     <data>
 
-        <record id="apptype_registry" model="clouder.application.type">
+        <record id="application_type_registry" model="clouder.application.type">
             <field name="name">registry</field>
             <field name="system_user">registry</field>
-            <field name="role_ids" eval="[(6, 0, [ref('role_registry'),ref('role_no_backup')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_registry'),ref('tag_no_backup')])]"/>
         </record>
 
+        <record id="image_template_registry_data" model="clouder.image.template">
+            <field name="name">image_template_registry_data</field>
+        </record>
+        <record id="image_template_registry_data_volume_auth" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_registry_data"/>
+            <field name="name">/auth</field>
+        </record>
+        <record id="image_template_registry_data_volume_certs" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_registry_data"/>
+            <field name="name">/certs</field>
+        </record>
+        <record id="image_template_registry_data_volume_var" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_registry_data"/>
+            <field name="name">/var/lib/registry</field>
+        </record>
         <record id="image_registry_data" model="clouder.image">
-            <field name="name">img_registry_data</field>
-            <field name="current_version">1</field>
+            <field name="name">image_registry_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_registry_data')])]"/>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
             <field name="dockerfile">
@@ -21,77 +36,56 @@
                 ]]>
             </field>
         </record>
-        <record id="image_registry_data_volume_auth" model="clouder.image.volume">
-            <field name="image_id" ref="image_registry_data"/>
-            <field name="name">/auth</field>
+
+        <record id="image_template_registry_exec" model="clouder.image.template">
+            <field name="name">image_template_registry_exec</field>
         </record>
-        <record id="image_registry_data_volume_certs" model="clouder.image.volume">
-            <field name="image_id" ref="image_registry_data"/>
-            <field name="name">/certs</field>
-        </record>
-        <record id="image_registry_data_volume_var" model="clouder.image.volume">
-            <field name="image_id" ref="image_registry_data"/>
-            <field name="name">/var/lib/registry</field>
-        </record>
-        <record id="image_registry_exec" model="clouder.image">
-            <field name="name">img_registry_exec</field>
-            <field name="current_version">1</field>
-            <field name="parent_from">registry:2</field>
-            <field name="parent_id"/>
-            <field name="dockerfile"/>
-        </record>
-        <record id="image_registry_exec_volume_auth" model="clouder.image.volume">
-            <field name="image_id" ref="image_registry_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/auth</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_registry_exec_volume_certs" model="clouder.image.volume">
-            <field name="image_id" ref="image_registry_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/certs</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_registry_exec_volume_var" model="clouder.image.volume">
-            <field name="image_id" ref="image_registry_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/var/lib/registry</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_registry_exec_port_http" model="clouder.image.port">
-            <field name="image_id" ref="image_registry_exec"/>
+        <record id="image_template_registry_exec_port_http" model="clouder.image.port">
+            <field name="template_id" ref="image_template_registry_exec"/>
             <field name="name">http</field>
             <field name="localport">5000</field>
             <field name="expose">internet</field>
         </record>
-
-        <record id="app_registry" model="clouder.application">
-            <field name="name">Registry</field>
-            <field name="code">registry</field>
-            <field name="type_id" ref="apptype_registry"/>
-            <field name="default_image_id" ref="image_registry_data"/>
-            <field name="base" eval="True"/>
+        <record id="image_registry_exec" model="clouder.image">
+            <field name="name">image_registry_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_registry_exec')])]"/>
+            <field name="parent_from">registry:2</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
         </record>
+
+
+
         <!-- app "data" -->
-        <record id="app_registry_data" model="clouder.application">
+        <record id="application_registry_data" model="clouder.application">
             <field name="name">Registry Data</field>
             <field name="code">data</field>
-            <field name="type_id" ref="apptype_registry"/>
-            <field name="parent_id" ref="app_registry"/>
+            <field name="type_id" ref="application_type_registry"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_registry_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
             <field name="autosave" eval="True"/>
         </record>
         <!-- app "exec" -->
-        <record id="app_registry_exec" model="clouder.application">
+        <record id="application_registry_exec" model="clouder.application">
             <field name="name">Registry Exec</field>
             <field name="code">exec</field>
-            <field name="type_id" ref="apptype_registry"/>
-            <field name="parent_id" ref="app_registry"/>
+            <field name="type_id" ref="application_type_registry"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_registry_exec"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
+        </record>
+        <record id="application_registry" model="clouder.application">
+            <field name="name">Registry</field>
+            <field name="code">registry</field>
+            <field name="type_id" ref="application_type_registry"/>
+            <field name="template_ids" eval="[(4, [ref('application_template_base_www')])]"/>
+            <field name="child_ids" eval="[(4, [ref('application_registry_data'),ref('application_registry_exec')])]"/>
+            <field name="base" eval="True"/>
         </record>
 
     </data>

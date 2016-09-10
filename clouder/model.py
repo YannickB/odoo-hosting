@@ -394,7 +394,9 @@ class ClouderModel(models.AbstractModel):
 
         :param vals: The values needed to create the record.
         """
+
         res = super(ClouderModel, self).create(vals)
+
         if self._autodeploy:
             res.hook_create()
             res.do('create', 'deploy_frame')
@@ -430,7 +432,7 @@ class ClouderModel(models.AbstractModel):
             server = self.server_id
 
         if not server_name:
-            server_name = server.name
+            server_name = server.fulldomain
 
         global ssh_connections
         host_fullname = server_name + \
@@ -519,6 +521,9 @@ class ClouderModel(models.AbstractModel):
         :param stdin_arg: The command we need to execute in stdin.
         :param path: The path where the command need to be executed.
         """
+
+        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].execute(cmd, stdin_arg=stdin_arg, path=path, ssh=ssh, server_name=server_name, username=username, executor=executor)
 
         res_ssh = self.connect(server_name=server_name, username=username)
         ssh, host = res_ssh['ssh'], res_ssh['host']
@@ -616,6 +621,9 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
+        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].get(source, destination, ssh=ssh)
+
         host = self.name
         if self._name == 'clouder.container':
             # TODO
@@ -639,6 +647,9 @@ class ClouderModel(models.AbstractModel):
         :param source: The path we need to get the file.
         :param destination: The path we need to send the file.
         """
+
+        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].send(source, destination, ssh=ssh, username=username)
 
         res_ssh = self.connect(username=username)
         ssh, server = res_ssh['ssh'], res_ssh['server']
@@ -749,14 +760,14 @@ class ClouderModel(models.AbstractModel):
         return os.path.isdir(localdir)
 
     @api.multi
-    def execute_write_file(self, localfile, value):
+    def execute_write_file(self, localfile, value, operator='a'):
         """
         Method which write in a file on the local system.
 
         :param localfile: The path to the file we need to write.
         :param value: The value we need to write in the file.
         """
-        f = open(localfile, 'a')
+        f = open(localfile, operator)
         f.write(value)
         f.close()
 
@@ -774,6 +785,45 @@ class ClouderModel(models.AbstractModel):
         self.log('status ' + str(result.status_code) + ' ' + result.reason)
         self.log('result ' + str(result.json()))
         return result
+
+
+class ClouderTemplateOne2many(models.AbstractModel):
+
+    _name = 'clouder.template.one2many'
+
+    @api.multi
+    def reset_template(self, records=[]):
+        if self.template_id:
+            if not records:
+                records = self.env[self._template_parent_model].search([('template_ids', 'in', self.template_id.id)])
+            for record in records:
+                name = hasattr(self.name, 'id') and self.name.id or self.name
+                childs = self.search([(self._template_parent_many2one, '=', record.id),('name','=', name)])
+                vals = {}
+                for field in self._template_fields:
+                    vals[field] = getattr(self, field)
+                if childs:
+                    for child in childs:
+                        child.write(vals)
+                else:
+                    vals.update({self._template_parent_many2one: record.id, 'name': name})
+                    self.create(vals)
+
+    @api.model
+    def create(self, vals):
+        """
+        """
+        res = super(ClouderTemplateOne2many, self).create(vals)
+        self.reset_template()
+        return res
+
+    @api.multi
+    def write(self, vals):
+        """
+        """
+        res = super(ClouderTemplateOne2many, self).write(vals)
+        self.reset_template()
+        return res
 
 
 def generate_random_password(size):

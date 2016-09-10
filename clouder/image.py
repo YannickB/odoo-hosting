@@ -27,6 +27,17 @@ import re
 from datetime import datetime
 
 
+class ClouderImageTemplate(models.Model):
+    """
+    """
+
+    _name = 'clouder.image.template'
+
+    name = fields.Char('Image name', required=True)
+    volume_ids = fields.One2many('clouder.image.volume', 'template_id', 'Volumes')
+    port_ids = fields.One2many('clouder.image.port', 'template_id', 'Ports')
+
+
 class ClouderImage(models.Model):
     """
     Define the image object, which represent the container image which
@@ -37,13 +48,16 @@ class ClouderImage(models.Model):
 
     name = fields.Char('Image name', required=True)
     type_id = fields.Many2one('clouder.application.type', 'Application Type')
-    current_version = fields.Char('Current version', required=True)
+    template_ids = fields.Many2many(
+        'clouder.image.template', 'clouder_image_template_rel',
+        'image_id', 'template_id', 'Templates')
     parent_id = fields.Many2one('clouder.image', 'Parent image')
     parent_version_id = fields.Many2one(
         'clouder.image.version', 'Parent version')
     parent_from = fields.Char('From')
     registry_id = fields.Many2one('clouder.container', 'Registry')
     dockerfile = fields.Text('DockerFile')
+    volumes_from = fields.Char('Volumes from')
     volume_ids = fields.One2many('clouder.image.volume', 'image_id', 'Volumes')
     port_ids = fields.One2many('clouder.image.port', 'image_id', 'Ports')
     version_ids = fields.One2many(
@@ -127,6 +141,33 @@ class ClouderImage(models.Model):
             'registry_id': self.registry_id and self.registry_id.id,
             'parent_id': self.parent_version_id and self.parent_version_id.id})
 
+    @api.model
+    def create(self, vals):
+        """
+        """
+        res = super(ClouderImage, self).create(vals)
+        if 'template_ids' in vals:
+            for template in res.template_ids:
+                for volume in self.env['clouder.image.volume'].search([('template_id', '=', template.id)]):
+                    volume.reset_template(records=[res])
+                for port in self.env['clouder.image.port'].search([('template_id', '=', template.id)]):
+                    port.reset_template(records=[res])
+        return res
+
+    @api.multi
+    def write(self, vals):
+        """
+        """
+        res = super(ClouderImage, self).write(vals)
+        if 'template_ids' in vals:
+            self = self.browse(self.id)
+            for template in self.template_ids:
+                for volume in self.env['clouder.image.volume'].search([('template_id', '=', template.id)]):
+                    volume.reset_template(records=[self])
+                for port in self.env['clouder.image.port'].search([('template_id', '=', template.id)]):
+                    port.reset_template(records=[self])
+        return res
+
 
 class ClouderImageVolume(models.Model):
     """
@@ -137,17 +178,23 @@ class ClouderImageVolume(models.Model):
 
     _name = 'clouder.image.volume'
 
+    _inherit = ['clouder.template.one2many']
+
+    _template_parent_model = 'clouder.image'
+    _template_parent_many2one = 'image_id'
+    _template_fields = ['hostpath', 'user', 'readonly', 'nosave']
+
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
-                               required=True)
+                               required=False)
+    template_id = fields.Many2one('clouder.image.template', 'Template', ondelete="cascade")
     name = fields.Char('Path', required=True)
-    from_code = fields.Char('From')
     hostpath = fields.Char('Host path')
     user = fields.Char('System User')
     readonly = fields.Boolean('Readonly?')
     nosave = fields.Boolean('No save?')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)',
+        ('name_uniq', 'unique(image_id,template_id,name)',
          'Volume name must be unique per image!')
     ]
 
@@ -161,8 +208,15 @@ class ClouderImagePort(models.Model):
 
     _name = 'clouder.image.port'
 
+    _inherit = ['clouder.template.one2many']
+
+    _template_parent_model = 'clouder.image'
+    _template_parent_many2one = 'image_id'
+    _template_fields = ['localport', 'expose', 'udp', 'use_hostport']
+
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
-                               required=True)
+                               required=False)
+    template_id = fields.Many2one('clouder.image.template', 'Template', ondelete="cascade")
     name = fields.Char('Name', required=True)
     localport = fields.Char('Local port', required=True)
     expose = fields.Selection(
@@ -172,7 +226,7 @@ class ClouderImagePort(models.Model):
     use_hostport = fields.Boolean('Use hostport?')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)',
+        ('name_uniq', 'unique(image_id,template_id,name)',
          'Port name must be unique per image!')
     ]
 
@@ -210,7 +264,7 @@ class ClouderImageVersion(models.Model):
         Property returning the address of the registry where is hosted
         the image version.
         """
-        return self.registry_id and self.registry_id.base_ids[0].fulldomain + ':' + \
+        return self.registry_id and self.registry_id.base_ids[0].fulldomainserver_id.ip + ':' + \
             self.registry_id.ports['http']['hostport']
 
     @property

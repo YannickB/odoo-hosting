@@ -44,7 +44,7 @@ class ClouderContainer(models.Model):
         super(ClouderContainer, self).deploy_post()
 
         if self.application_id.type_id.name == 'drupal'\
-                and self.application_id.code == 'wkc':
+                and self.application_id.code == 'wkc' and self.application_id.check_tags(['exec']):
             self.send(modules.get_module_path(
                 'clouder_template_drupal_wikicompare') +
                 '/res/wikicompare.script',
