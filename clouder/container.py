@@ -118,14 +118,14 @@ class ClouderServer(models.Model):
     @api.depends('private_key')
     def _get_private_key(self):
         for server in self:
-            key_file = server.home_directory + '/.ssh/keys/' + server.fulldomain
+            key_file = server.home_directory + '/.ssh/keys/' + server.name + '.' + server.domain_id.name
             server.private_key = self.execute_local(['cat', key_file])
 
     @api.multi
     @api.depends('public_key')
     def _get_public_key(self):
         for server in self:
-            key_file = server.home_directory + '/.ssh/keys/' + server.fulldomain
+            key_file = server.home_directory + '/.ssh/keys/' + server.name + '.' + server.domain_id.name
             server.public_key = self.execute_local(['cat', key_file + '.pub'])
 
     @api.multi
@@ -186,6 +186,7 @@ class ClouderServer(models.Model):
     supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
     runner_id = fields.Many2one('clouder.container', 'Runner')
     salt_minion_id = fields.Many2one('clouder.container', 'Salt Minion', readonly=True)
+    control_dns = fields.Boolean('Control DNS?')
     oneclick_id = fields.Many2one('clouder.oneclick', 'Oneclick Deployment')
     oneclick_ports = fields.Boolean('Assign critical ports?')
 
@@ -195,7 +196,7 @@ class ClouderServer(models.Model):
         """
 
         fulldomain = self.name + '.' + self.domain_id.name
-        if self.domain_id.dns_id:
+        if self.control_dns and self.domain_id.dns_id:
             ip = socket.gethostbyname(fulldomain)
             if ip != self.ip:
                 self.raise_error("Couldn't resolve hostname of the server " + fulldomain)
@@ -281,6 +282,37 @@ class ClouderServer(models.Model):
         super(ClouderServer, self).purge()
 
     @api.multi
+    def deploy_dns(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('deploy_dns ' + self.fulldomain, 'deploy_dns_exec')
+
+    @api.multi
+    def deploy_dns_exec(self):
+        self.purge_dns_exec()
+
+        if self.domain_id.dns_id:
+            self.domain_id.dns_id.execute([
+                'echo "' + self.name + ' IN A ' + self.ip +
+                '" >> ' + self.domain_id.configfile])
+            self.domain_id.refresh_serial(self.fulldomain)
+            self.control_dns = True
+
+    @api.multi
+    def purge_dns(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('purge_dns', 'purge_dns_exec')
+
+    @api.multi
+    def purge_dns_exec(self):
+        self.control_dns = False
+        if self.domain_id.dns_id:
+            self.domain_id.dns_id.execute([
+                'sed', '-i',
+                '"/' + self.name + '\sIN\sA/d"',
+                self.domain_id.configfile])
+            self.domain_id.refresh_serial()
+
+    @api.multi
     def oneclick_deploy(self):
         self = self.with_context(no_enqueue=True)
         self.do('oneclick_deploy ' + self.oneclick_id.function, 'oneclick_deploy_exec') 
@@ -349,7 +381,7 @@ class ClouderContainer(models.Model):
     suffix = fields.Char('Suffix', required=True)
     application_id = fields.Many2one('clouder.application',
                                      'Application', required=True)
-    image_id = fields.Many2one('clouder.image', 'Image', required=True)
+    image_id = fields.Many2one('clouder.image', 'Image', required=False)
     server_id = fields.Many2one('clouder.server', 'Server', required=True)
     image_version_id = fields.Many2one('clouder.image.version',
                                        'Image version', required=False)
@@ -416,7 +448,7 @@ class ClouderContainer(models.Model):
         database = False
         for link in self.link_ids:
             if link.target:
-                if link.name.name.check_role('database'):
+                if link.name.check_tags(['database']):
                     database = link.target
         return database
 
@@ -505,7 +537,7 @@ class ClouderContainer(models.Model):
         """
         links = {}
         for link in self.link_ids:
-            links[link.name.name.code] = link
+            links[link.name.code] = link
         return links
 
     @property
@@ -518,6 +550,26 @@ class ClouderContainer(models.Model):
             if child.child_id:
                 childs[child.child_id.application_id.code] = child.child_id
         return childs
+
+    @property
+    def available_links(self):
+        """
+        """
+        links = {}
+        if self.parent_id:
+            for code, link in self.parent_id.container_id.links.iteritems():
+                if link.target:
+                    links[code] = link.target
+            for code, child in self.parent_id.container_id.childs.iteritems():
+                links[code] = child
+
+        for code, link in self.links.iteritems():
+            if link.target:
+                links[code] = link.target
+        for code, child in self.childs.iteritems():
+            links[code] = child
+        return links
+
 
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,environment_id,suffix)',
@@ -554,7 +606,7 @@ class ClouderContainer(models.Model):
         Check that a backup server is specified.
         """
         if not self.backup_ids and \
-                not self.application_id.check_role('no-backup'):
+                not self.application_id.check_tags(['no-backup']):
             raise except_orm(
                 _('Data error!'),
                 _("You need to create at least one backup container."))
@@ -571,6 +623,14 @@ class ClouderContainer(models.Model):
                 _('Data error!'),
                 _("The image of image version must be "
                   "the same than the image of container."))
+
+    # @api.one
+    # @api.constrains('image_id', 'child_ids')
+    # def _check_image(self):
+    #     """
+    #     """
+    #     if not self.image_id and not self.child_ids:
+    #         raise self.raise_error('You need to specify the image!')
 
     @api.multi
     def onchange_application_id_vals(self, vals):
@@ -618,13 +678,17 @@ class ClouderContainer(models.Model):
                     if option['name'] and option['name'].id in option_sources:
                         option['source'] = option_sources[option['name'].id]
 
-                        if option['source'].type == 'container' and option['source'].auto and \
-                                not (option['source'].app_code and option['source'].app_code != application.code):
-                            # Updating the default value if there is no current one set
-                            options.append((0, 0, {
-                                'name': option['source'].id,
-                                'value': option['value'] or option['source'].get_default
-                            }))
+                        if option['source'].type == 'container' and option['source'].auto:
+                            flag = True
+                            for tag in option['source'].tag_ids:
+                                if tag not in application.tag_ids:
+                                    flag = False
+                            if flag:
+                                # Updating the default value if there is no current one set
+                                options.append((0, 0, {
+                                    'name': option['source'].id,
+                                    'value': option['value'] or option['source'].get_default
+                                }))
 
                             # Removing the source id from those to add later
                             sources_to_add.remove(option['name'].id)
@@ -698,10 +762,9 @@ class ClouderContainer(models.Model):
                     if 'parent_id' in vals and vals['parent_id']:
                         parent = self.env['clouder.container.child'].browse(
                             vals['parent_id'])
-                        for parent_link in parent.container_id.link_ids:
-                            if link['source'].name.code == parent_link.name.name.code \
-                                    and parent_link.target:
-                                next_id = parent_link.target.id
+                        for parent_code, parent_link in parent.container_id.available_links.iteritems():
+                            if link['source'].name.id == parent_link.application_id.id:
+                                next_id = parent_link.id
                     context = self.env.context
                     if not next_id and 'container_links' in context:
                         fullcode = link['source'].name.fullcode
@@ -711,8 +774,7 @@ class ClouderContainer(models.Model):
                         next_id = link['source'].next.id
                     if not next_id:
                         target_ids = self.search([
-                            ('application_id.code', '=', link['source'].name.code),
-                            ('parent_id', '=', False)])
+                            ('application_id', '=', link['source'].name.id)])
                         if target_ids:
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link['source'].name.id,
@@ -1001,13 +1063,13 @@ class ClouderContainer(models.Model):
             [('container_id', '=', self.id)]).unlink()
 
         image = self.env['clouder.image'].browse(vals['image_id'])
-        if vals['parent_id'] and image.volume_from:
-            volumes_from = ','.split(image.volume_from)
+        if vals['parent_id'] and image.volumes_from:
+            volumes_from = image.volumes_from.split(',')
             targets = []
             for child in self.env['clouder.container.child'].browse(vals['parent_id']).container_id.child_ids:
                 for code in volumes_from:
-                    if child.name.check_tag([code]):
-                        targets.append(child.target)
+                    if child.name.check_tags([code]):
+                        targets.append(child.child_id)
             vals['volumes_from_ids'] = [(6, 0, [c.id for c in targets])]
 
         for key, value in vals.iteritems():
@@ -1231,13 +1293,16 @@ class ClouderContainer(models.Model):
                     arg += ':ro'
                 volumes.append(arg)
         volumes_from = []
-        for volume_from in self.volume_from_ids:
+        for volume_from in self.volumes_from_ids:
             volumes_from.append(volume_from.name)
         links = []
         for link in self.link_ids:
-            if link.name.make_link \
+            if link.make_link \
                     and link.target.server_id == self.server_id:
-                links.append(link.target.name + ':' + link.name.name.code)
+                target = link.target
+                if 'exec' in target.childs:
+                    target = target.childs['exec']
+                links.append(target.name + ':' + link.name.code)
         return {'ports': ports, 'expose_ports': expose_ports, 'volumes': volumes, 'volumes_from': volumes_from, 'links': links, 'environment': {}}
 
     @api.multi
@@ -1253,6 +1318,10 @@ class ClouderContainer(models.Model):
         """
         Deploy the container in the server.
         """
+
+        if self.parent_id:
+            self.parent_id.child_id = self
+
         self = self.with_context(no_enqueue=True)
         super(ClouderContainer, self).deploy()
 
@@ -1481,7 +1550,7 @@ class ClouderContainerLink(models.Model):
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify a link to " +
-                  self.name.name.name + " for the container " +
+                  self.name.name + " for the container " +
                   self.container_id.name))
 
     @api.multi
@@ -1508,6 +1577,9 @@ class ClouderContainerLink(models.Model):
         """
         Make the control to know if we can launch the deploy/purge.
         """
+        if self.container_id.child_ids:
+            self.log('The container has children, skipping deploy link')
+            return False
         if not self.target:
             self.log('The target isnt configured in the link, '
                      'skipping deploy link')
@@ -1517,7 +1589,7 @@ class ClouderContainerLink(models.Model):
     @api.multi
     def deploy_(self):
         self = self.with_context(no_enqueue=True)
-        self.do('deploy_link ' + self.name.name.name, 'deploy_exec', where=self.container_id)
+        self.do('deploy_link ' + self.name.name, 'deploy_exec', where=self.container_id)
 
     @api.multi
     def deploy_exec(self):
@@ -1529,7 +1601,7 @@ class ClouderContainerLink(models.Model):
     @api.multi
     def purge_(self):
         self = self.with_context(no_enqueue=True)
-        self.do('purge_link ' + self.name.name.name, 'purge_exec', where=self.container_id)
+        self.do('purge_link ' + self.name.name, 'purge_exec', where=self.container_id)
 
     @api.multi
     def purge_exec(self):
@@ -1577,14 +1649,15 @@ class ClouderContainerChild(models.Model):
 
     @api.multi
     def create_child_exec(self):
+        container = self.container_id
         self = self.with_context(autocreate=True)
         self.delete_child_exec()
-        self.child_id = self.env['clouder.container'].create({
-            'environment_id': self.container_id.environment_id.id,
-            'suffix': self.container_id.suffix + '-' + self.name.code,
+        self.env['clouder.container'].create({
+            'environment_id': container.environment_id.id,
+            'suffix': container.suffix + '-' + self.name.code,
             'parent_id': self.id,
             'application_id': self.name.id,
-            'server_id': self.server_id.id or self.container_id.server_id.id
+            'server_id': self.server_id.id or container.server_id.id
         })
         if self.save_id:
             self.save_id.container_id = self.child_id

@@ -80,6 +80,7 @@
             <field name="parent_from">clouder/clouder-nginx</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
         </record>
 
         <record id="application_template_base_www" model="clouder.application.template">

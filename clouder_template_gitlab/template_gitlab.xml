@@ -248,7 +248,7 @@
         <!-- app "data" -->
         <record id="application_gitlab_data" model="clouder.application">
             <field name="name">Gitlab Data</field>
-            <field name="code">gitlab-data</field>
+            <field name="code">data</field>
             <field name="type_id" ref="application_type_gitlab"/>
             <field name="template_id" ref=""/>
             <field name="template_ids" eval="[(4, [ref('clouder_template_postgres.application_template_container_postgres'),ref('clouder_template_shinken.application_template_container_shinken')])]"/>
@@ -262,7 +262,7 @@
         <!-- app "files" -->
         <record id="application_gitlab_files" model="clouder.application">
             <field name="name">Gitlab Files</field>
-            <field name="code">gitlab-files</field>
+            <field name="code">files</field>
             <field name="type_id" ref="application_type_gitlab"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_gitlab_files"/>
@@ -273,7 +273,7 @@
         <!-- app "exec" -->
         <record id="application_gitlab_exec" model="clouder.application">
             <field name="name">Gitlab Exec</field>
-            <field name="code">gitlab-exec</field>
+            <field name="code">exec</field>
             <field name="type_id" ref="application_type_gitlab"/>
             <field name="template_ids" eval="[(4, [ref('clouder_template_postgres.application_template_container_postgres'),ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_redis.application_template_container_redis')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
@@ -289,19 +289,17 @@
             <field name="code">gitlab</field>
             <field name="type_id" ref="application_type_gitlab"/>
             <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
-            <field name="default_image_id" ref="image_gitlab_exec"/>
             <field name="child_ids" eval="[(4, [ref('application_gitlab_data'),ref('application_gitlab_files'),ref('application_gitlab_exec')])]"/>
-            <field name="sequence">2</field>
+            <field name="sequence">3</field>
             <field name="required" eval="True"/>
             <field name="base" eval="True"/>
         </record>
 
         <record id="application_gitlab_redis" model="clouder.application">
-            <field name="name">Gitlab + Redis</field>
-            <field name="code">gitlab-redis</field>
+            <field name="name">Gitlab + Redis + Postgres</field>
+            <field name="code">gitlab-all</field>
             <field name="type_id" ref="application_type_gitlab"/>
-            <field name="default_image_id" ref="image_gitlab_exec"/>
-            <field name="child_ids" eval="[(4, [ref('clouder_template_redis.application_redis'), ref('application_gitlab')])]"/>
+            <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('clouder_template_redis.application_redis'), ref('application_gitlab')])]"/>
         </record>
 
         <record id="application_template_container_gitlab" model="clouder.application.template">
@@ -312,7 +310,12 @@
             <field name="name" ref="application_gitlab"/>
             <field name="container" eval="True"/>
             <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
+        </record>
+        <record id="application_template_container_gitlab_link_registry" model="clouder.application.link">
+            <field name="template_id" ref="application_template_container_gitlab"/>
+            <field name="name" ref="clouder.application_registry"/>
+            <field name="container" eval="True"/>
+            <field name="auto" eval="True"/>
         </record>
 
     </data>

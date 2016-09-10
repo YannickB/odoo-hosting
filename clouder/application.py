@@ -157,7 +157,7 @@ class ClouderApplication(models.Model):
     _name = 'clouder.application'
 
     name = fields.Char('Name', required=True)
-    code = fields.Char('Code', size=20, required=True)
+    code = fields.Char('Code', required=True)
     type_id = fields.Many2one('clouder.application.type', 'Type',
                               required=True)
     template_ids = fields.Many2many(
@@ -165,7 +165,7 @@ class ClouderApplication(models.Model):
         'application_id', 'template_id', 'Templates')
     next_server_id = fields.Many2one('clouder.server', 'Next server')
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
-                                       required=True)
+                                       required=False)
     next_image_version_id = fields.Many2one('clouder.image.version', 'Next Image Version')
     base = fields.Boolean('Can have base?')
     tag_ids = fields.Many2many(
@@ -213,8 +213,6 @@ class ClouderApplication(models.Model):
     @property
     def fullcode(self):
         fullcode = self.code
-        if self.parent_id:
-            fullcode = self.parent_id.fullcode + '-' + self.code
         return fullcode
 
     @property
@@ -283,7 +281,7 @@ class ClouderApplication(models.Model):
         return links
 
     _sql_constraints = [
-        ('code_uniq', 'unique(code)', 'Code must be unique!'),
+        ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
 
     _order = 'sequence, code'
@@ -308,6 +306,14 @@ class ClouderApplication(models.Model):
             raise except_orm(_('Data error!'), _(
                 "Admin email can only contains letters, "
                 "digits, underscore, - and @"))
+
+    @api.one
+    @api.constrains('default_image_id', 'child_ids')
+    def _check_image(self):
+        """
+        """
+        if not self.default_image_id and not self.child_ids:
+            raise self.raise_error('You need to specify the image!')
 
     @api.multi
     @api.onchange('type_id')
@@ -350,7 +356,7 @@ class ClouderApplication(models.Model):
         if 'template_ids' in vals:
             for template in res.template_ids:
                 for link in self.env['clouder.application.link'].search([('template_id', '=', template.id)]):
-                    link.reset_template(records=[self])
+                    link.reset_template(records=[res])
         return res
 
     @api.multi

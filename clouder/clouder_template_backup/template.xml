@@ -51,7 +51,7 @@
 
         <record id="application_backup_upload" model="clouder.application">
             <field name="name">Backup Upload</field>
-            <field name="code">backup-upl</field>
+            <field name="code">backup-upload</field>
             <field name="type_id" ref="application_type_backup_upload"/>
             <field name="default_image_id" ref="image_backup_upload"/>
         </record>
@@ -98,7 +98,7 @@
 
         <record id="application_backup_simple" model="clouder.application">
             <field name="name">Backup Simple</field>
-            <field name="code">backup-sim</field>
+            <field name="code">backup-simple</field>
             <field name="type_id" ref="application_type_backup"/>
             <field name="template_ids" eval="[(4, [ref('application_template_backup')])]"/>
             <field name="default_image_id" ref="image_backup_simple"/>

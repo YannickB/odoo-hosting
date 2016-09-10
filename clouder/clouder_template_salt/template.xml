@@ -63,7 +63,7 @@
             <field name="parent_id"/>
             <field name="dockerfile">
                 <![CDATA[
-f
+
                 RUN mkdir -p /srv/salt/_modules
                 ADD sources/salt-master/* /srv/salt/
                 ADD sources/_modules/clouder.py /srv/salt/_modules/
@@ -105,11 +105,12 @@ f
 
                 ]]>
             </field>
+            <field name="volumes_from">data</field>
         </record>
 
         <record id="application_salt_master_data" model="clouder.application">
             <field name="name">Salt Master Data</field>
-            <field name="code">salt-master-data</field>
+            <field name="code">data</field>
             <field name="type_id" ref="application_type_salt_master"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_salt_master_data"/>
@@ -119,10 +120,10 @@ f
         </record>
         <record id="application_salt_master_exec" model="clouder.application">
             <field name="name">Salt Master Exec</field>
-            <field name="code">salt-master-exec</field>
+            <field name="code">exec</field>
             <field name="type_id" ref="application_type_salt_master"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
-            <field name="default_image_id" ref="image_salt_master_data"/>
+            <field name="default_image_id" ref="image_salt_master_exec"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
             <field name="update_strategy">auto</field>
@@ -131,7 +132,6 @@ f
             <field name="name">Salt Master</field>
             <field name="code">salt-master</field>
             <field name="type_id" ref="application_type_salt_master"/>
-            <field name="default_image_id" ref="image_salt_master_exec"/>
             <field name="child_ids" eval="[(4, [ref('application_salt_master_data'),ref('application_salt_master_exec')])]"/>
         </record>
 
@@ -165,6 +165,7 @@ f
         </record>
         <record id="image_salt_minion" model="clouder.image">
             <field name="name">image_salt_minion</field>
+            <field name="type_id" ref="application_type_salt_minion"/>
             <field name="template_ids" eval="[(4, [ref('image_template_salt_minion')])]"/>
             <field name="parent_from">clouder/clouder-base</field>
             <field name="parent_id"/>
@@ -205,6 +206,7 @@ f
                 RUN echo "command=/etc/init.d/nagios-nrpe-server restart" >> /etc/supervisor/conf.d/supervisord.conf
 
                 CMD ["/usr/bin/supervisord"]
+                CMD salt-minion -l debug
 
                 ]]>
             </field>

@@ -217,7 +217,7 @@
 
         <record id="application_odoo_data" model="clouder.application">
             <field name="name">Odoo Data</field>
-            <field name="code">odoo-data</field>
+            <field name="code">data</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
@@ -229,9 +229,9 @@
 
         <record id="application_odoo8_files" model="clouder.application">
             <field name="name">Odoo 8 Files</field>
-            <field name="code">odoo8-files</field>
+            <field name="code">files</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab'),ref('clouder.application_template_container_registry')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_odoo8_files"/>
             <field name="sequence">2</field>
@@ -242,9 +242,9 @@
 
         <record id="application_odoo9_files" model="clouder.application">
             <field name="name">Odoo 9 Files</field>
-            <field name="code">odoo9-files</field>
+            <field name="code">files</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab'),ref('clouder.application_template_container_registry')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_odoo9_files"/>
             <field name="sequence">2</field>
@@ -255,9 +255,9 @@
 
         <record id="application_odoo8_clouder_files" model="clouder.application">
             <field name="name">Clouder 8 Files</field>
-            <field name="code">clouder8-files</field>
+            <field name="code">files</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab'),ref('clouder.application_template_container_registry')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_odoo8_clouder_files"/>
             <field name="sequence">2</field>
@@ -268,9 +268,9 @@
 
         <record id="application_odoo9_clouder_files" model="clouder.application">
             <field name="name">Clouder 9 Files</field>
-            <field name="code">clouder9-files</field>
+            <field name="code">files</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab'),ref('clouder.application_template_container_registry')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_odoo9_clouder_files"/>
             <field name="sequence">2</field>
@@ -281,7 +281,7 @@
 
         <record id="application_odoo_exec" model="clouder.application">
             <field name="name">Odoo Exec</field>
-            <field name="code">odoo-exec</field>
+            <field name="code">exec</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
@@ -293,7 +293,7 @@
 
         <record id="application_odoo_clouder_exec" model="clouder.application">
             <field name="name">Clouder Exec</field>
-            <field name="code">clouder-exec</field>
+            <field name="code">exec</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
@@ -305,7 +305,7 @@
 
         <record id="application_odoo_ssh" model="clouder.application">
             <field name="name">Odoo SSH</field>
-            <field name="code">odoo-ssh</field>
+            <field name="code">ssh</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_ssh')])]"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
@@ -318,7 +318,6 @@
             <field name="code">odoo8</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
-            <field name="default_image_id" ref="image_odoo_exec"/>
             <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo8_files'),ref('application_odoo_exec'),ref('application_odoo_ssh')])]"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -330,7 +329,6 @@
             <field name="code">odoo9</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
-            <field name="default_image_id" ref="image_odoo_exec"/>
             <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo9_files'),ref('application_odoo_exec'),ref('application_odoo_ssh')])]"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -342,7 +340,6 @@
             <field name="code">clouder8</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
-            <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo8_clouder_files'),ref('application_odoo_clouder_exec'),ref('application_odoo_ssh')])]"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -359,7 +356,6 @@
             <field name="code">clouder9</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
-            <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo9_clouder_files'),ref('application_odoo_clouder_exec'),ref('application_odoo_ssh')])]"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -373,33 +369,29 @@
 
         <record id="application_odoo8_postgres" model="clouder.application">
             <field name="name">Odoo 8 + Postgres</field>
-            <field name="code">odoo8-postgres</field>
+            <field name="code">odoo8-all</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo8')])]"/>
         </record>
 
         <record id="application_odoo9_postgres" model="clouder.application">
             <field name="name">Odoo 9 + Postgres</field>
-            <field name="code">odoo9-postgres</field>
+            <field name="code">odoo9-all</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo9')])]"/>
         </record>
 
         <record id="application_odoo8_clouder_postgres" model="clouder.application">
             <field name="name">Clouder 8 + Postgres</field>
-            <field name="code">clouder8-postgres</field>
+            <field name="code">clouder8-all</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo8_clouder')])]"/>
         </record>
 
         <record id="application_odoo9_clouder_postgres" model="clouder.application">
             <field name="name">Clouder 9 + Postgres</field>
-            <field name="code">clouder9-postgres</field>
+            <field name="code">clouder9-all</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo9_clouder')])]"/>
         </record>
 

@@ -119,7 +119,7 @@ class ClouderImage(models.Model):
                 "Name can only contains letters, digits and underscore"))
 
     @api.multi
-    def build_image(self, runner=False):
+    def build_image(self, model, server, runner=False, expose_ports=[], salt=True):
         """
         """
         return
@@ -150,9 +150,9 @@ class ClouderImage(models.Model):
         if 'template_ids' in vals:
             for template in res.template_ids:
                 for volume in self.env['clouder.image.volume'].search([('template_id', '=', template.id)]):
-                    volume.reset_template(records=[self])
+                    volume.reset_template(records=[res])
                 for port in self.env['clouder.image.port'].search([('template_id', '=', template.id)]):
-                    port.reset_template(records=[self])
+                    port.reset_template(records=[res])
         return res
 
     @api.multi

@@ -60,7 +60,7 @@
         <!-- app "data" -->
         <record id="application_registry_data" model="clouder.application">
             <field name="name">Registry Data</field>
-            <field name="code">registry-data</field>
+            <field name="code">data</field>
             <field name="type_id" ref="application_type_registry"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_registry_data"/>
@@ -71,7 +71,7 @@
         <!-- app "exec" -->
         <record id="application_registry_exec" model="clouder.application">
             <field name="name">Registry Exec</field>
-            <field name="code">registry-exec</field>
+            <field name="code">exec</field>
             <field name="type_id" ref="application_type_registry"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_registry_exec"/>
@@ -84,19 +84,8 @@
             <field name="code">registry</field>
             <field name="type_id" ref="application_type_registry"/>
             <field name="template_ids" eval="[(4, [ref('application_template_base_www')])]"/>
-            <field name="default_image_id" ref="image_registry_exec"/>
             <field name="child_ids" eval="[(4, [ref('application_registry_data'),ref('application_registry_exec')])]"/>
             <field name="base" eval="True"/>
-        </record>
-
-        <record id="application_template_container_registry" model="clouder.application.template">
-            <field name="name">Container Registry</field>
-        </record>
-        <record id="application_template_container_registry_link_registry" model="clouder.application.link">
-            <field name="template_id" ref="application_template_container_registry"/>
-            <field name="name" ref="application_registry"/>
-            <field name="container" eval="True"/>
-            <field name="auto" eval="True"/>
         </record>
 
     </data>

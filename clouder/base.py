@@ -62,6 +62,17 @@ class ClouderDomain(models.Model):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits - and dot"))
 
+    @api.multi
+    def write(self, vals):
+
+        if 'dns_id' in vals:
+            self.purge()
+
+        super(ClouderDomain, self).write(vals)
+
+        if 'dns_id' in vals:
+            self.deploy()
+
 
 class ClouderBase(models.Model):
     """
@@ -309,11 +320,7 @@ class ClouderBase(models.Model):
 
             # Adding missing option from sources
             for def_opt_key in sources_to_add:
-                if option_sources[def_opt_key].type == 'base' and option_sources[def_opt_key].auto and \
-                        not (
-                                    option_sources[def_opt_key].app_code and
-                                    option_sources[def_opt_key].app_code != application.code
-                        ):
+                if option_sources[def_opt_key].type == 'base' and option_sources[def_opt_key].auto:
                     options.append((0, 0, {
                             'name': option_sources[def_opt_key].id,
                             'value': option_sources[def_opt_key].get_default
@@ -890,7 +897,7 @@ class ClouderBaseLink(models.Model):
 
     base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade",
                               required=True)
-    name = fields.Many2one('clouder.application.link', 'Application Link',
+    name = fields.Many2one('clouder.application', 'Application',
                            required=True)
     target = fields.Many2one('clouder.container', 'Target')
     required = fields.Boolean('Required?')
@@ -915,7 +922,7 @@ class ClouderBaseLink(models.Model):
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify a link to "
-                  + self.name.name.name + " for the base "
+                  + self.name.name + " for the base "
                   + self.base_id.name)
             )
 
@@ -951,7 +958,7 @@ class ClouderBaseLink(models.Model):
     @api.multi
     def deploy_(self):
         self = self.with_context(no_enqueue=True)
-        self.do('deploy_link ' + self.name.name.name, 'deploy_exec', where=self.base_id)
+        self.do('deploy_link ' + self.name.name, 'deploy_exec', where=self.base_id)
 
     @api.multi
     def deploy_exec(self):
@@ -963,7 +970,7 @@ class ClouderBaseLink(models.Model):
     @api.multi
     def purge_(self):
         self = self.with_context(no_enqueue=True)
-        self.do('purge_link ' + self.name.name.name, 'purge_exec', where=self.base_id)
+        self.do('purge_link ' + self.name.name, 'purge_exec', where=self.base_id)
 
     @api.multi
     def purge_exec(self):

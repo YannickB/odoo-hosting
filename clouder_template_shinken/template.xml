@@ -39,23 +39,26 @@
             <field name="parent_from">clouder/clouder-shinken</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
         </record>
 
         <record id="application_shinken_data" model="clouder.application">
             <field name="name">Shinken Data</field>
-            <field name="code">shinken-data</field>
+            <field name="code">data</field>
             <field name="type_id" ref="application_type_shinken"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_shinken_data"/>
             <field name="sequence">1</field>
+            <field name="required" eval="True"/>
         </record>
         <record id="application_shinken_exec" model="clouder.application">
             <field name="name">Shinken Exec</field>
-            <field name="code">shinken-exec</field>
+            <field name="code">exec</field>
             <field name="type_id" ref="application_type_shinken"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_shinken_exec"/>
             <field name="sequence">2</field>
+            <field name="required" eval="True"/>
             <field name="update_strategy">auto</field>
         </record>
 
@@ -65,7 +68,6 @@
             <field name="type_id" ref="application_type_shinken"/>
             <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
             <field name="child_ids" eval="[(4, [ref('application_shinken_data'),ref('application_shinken_exec')])]"/>
-            <field name="default_image_id" ref="image_shinken_exec"/>
             <field name="base" eval="True"/>
         </record>
 
@@ -82,7 +84,6 @@
         <record id="application_template_base_www_link_shinken" model="clouder.application.link">
             <field name="template_id" ref="clouder.application_template_base_www"/>
             <field name="name" ref="application_shinken"/>
-            <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>

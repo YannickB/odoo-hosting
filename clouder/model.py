@@ -394,7 +394,9 @@ class ClouderModel(models.AbstractModel):
 
         :param vals: The values needed to create the record.
         """
+
         res = super(ClouderModel, self).create(vals)
+
         if self._autodeploy:
             res.hook_create()
             res.do('create', 'deploy_frame')
@@ -520,6 +522,9 @@ class ClouderModel(models.AbstractModel):
         :param path: The path where the command need to be executed.
         """
 
+        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].execute(cmd, stdin_arg=stdin_arg, path=path, ssh=ssh, server_name=server_name, username=username, executor=executor)
+
         res_ssh = self.connect(server_name=server_name, username=username)
         ssh, host = res_ssh['ssh'], res_ssh['host']
 
@@ -616,6 +621,9 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
+        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].get(source, destination, ssh=ssh)
+
         host = self.name
         if self._name == 'clouder.container':
             # TODO
@@ -639,6 +647,9 @@ class ClouderModel(models.AbstractModel):
         :param source: The path we need to get the file.
         :param destination: The path we need to send the file.
         """
+
+        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].send(source, destination, ssh=ssh, username=username)
 
         res_ssh = self.connect(username=username)
         ssh, server = res_ssh['ssh'], res_ssh['server']
@@ -776,7 +787,7 @@ class ClouderModel(models.AbstractModel):
         return result
 
 
-class ClouderTemplateOne2many(models.Model):
+class ClouderTemplateOne2many(models.AbstractModel):
 
     _name = 'clouder.template.one2many'
 

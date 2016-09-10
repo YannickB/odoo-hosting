@@ -40,7 +40,7 @@ class ClouderContainer(models.Model):
         super(ClouderContainer, self).deploy_post()
 
         for link in self.link_ids:
-            if link.name.name.code == 'postfix' and link.target:
+            if link.name.code == 'postfix' and link.target:
                 self.execute(['echo "root=' + self.email_sysadmin +
                              '" > /etc/ssmtp/ssmtp.conf'], username='root')
                 self.execute(['echo "mailhub=postfix:25" '
@@ -108,6 +108,56 @@ class ClouderContainer(models.Model):
             self.execute(['chmod', '+x', '/bin/openerp_mailgate.py'])
 
 
+class ClouderContainerLink(models.Model):
+    """
+    Add methods to manage the spamassassin specificities.
+    """
+
+    _inherit = 'clouder.container.link'
+
+    @api.multi
+    def deploy_link(self):
+        """
+        Deploy the configuration file to watch the container.
+        """
+        super(ClouderContainerLink, self).deploy_link()
+        if self.name.type_id.name == 'spamassassin' \
+                and self.container_id.application_id.type_id.name == 'postfix':
+
+            self.container_id.execute([
+                "echo '#spamassassin-flag'"
+                ">> /etc/postfix/master.cf"])
+            self.container_id.execute([
+                "echo 'smtp      inet  n       -       -       -       -       "
+                "smtpd -o content_filter=spamassassin' "
+                ">> /etc/postfix/master.cf"])
+            self.container_id.execute([
+                "echo 'spamassassin unix -     n       n       -       -       "
+                "pipe user=nobody argv=/usr/bin/spamc -d " + self.target.server_id.ip + " -p " + self.target.ports['spamd']['hostport'] + " -f -e /usr/sbin/sendmail "
+                "-oi -f \${sender} \${recipient}' "
+                ">> /etc/postfix/master.cf"])
+            self.container_id.execute([
+                "echo '#spamassassin-endflag'"
+                ">> /etc/postfix/master.cf"])
+
+            self.container_id.execute(
+                ['/etc/init.d/postfix', 'reload'])
+
+    @api.multi
+    def purge_link(self):
+        """
+        Remove the configuration file.
+        """
+        super(ClouderContainerLink, self).purge_link()
+        if self.name.type_id.name == 'spamassassin' \
+                and self.container_id.application_id.type_id.name == 'postfix':
+
+            self.container_id.execute([
+                'sed', '-i',
+                '"/#spamassassin-flag/,/#spamassassin-endflag/d"',
+                '/etc/postfix/master.cf'])
+            self.container_id.execute(
+                ['/etc/init.d/postfix', 'reload'])
 
 
 class ClouderBaseLink(models.Model):
@@ -166,10 +216,10 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
 
-        if self.name.name.code == 'postfix':
+        if self.name.type_id.name == 'postfix':
             dns_link = self.search([
                 ('base_id', '=', self.base_id.id),
-                ('name.name.code', '=', 'bind')])
+                ('name.type_id.name', '=', 'bind')])
             if dns_link and dns_link.target:
                 base = self.base_id
                 self.target.execute([
@@ -203,10 +253,10 @@ class ClouderBaseLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.name.code == 'postfix':
+        if self.name.type_id.name == 'postfix':
             dns_link = self.search([
                 ('base_id', '=', self.base_id.id),
-                ('name.name.code', '=', 'bind')])
+                ('name.type_id.name', '=', 'bind')])
             if dns_link and dns_link.target:
                 base = self.base_id
                 self.target.execute(['rm', '-rf', '/opt/opendkim/keys/' + base.fullname])

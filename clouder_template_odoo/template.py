@@ -48,7 +48,7 @@ class ClouderContainer(models.Model):
             config_file = '/opt/odoo/etc/odoo.conf'
             if self.application_id.code == 'data':
                 self.execute(['sed', '-i', '"s/APPLICATION/' +
-                             self.application_id.parent_id.fullcode
+                             self.parent_id.container_id.application_id.fullcode
                              .replace('-', '_') + '/g"', config_file])
                 self.execute(['sed', '-i', 's/DB_SERVER/' +
                              self.db_server + '/g',
@@ -436,7 +436,7 @@ class ClouderBaseLink(models.Model):
     def nginx_config_update(self, target):
         res = super(ClouderBaseLink, self).nginx_config_update(target)
 
-        if self.name.name.code == 'proxy' \
+        if self.name.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'odoo':
 
             target.execute([
@@ -452,7 +452,7 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
 
-        if self.name.name.code == 'postfix' \
+        if self.name.type_id.name == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
 
             self.log("client = erppeek.Client('http://" +
@@ -509,7 +509,7 @@ class ClouderBaseLink(models.Model):
         Purge postfix configuration.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.name.code == 'postfix' \
+        if self.name.type_id.name == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
             self.target.execute([
                 'sed', '-i',

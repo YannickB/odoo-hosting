@@ -133,7 +133,7 @@ class ClouderSave(models.Model):
         """
         Property returning the container server which will be restored.
         """
-        return self.container_restore_to_server_id.name \
+        return self.container_restore_to_server_id.fulldomain \
             or self.base_container_server or self.repo_id.container_server
 
     @property
@@ -187,9 +187,9 @@ class ClouderSave(models.Model):
 
             container_links = {}
             for link in container.link_ids:
-                container_links[link.name.name.code] = {
+                container_links[link.name.code] = {
                     'name': link.name.id,
-                    'code': link.name.name.code,
+                    'code': link.name.code,
                     'target': link.target and link.target.id or False
                 }
 
@@ -197,7 +197,7 @@ class ClouderSave(models.Model):
                 'environment': container.environment_id.prefix,
                 'container_fullname': container.fullname,
                 'container_suffix': container.suffix,
-                'container_server': container.server_id.name,
+                'container_server': container.server_id.fulldomain,
                 'container_volumes_comma': container.volumes_save,
                 'container_app': container.application_id.code,
                 'container_img': container.image_id.name,
@@ -228,7 +228,7 @@ class ClouderSave(models.Model):
                 'base_container_environment': base.container_id.environment_id.prefix,
                 'base_container_suffix': base.container_id.suffix,
                 'base_container_server':
-                base.container_id.server_id.name,
+                base.container_id.server_id.fulldomain,
                 'base_admin_name': base.admin_name,
                 'base_admin_password': base.admin_password,
                 'base_admin_email': base.admin_email,
@@ -318,14 +318,14 @@ class ClouderSave(models.Model):
                     '/home/backup/.ssh/config', username='backup')
         backup.send(
             self.home_directory + '/.ssh/keys/' +
-            self.container_id.server_id.name + '.pub',
+            self.container_id.server_id.fulldomain + '.pub',
             '/home/backup/.ssh/keys/' +
-            self.container_id.server_id.name + '.pub', username='backup')
+            self.container_id.server_id.fulldomain + '.pub', username='backup')
         backup.send(
             self.home_directory + '/.ssh/keys/' +
-            self.container_id.server_id.name,
+            self.container_id.server_id.fulldomain,
             '/home/backup/.ssh/keys/' +
-            self.container_id.server_id.name, username='backup')
+            self.container_id.server_id.fulldomain, username='backup')
         backup.execute(['chmod', '-R', '700', '/home/backup/.ssh'],
                        username='backup')
 
@@ -334,7 +334,7 @@ class ClouderSave(models.Model):
 
         backup.execute([
             'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-            self.container_id.server_id.name + ':' + directory + '/',
+            self.container_id.server_id.fulldomain + ':' + directory + '/',
             directory], username='backup')
 
         if backup.backup_method == 'simple':
@@ -674,12 +674,12 @@ class ClouderSave(models.Model):
                     '/home/backup/.ssh/config', username='backup')
         backup.send(
             self.home_directory + '/.ssh/keys/' +
-            container.server_id.name + '.pub',
-            '/home/backup/.ssh/keys/' + container.server_id.name + '.pub',
+            container.server_id.fulldomain + '.pub',
+            '/home/backup/.ssh/keys/' + container.server_id.fulldomain + '.pub',
             username='backup')
         backup.send(
-            self.home_directory + '/.ssh/keys/' + container.server_id.name,
-            '/home/backup/.ssh/keys/' + container.server_id.name,
+            self.home_directory + '/.ssh/keys/' + container.server_id.fulldomain,
+            '/home/backup/.ssh/keys/' + container.server_id.fulldomain,
             username='backup')
         backup.execute(['chmod', '-R', '700', '/home/backup/.ssh'],
                        username='backup')
@@ -704,7 +704,7 @@ class ClouderSave(models.Model):
 
         backup.execute([
             'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-            directory + '/', container.server_id.name + ':' + directory],
+            directory + '/', container.server_id.fulldomain + ':' + directory],
             username='backup')
         backup.execute(['rm', '-rf', directory + '*'], username='backup')
         # backup.execute(['rm', '/home/backup/.ssh/keys/*'], username='backup')

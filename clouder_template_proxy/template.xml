@@ -21,23 +21,26 @@
             <field name="parent_from">clouder/clouder-proxy</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
         </record>
 >
         <record id="application_proxy_data" model="clouder.application">
             <field name="name">Proxy Data</field>
-            <field name="code">proxy-data</field>
+            <field name="code">data</field>
             <field name="type_id" ref="application_type_proxy"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_proxy_data"/>
             <field name="sequence">1</field>
+            <field name="required" eval="True"/>
         </record>
         <record id="application_proxy_exec" model="clouder.application">
             <field name="name">Proxy Exec</field>
-            <field name="code">proxy-exec</field>
+            <field name="code">exec</field>
             <field name="type_id" ref="application_type_proxy"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_proxy_exec"/>
             <field name="sequence">2</field>
+            <field name="required" eval="True"/>
             <field name="update_strategy">auto</field>
         </record>
         <record id="application_proxy" model="clouder.application">
@@ -45,7 +48,6 @@
             <field name="code">proxy</field>
             <field name="type_id" ref="application_type_proxy"/>
             <field name="child_ids" eval="[(4, [ref('application_proxy_data'),ref('application_proxy_exec')])]"/>
-            <field name="default_image_id" ref="image_proxy_exec"/>
         </record>
 
         <record id="application_template_base_www_link_proxy" model="clouder.application.link">

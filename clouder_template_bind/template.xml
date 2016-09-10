@@ -46,23 +46,26 @@
             <field name="parent_from">clouder/clouder-bind</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
         </record>
 
         <record id="application_bind_data" model="clouder.application">
             <field name="name">Bind Data</field>
-            <field name="code">bind-data</field>
+            <field name="code">data</field>
             <field name="type_id" ref="application_type_bind"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_bind_data"/>
             <field name="sequence">1</field>
+            <field name="required" eval="True"/>
         </record>
         <record id="application_bind_exec" model="clouder.application">
             <field name="name">Bind Exec</field>
-            <field name="code">bind-exec</field>
+            <field name="code">exec</field>
             <field name="type_id" ref="application_type_bind"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_bind_exec"/>
             <field name="sequence">2</field>
+            <field name="required" eval="True"/>
             <field name="update_strategy">auto</field>
         </record>
         <record id="application_bind" model="clouder.application">
@@ -70,7 +73,6 @@
             <field name="code">bind</field>
             <field name="type_id" ref="application_type_bind"/>
             <field name="child_ids" eval="[(4, [ref('application_bind_data'),ref('application_bind_exec')])]"/>
-            <field name="default_image_id" ref="image_bind_exec"/>
         </record>
 
         <record id="application_template_base_www_link_bind" model="clouder.application.link">

@@ -181,8 +181,8 @@
                         <field name="suffix"/>
                         <field name="application_id"/>
                         <field name="server_id"/>
-                        <field name="image_id"/>
-                        <field name="image_version_id" domain="[('image_id','=',image_id)]"/>
+                        <field name="image_id" attrs="{'invisible': [('child_ids','!=', [])], 'required': [('child_ids','=', [])]}"/>
+                        <field name="image_version_id" domain="[('image_id','=',image_id)]" attrs="{'invisible': [('child_ids','!=', [])]}"/>
                         <newline/>
                         <field name="volumes_from_ids" widget="many2many_tags"/>
                         <field name="public"/>
@@ -325,12 +325,15 @@
                         <field name="runner_id" widget="selection"/>
                         <newline/>
                         <field name="salt_minion_id"/>
+                        <field name="control_dns"/>
                     </group>
                     <button name="reinstall" string="Reinstall" type="object"/>
                     <button name="purge" string="Purge" type="object"/>
                     <button name="test_connection" string="Test connection" type="object"/>
                     <button name="start_containers" string="Restart Containers" type="object"/>
                     <button name="stop_containers" string="Stop Containers" type="object"/>
+                    <button name="deploy_dns" string="Reinstall DNS" type="object"/>
+                    <button name="purge_dns" string="Purge DNS" type="object"/>
                     <button name="clean" string="Clean disk space" type="object"/>
                     <newline/>
                     <group col="4">
@@ -350,6 +353,7 @@
             <field name="arch" type="xml">
                 <tree string="Servers">
                     <field name="name"/>
+                    <field name="domain_id"/>
                     <field name="runner_id"/>
                     <field name="ip"/>
                     <field name="ssh_port"/>
@@ -646,9 +650,9 @@
                 <form string="Application" version="7.0">
                     <group col="4">
                         <field name="name"/>
-                        <field name="code"/>
-                        <field name="type_id"/>
                         <field name="template_ids" widget="many2many_tags"/>
+                        <field name="type_id"/>
+                        <field name="code"/>
                         <field name="base"/>
                         <field name="tag_ids" widget="many2many_tags"/>
                         <newline/>
@@ -718,6 +722,7 @@
             <field name="arch" type="xml">
                 <tree string="Applications" default_order="name">
                     <field name="name"/>
+                    <field name="type_id"/>
                     <field name="code"/>
                     <field name="tag_ids" widget="many2many_tags"/>
                 </tree>
@@ -818,7 +823,7 @@
                     <group col="4">
                         <field name="parent_version_id" domain="[('image_id','=',parent_id)]" attrs="{'invisible': [('parent_id','=',False)],'required': [('parent_id','!=',False)]}"/>
                         <field name="parent_from" attrs="{'invisible': [('parent_id','!=',False)],'required': [('parent_id','=',False)]}"/>
-                        <field name="registry_id" attrs="{'invisible': [('name','in',['img_registry_data','img_registry_exec'])],'required': [('name','not in',['img_registry_data','img_registry_exec'])]}" domain="[('application_id.type_id.role_ids.name','=','registry'),('application_id.child_ids','!=',False)]"/>
+                        <field name="registry_id" attrs="{'invisible': [('name','in',['img_registry_data','img_registry_exec'])],'required': [('name','not in',['img_registry_data','img_registry_exec'])]}" domain="[('application_id.type_id.tag_ids.name','=','registry'),('application_id.child_ids','!=',False)]"/>
                     </group>
                     <button name="build" string="Build" type="object"/>
                     <field name="version_ids" colspan="4"/>

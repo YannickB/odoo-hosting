@@ -68,7 +68,7 @@ class ClouderContainerLink(models.Model):
         Deploy the configuration file to watch the container.
         """
         super(ClouderContainerLink, self).deploy_link()
-        if self.name.name.code == 'postgres':
+        if self.name.type_id.name == 'postgres':
             self.log('Creating database user')
 
             container = self.container_id
@@ -99,7 +99,7 @@ class ClouderContainerLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderContainerLink, self).purge_link()
-        if self.name.name.code == 'postgres':
+        if self.name.type_id.name == 'postgres':
             container = self.container_id
             container.database.execute([
                 'psql', '-c', '"DROP USER ' + container.db_user + ';"'],

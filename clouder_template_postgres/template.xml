@@ -59,26 +59,29 @@
             <field name="template_ids" eval="[(4, [ref('image_template_postgres_exec')])]"/>
             <field name="current_version">9.4</field>
             <field name="parent_from">postgres:9.4</field>
+            <field name="volumes_from">data</field>
         </record>
 
 
         <record id="application_postgres_data" model="clouder.application">
             <field name="name">Postgresql Data</field>
-            <field name="code">postgres-data</field>
+            <field name="code">data</field>
             <field name="type_id" ref="application_type_postgres"/>
             <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_postgres_data"/>
             <field name="sequence">1</field>
+            <field name="required" eval="True"/>
         </record>
 
         <record id="application_postgres_exec" model="clouder.application">
             <field name="name">Postgresql Exec</field>
-            <field name="code">postgres-exec</field>
+            <field name="code">exec</field>
             <field name="type_id" ref="application_type_postgres"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_postgres_exec"/>
             <field name="sequence">2</field>
+            <field name="required" eval="True"/>
             <field name="update_strategy">auto</field>
         </record>
 
@@ -87,7 +90,6 @@
             <field name="code">postgres</field>
             <field name="type_id" ref="application_type_postgres"/>
             <field name="child_ids" eval="[(4, [ref('application_postgres_data'),ref('application_postgres_exec')])]"/>
-            <field name="default_image_id" ref="image_postgres_exec"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
         </record>

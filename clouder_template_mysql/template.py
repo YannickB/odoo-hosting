@@ -107,7 +107,7 @@ class ClouderContainerLink(models.Model):
         Deploy the configuration file to watch the container.
         """
         super(ClouderContainerLink, self).deploy_link()
-        if self.name.name.code == 'mysql':
+        if self.name.type_id.name == 'mysql':
             self.log('Creating database user')
 
             self.container_id.database.execute([
@@ -123,7 +123,7 @@ class ClouderContainerLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderContainerLink, self).purge_link()
-        if self.name.name.code == 'mysql':
+        if self.name.type_id.name == 'mysql':
             self.container_id.database.execute([
                 "mysql -u root -p'" + self.container_id.database.root_password +
                 "' -se \"drop user " + self. container_id.db_user + ";\""])

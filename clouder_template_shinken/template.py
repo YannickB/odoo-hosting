@@ -36,7 +36,7 @@ class ClouderServer(models.Model):
         """
         Property returning the shinken config file.
         """
-        return '/usr/local/shinken/etc/hosts/' + self.name + '.cfg'
+        return '/usr/local/shinken/etc/hosts/' + self.fulldomain + '.cfg'
 
 
 class ClouderContainer(models.Model):
@@ -177,7 +177,7 @@ class ClouderContainerLink(models.Model):
         Deploy the configuration file to watch the container.
         """
         super(ClouderContainerLink, self).deploy_link()
-        if self.name.name.code == 'shinken':
+        if self.name.type_id.name == 'shinken':
             config_file = 'container-shinken'
             if not self.container_id.autosave:
                 config_file = 'container-shinken-nosave'
@@ -227,7 +227,7 @@ class ClouderContainerLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderContainerLink, self).purge_link()
-        if self.name.name.code == 'shinken':
+        if self.name.type_id.name == 'shinken':
             self.target.execute(['rm', self.container_id.shinken_configfile],
                                 username='shinken')
             self.target.execute(
@@ -248,7 +248,7 @@ class ClouderBaseLink(models.Model):
         Deploy the configuration file to watch the base.
         """
         super(ClouderBaseLink, self).deploy_link()
-        if self.name.name.code == 'shinken':
+        if self.name.type_id.name == 'shinken':
             config_file = 'base-shinken'
             if not self.base_id.autosave:
                 config_file = 'base-shinken-nosave'
@@ -298,7 +298,7 @@ class ClouderBaseLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.name.code == 'shinken':
+        if self.name.type_id.name == 'shinken':
             self.target.execute(['rm', self.base_id.shinken_configfile],
                                 username='shinken')
             self.target.execute(

@@ -34,7 +34,7 @@ class ClouderApplicationTypeOption(models.Model):
     @api.multi
     def generate_default(self):
         res = super(ClouderApplicationTypeOption, self).generate_default()
-        if self.name == 'token' and self.apptype_id.name == 'gitlab':
+        if self.name == 'token' and self.application_type_id.name == 'gitlab':
             res = model.generate_random_password(20)
         return res
 
@@ -138,13 +138,13 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).deploy_link()
 
-        if self.name.name.code == 'gitlab' \
+        if self.name.type_id.name == 'gitlab' \
                 and self.container_id.application_id.type_id.name == 'gitlabci':
             if self.target.base_ids:
                 container = self.target.childs['data']
                 base = self.target.base_ids[0]
-                token = self.target.childs['exec'].execute(['psql', '-h', 'postgres', '-U',  container.db_user, '-tA', '-c', '"SELECT runners_registration_token FROM application_settings ORDER BY id desc LIMIT 1;"', base.fullname_])
-                self.container_id.childs['exec'].execute([
+                token = self.target.execute(['psql', '-h', 'postgres', '-U',  container.db_user, '-tA', '-c', '"SELECT runners_registration_token FROM application_settings ORDER BY id desc LIMIT 1;"', base.fullname_])
+                self.container_id.execute([
                     'gitlab-runner', 'register', '-n',
                     '-u', 'https://' + base.fulldomain + '/ci',
                     '-r', token.replace('\n',''),
@@ -157,7 +157,7 @@ class ClouderContainerLink(models.Model):
                 self.container_id.execute(['sed', '-i', '"s/concurrent = [0-9]*/concurrent = ' + self.container_id.options['concurrent']['value'] + '/g"',
                              '/etc/gitlab-runner/config.toml'])
 
-        elif self.name.name.type_id.name == 'gitlab' and self.container_id.application_id.code == 'files':
+        elif self.name.type_id.name == 'gitlab' and self.container_id.application_id.check_tags(['files']):
             if self.target.base_ids:
 
                 group_id = self.gitlab_ressource('group', self.container_id.environment_id.prefix, data={'name': self.container_id.environment_id.name})['id']
@@ -177,7 +177,7 @@ class ClouderContainerLink(models.Model):
                     self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
                     self.gitlab_ressource('variable', 'REGISTRY_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
 
-        if self.name.name.code == 'registry':
+        if self.name.type_id.name == 'registry':
             if 'gitlab' in self.container_id.links:
                 self.container_id.links['gitlab'].deploy_link()
 
@@ -188,12 +188,12 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).purge_link()
 
-        if self.name.name.code == 'gitlab' \
+        if self.name.type_id.name == 'gitlab' \
                 and self.container_id.application_id.type_id.name == 'gitlabci':
             if self.target.base_ids and 'exec' in self.container_id.childs:
                 container = self.container_id.childs['exec']
                 base = self.target.base_ids[0]
-                self.container_id.childs['exec'].execute([
+                self.container_id.execute([
                     'gitlab-runner', 'unregister',
                     '-u', 'https://' + base.fulldomain + '/ci',
                     '-n', self.container_id.fullname,
@@ -222,23 +222,31 @@ class ClouderBase(models.Model):
             ], username='postgres')
             self.container_id.childs['data'].execute(['sed', '-i', '"s/database: [0-9a-z_]*/database: ' + self.fullname_ + '/g"',
                           '/opt/gitlab/config/database.yml'])
-            self.container_id.childs['exec'].execute(['yes', 'yes', '|', 'bundle', 'exec', 'rake', 'gitlab:setup', 'RAILS_ENV=production', 'GITLAB_ROOT_PASSWORD=' + self.admin_password, 'GITLAB_ROOT_EMAIL=' + self.admin_email], path='/opt/gitlab/files', username='git')
-            self.container_id.childs['exec'].execute(['bundle', 'exec', 'rake', 'assets:precompile', 'RAILS_ENV=production'], path='/opt/gitlab/files', username='git')
+            self.container_id.database.execute([
+                    'psql', '-c',
+                    '"update pg_database set datallowconn = \'false\' '
+                    'where datname = \'' + self.fullname_ + '\'; '
+                    'SELECT pg_terminate_backend(pid) '
+                    'FROM pg_stat_activity WHERE datname = \''
+                    + self.fullname_ + '\';"'
+                ], username='postgres')
+            self.container_id.execute(['yes', 'yes', '|', 'bundle', 'exec', 'rake', 'gitlab:setup', 'RAILS_ENV=production', 'GITLAB_ROOT_PASSWORD=' + self.admin_password, 'GITLAB_ROOT_EMAIL=' + self.admin_email], path='/opt/gitlab/files', username='git')
+            self.container_id.execute(['bundle', 'exec', 'rake', 'assets:precompile', 'RAILS_ENV=production'], path='/opt/gitlab/files', username='git')
             container = self.container_id.childs['data']
-            self.container_id.childs['exec'].execute(['psql', '-h', 'postgres', '-U',  self.container_id.db_user, '-c', '"INSERT INTO personal_access_tokens (user_id, token, name, created_at, updated_at) VALUES (1, \'' + self.options['token']['value'] + '\', \'Clouder\', \'' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\', \'' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\')"', self.fullname_])
-            self.container_id.childs['exec'].execute(['mkdir', '-p', '/etc/nginx/ssl'])
-            self.container_id.childs['exec'].execute([
+            self.container_id.execute(['psql', '-h', 'postgres', '-U',  self.container_id.db_user, '-c', '"INSERT INTO personal_access_tokens (user_id, token, name, created_at, updated_at) VALUES (1, \'' + self.options['token']['value'] + '\', \'Clouder\', \'' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\', \'' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\')"', self.fullname_])
+            self.container_id.execute(['mkdir', '-p', '/etc/nginx/ssl'])
+            self.container_id.execute([
                     'openssl', 'req', '-x509', '-nodes', '-days', '365',
                     '-newkey', 'rsa:2048', '-out', '/etc/nginx/ssl/gitlab.crt',
                     ' -keyout', '/etc/nginx/ssl/gitlab.key', '-subj', '"/C=FR/L=Paris/O=' +
                     self.domain_id.organisation +
                     '/CN=' + self.fulldomain + '"'])
-            self.container_id.childs['exec'].execute(['cp', '/opt/gitlab/files/lib/support/nginx/gitlab-ssl', '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.childs['exec'].execute(['sed', '-i', '"s/server_name [A-Z0-9a-z_.]*;/server_name ' + self.fulldomain + ';/g"', '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.childs['exec'].execute(['sed', '-i', '"s/\/home\/git\/gitlab/\/opt\/gitlab\/files/g"', '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.childs['exec'].execute(['ln', '-s', '/etc/nginx/sites-available/' + self.fullname, '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.childs['exec'].execute(['chown', '-R', 'git:git', '/opt/gitlab'])
-            self.container_id.childs['exec'].start()
+            self.container_id.execute(['cp', '/opt/gitlab/files/lib/support/nginx/gitlab-ssl', '/etc/nginx/sites-available/' + self.fullname])
+            self.container_id.execute(['sed', '-i', '"s/server_name [A-Z0-9a-z_.]*;/server_name ' + self.fulldomain + ';/g"', '/etc/nginx/sites-available/' + self.fullname])
+            self.container_id.execute(['sed', '-i', '"s/\/home\/git\/gitlab/\/opt\/gitlab\/files/g"', '/etc/nginx/sites-available/' + self.fullname])
+            self.container_id.execute(['ln', '-s', '/etc/nginx/sites-available/' + self.fullname, '/etc/nginx/sites-enabled/' + self.fullname])
+            self.container_id.execute(['chown', '-R', 'git:git', '/opt/gitlab'])
+            self.container_id.start()
         return res
 
     @api.multi
@@ -247,9 +255,9 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'gitlab':
-            self.container_id.childs['exec'].execute(['rm', '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.childs['exec'].execute(['rm', '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.childs['exec'].start()
+            self.container_id.execute(['rm', '/etc/nginx/sites-enabled/' + self.fullname])
+            self.container_id.execute(['rm', '/etc/nginx/sites-available/' + self.fullname])
+            self.container_id.start()
         return res
 
 
@@ -266,12 +274,12 @@ class ClouderBaseLink(models.Model):
         Configure the proxy to redirect to the application port.
         """
         super(ClouderBaseLink, self).deploy_link()
-        if self.name.name.code == 'proxy' and self.base_id.application_id.type_id.name == 'gitlab':
+        if self.name.type_id.name == 'proxy' and self.base_id.application_id.type_id.name == 'gitlab':
             key = self.target.execute(['cat', '/etc/ssl/private/' + self.base_id.fulldomain + '.key'])
             cert = self.target.execute(['cat', '/etc/ssl/certs/' + self.base_id.fulldomain + '.crt'])
-            self.base_id.container_id.childs['exec'].execute([
+            self.base_id.container_id.execute([
                 'echo', '"' + cert + '"', '>', '/etc/nginx/ssl/gitlab.crt'
             ])
-            self.base_id.container_id.childs['exec'].execute([
+            self.base_id.container_id.execute([
                 'echo', '"' + key + '"', '>', '/etc/nginx/ssl/gitlab.key'])
-            self.base_id.container_id.childs['exec'].execute(['/etc/init.d/nginx', 'reload'])
+            self.base_id.container_id.execute(['/etc/init.d/nginx', 'reload'])
