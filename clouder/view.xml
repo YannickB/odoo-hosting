@@ -103,8 +103,9 @@
                             <field name="link_ids" colspan="4">
                                 <tree string="Links" editable="bottom">
                                     <field name="name"/>
-                                    <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <field name="target" domain="[('application_id','=',name)]"/>
                                     <field name="required"/>
+                                    <field name="auto"/>
                                     <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>
                                     <button name="purge_" type="object" string="Purge"/>
@@ -217,8 +218,9 @@
                             <field name="link_ids" colspan="4">
                                 <tree string="Links" editable="bottom">
                                     <field name="name"/>
-                                    <field name="target" domain="[('application_id.link_target_ids','in',name)]"/>
+                                    <field name="target" domain="[('application_id','=',name)]"/>
                                     <field name="required"/>
+                                    <field name="auto"/>
                                     <field name="make_link"/>
                                     <field name="deployed"/>
                                     <button name="deploy_" type="object" string="Reload"/>

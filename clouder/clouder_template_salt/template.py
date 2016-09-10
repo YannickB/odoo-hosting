@@ -71,6 +71,7 @@ class ClouderServer(models.Model):
                     '"/  \'' + self.fulldomain + '\'/,/END\s' + self.fulldomain + '/d"',
                     '/srv/pillar/top.sls'])
                 master.execute(['rm', '/etc/salt/pki/master/minions/' + self.fulldomain])
+                master.execute(['rm', '/etc/salt/pki/master/minions_denied/' + self.fulldomain])
             except:
                 pass
         try:

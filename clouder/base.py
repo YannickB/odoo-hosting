@@ -340,6 +340,7 @@ class ClouderBase(models.Model):
                         link = {
                             'name': link[2].get('name', False),
                             'required': link[2].get('required', False),
+                            'auto': link[2].get('auto', False),
                             'next': link[2].get('next', False)
                         }
                         # This case means we do not have an odoo recordset and need to load the link manually
@@ -349,6 +350,7 @@ class ClouderBase(models.Model):
                         link = {
                             'name': getattr(link, 'name', False),
                             'required': getattr(link, 'required', False),
+                            'auto': getattr(link, 'auto', False),
                             'next': getattr(link, 'next', False)
                         }
                     # Keeping the link if there is a match with the sources
@@ -364,6 +366,7 @@ class ClouderBase(models.Model):
                 link = {
                     'name': getattr(link_sources[def_key_link], 'name', False),
                     'required': getattr(link_sources[def_key_link], 'required', False),
+                    'auto': getattr(link_sources[def_key_link], 'auto', False),
                     'next': getattr(link_sources[def_key_link], 'next', False),
                     'source': link_sources[def_key_link]
                 }
@@ -396,6 +399,7 @@ class ClouderBase(models.Model):
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link['source'].name.id,
                                          'required': link['required'],
+                                         'auto': link['auto'],
                                          'target': next_id}))
             # Replacing old links
             vals['link_ids'] = links
@@ -901,6 +905,7 @@ class ClouderBaseLink(models.Model):
                            required=True)
     target = fields.Many2one('clouder.container', 'Target')
     required = fields.Boolean('Required?')
+    auto = fields.Boolean('Auto?')
     deployed = fields.Boolean('Deployed?', readonly=True)
 
     @property

@@ -178,48 +178,47 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).deploy_link()
         if self.name.type_id.name == 'shinken':
-            config_file = 'container-shinken'
-            if not self.container_id.autosave:
-                config_file = 'container-shinken-nosave'
-            self.target.send(
-                modules.get_module_path('clouder_template_shinken') +
-                '/res/' + config_file + '.config',
-                self.container_id.shinken_configfile, username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/BACKUPIP/' +
-                self.container_id.backup_ids[0].server_id.ip + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/PORT/' +
-                self.container_id.backup_ids[0].ports['nrpe']['hostport']
-                + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i', '"s/METHOD/' +
-                self.container_id.backup_ids[0].backup_method + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i', '"s/TYPE/container/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/BACKUPIP/' +
-                self.container_id.backup_ids[0].server_id.ip + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/UNIQUE_NAME/' + self.container_id.fullname + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/HOST/' + self.container_id.server_id.name + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
+            if self.container_id.autosave:
+                config_file = 'container-shinken'
+                self.target.send(
+                    modules.get_module_path('clouder_template_shinken') +
+                    '/res/' + config_file + '.config',
+                    self.container_id.shinken_configfile, username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/BACKUPIP/' +
+                    self.container_id.backup_ids[0].server_id.ip + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/PORT/' +
+                    self.container_id.backup_ids[0].ports['nrpe']['hostport']
+                    + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i', '"s/METHOD/' +
+                    self.container_id.backup_ids[0].backup_method + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i', '"s/TYPE/container/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/BACKUPIP/' +
+                    self.container_id.backup_ids[0].server_id.ip + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/UNIQUE_NAME/' + self.container_id.fullname + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/HOST/' + self.container_id.server_id.name + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
 
-            self.target.execute(
-                ['/usr/local/shinken/bin/init.d/shinken', 'reload'],
-                username='shinken')
+                self.target.execute(
+                    ['/usr/local/shinken/bin/init.d/shinken', 'reload'],
+                    username='shinken')
 
     @api.multi
     def purge_link(self):

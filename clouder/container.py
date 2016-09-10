@@ -319,6 +319,7 @@ class ClouderServer(models.Model):
 
     @api.multi
     def oneclick_deploy_exec(self):
+        #TODO check that ns record of the domain is the IP
         getattr(self, self.oneclick_id.function + '_deploy')()
 
     @api.multi
@@ -721,6 +722,7 @@ class ClouderContainer(models.Model):
                         link = {
                             'name': link[2].get('name', False),
                             'required': link[2].get('required', False),
+                            'auto': link[2].get('auto', False),
                             'make_link': link[2].get('make_link', False),
                             'next': link[2].get('next', False)
                         }
@@ -731,6 +733,7 @@ class ClouderContainer(models.Model):
                         link = {
                             'name': getattr(link, 'name', False),
                             'required': getattr(link, 'required', False),
+                            'auto': getattr(link, 'auto', False),
                             'make_link': getattr(link, 'make_link', False),
                             'next': getattr(link, 'next', False)
                         }
@@ -747,6 +750,7 @@ class ClouderContainer(models.Model):
                 link = {
                     'name': getattr(link_sources[def_key_link], 'name', False),
                     'required': getattr(link_sources[def_key_link], 'required', False),
+                    'auto': getattr(link_sources[def_key_link], 'auto', False),
                     'make_link': getattr(link_sources[def_key_link], 'make_link', False),
                     'next': getattr(link_sources[def_key_link], 'next', False),
                     'source': link_sources[def_key_link]
@@ -779,6 +783,7 @@ class ClouderContainer(models.Model):
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link['source'].name.id,
                                          'required': link['source'].required,
+                                         'auto': link['source'].auto,
                                          'make_link': link['source'].make_link,
                                          'target': next_id}))
             # Replacing old links
@@ -1328,19 +1333,28 @@ class ClouderContainer(models.Model):
         if self.child_ids:
             for child in self.child_ids:
                 child.create_child_exec()
-            return
 
-        self.hook_deploy()
+        else:
+            self.hook_deploy()
 
-        time.sleep(3)
+            time.sleep(3)
 
-        self.deploy_post()
+            self.deploy_post()
 
-        self.start()
+            self.start()
 
-        # For shinken
-        self = self.with_context(save_comment='First save')
-        self.save_exec(no_enqueue=True)
+            # For shinken
+            self = self.with_context(save_comment='First save')
+            self.save_exec(no_enqueue=True)
+
+        links = self.env['clouder.container.link'].search([('name', '=', self.application_id.id),('auto','=',True),('target','=',False)])
+        links.write({'target': self.id})
+        for link in links:
+            link.deploy_link()
+        links = self.env['clouder.base.link'].search([('name', '=', self.application_id.id),('auto','=',True),('target','=',False)])
+        links.write({'target': self.id})
+        for link in links:
+            link.deploy_link()
 
         return
 
@@ -1536,6 +1550,7 @@ class ClouderContainerLink(models.Model):
         'clouder.application', 'Application', required=True)
     target = fields.Many2one('clouder.container', 'Target')
     required = fields.Boolean('Required?')
+    auto = fields.Boolean('Auto?')
     make_link = fields.Boolean('Make docker link?')
     deployed = fields.Boolean('Deployed?', readonly=True)
 

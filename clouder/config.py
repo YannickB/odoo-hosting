@@ -122,7 +122,7 @@ class ClouderConfigSettings(models.Model):
 
         links = self.env['clouder.container.link'].search(
             [('container_id.application_id.type_id.name', '=', 'backup'),
-             ('name.name.code', '=', 'backup-upl')])
+             ('name.code', '=', 'backup-upload')])
         for link in links:
             link.deploy_exec()
 

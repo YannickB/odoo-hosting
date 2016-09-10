@@ -213,9 +213,9 @@ class ClouderSave(models.Model):
 
             base_links = {}
             for link in base.link_ids:
-                base_links[link.name.name.code] = {
+                base_links[link.name.code] = {
                     'name': link.name.id,
-                    'code': link.name.name.code,
+                    'code': link.name.code,
                     'target': link.target and link.target.id or False
                 }
 
