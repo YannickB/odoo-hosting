@@ -626,7 +626,7 @@ class ClouderSave(models.Model):
                     }
                     self = self.with_context(base_restoration=True)
                     base = self.env['clouder.base'].create(base_vals)
-
+                    self = self.with_context(base_restoration=False)
                 else:
                     self.log("A corresponding base was found")
                     base = bases[0]

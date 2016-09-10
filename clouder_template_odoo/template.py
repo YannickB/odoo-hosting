@@ -408,7 +408,7 @@ class ClouderBase(models.Model):
             # except:
             #     pass
 
-            self.salt_master.execute(['salt', self.container_id.server_id.name, 'state.apply', 'base_update', "pillar=\"{'base_name': '" + self.fullname_ + "'}\""])
+            self.salt_master.execute(['salt', self.container_id.server_id.fulldomain, 'state.apply', 'base_update', "pillar=\"{'base_name': '" + self.fullname_ + "'}\""])
 
         return res
 
@@ -454,6 +454,9 @@ class ClouderBaseLink(models.Model):
 
         if self.name.type_id.name == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
+
+            if 'base_restoration' in self.env.context and self.env.context['base_restoration']:
+                return
 
             self.log("client = erppeek.Client('http://" +
                      self.base_id.container_id.server_id.ip +

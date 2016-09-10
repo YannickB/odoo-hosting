@@ -1523,7 +1523,7 @@ class ClouderContainer(models.Model):
 
         for base in self.reset_base_ids:
             subbase_name = self.subservice_name + '-' + base.name
-            self = self.with_context(
+            base = base.with_context(
                 save_comment='Duplicate base into ' + subbase_name, reset_base_name=subbase_name, reset_container=subservice)
             base.reset_base_exec()
         self.subservice_name = False
