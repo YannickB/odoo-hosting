@@ -449,29 +449,32 @@ class ClouderSave(models.Model):
                 _('Error!'),
                 _("Couldn't find application " + self.container_app +
                   ", aborting restoration."))
-        imgs = image_obj.search([('name', '=', self.container_img)])
-        if not imgs:
-            raise except_orm(
-                _('Error!'),
-                _("Couldn't find image " + self.container_img +
-                  ", aborting restoration."))
 
-        img_versions = image_version_obj.search(
-            [('name', '=', self.container_img_version)])
-        # upgrade = True
-        if not img_versions:
-            self.log("Warning, couldn't find the image version, using latest")
-            # We do not want to force the upgrade if we had to use latest
-            # upgrade = False
-            versions = imgs[0].version_ids
-            if not versions:
-                raise except_orm(
-                    _('Error!'),
-                    _("Couldn't find versions for image " +
-                      self.container_img + ", aborting restoration."))
-            img_versions = [versions[0]]
 
         if self.container_restore_to_suffix or not self.container_id:
+
+            imgs = image_obj.search([('name', '=', self.container_img)])
+            if not imgs:
+                raise except_orm(
+                    _('Error!'),
+                    _("Couldn't find image " + self.container_img +
+                      ", aborting restoration."))
+
+            img_versions = image_version_obj.search(
+                [('name', '=', self.container_img_version)])
+            # upgrade = True
+            if not img_versions:
+                self.log("Warning, couldn't find the image version, using latest")
+                # We do not want to force the upgrade if we had to use latest
+                # upgrade = False
+                versions = imgs[0].version_ids
+                if not versions:
+                    raise except_orm(
+                        _('Error!'),
+                        _("Couldn't find versions for image " +
+                          self.container_img + ", aborting restoration."))
+                img_versions = [versions[0]]
+
             containers = container_obj.search([
                 ('environment_id.prefix', '=', self.computed_restore_to_environment),
                 ('suffix', '=', self.computed_container_restore_to_suffix),

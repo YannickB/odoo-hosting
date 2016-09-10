@@ -160,22 +160,35 @@ class ClouderContainerLink(models.Model):
         elif self.name.type_id.name == 'gitlab' and self.container_id.application_id.check_tags(['files']):
             if self.target.base_ids:
 
-                group_id = self.gitlab_ressource('group', self.container_id.environment_id.prefix, data={'name': self.container_id.environment_id.name})['id']
+                if not self.container_id.parent_id.container_id.from_id:
 
-                project = self.request(self.gitlab_url + '/projects/' + self.container_id.environment_id.prefix + '%2F' + self.container_id.name, headers=self.gitlab_headers, params={'name': self.container_id.fullname})
-                if project.status_code != 200:
-                    project = self.request(self.gitlab_url + '/projects', headers=self.gitlab_headers, method='post', data={'name': self.container_id.name, 'namespace_id': group_id}).json()
-                    self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
-                    self.gitlab_ressource('variable', 'REGISTRY_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
-                    self.gitlab_ressource('variable', 'SALT_DOMAIN', project_id=str(project['id']), data={'value': self.salt_master.server_id.name + ':'  + self.salt_master.ports['api']['hostport']})
-                    self.gitlab_ressource('variable', 'PRODUCTION_SERVER', project_id=str(project['id']), data={'value': self.container_id.server_id.name})
-                    self.gitlab_ressource('file', '.gitignore', project_id=str(project['id']))
-                    self.gitlab_ressource('file', 'Dockerfile', project_id=str(project['id']))
-                    self.gitlab_ressource('file', '.gitlab-ci.yml', project_id=str(project['id']))
+                    group_id = self.gitlab_ressource('group', self.container_id.environment_id.prefix, data={'name': self.container_id.environment_id.name})['id']
+
+                    project = self.request(self.gitlab_url + '/projects/' + self.container_id.environment_id.prefix + '%2F' + self.container_id.name, headers=self.gitlab_headers, params={'name': self.container_id.fullname})
+                    if project.status_code != 200:
+                        project = self.request(self.gitlab_url + '/projects', headers=self.gitlab_headers, method='post', data={'name': self.container_id.name, 'namespace_id': group_id}).json()
+                        self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
+                        self.gitlab_ressource('variable', 'SALT_DOMAIN', project_id=str(project['id']), data={'value': self.salt_master.server_id.fulldomain + ':'  + self.salt_master.ports['api']['hostport']})
+                        self.gitlab_ressource('variable', 'PRODUCTION_SERVER', project_id=str(project['id']), data={'value': self.container_id.server_id.fulldomain})
+                        self.gitlab_ressource('variable', 'PRODUCTION_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
+                        self.gitlab_ressource('file', '.gitignore', project_id=str(project['id']))
+                        self.gitlab_ressource('file', 'Dockerfile', project_id=str(project['id']))
+                        self.gitlab_ressource('file', '.gitlab-ci.yml', project_id=str(project['id']))
+                    else:
+                        project = project.json()
+                        self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
+                        self.gitlab_ressource('variable', 'PRODUCTION_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
+
                 else:
-                    project = project.json()
-                    self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
-                    self.gitlab_ressource('variable', 'REGISTRY_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
+                    from_id = self.container_id.parent_id.container_id.from_id
+                    link = 'files' in from_id.childs \
+                           and  'gitlab' in from_id.childs['files'].links \
+                           and from_id.childs['files'].links['gitlab']
+                    self.log(str(link))
+                    if link:
+                        project = link.request(self.gitlab_url + '/projects/' + link.container_id.environment_id.prefix + '%2F' + link.container_id.name, headers=link.gitlab_headers, params={'name': link.container_id.fullname}).json()
+                        link.gitlab_ressource('variable', 'STAGING_SERVER', project_id=str(project['id']), data={'value': self.container_id.server_id.fulldomain})
+                        link.gitlab_ressource('variable', 'STAGING_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
 
         if self.name.type_id.name == 'registry':
             if 'gitlab' in self.container_id.links:

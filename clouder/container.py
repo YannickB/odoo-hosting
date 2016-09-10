@@ -313,6 +313,60 @@ class ClouderServer(models.Model):
             self.domain_id.refresh_serial()
 
     @api.multi
+    def oneclick_deploy_element(self, type, code, container=False, ports=[]):
+
+        application_obj = self.env['clouder.application']
+        container_obj = self.env['clouder.container']
+        port_obj = self.env['clouder.container.port']
+        base_obj = self.env['clouder.base']
+
+        application = application_obj.search([('code', '=', code)])
+
+        if not container:
+            container = container_obj.search([('environment_id', '=', self.environment_id.id), ('suffix', '=', code)])
+
+        if type == 'container':
+            if not container:
+                # ports = []
+                # if self.oneclick_ports:
+                #     ports = [(0,0,{'name':'bind', 'localport': 53, 'hostport': 53, 'expose': 'internet', 'udp': True})]
+                container = container_obj.create({
+                    'suffix': code,
+                    'environment_id': self.environment_id.id,
+                    'server_id': self.id,
+                    'application_id': application.id,
+                })
+                if self.oneclick_ports and ports:
+                    for port in ports:
+                        port_record = port_obj.search([('container_id', '=', container.childs['exec'].id),('localport','=',port)])
+                        port_record.write({'hostport': port})
+                    container.childs['exec'].reinstall()
+            return container
+
+        if type == 'base':
+            base = base_obj.search([('name', '=', code), ('domain_id', '=', self.domain_id.id)])
+            if not base:
+                base = base_obj.create({
+                    'name': code,
+                    'domain_id': self.domain_id.id,
+                    'environment_id': self.environment_id.id,
+                    'title': application.name,
+                    'application_id': application.id,
+                    'container_id': container.id,
+                    'admin_name': 'admin',
+                    'admin_password': 'adminadmin',
+                    'ssl_only': True,
+                    'autosave': True,
+                })
+            return base
+
+        if type == 'subservice':
+            if not container_obj.search([('environment_id', '=', self.environment_id.id), ('suffix', '=', container.name + '-test')]):
+                container.reset_base_ids = [(6, 0, [b.id for b in container.base_ids])]
+                container.subservice_name = 'test'
+                container.install_subservice()
+
+    @api.multi
     def oneclick_deploy(self):
         self = self.with_context(no_enqueue=True)
         self.do('oneclick_deploy ' + self.oneclick_id.function, 'oneclick_deploy_exec') 
@@ -404,8 +458,12 @@ class ClouderContainer(models.Model):
     parent_id = fields.Many2one('clouder.container.child', 'Parent')
     child_ids = fields.One2many('clouder.container.child',
                                 'container_id', 'Childs')
+    from_id = fields.Many2one('clouder.container', 'From')
     subservice_name = fields.Char('Subservice Name')
     ports_string = fields.Text('Ports', compute='_get_ports')
+    reset_base_ids = fields.Many2many(
+        'clouder.base', 'clouder_container_reser_base_rel',
+        'container_id', 'base_id', 'Bases to duplicate')
     backup_ids = fields.Many2many(
         'clouder.container', 'clouder_container_backup_rel',
         'container_id', 'backup_id', 'Backup containers')
@@ -1430,26 +1488,43 @@ class ClouderContainer(models.Model):
         containers = self.search([('suffix', '=', subservice_name),
                                   ('environment_id', '=', self.environment_id.id),
                                   ('server_id', '=', self.server_id.id)])
+        for container in containers:
+            if container.parent_id:
+                container.parent_id.unlink()
         containers.unlink()
+
+        parent = False
+        if self.parent_id:
+            parent = self.env['clouder.container.child'].create({
+                'container_id': self.parent_id.container_id.id,
+                'name': self.parent_id.name.id,
+                'sequence': self.parent_id.sequence + 1
+            })
 
         links = {}
         for link in self.link_ids:
-            links[link.name.name.fullcode] = link.target.id
+            links[link.name.fullcode] = link.target.id
         self = self.with_context(container_links=links)
         container_vals = {
             'environment_id': self.environment_id.id,
             'suffix': subservice_name,
             'server_id': self.server_id.id,
             'application_id': self.application_id.id,
+            'parent_id': parent and parent.id,
+            'from_id': self.id,
             'image_version_id': self.image_version_id.id
         }
         subservice = self.create(container_vals)
-        for base in self.base_ids:
+
+        if parent:
+            parent.target = subservice
+
+        for base in self.reset_base_ids:
             subbase_name = self.subservice_name + '-' + base.name
             self = self.with_context(
                 save_comment='Duplicate base into ' + subbase_name, reset_base_name=subbase_name, reset_container=subservice)
-            base.reset_base()
-        self.sub_service_name = False
+            base.reset_base_exec()
+        self.subservice_name = False
 
 
 class ClouderContainerPort(models.Model):

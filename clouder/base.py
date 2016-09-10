@@ -308,8 +308,7 @@ class ClouderBase(models.Model):
                     if option['name'] and option['name'].id in option_sources:
                         option['source'] = option_sources[option['name'].id]
 
-                        if option['source'].type == 'base' and option['source'].auto and \
-                                not (option['source'].app_code and option['source'].app_code != application.code):
+                        if option['source'].type == 'base' and option['source'].auto:
                             # Updating the default value if there is no current one set
                             options.append((0, 0, {
                                 'name': option['source'].id,
@@ -683,7 +682,7 @@ class ClouderBase(models.Model):
             base_reset_fullname_=base_reset_id.fullname_)
         base = base.with_context(
             container_reset_name=base_reset_id.container_id.name)
-        base.update_base()
+        base.update_exec()
         base.post_reset()
         base.deploy_post()
 

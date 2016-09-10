@@ -87,8 +87,8 @@
                         <field name="cert_renewal_date" attrs="{'invisible': [('cert_renewal_date','=',False)]}"/>
                         <button name="renew_cert" string="Renewal Certs" type="object" attrs="{'invisible': [('cert_renewal_date','=',False)]}"/>
                         <newline/>
-                        <field name="parent_id"/>
-                        <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('parent_id','=',False)]}"/>
+                        <field name="reset_id"/>
+                        <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('reset_id','=',False)]}"/>
                         <newline/>
                         <field name="public"/>
                     </group>
@@ -187,6 +187,7 @@
                         <newline/>
                         <field name="volumes_from_ids" widget="many2many_tags"/>
                         <field name="public"/>
+                        <field name="from_id" attrs="{'invisible': [('from_id','=', False)]}"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -245,11 +246,15 @@
                             <button name="start" string="Restart" type="object"/>
                             <button name="stop" string="Stop" type="object"/>
                             <newline/>
-                            <group col="4">
-                                    <field name="subservice_name"/>
-                                    <button name="install_subservice" string="Install Subservice" type="object"/>
-                            </group>
                             <field name="job_ids" colspan="4"/>
+                        </page>
+                        <page string="Reset" attrs="{'invisible': [('from_id','!=', False)]}">
+                            <group col="4">
+                                <field name="reset_base_ids"/>
+                                <newline/>
+                                <field name="subservice_name"/>
+                                <button name="install_subservice" string="Install Subservice" type="object"/>
+                            </group>
                         </page>
                         <page string="Save">
                             <group col="4">
