@@ -15,101 +15,43 @@
             <field name="default">2</field>
         </record>
 
-        <!-- image "data" repository -->
-        <record id="image_template_gitlabci_data" model="clouder.image.template">
-            <field name="name">image_template_gitlabci_data</field>
-        </record>
-        <record id="image_template_gitlabci_data_volume_etc" model="clouder.image.volume">
-            <field name="template_id" ref="image_template_gitlabci_data"/>
-            <field name="name">/etc/gitlab-runner</field>
-        </record>
-        <record id="image_gitlabci_data" model="clouder.image">
-            <field name="name">image_gitlabci_data</field>
-            <field name="type_id" ref="application_type_gitlabci"/>
-            <field name="template_ids" eval="[(4, [ref('image_template_gitlabci_data')])]"/>
-            <field name="parent_from">clouder/clouder-base</field>
-            <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-
-		RUN mkdir -p /etc/gitlab-runner
-
-                ]]>
-            </field>
-        </record>
-
         <!-- image "exec" repository -->
-        <record id="image_template_gitlabci_exec" model="clouder.image.template">
-            <field name="name">image_template_gitlabci_exec</field>
+        <record id="image_template_gitlabci" model="clouder.image.template">
+            <field name="name">image_template_gitlabci</field>
         </record>
-        <record id="image_template_gitlabci_exec_volume_docker" model="clouder.image.volume">
-            <field name="template_id" ref="image_template_gitlabci_exec"/>
+        <record id="image_template_gitlabci_volume_docker" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_gitlabci"/>
             <field name="name">/var/run/docker.sock</field>
             <field name="hostpath">/var/run/docker.sock</field>
             <field name="readonly" eval="True"/>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_gitlabci_exec" model="clouder.image">
-            <field name="name">image_gitlabci_exec</field>
+        <record id="image_gitlabci" model="clouder.image">
+            <field name="name">image_gitlabci</field>
             <field name="type_id" ref="application_type_gitlabci"/>
-            <field name="template_ids" eval="[(4, [ref('image_template_gitlabci_exec')])]"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_gitlabci')])]"/>
             <field name="parent_from">gitlab/gitlab-runner:latest</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
-            <field name="volumes_from">data</field>
         </record>
 
 
-
-        <!-- app "data" -->
-        <record id="application_gitlabci_data" model="clouder.application">
-            <field name="name">Gitlab CI Data</field>
-            <field name="code">data</field>
-            <field name="type_id" ref="application_type_gitlabci"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken')])]"/>
-            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
-            <field name="default_image_id" ref="image_gitlabci_data"/>
-            <field name="sequence">1</field>
-            <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
-        </record>
-        <!-- links to templates -->
-        <!-- bind to shinken -->
-<!--        <record id="application_gitlabci_data_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="application_gitlabci_data"/>
-            <field name="name" ref="clouder_template_shinken.application_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>-->
-        <!-- app "exec" -->
-        <record id="application_template_gitlabci_exec" model="clouder.application.template">
+        <record id="application_template_gitlabci" model="clouder.application.template">
             <field name="name">Gitlab CI</field>
         </record>
-        <record id="application_template_gitlabci_exec_link_gitlab" model="clouder.application.link">
-            <field name="template_id" ref="application_template_gitlabci_exec"/>
+        <record id="application_template_gitlabci_link_gitlab" model="clouder.application.link">
+            <field name="template_id" ref="application_template_gitlabci"/>
             <field name="name" ref="application_gitlab"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
         </record>
-        <record id="application_gitlabci_exec" model="clouder.application">
-            <field name="name">Gitlab CI Exec</field>
-            <field name="code">exec</field>
-            <field name="type_id" ref="application_type_gitlabci"/>
-            <field name="template_ids" eval="[(4, [ref('application_template_gitlabci_exec')])]"/>
-            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
-            <field name="default_image_id" ref="image_gitlabci_exec"/>
-            <field name="sequence">2</field>
-            <field name="required" eval="True"/>
-        </record>
-        <!-- app -->
-
         <record id="application_gitlabci" model="clouder.application">
             <field name="name">Gitlab CI</field>
             <field name="code">gitlabci</field>
             <field name="type_id" ref="application_type_gitlabci"/>
-            <field name="child_ids" eval="[(4, [ref('application_gitlabci_data'),ref('application_gitlabci_exec')])]"/>
+            <field name="template_ids" eval="[(4, [ref('application_template_gitlabci')])]"/>
+            <field name="default_image_id" ref="image_gitlabci"/>
         </record>
 
 

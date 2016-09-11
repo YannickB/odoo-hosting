@@ -59,52 +59,18 @@
             <field name="name">image_salt_master_data</field>
             <field name="type_id" ref="application_type_salt_master"/>
             <field name="template_ids" eval="[(4, [ref('image_template_salt_master_data')])]"/>
-            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_from">clouder/clouder-salt-master-data</field>
             <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-
-                RUN mkdir -p /srv/salt/_modules
-                ADD sources/salt-master/* /srv/salt/
-                ADD sources/_modules/clouder.py /srv/salt/_modules/
-                RUN mkdir -p /srv/pillar/containers
-                RUN mkdir -p /srv/pillar/bases
-                RUN echo "base:" > /srv/pillar/top.sls
-
-                ]]>
-            </field>
+            <field name="dockerfile"/>
         </record>
 
         <record id="image_salt_master_exec" model="clouder.image">
             <field name="name">image_salt_master_exec</field>
             <field name="type_id" ref="application_type_salt_master"/>
             <field name="template_ids" eval="[(4, [ref('image_template_salt_master_exec')])]"/>
-            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_from">clouder/clouder-salt-master-exec</field>
             <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-
-                RUN wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
-                RUN echo "deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest xenial main" > /etc/apt/sources.list.d/saltstack.list
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install salt-master salt-api salt-ssh supervisor python-pip
-
-                RUN pip install --upgrade pip cherrypy
-
-                ADD sources/salt-api.conf /etc/salt/master.d/salt-api.conf
-                ADD sources/reactor.conf /etc/salt/master.d/reactor.conf
-
-                RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "[program:salt]" >> /etc/supervisor/conf.d/supervisord.conf
-		        RUN echo "command=salt-master" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "[program:salt-api]" >> /etc/supervisor/conf.d/supervisord.conf
-		        RUN echo "command=salt-api" >> /etc/supervisor/conf.d/supervisord.conf
-
-                CMD ["/usr/bin/supervisord"]
-
-                ]]>
-            </field>
+            <field name="dockerfile"/>
             <field name="volumes_from">data</field>
         </record>
 
@@ -167,48 +133,9 @@
             <field name="name">image_salt_minion</field>
             <field name="type_id" ref="application_type_salt_minion"/>
             <field name="template_ids" eval="[(4, [ref('image_template_salt_minion')])]"/>
-            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_from">clouder/clouder-salt-master-minion</field>
             <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-
-                RUN wget -O - https://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest/SALTSTACK-GPG-KEY.pub | sudo apt-key add -
-                RUN echo "deb http://repo.saltstack.com/apt/ubuntu/16.04/amd64/latest xenial main" > /etc/apt/sources.list.d/saltstack.list
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install salt-minion python-docker python-pip
-
-                RUN pip install --upgrade pip erppeek
-
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -q install supervisor python-pip python-dev nagios-nrpe-server htop hddtemp lm-sensors
-
-                RUN pip install --upgrade pip setuptools
-                RUN pip install bottle pysensors batinfo pymdstat pysnmp zeroconf netifaces influxdb statsd pystache docker-py pika py-cpuinfo
-
-                RUN pip install glances
-
-                ADD sources/check_mem.pl /usr/lib/nagios/plugins/check_mem.pl
-                RUN chmod +x /usr/lib/nagios/plugins/check_mem.pl
-
-                USER root
-                RUN sed -i "s/allowed_hosts=127.0.0.1/allowed_hosts=172.17.0.0\/16/g" /etc/nagios/nrpe.cfg
-                RUN echo "command[check_mem]=/usr/lib/nagios/plugins/check_mem.pl -fC -w 20 -c 10" >> /etc/nagios/nrpe.cfg
-                RUN echo "command[check_disk]=/usr/lib/nagios/plugins/check_disk -w 20% -c 10% -p /" >> /etc/nagios/nrpe.cfg
-
-                RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-
-                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "[program:salt]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "command=salt-minion" >> /etc/supervisor/conf.d/supervisord.conf
-
-                RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "[program:nrpe]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "command=/etc/init.d/nagios-nrpe-server restart" >> /etc/supervisor/conf.d/supervisord.conf
-
-                CMD ["/usr/bin/supervisord"]
-
-                ]]>
-            </field>
+            <field name="dockerfile"/>
         </record>
 
     </data>

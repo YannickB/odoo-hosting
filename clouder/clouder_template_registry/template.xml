@@ -26,15 +26,9 @@
         <record id="image_registry_data" model="clouder.image">
             <field name="name">image_registry_data</field>
             <field name="template_ids" eval="[(4, [ref('image_template_registry_data')])]"/>
-            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_from">clouder/clouder-registry-data</field>
             <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-                    RUN mkdir -p /auth
-                    RUN touch /auth/htpasswd
-                    RUN mkdir -p /certs
-                ]]>
-            </field>
+            <field name="dockerfile"/>
         </record>
 
         <record id="image_template_registry_exec" model="clouder.image.template">
