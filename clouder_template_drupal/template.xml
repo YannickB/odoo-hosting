@@ -40,7 +40,7 @@
         </record>
 
         <record id="image_drupal" model="clouder.image">
-            <field name="name">img_drupal</field>
+            <field name="name">image_drupal</field>
             <field name="parent_from">clouder/clouder-drupal</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
@@ -63,41 +63,17 @@
         <record id="image_drupal_data" model="clouder.image">
             <field name="name">image_drupal_data</field>
             <field name="template_ids" eval="[(4, [ref('clouder.image_template_nginx_data')])]"/>
-            <field name="parent_from">clouder/clouder-php</field>
+            <field name="parent_from">clouder/clouder-drupal</field>
             <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-RUN curl -SL -o /tmp/drush.phar http://files.drush.org/drush.phar
-RUN mv /tmp/drush.phar /usr/local/bin/drush
-RUN chmod +x /usr/local/bin/drush
-
-USER www-data
-RUN yes | drush init
-
-USER root
-
-                ]]>
-            </field>
+            <field name="dockerfile"/>
         </record>
 
         <record id="image_drupal_exec" model="clouder.image">
             <field name="name">image_drupal_exec</field>
             <field name="template_ids" eval="[(4, [ref('clouder.image_template_nginx_exec')])]"/>
-            <field name="parent_from">clouder/clouder-php</field>
+            <field name="parent_from">clouder/clouder-drupal</field>
             <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-RUN curl -SL -o /tmp/drush.phar http://files.drush.org/drush.phar
-RUN mv /tmp/drush.phar /usr/local/bin/drush
-RUN chmod +x /usr/local/bin/drush
-
-USER www-data
-RUN yes | drush init
-
-USER root
-
-                ]]>
-            </field>
+            <field name="dockerfile"/>
             <field name="volumes_from">data</field>
         </record>
         

@@ -96,54 +96,9 @@
             <field name="name">image_gitlab_data</field>
             <field name="type_id" ref="application_type_gitlab"/>
             <field name="template_ids" eval="[(4, [ref('image_template_gitlab_data')])]"/>
-            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_from">clouder/clouder-gitlab-data</field>
             <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git nginx logrotate
-
-                RUN useradd -d /home/git  -s /bin/bash git
-                RUN mkdir /home/git
-                RUN chown git:git /home/git
-                RUN touch /home/git/.pgpass
-
-                ADD sources/default /etc/default/gitlab
-                RUN rm /etc/nginx/sites-enabled/default
-                ADD sources/logrotate /etc/logrotate.d/gitlab
-
-                RUN mkdir -p /opt/gitlab/data/uploads
-                RUN chmod -R 700 /opt/gitlab/data/uploads
-                RUN mkdir -p /opt/gitlab/data/builds
-                RUN mkdir -p /opt/gitlab/data/artifacts
-                RUN mkdir -p /opt/gitlab/config
-                RUN mkdir -p /opt/gitlab/var/log
-                RUN mkdir -p /opt/gitlab/var/tmp
-
-                ADD sources/gitlab.yml /opt/gitlab/config/gitlab.yml
-                ADD sources/secrets.yml /opt/gitlab/config/secrets.yml
-                ADD sources/resque.yml /opt/gitlab/config/resque.yml
-                ADD sources/database.yml /opt/gitlab/config/database.yml
-                RUN chmod 0600 /opt/gitlab/config/secrets.yml
-                ADD sources/unicorn.rb /opt/gitlab/config/unicorn.rb
-                ADD sources/rack_attack.rb /opt/gitlab/config/rack_attack.rb
-
-                RUN chown -R git:git /opt/gitlab
-
-                USER git
-
-		RUN mkdir /home/git/repositories
-		RUN chmod -R 770 /home/git/repositories
-		RUN chmod -R ug-s /home/git/repositories/
-
-                # Configure Git global settings for git user
-                # 'autocrlf' is needed for the web editor
-                RUN git config --global core.autocrlf input
-
-                # Disable 'git gc --auto' because GitLab already runs 'git gc' when needed
-                RUN git config --global gc.auto 0
-
-                ]]>
-            </field>
+            <field name="dockerfile"/>
         </record>
 
         <!-- image "files" repository -->
@@ -151,54 +106,9 @@
             <field name="name">image_gitlab_files</field>
             <field name="type_id" ref="application_type_gitlab"/>
             <field name="template_ids" eval="[(4, [ref('image_template_gitlab_files')])]"/>
-            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_from">clouder/clouder-gitlab-files</field>
             <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-
-                RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install git build-essential zlib1g-dev libyaml-dev libssl-dev libpq-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby ruby-dev golang
-
-                RUN useradd -d /home/git  -s /bin/bash git
-                RUN mkdir /home/git
-                RUN chown git:git /home/git
-
-                RUN mkdir -p /opt/gitlab/files
-                RUN chown -R git:git /opt/gitlab
-
-                # Clone GitLab repository
-                RUN cd /opt/gitlab/files
-                RUN git clone https://gitlab.com/gitlab-org/gitlab-ce.git /opt/gitlab/files -b 8-11-stable
-
-                RUN gem install bundler --no-ri --no-rdoc
-		RUN cd /opt/gitlab/files; bundle install --deployment --without development test mysql aws kerberos
-
-		RUN git clone https://gitlab.com/gitlab-org/gitlab-workhorse.git /opt/gitlab/gitlab-workhorse
-		RUN cd /opt/gitlab/gitlab-workhorse; git checkout v0.7.8
-		RUN cd /opt/gitlab/gitlab-workhorse; make
-
-		RUN ln -s /opt/gitlab/config/gitlab.yml /opt/gitlab/files/config/gitlab.yml
-                RUN ln -s /opt/gitlab/config/secrets.yml /opt/gitlab/files/config/secrets.yml
-                RUN ln -s /opt/gitlab/config/resque.yml /opt/gitlab/files/config/resque.yml
-                RUN ln -s /opt/gitlab/config/database.yml /opt/gitlab/files/config/database.yml
-                RUN ln -s /opt/gitlab/config/unicorn.rb /opt/gitlab/files/config/unicorn.rb
-                RUN ln -s /opt/gitlab/config/rack_attack.rb /opt/gitlab/files/config/initializers/rack_attack.rb
-
-                RUN rm -rf /opt/gitlab/files/log
-                RUN rm -rf /opt/gitlab/files/tmp
-                RUN rm -rf /opt/gitlab/files/public/uploads
-                RUN rm -rf /opt/gitlab/files/builds
-                RUN rm -rf /opt/gitlab/files/shared/artifacts
-                RUN ln -s /opt/gitlab/var/log /opt/gitlab/files/log
-                RUN ln -s /opt/gitlab/var/tmp /opt/gitlab/files/tmp
-                RUN ln -s /opt/gitlab/data/uploads /opt/gitlab/files/public/uploads
-                RUN ln -s /opt/gitlab/data/builds /opt/gitlab/files/builds
-                RUN ln -s /opt/gitlab/data/artifacts /opt/gitlab/files/shared/artifacts
-
-		RUN chown -R git:git /opt/gitlab
-		USER git
-
-                ]]>
-            </field>
+            <field name="dockerfile"/>
             <field name="volumes_from">data</field>
         </record>
 
@@ -207,41 +117,9 @@
             <field name="name">image_gitlab_exec</field>
             <field name="type_id" ref="application_type_gitlab"/>
             <field name="template_ids" eval="[(4, [ref('image_template_gitlab_exec')])]"/>
-            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_from">clouder/clouder-gitlab-exec</field>
             <field name="parent_id"/>
-            <field name="dockerfile">
-                <![CDATA[
-
-                USER root
-
-                # update apt-get and install needed tools for the gitlab installation
-                RUN apt-get update -y
-                RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libpq-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-docutils pkg-config cmake nodejs ruby ruby-dev golang git supervisor postgresql-client nginx
-
-		ADD sources/default /etc/default/gitlab
-		RUN gem install bundler --no-ri --no-rdoc
-
-                # create a user for gitlab
-                RUN useradd -d /home/git  -s /bin/bash git
-                RUN mkdir /home/git
-                RUN chown git:git /home/git
-		RUN adduser git sudo
-
-		RUN echo "[supervisord]" >> /etc/supervisor/conf.d/supervisord.conf
-		RUN echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-		RUN echo "" >> /etc/supervisor/conf.d/supervisord.conf
-		RUN echo "[program:gitlab]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo 'command=/opt/gitlab/files/lib/support/init.d/gitlab restart' >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "[program:nginx]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo 'command=/etc/init.d/nginx restart' >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo "[program:sshd]" >> /etc/supervisor/conf.d/supervisord.conf
-                RUN echo 'command=/etc/init.d/ssh start' >> /etc/supervisor/conf.d/supervisord.conf
-
-                CMD /usr/bin/supervisord
-
-
-                ]]>
-            </field>
+            <field name="dockerfile"/>
             <field name="volumes_from">data,files</field>
         </record>
 
