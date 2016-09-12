@@ -24,7 +24,7 @@
     'name': 'Clouder Invoicing',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['base', 'clouder', 'account', 'product'],
+    'depends': ['base', 'clouder', 'account', 'account_accountant', 'product'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
