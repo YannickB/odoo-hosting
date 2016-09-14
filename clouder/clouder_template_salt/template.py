@@ -22,6 +22,7 @@
 
 from openerp import models, api
 import yaml
+import time
 
 
 class ClouderServer(models.Model):
@@ -55,6 +56,9 @@ class ClouderServer(models.Model):
             'application_id': application.id,
             'server_id': self.id,
         })
+
+        time.sleep(3)
+
         master.execute(['salt-key', '-y', '--accept=' + self.fulldomain])
 
         master.execute(['echo "  \'' + self.fulldomain + '\':\n#END ' + self.fulldomain + '" >> /srv/pillar/top.sls'])
@@ -121,8 +125,9 @@ class ClouderContainer(models.Model):
         data = {self.name: data}
 
         if 'registry' in self.links:
+            registry_domain = self.links['registry'].target.base_ids[0].fulldomain
             data[self.name + '-docker-registries'] = {
-               'https://' + self.links['registry'].target.base_ids[0].fulldomain + '/v1/': {
+               'https://' + registry_domain + '/v1/': {
                    'email': 'admin@example.net',
                    'username': self.name,
                    'password': self.options['registry_password']['value']

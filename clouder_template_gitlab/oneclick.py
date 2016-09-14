@@ -53,7 +53,7 @@ class ClouderServer(models.Model):
         self.oneclick_deploy_element('base', 'registry', container=container)
 
         self.oneclick_deploy_element('container', 'gitlab-all')
-        self.oneclick_deploy_element('base', 'gitlab')
+        self.oneclick_deploy_element('base', 'gitlab', code_container='gitlab-all-gitlab')
 
         self.oneclick_deploy_element('container', 'gitlabci')
 

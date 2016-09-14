@@ -400,6 +400,7 @@ class ClouderModel(models.AbstractModel):
         if self._autodeploy:
             res.hook_create()
             res.do('create', 'deploy_frame')
+
         return res
 
     @api.one

@@ -138,5 +138,12 @@
             <field name="dockerfile"/>
         </record>
 
+        <record id="application_salt_minion" model="clouder.application">
+            <field name="name">Salt Minion</field>
+            <field name="code">salt-minion</field>
+            <field name="type_id" ref="application_type_salt_minion"/>
+            <field name="default_image_id" ref="image_salt_minion"/>
+        </record>
+
     </data>
 </openerp>

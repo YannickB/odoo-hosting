@@ -297,7 +297,7 @@ class ClouderServer(models.Model):
                 'echo "' + self.name + ' IN A ' + self.ip +
                 '" >> ' + self.domain_id.configfile])
             self.domain_id.refresh_serial(self.fulldomain)
-            self.control_dns = True
+            # self.control_dns = True
 
     @api.multi
     def purge_dns(self):
@@ -315,7 +315,7 @@ class ClouderServer(models.Model):
             self.domain_id.refresh_serial()
 
     @api.multi
-    def oneclick_deploy_element(self, type, code, container=False, ports=[]):
+    def oneclick_deploy_element(self, type, code, container = False, code_container='', ports=[]):
 
         application_obj = self.env['clouder.application']
         container_obj = self.env['clouder.container']
@@ -324,6 +324,8 @@ class ClouderServer(models.Model):
 
         application = application_obj.search([('code', '=', code)])
 
+        if not container and code_container:
+            container = container_obj.search([('environment_id', '=', self.environment_id.id), ('suffix', '=', code_container)])
         if not container:
             container = container_obj.search([('environment_id', '=', self.environment_id.id), ('suffix', '=', code)])
 
@@ -342,7 +344,8 @@ class ClouderServer(models.Model):
                     for port in ports:
                         port_record = port_obj.search([('container_id', '=', container.childs['exec'].id),('localport','=',port)])
                         port_record.write({'hostport': port})
-                    container.childs['exec'].reinstall()
+                    container = container.with_context(container_childs=False)
+                    container.childs['exec'].deploy()
             return container
 
         if type == 'base':
@@ -941,6 +944,9 @@ class ClouderContainer(models.Model):
             'parent_id': self.parent_id and self.parent_id.id or False
             }
         vals = self.onchange_application_id_vals(vals)
+        if 'container_childs' in self.env.context and self.env.context['container_childs']:
+            vals['link_ids'] = []
+            vals['child_ids'] = []
         self.env['clouder.container.option'].search(
             [('container_id', '=', self.id)]).unlink()
         self.env['clouder.container.link'].search(
@@ -1180,7 +1186,45 @@ class ClouderContainer(models.Model):
     def create(self, vals):
         vals = self.onchange_application_id_vals(vals)
         vals = self.onchange_image_id_vals(vals)
-        return super(ClouderContainer, self).create(vals)
+
+        childs = []
+        links = []
+        if vals['child_ids']:
+            self = self.with_context(container_childs=True)
+            childs = vals['child_ids']
+            links = vals['link_ids']
+            vals['child_ids'] = []
+            vals['link_ids'] = []
+        else:
+            self = self.with_context(container_childs=False)
+
+        res = super(ClouderContainer, self).create(vals)
+
+        for child in childs:
+            child_vals = child[2]
+            child_vals.update({'container_id': res.id})
+            self.env['clouder.container.child'].create(child_vals)
+        # Ensure correct order
+        res = self.browse(res.id)
+        for child in res.child_ids:
+            child.create_child_exec()
+
+        for link in links:
+            link_vals = link[2]
+            link_vals.update({'container_id': res.id})
+            link = self.env['clouder.container.link'].create(link_vals)
+            link.deploy_exec()
+
+        links = self.env['clouder.container.link'].search([('name', '=', res.application_id.id),('auto','=',True),('target','=',False)])
+        links.write({'target': res.id})
+        for link in links:
+            link.deploy_link()
+        links = self.env['clouder.base.link'].search([('name', '=', res.application_id.id),('auto','=',True),('target','=',False)])
+        links.write({'target': res.id})
+        for link in links:
+            link.deploy_link()
+
+        return res
 
     @api.multi
     def write(self, vals):
@@ -1390,7 +1434,7 @@ class ClouderContainer(models.Model):
         self = self.with_context(no_enqueue=True)
         super(ClouderContainer, self).deploy()
 
-        if self.child_ids:
+        if self.child_ids or 'container_childs' in self.env.context and self.env.context['container_childs']:
             for child in self.child_ids:
                 child.create_child_exec()
 
@@ -1406,15 +1450,6 @@ class ClouderContainer(models.Model):
             # For shinken
             self = self.with_context(save_comment='First save')
             self.save_exec(no_enqueue=True)
-
-        links = self.env['clouder.container.link'].search([('name', '=', self.application_id.id),('auto','=',True),('target','=',False)])
-        links.write({'target': self.id})
-        for link in links:
-            link.deploy_link()
-        links = self.env['clouder.base.link'].search([('name', '=', self.application_id.id),('auto','=',True),('target','=',False)])
-        links.write({'target': self.id})
-        for link in links:
-            link.deploy_link()
 
         return
 
