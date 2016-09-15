@@ -37,7 +37,7 @@ $payment.on("click", 'button[type="submit"],button[name="submit"]', function (ev
             'acquirer_id': acquirer_id,
             'lang': Clouder.params['lang']
         },
-        method:'POST',
+        method: 'POST', type: 'POST'
         cache: false,
         dataType: 'html',
         success: function(data) {
