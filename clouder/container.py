@@ -482,7 +482,7 @@ class ClouderContainer(models.Model):
         """
         Property returning the full name of the container.
         """
-        return self.name + '_' + self.server_id.name
+        return self.name + '_' + self.server_id.fulldomain
 
     @property
     def volumes_save(self):
@@ -532,7 +532,7 @@ class ClouderContainer(models.Model):
         if self.database.server_id == self.server_id:
             return self.database.application_id.code
         else:
-            return self.database.server_id.name
+            return self.database.server_id.fulldomain
 
     @property
     def db_user(self):
