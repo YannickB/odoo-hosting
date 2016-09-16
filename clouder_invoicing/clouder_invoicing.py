@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, _
+from openerp import models, fields, api, release, _
 from openerp.exceptions import except_orm
 from dateutil.relativedelta import relativedelta
 import logging
@@ -33,7 +33,7 @@ class ClouderInvoicingPricegridLine(models.Model):
     Defines a pricegrid line
     """
     _name = 'clouder.invoicing.pricegrid.line'
-    
+
     def _get_application_id(self):
         object = self.link
         if self.link._name != 'clouder.application':
@@ -245,6 +245,9 @@ class ClouderContainer(models.Model):
     """
     _inherit = 'clouder.container'
 
+    def version(self):
+        return int(release.version.split('.')[0])
+
     def _compute_last_invoiced_default(self):
         """
         Computes the default value for the last_invoiced field
@@ -339,22 +342,33 @@ class ClouderContainer(models.Model):
                 # Invoicing per base
                 for base in container.base_ids:
                     if base.should_invoice() and base.pricegrid_ids:
-                        results['invoice_base_data'].append({
+                        curr_res = {
                             'id': base.id,
                             'product_id': base.application_id.invoicing_product_id,
                             'partner_id': base.environment_id.partner_id.id,
-                            'account_id': base.environment_id.partner_id.property_account_receivable.id,
                             'amount': base.pricegrid_ids.invoice_amount()
-                        })
+                        }
+                        # property_account_income_id
+                        if self.version() >= 9.0:
+                            curr_res['account_id'] = base.environment_id.partner_id.property_account_receivable_id.id
+                        else:
+                            curr_res['account_id'] = base.environment_id.partner_id.property_account_receivable.id
+                        results['invoice_base_data'].append(curr_res)
             elif container.should_invoice() and container.pricegrid_ids:
                 # Invoicing per container
-                results['invoice_container_data'].append({
+                curr_res = {
                     'id': container.id,
                     'product_id': container.application_id.invoicing_product_id,
                     'partner_id': container.environment_id.partner_id.id,
-                    'account_id': container.environment_id.partner_id.property_account_receivable.id,
+
                     'amount': container.pricegrid_ids.invoice_amount()
-                })
+                }
+                if self.version() >= 9.0:
+                    curr_res['account_id'] = container.environment_id.partner_id.property_account_receivable_id.id
+                else:
+                    curr_res['account_id'] = container.environment_id.partner_id.property_account_receivable.id
+
+                results['invoice_container_data'].append(curr_res)
         return results
 
 
@@ -452,6 +466,9 @@ class AccountInvoice(models.Model):
     """
     _inherit = "account.invoice"
 
+    def version(self):
+        return int(release.version.split('.')[0])
+
     @api.model
     def clouder_make_invoice(self, data):
         """
@@ -465,11 +482,19 @@ class AccountInvoice(models.Model):
             'account_id': data['account_id']
         })
 
+        product_tmpl = self.env['product.product'].browse([data['product_id']])[0].product_tmpl_id
+
+        if self.version() >= 9:
+            product_acc = product_tmpl.property_account_income_id
+        else:
+            product_acc = product_tmpl.property_account_income
+
         line_data = {
             'invoice_id': invoice.id,
             'origin': data['origin'],
             'product_id': data['product_id'],
-            'price_unit': data['amount']
+            'price_unit': data['amount'],
+            'account_id': product_acc.id
         }
 
         if 'name' in data:
@@ -500,7 +525,7 @@ class AccountInvoice(models.Model):
                 inv_data['name'] = data['name'],
 
             invoice = self.clouder_make_invoice(inv_data)
-            
+
             # Updating date for instance
             instance.write({'last_invoiced': fields.Date.today()})
 

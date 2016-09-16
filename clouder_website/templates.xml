@@ -14,7 +14,7 @@
                 t-att-href="'%s/clouder_website/static/src/css/plugin.css' % (hostname)"
             />
             <div class="col-md-6">
-                <div class="padding bg-smoke">
+                <div class="padding">
                     <h3 class="nmt CL_Title">Request a Clouder Instance</h3>
                     <div class="CL_Loading"/>
                     <form id="ClouderForm" method="POST" action="">

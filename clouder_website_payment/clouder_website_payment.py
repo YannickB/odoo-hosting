@@ -20,13 +20,23 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, http, _
+from openerp import models, fields, api, http, release, _
 from openerp.exceptions import except_orm
 import openerp
 import threading
 import logging
 
 _logger = logging.getLogger(__name__)
+
+
+class PaymentAcquirer(models.Model):
+    """
+    Adds a way to tell if the payment acquirer should be used for the form
+    """
+
+    _inherit = 'payment.acquirer'
+
+    clouder_form_enabled = fields.Boolean(string='Enabled in Clouder form?')
 
 
 class ClouderApplication(models.Model):
@@ -89,7 +99,7 @@ class ClouderApplication(models.Model):
         # Update the session
         session = self.env['clouder.web.session'].browse([session_id])[0]
         session.state = state
-        
+
         return created_id
 
 
@@ -114,6 +124,9 @@ class ClouderWebSession(models.Model):
         default='started'
     )
     invoice_id = fields.Many2one('account.invoice', 'Invoice', required=False)
+
+    def version(self):
+        return int(release.version.split('.')[0])
 
     @api.model
     def launch_update_with_invoice(self):
@@ -168,11 +181,15 @@ class ClouderWebSession(models.Model):
             invoice_data = {
                 'amount': session.amount,
                 'partner_id': session.partner_id.id,
-                'account_id': session.partner_id.property_account_receivable.id,
                 'product_id': session.application_id.invoicing_product_id.id,
                 'name': inv_desc,
                 'origin': session.reference
             }
+            if self.version() >= 9.0:
+                invoice_data['account_id'] = session.partner_id.property_account_receivable_id.id
+            else:
+                invoice_data['account_id'] = session.partner_id.property_account_receivable.id
+
             invoice_id = orm_inv.clouder_make_invoice(invoice_data)
             invoice = orm_inv.browse([invoice_id])[0]
             session.write({'invoice_id': invoice.id})
