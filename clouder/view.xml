@@ -128,7 +128,7 @@
                             <button name="purge" string="Purge" type="object"/>
                             <field name="job_ids" colspan="4"/>
                         </page>
-                        <page string="Save">
+                        <page name="save" string="Save">
                             <group col="4">
                                 <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
                                 <field name="time_between_save"/>
@@ -251,7 +251,7 @@
                             </group>
                             <field name="job_ids" colspan="4"/>
                         </page>
-                        <page string="Save">
+                        <page name="save" string="Save">
                             <group col="4">
                                 <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
                                 <field name="autosave"/>
@@ -400,7 +400,7 @@
                                 <field name="container_links"/>
                                 <field name="container_volumes_comma"/>
                                 <field name="container_volumes"/>
-                            </group>  
+                            </group>
                        </page>
                         <page string="Base" attrs="{'invisible':[('base_fullname','=',False)]}">
                             <group col="4">
@@ -419,7 +419,7 @@
                                 <field name="base_autosave"/>
                                 <field name="base_options"/>
                                 <field name="base_links"/>
-                            </group>  
+                            </group>
                        </page>
                     </notebook>
                     <group col="4">
@@ -655,7 +655,7 @@
                                 </tree>
                             </field>
                         </page>
-                        <page string="Save">
+                        <page name="save" string="Save">
                             <group>
                                 <field name="autosave"/>
                                 <newline/>
@@ -667,7 +667,7 @@
                                 <field name="base_save_expiration"/>
                             </group>
                         </page>
-                        <page string="Metadata">
+                        <page name="metadata" string="Metadata">
                             <field name="metadata_ids" colspan="4">
                                 <tree string="Metadata" editable="bottom">
                                     <field name="name"/>
@@ -891,6 +891,6 @@
           <field name="function">launch_next_saves</field>
           <field name="args">([1])</field>
         </record>
-        
+
     </data>
 </openerp>

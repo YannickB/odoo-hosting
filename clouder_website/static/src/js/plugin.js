@@ -642,7 +642,7 @@ Clouder.showStep = function(step){
 
 // Loads JQuery plugins and sets default values
 Clouder.loadJQueryPlugins = function() {
-    jQuery.noConflict(); // Avoid conflicts between our JQuery and the possibly existing one
+    window.$ = jQuery.noConflict(); // Avoid conflicts between our JQuery and the possibly existing one
     jQuery(document).ready(function($) {
         Clouder.params.langShort = Clouder.params.lang.split('_')[0];
         // Loads the form content in the ClouderPlugin div and launches the javascript
