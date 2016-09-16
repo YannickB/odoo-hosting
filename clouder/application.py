@@ -24,9 +24,10 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 from datetime import datetime
-import re
+import re, json
 
 import model
+
 
 
 class ClouderApplicationRole(models.Model):
@@ -108,16 +109,25 @@ class ClouderApplicationTypeOption(models.Model):
          'Options name must be unique per apptype!'),
     ]
 
-    @property
-    def get_default(self):
-        res = self.default
+    @api.multi
+    def generate_default(self):
+        res = ''
         if self.name == 'db_password':
             res = model.generate_random_password(20)
+        if self.name == 'secret':
+            res = model.generate_random_password(50)
         if self.name == 'ssh_privatekey':
             res = self.env['clouder.server']._default_private_key()
         if self.name == 'ssh_publickey':
             res = self.env['clouder.server']._default_public_key()
         return res
+
+    @property
+    def get_default(self):
+        if self.default:
+            return self.default
+        else:
+            return self.generate_default()
 
 
 class ClouderApplication(models.Model):
@@ -146,6 +156,7 @@ class ClouderApplication(models.Model):
                                'Links')
     link_target_ids = fields.One2many('clouder.application.link', 'name',
                                       'Links Targets')
+    metadata_ids = fields.One2many('clouder.application.metadata', 'application_id', 'Metadata')
     parent_id = fields.Many2one('clouder.application', 'Parent')
     required = fields.Boolean('Required?')
     sequence = fields.Integer('Sequence')
@@ -342,3 +353,54 @@ class ClouderApplicationLink(models.Model):
         ('name_uniq', 'unique(application_id,name)',
          'Links must be unique per application!'),
     ]
+
+
+class ClouderApplicationMetadata(models.Model):
+    """
+    Defines an object to store metadata linked to an application
+    """
+
+    _name = 'clouder.application.metadata'
+
+    application_id = fields.Many2one('clouder.application', 'Application', ondelete="cascade", required=True)
+    name = fields.Char('Name', required=True, size=64)
+    clouder_type = fields.Selection(
+        [
+            ('container', 'Container'),
+            ('base', 'Base')
+        ], 'Type', required=True)
+    is_function = fields.Boolean('Function', help="Is the value computed by a function?", required=False, default=False)
+    func_name = fields.Char('Function Name', size=64)
+    default_value = fields.Text('Default Value')
+    value_type = fields.Selection(
+        [
+            ('int', 'Integer'),
+            ('float', 'Float'),
+            ('char', 'Char')
+        ], 'Data Type', required=True)
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(application_id,name, clouder_type)', 'Metadata must be unique per application!'),
+    ]
+
+    @api.depends('is_function', 'func_name')
+    @api.multi
+    def _check_function(self):
+        """
+        Checks that the function name is defined and exists if is_functions is set to True
+        """
+        for metadata in self:
+            if metadata.is_function:
+                if not metadata.func_name:
+                    raise except_orm(
+                        _('Data error!'),
+                        _("You must enter the function name to set is_function to true.")
+                    )
+                else:
+                    obj_env = self.env['clouder.'+self.clouder_type]
+                    if not getattr(obj_env, self.func_name, False):
+                        raise except_orm(
+                            _('Base Metadata error!'),
+                            _("Invalid function name {0} for clouder.base".format(self.name.func_name))
+                        )
+

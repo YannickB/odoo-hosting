@@ -83,9 +83,10 @@ class FormController(http.Controller):
         """
         # TODO: replace with error handling
         _logger.warning('Bad request received: {0}'.format(desc))
-        response = BadRequest(description=desc).get_response(request.httprequest.environ)
-        for (hdr, val) in HEADERS:
-            response.headers.add(hdr, val)
+        response = {
+            "error": desc
+        }
+        return request.make_response(json.dumps(response), headers=HEADERS)
         return response
 
     def hook_next(self, data):
@@ -135,7 +136,7 @@ class FormController(http.Controller):
     #######################
     #        Pages        #
     #######################
-    @http.route('/clouder_form/request_form', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/request_form', type='http', auth='public', methods=['POST'], csrf=False)
     def request_form(self, **post):
         """
         Generates and returns the HTML base form
@@ -191,7 +192,7 @@ class FormController(http.Controller):
 
         return request.make_response(html, headers=HEADERS)
 
-    @http.route('/clouder_form/submit_form', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/submit_form', type='http', auth='public', methods=['POST'], csrf=False)
     def submit_form(self, **post):
         """
         Submits the base form then calls the next part of the process
@@ -329,7 +330,7 @@ class FormController(http.Controller):
 
         return self.hook_next(data)
 
-    @http.route('/clouder_form/check_data', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/check_data', type='http', auth='public', methods=['POST'], csrf=False)
     def check_data(self, **post):
         """
         Checks that the form data submitted is not a doublon
@@ -503,7 +504,7 @@ class FormController(http.Controller):
             }
             return request.make_response(json.dumps(result), headers=HEADERS)
 
-    @http.route('/clouder_form/form_login', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/form_login', type='http', auth='public', methods=['POST'], csrf=False)
     def page_login(self, **post):
         """
         Uses check_login on the provided login and password
@@ -536,7 +537,7 @@ class FormController(http.Controller):
 
         return request.make_response(json.dumps(result), headers=HEADERS)
 
-    @http.route('/clouder_form/get_env', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/get_env', type='http', auth='public', methods=['POST'], csrf=False)
     def get_env(self, **post):
         """
         Returns the list of environments linked to the given user

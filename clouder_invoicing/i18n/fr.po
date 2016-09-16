@@ -1,0 +1,271 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+#	* clouder_invoicing
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 8.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-09-16 14:28+0000\n"
+"PO-Revision-Date: 2016-09-16 14:28+0000\n"
+"Last-Translator: <>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:238
+#, python-format
+msgid "An application with pricegrids must have an invoicing product set."
+msgstr "Une application avec des grilles de prix doit avoir un produit de facturation."
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,application_id:0
+#: field:clouder.invoicing.pricegrid.line,link_application:0
+msgid "Application"
+msgstr "Application"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:225
+#, python-format
+msgid "Application invoice error!"
+msgstr "Erreur de facturation sur l'application!"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:237
+#, python-format
+msgid "Application pricegrid error!"
+msgstr "Erreur de grille de prix sur l'application!"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,link_base:0
+msgid "Base"
+msgstr "Base"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,link_container:0
+msgid "Container"
+msgstr "Contenaire"
+
+#. module: clouder_invoicing
+#: model:product.category,name:clouder_invoicing.container_instance_product_category
+msgid "Container/Base Instance"
+msgstr "Instance de Contenaire/Base"
+
+#. module: clouder_invoicing
+#: model:product.template,name:clouder_invoicing.container_instance_product_product_template
+msgid "Container/Base Instance Fee"
+msgstr "Frais pour instance de Contenaire/Base"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,create_uid:0
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,create_date:0
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,display_name:0
+msgid "Display Name"
+msgstr "Label"
+
+#. module: clouder_invoicing
+#: selection:clouder.invoicing.pricegrid.line,type:0
+msgid "Fixed Price"
+msgstr "Prix fixe"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,id:0
+msgid "ID"
+msgstr "ID"
+
+#. module: clouder_invoicing
+#: field:clouder.application,initial_invoice_amount:0
+msgid "Instance Creation Fees"
+msgstr "Frais de création d'instance"
+
+#. module: clouder_invoicing
+#: model:ir.model,name:clouder_invoicing.model_account_invoice
+msgid "Invoice"
+msgstr "Facture"
+
+#. module: clouder_invoicing
+#: view:clouder.application:clouder_invoicing.view_clouder_application_form_invoicing
+#: view:clouder.base:clouder_invoicing.view_clouder_base_form_invoicing
+#: view:clouder.container:clouder_invoicing.view_clouder_container_form_invoicing
+msgid "Invoicing"
+msgstr "Facturation"
+
+#. module: clouder_invoicing
+#: field:clouder.base,invoicing_period:0
+#: field:clouder.container,invoicing_period:0
+msgid "Invoicing Period (months)"
+msgstr "Période de facturation (mois)"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,application_metadata:0
+msgid "Invoicing Unit"
+msgstr "Unité de facturation"
+
+#. module: clouder_invoicing
+#: field:clouder.application,invoicing_product_id:0
+msgid "Invoicing product"
+msgstr "Produit de facturation"
+
+#. module: clouder_invoicing
+#: field:clouder.base,last_invoiced:0
+#: field:clouder.container,last_invoiced:0
+msgid "Last Invoiced"
+msgstr "Dernière facturation"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,__last_update:0
+msgid "Last Modified on"
+msgstr "Dernière modification le"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,write_uid:0
+msgid "Last Updated by"
+msgstr "Dernière modification par"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,write_date:0
+msgid "Last Updated on"
+msgstr "Dernière mise à jour le"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:121
+#, python-format
+msgid "No linked metadata found for {0} '{1}'"
+msgstr "Aucune métadonnée trouvée pour {0} '{1}'"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,price:0
+msgid "Price"
+msgstr "Prix"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:69
+#: code:addons/clouder_invoicing/clouder_invoicing.py:77
+#: code:addons/clouder_invoicing/clouder_invoicing.py:86
+#, python-format
+msgid "Pricegrid error!"
+msgstr "Erreur de grille de prix!"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:138
+#: code:addons/clouder_invoicing/clouder_invoicing.py:179
+#, python-format
+msgid "Pricegrid invoice_amount error!"
+msgstr "Erreur sur le montant des grille de prix!"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:120
+#, python-format
+msgid "Pricegrid invoicing_unit error!"
+msgstr "Erreur sur l'unité de facturation des grilles de prix!"
+
+#. module: clouder_invoicing
+#: view:clouder.invoicing.pricegrid.line:clouder_invoicing.view_clouder_invoicing_pricdegrid_line_form
+msgid "Pricegrid line"
+msgstr "Ligne de grille de prix"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:78
+#, python-format
+msgid "Pricegrid links to application/container/base are exclusive to one another."
+msgstr "Les liens d'une grille de prix vers une application/contenaire/base sont exclusifs."
+
+#. module: clouder_invoicing
+#: field:clouder.application,pricegrid_ids:0
+#: field:clouder.base,pricegrid_ids:0
+#: field:clouder.container,pricegrid_ids:0
+msgid "Pricegrids"
+msgstr "Grilles de prix"
+
+#. module: clouder_invoicing
+#: view:clouder.base:clouder_invoicing.view_clouder_base_form_invoicing
+#: view:clouder.container:clouder_invoicing.view_clouder_container_form_invoicing
+msgid "Pricing"
+msgstr "Tarification"
+
+#. module: clouder_invoicing
+#: view:clouder.application:clouder_invoicing.view_clouder_application_form_invoicing
+msgid "Pricing grid"
+msgstr "Grille de tarification"
+
+#. module: clouder_invoicing
+#: model:product.template,description_sale:clouder_invoicing.container_instance_product_product_template
+msgid "The managing fee for your Container/Base instance"
+msgstr "Les frais de gestion pour vos instances de Contenaires/Bases."
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:87
+#, python-format
+msgid "The metadata should be associated with the same application as the pricegrid."
+msgstr "La métadonnée doit être associée à la même application que la grille de prix."
+
+#. module: clouder_invoicing
+#: help:clouder.base,invoicing_period:0
+#: help:clouder.container,invoicing_period:0
+msgid "The period separating two invoices.\n"
+"Set to nothing to disable invoicing for this container."
+msgstr "La période séparant deux facturations.\n"
+"Laisser vide pour désactiver la facturation de ce contenaire."
+
+#. module: clouder_invoicing
+#: model:product.template,description:clouder_invoicing.container_instance_product_product_template
+msgid "The service fee to keep an instance running"
+msgstr "Frais de service pour le fonctionnement de l'instance"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:139
+#, python-format
+msgid "This function should only be called from a set of records linked to the same container OR base OR application."
+msgstr "Cette fonction devrait seulement être appelée sur des enregistrements liés au même container OU base OU application."
+
+#. module: clouder_invoicing
+#: help:clouder.application,initial_invoice_amount:0
+msgid "This is the price to pay once at instance creation.\n"
+"        This price is manually set and unrelated to price grids computation."
+msgstr "Le prix a payer lors de la création de l'instance.\n"
+"        Ce prix est manuellement renseigné et completement séparé des calculs via les grilles de prix."
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,threshold:0
+msgid "Threshold"
+msgstr "Seuil"
+
+#. module: clouder_invoicing
+#: field:clouder.invoicing.pricegrid.line,type:0
+msgid "Type"
+msgstr "Type"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:181
+#, python-format
+msgid "Unknown type '{0}' in pricegrid line for {1} '{2}'."
+msgstr "Type inconnu: '{0}' dans une grille de prix du {1} '{2}'."
+
+#. module: clouder_invoicing
+#: selection:clouder.invoicing.pricegrid.line,type:0
+msgid "Value Multiplier"
+msgstr "Multiplicateur de valeur"
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:70
+#, python-format
+msgid "You cannot define a pricegrid line without linking it to a base or container or application."
+msgstr "Vous ne pouvez pas définir une grille de prix qui n'est pas liée a une base ou container ou application."
+
+#. module: clouder_invoicing
+#: code:addons/clouder_invoicing/clouder_invoicing.py:226
+#, python-format
+msgid "You cannot set a negative amount as instance creation fees."
+msgstr "Vous ne pouvez pas saisir des frais de création d'instance négatifs."
+

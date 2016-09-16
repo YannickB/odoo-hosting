@@ -17,7 +17,7 @@
 
         <record id="image_mautic" model="clouder.image">
             <field name="name">img_mautic</field>
-            <field name="current_version">1.4.1</field>
+            <field name="current_version">2.1.0</field>
             <field name="parent_from">clouder/clouder-mautic</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>

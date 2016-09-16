@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
@@ -20,21 +21,5 @@
 #
 ##############################################################################
 
-{
-    'name': 'Clouder Invoicing',
-    'version': '1.0',
-    'category': 'Clouder',
-    'depends': ['base'],
-    'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
-    'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder
-    """,
-    'demo': [],
-    'data': [
-        'clouder_invoicing_view.xml',
-    ],
-    'installable': True,
-    'application': True,
-}
+import template
+

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 8.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-07-23 16:17+0000\n"
-"PO-Revision-Date: 2016-07-23 16:17+0000\n"
+"POT-Creation-Date: 2016-09-16 14:29+0000\n"
+"PO-Revision-Date: 2016-09-16 14:29+0000\n"
 "Last-Translator: <>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -26,7 +26,7 @@ msgid "Amount to pay"
 msgstr "Montant à règler"
 
 #. module: clouder_website_payment
-#: code:addons/clouder_website_payment/clouder_website_payment.py:44
+#: code:addons/clouder_website_payment/clouder_website_payment.py:54
 #, python-format
 msgid "Application error!"
 msgstr "Erreur d'application!"
@@ -37,7 +37,7 @@ msgid "Cancelled"
 msgstr "Annulée"
 
 #. module: clouder_website_payment
-#: code:addons/clouder_website_payment/clouder_website_payment.py:159
+#: code:addons/clouder_website_payment/clouder_website_payment.py:172
 #, python-format
 msgid "Clouder Web Session error!"
 msgstr "Erreur de Session web Clouder!"
@@ -46,6 +46,11 @@ msgstr "Erreur de Session web Clouder!"
 #: selection:clouder.web.session,state:0
 msgid "Done"
 msgstr "Terminé"
+
+#. module: clouder_website_payment
+#: field:payment.acquirer,clouder_form_enabled:0
+msgid "Enabled in Clouder form?"
+msgstr "Visible dans le formulaire Clouder?"
 
 #. module: clouder_website_payment
 #: selection:clouder.web.session,state:0
@@ -69,10 +74,16 @@ msgid "Invoice Reference"
 msgstr "Référence de la facture"
 
 #. module: clouder_website_payment
+#: code:addons/clouder_website_payment/controller/form_controller_extend.py:84
 #: code:addons/clouder_website_payment/controller/main.py:61
 #, python-format
 msgid "Pay Now"
 msgstr "Proceder au paiement"
+
+#. module: clouder_website_payment
+#: model:ir.model,name:clouder_website_payment.model_payment_acquirer
+msgid "Payment Acquirer"
+msgstr "Intermédiaire de paiement"
 
 #. module: clouder_website_payment
 #: view:website:clouder_website_payment.payment_buttons
@@ -136,13 +147,13 @@ msgid "We're sorry to see you go."
 msgstr "Nous sommes désolé de ne pas vous avoir convaincu."
 
 #. module: clouder_website_payment
-#: code:addons/clouder_website_payment/clouder_website_payment.py:45
+#: code:addons/clouder_website_payment/clouder_website_payment.py:55
 #, python-format
 msgid "You cannot define a web creation type without defining price grids."
 msgstr "Vous ne pouvez pas définir un type de création web sans définir une grille de prix."
 
 #. module: clouder_website_payment
-#: code:addons/clouder_website_payment/clouder_website_payment.py:160
+#: code:addons/clouder_website_payment/clouder_website_payment.py:173
 #, python-format
 msgid "You cannot launch invoice creation when a session is not process or already has an invoice"
 msgstr "Vous ne pouvez pas lancer une création d'instance a partir d'une session qui n'est pas en cours ou n'as pas de facture"

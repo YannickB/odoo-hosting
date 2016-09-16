@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <!-- Pricegrid views -->
+        <record id="view_clouder_invoicing_pricdegrid_line_form" model="ir.ui.view">
+            <field name="name">clouder.invoicing.pricegrid.line.form</field>
+            <field name="model">clouder.invoicing.pricegrid.line</field>
+            <field name="arch" type="xml">
+                <form string="Pricegrid line" version="7.0">
+                    <group col="4">
+                        <field name="application_id" invisible="1"/>
+                        <field name="application_metadata" domain="[('application_id', '=', application_id)]"/>
+                        <field name="threshold"/>
+                        <newline/>
+                        <field name="price"/>
+                        <field name="type"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <!-- Application Invoicing -->
+        <record id="view_clouder_application_form_invoicing" model="ir.ui.view">
+            <field name="name">clouder.application.form.invoicing</field>
+            <field name="inherit_id" ref="clouder.view_clouder_application_form"/>
+            <field name="model">clouder.application</field>
+            <field name="arch" type="xml">
+                <page name="save" position="after">
+                    <page string="Invoicing">
+                        <group string="Pricing grid">
+                            <field name="initial_invoice_amount"/>
+                            <field name="invoicing_product_id"/>
+                            <field name="pricegrid_ids" editable="bottom">
+                                <tree>
+                                    <field name="threshold"/>
+                                    <field name="price"/>
+                                    <field name="type"/>
+                                </tree>
+                            </field>
+                        </group>
+                    </page>
+                </page>
+            </field>
+        </record>
+        <!-- Container Invoicing -->
+        <record id="view_clouder_container_form_invoicing" model="ir.ui.view">
+            <field name="name">clouder.container.form.invoicing</field>
+            <field name="inherit_id" ref="clouder.view_clouder_container_form"/>
+            <field name="model">clouder.container</field>
+            <field name="arch" type="xml">
+                <page name="save" position="after">
+                    <page string="Invoicing">
+                        <group string="Pricing">
+                            <field name="pricegrid_ids" editable="bottom">
+                                <tree>
+                                    <field name="threshold"/>
+                                    <field name="price"/>
+                                    <field name="type"/>
+                                    <field name="application_metadata" invisible="1"/>
+                                </tree>
+                            </field>
+                            <field name="invoicing_period"/>
+                        </group>
+                    </page>
+                </page>
+            </field>
+        </record>
+
+        <!-- Base Invoicing -->
+        <record id="view_clouder_base_form_invoicing" model="ir.ui.view">
+            <field name="name">clouder.base.form.invoicing</field>
+            <field name="inherit_id" ref="clouder.view_clouder_base_form"/>
+            <field name="model">clouder.base</field>
+            <field name="arch" type="xml">
+                <page name="save" position="after">
+                    <page string="Invoicing">
+                        <group string="Pricing">
+                            <field name="pricegrid_ids" editable="bottom">
+                                <tree>
+                                    <field name="threshold"/>
+                                    <field name="price"/>
+                                    <field name="type"/>
+                                    <field name="application_metadata" invisible="1"/>
+                                </tree>
+                            </field>
+                            <field name="invoicing_period"/>
+                        </group>
+                    </page>
+                </page>
+            </field>
+        </record>
+
+    </data>
+</openerp>
