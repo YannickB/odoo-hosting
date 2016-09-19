@@ -110,6 +110,7 @@ class ClouderContainer(models.Model):
         data = {
             'name': self.name,
             'image':self.name,
+            'from': self.image_id.parent_from,
             'secretkey': 'registry_password' in self.options and self.options['registry_password']['value'],
         }
         bases = {}

@@ -682,6 +682,7 @@ class ClouderBase(models.Model):
             base_reset_fullname_=base_reset_id.fullname_)
         base = base.with_context(
             container_reset_name=base_reset_id.container_id.name)
+        base.deploy_salt()
         base.update_exec()
         base.post_reset()
         base.deploy_post()
