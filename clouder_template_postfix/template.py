@@ -45,19 +45,20 @@ class ClouderContainer(models.Model):
                              '" > /etc/ssmtp/ssmtp.conf'], username='root')
                 self.execute(['echo "mailhub=postfix:25" '
                              '>> /etc/ssmtp/ssmtp.conf'], username='root')
-                self.execute(['echo "rewriteDomain=' + self.fullname +
+                self.execute(['echo "rewriteDomain=' + self.server_id.fulldomain +
                               '" >> /etc/ssmtp/ssmtp.conf'], username='root')
-                self.execute(['echo "hostname=' + self.fullname +
+                self.execute(['echo "hostname=' + self.server_id.fulldomain +
                              '" >> /etc/ssmtp/ssmtp.conf'], username='root')
                 self.execute(['echo "FromLineOverride=YES" >> '
                              '/etc/ssmtp/ssmtp.conf'], username='root')
-        if self.application_id.type_id.name == 'postfix' and self.application_id.check_tags(['exec']):
+        if self.application_id.type_id.name == 'postfix' and self.application_id.check_tags(['data']):
 
             # Adding boolean flag to see if all SMTP options are set
             smtp_options = False
-            if self.options['smtp_relayhost']['value'] and \
-                self.options['smtp_username']['value'] and \
-                self.options['smtp_key']['value']:
+            options = self.parent_id.container_id.options
+            if options['smtp_relayhost']['value'] and \
+                options['smtp_username']['value'] and \
+                options['smtp_key']['value']:
                 smtp_options = True
 
             if smtp_options:
@@ -65,14 +66,14 @@ class ClouderContainer(models.Model):
                     'sed', '-i',
                     '"/relayhost =/d" ' + '/etc/postfix/main.cf']),
                 self.execute([
-                    'echo "relayhost = ' + self.options['smtp_relayhost']['value']
+                    'echo "relayhost = ' + options['smtp_relayhost']['value']
                     + '" >> /etc/postfix/main.cf'])
 
             self.execute([
                 'sed', '-i',
                 '"/myorigin =/d" ' + '/etc/postfix/main.cf']),
             self.execute([
-                'echo "myorigin = ' + self.server_id.name + 
+                'echo "myorigin = ' + self.server_id.fulldomain +
                 '" >> /etc/postfix/main.cf'])
 
             self.execute([
@@ -97,15 +98,9 @@ class ClouderContainer(models.Model):
                     '>> /etc/postfix/main.cf'])
                 self.execute([
                     'echo "smtp_sasl_password_maps = ' + 'static:' +
-                    (self.options['smtp_username']['value'] or '') + ':' +
-                    (self.options['smtp_key']['value'] or '') +
+                    (options['smtp_username']['value'] or '') + ':' +
+                    (options['smtp_key']['value'] or '') +
                     '" >> /etc/postfix/main.cf'])
-
-            self.send(modules.get_module_path('clouder_template_postfix') +
-                      '/res/openerp_mailgate.py',
-                      '/bin/openerp_mailgate.py')
-
-            self.execute(['chmod', '+x', '/bin/openerp_mailgate.py'])
 
 
 class ClouderContainerLink(models.Model):

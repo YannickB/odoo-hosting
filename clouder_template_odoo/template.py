@@ -497,7 +497,7 @@ class ClouderBaseLink(models.Model):
             self.target.execute([
                 "echo '" + self.base_id.fullname_ +
                 ": \"|openerp_mailgate.py --host=" +
-                self.base_id.container_id.server_id.name +
+                self.base_id.container_id.server_id.ip +
                 " --port=" +
                 self.base_id.odoo_port +
                 " -u 1 -p $$$" + self.base_id.admin_password + "$$$ -d " +

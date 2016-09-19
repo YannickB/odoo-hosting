@@ -13,6 +13,11 @@ copy:
     - name: /tmp/salt_build/build_{{ pillar['image'] }}
     - source: salt://containers/build_{{ pillar['container_name'] }}
 
+pull:
+  dockerng.image_present:
+    - name: {{ container['from'] }}
+    - force: True
+
 build:
   dockerng.image_present:
     - name: {{ pillar['image'] }}
