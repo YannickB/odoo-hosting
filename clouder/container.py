@@ -161,6 +161,7 @@ class ClouderServer(models.Model):
         """
         """
         for server in self:
+            self.execute_local(['mkdir', '-p', server.home_directory + '/.ssh/keys'])
             key_file = server.home_directory + '/.ssh/keys/' + server.fulldomain
             self.execute_write_file(key_file + '.pub', server.public_key, operator='w')
             self.execute_local(['chmod', '700', key_file + '.pub'])
@@ -402,6 +403,7 @@ class ClouderServer(models.Model):
         http://blog.yohanliyanage.com/2015/05/docker-clean-up-after-yourself/
         """
         self.execute(['docker', 'rmi $(docker images -f "dangling=true" -q)'])
+        self.execute(['docker', 'rmi', '-f', '$(docker images -q)'])
         self.execute(['docker', 'run -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker:/var/lib/docker --rm martin/docker-cleanup-volumes'])
 
 
@@ -552,9 +554,9 @@ class ClouderContainer(models.Model):
         hosted in this container.
         """
         db_password = ''
-        for option in self.option_ids:
-            if option.name.name == 'db_password':
-                db_password = option.value
+        for key, option in self.options.iteritems():
+            if key == 'db_password':
+                db_password = option['value']
         return db_password
 
     @property
@@ -588,6 +590,11 @@ class ClouderContainer(models.Model):
                 options[option.name] = {
                     'id': option.id, 'name': option.id,
                     'value': option.default}
+        for child in self.child_ids:
+            if child.child_id:
+                for key, option in child.child_id.options.iteritems():
+                    if option['value']:
+                        options[key] = option
         for option in self.option_ids:
             options[option.name.name] = {
                 'id': option.id, 'name': option.name.id, 'value': option.value}
