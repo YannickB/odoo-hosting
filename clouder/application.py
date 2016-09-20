@@ -112,7 +112,7 @@ class ClouderApplicationTypeOption(models.Model):
     default = fields.Text('Default value')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(apptype_id,name)',
+        ('name_uniq', 'unique(application_type_id,name)',
          'Options name must be unique per apptype!'),
     ]
 
