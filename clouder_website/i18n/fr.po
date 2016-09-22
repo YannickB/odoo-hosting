@@ -396,7 +396,7 @@ msgstr "Veuillez saisir un email valide."
 #. module: clouder_website
 #: view:website:clouder_website.plugin_form
 msgid "Please enter a valid phone number."
-msgstr "Veuillez saisir un nupéro de téléphone valide."
+msgstr "Veuillez saisir un numéro de téléphone valide."
 
 #. module: clouder_website
 #: view:website:clouder_website.plugin_form
