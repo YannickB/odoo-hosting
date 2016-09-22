@@ -192,6 +192,25 @@ class FormController(http.Controller):
 
         return request.make_response(html, headers=HEADERS)
 
+    @http.route('/clouder_form/tos', type='http', auth='public', methods=['GET'], csrf=False)
+    def form_tos(self, **post):
+        """
+        Generates and returns the HTML TOS page
+        """
+        # Check parameters
+        lang = 'en_US'
+        if 'lang' in post:
+            lang = post['lang']
+        request.env = self.env_with_context({'lang': lang})
+
+        html = request.env.ref('clouder_website.form_tos').render(
+            {},
+            engine='ir.qweb',
+            context=request.context
+        )
+
+        return request.make_response(html, headers=HEADERS)
+
     @http.route('/clouder_form/submit_form', type='http', auth='public', methods=['POST'], csrf=False)
     def submit_form(self, **post):
         """

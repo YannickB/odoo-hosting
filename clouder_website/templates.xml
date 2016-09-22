@@ -16,7 +16,9 @@
             <div class="col-md-6">
                 <div class="padding">
                     <h3 class="nmt CL_Title">Request a Clouder Instance</h3>
-                    <div class="CL_Loading"/>
+                    <div class="CL_Loading">
+                        <i class="fa fa-spinner fa-pulse fa-3x fa-fw margin-bottom"></i>
+                    </div>
                     <form id="ClouderForm" method="POST" action="">
                         <input type="hidden" name="clouder_partner_id" value=""/>
                         <input type="hidden" name="lang" value=""/>
@@ -249,23 +251,44 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="b ui-checkbox solorow" style="">
+                                    <label>
+                                        <input class="condition" type="checkbox" name="agree"/>
+                                        <span class="icon"><i class="fa fa-check"></i></span>
+                                        <span>I agree with the </span>
+                                        <a t-att-href="'%s/clouder_form/tos' % (hostname)" target="_blank">
+                                            <span>terms and conditions</span>
+                                        </a>
+                                    </label>
+                                </div>
+                            </div>
                         </fieldset>
 
                         <div class="CL_hint">
                         </div>
 
                         <div class="CL_Step CL_Step1 row">
-                            <a class="CL_btn CL_pull-right CL_mb32 CL_a-next">Next<span class="CL_fa"/></a>
+                            <div class="col-md-6">
+                                <button type="button" class="button button-small CL_pull-right CL_mb32 CL_next">Next<span class="CL_fa"/></button>
+                            </div>
                         </div>
 
                         <div class="CL_Step CL_Step2 row">
-                            <a class="CL_btn CL_pull-left CL_mb32 CL_a-prev">Previous<span class="CL_fa"/></a>
-                            <a class="CL_btn CL_pull-right CL_mb32 CL_a-submit">Submit<span class="CL_fa"/></a>
+                            <div class="col-md-6">
+                                <button type="button" class="button button-small CL_pull-left CL_mb32 CL_prev">Previous<span class="CL_fa"/></button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="button button-small CL_pull-right CL_mb32 CL_submit">Submit<span class="CL_fa"/></button>
+                            </div>
                         </div>
                     </form>
 
-                    <div class="CL_final_error">
-                        <a class="CL_btn CL_pull-left CL_mb32 CL_a-retry">Retry<span class="CL_fa"/></a>
+                    <div class="CL_final_error row">
+                        <div class="col-md-6">
+                            <span class="CL_Error_msg"></span>
+                            <button type="button" class="button button-small CL_pull-left CL_mb32 CL_retry">Retry<span class="CL_fa"/></button>
+                        </div>
                     </div>
                     <div id="CL_ERROR_MESSAGES" style="display: none;">
                         <p id="CL_ERR_CHECK_INST">Error: could not check data with the server.</p>
@@ -285,6 +308,10 @@
                     </div>
                 </div>
             </div>
+        </template>
+        <template id="form_tos">
+            <!-- TODO: have someone make the actual TOS page -->
+            <span>Placeholder for actual TOS</span>
         </template>
     </data>
 </openerp>

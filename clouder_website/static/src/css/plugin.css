@@ -26,7 +26,6 @@
     margin: 0
 }
 
-
 #ClouderPlugin button {
     overflow: visible
 }
@@ -204,6 +203,22 @@
  * CLASSES *
  * ******* */
 
+#ClouderPlugin .solorow {
+    text-align: center;
+}
+
+#ClouderPlugin .CL_Loading {
+    align-items: center;
+}
+
+#ClouderPlugin .CL_Loading i {
+    width:100%;
+    transform-origin:center center;
+    -ms-transform-origin:center center;
+    -webkit-transform-origin: center center;
+    -moz-transform-origin:center center;
+    -o-transform-origin:center center;
+}
 
 #ClouderPlugin .padding {
     padding: 25px;

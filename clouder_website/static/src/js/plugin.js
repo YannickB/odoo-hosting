@@ -145,17 +145,32 @@ Clouder.run = function($){
         $clouder_form.find("select[name='country_id']").change();
 
         // Buttons handlers
-        $clouder_form.find('.CL_a-next').off('click').on('click', function () {
+        $clouder_form.find('.CL_next').off('click').on('click', function () {
             Clouder.error_step(1);
         });
 
-        $clouder_form.find('.CL_a-prev').off('click').on('click', function () {
+        $clouder_form.find('.CL_prev').off('click').on('click', function () {
             Clouder.showStep(1);
         });
-        $clouder_form.find('.CL_a-submit').off('click').on('click', function () {
+        Clouder.submit_button_bind = function () {
             Clouder.error_step(2);
+        };
+        $clouder_form.find('.CL_submit').off('click').on('click', Clouder.submit_button_bind);
+
+        $clouder_form.find('.condition').change(function(){
+            $submit = $clouder_form.find('.CL_submit');
+            if (this.checked){
+                $submit.attr('disabled', false);
+                $submit.on('click', Clouder.submit_button_bind);
+            }
+            else {
+                $submit.attr('disabled', true);
+                $submit.off('click');
+            }
         });
-        Clouder.$plugin.find('.CL_a-retry').off('click').on('click', function(){
+        $clouder_form.find('.condition').change();
+
+        Clouder.$plugin.find('.CL_retry').off('click').on('click', function(){
             Clouder.$plugin.find('.CL_final_error').hide();
             Clouder.loading(true, $clouder_form);
             Clouder.showStep(1);
@@ -219,7 +234,7 @@ Clouder.check_instance_data = function(){
 
                 $error.show();
             }
-            else if (data.html != undefined){
+            else if (data.next_step_validated != undefined){
                 Clouder.parse_check(data);
                 Clouder.loading(false, $form);
             }
@@ -266,15 +281,14 @@ Clouder.readresponse = function(data, cleanup=true){
 Clouder.loading = function(state, $selector){
     var $loading = Clouder.$plugin.find('.CL_Loading');
     if (state){
-        $loading.css('background', 'black url('+Clouder.img_loading+') no-repeat center center');
         $loading.css('height', $form.height());
         $loading.css('width', $form.width());
+        $loading.css('display', 'flex');
         $selector.hide();
         Clouder.$plugin.find('.CL_hint').hide();
         $loading.show();
     }
     else {
-        $loading.css('background', '');
         $loading.hide();
         $selector.show();
     }
@@ -649,8 +663,6 @@ Clouder.loadJQueryPlugins = function() {
         Clouder.loadPhp($);
     });
 };
-
-Clouder.img_loading = Clouder.pluginPath + "clouder_website/static/src/img/loading32x32.gif"
 
 Clouder.loadPhp = function ($) {
     $('#ClouderPlugin').css('min-height', '52px');
