@@ -34,12 +34,12 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
-    @property
-    def base_backup_container(self):
-        res = super(ClouderContainer, self).base_backup_container
-        if self.application_id.type_id.name == 'odoo':
-            res = self.childs['exec']
-        return res
+    # @property
+    # def base_backup_container(self):
+    #     res = super(ClouderContainer, self).base_backup_container
+    #     if self.application_id.type_id.name == 'odoo':
+    #         res = self.childs['exec']
+    #     return res
 
     @api.multi
     def deploy_post(self):

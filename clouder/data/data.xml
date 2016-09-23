@@ -67,6 +67,12 @@
             <field name="localport">80</field>
             <field name="expose">internet</field>
         </record>
+        <record id="image_template_nginx_exec_port_https" model="clouder.image.port">
+            <field name="template_id" ref="image_template_nginx_exec"/>
+            <field name="name">https</field>
+            <field name="localport">443</field>
+            <field name="expose">internet</field>
+        </record>
         <record id="image_nginx_exec" model="clouder.image">
             <field name="name">image_nginx_exec</field>
             <field name="template_ids" eval="[(4, [ref('image_template_nginx_exec')])]"/>
