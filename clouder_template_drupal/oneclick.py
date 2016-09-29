@@ -20,4 +20,34 @@
 #
 ##############################################################################
 
-import template
+from openerp import models, api, modules
+
+
+class ClouderServer(models.Model):
+    """
+    Add methods to manage the postgres specificities.
+    """
+
+    _inherit = 'clouder.server'
+
+    @api.multi
+    def oneclick_deploy_exec(self):
+
+        super(ClouderServer, self).oneclick_deploy_exec()
+
+        for oneclick in self.oneclick_ids:
+            if oneclick.code == 'drupal':
+                self.oneclick_deploy_element('container', 'drupal-all')
+                self.oneclick_deploy_element('base', 'drupal', code_container='drupal-all-drupal')
+
+    @api.multi
+    def oneclick_purge_exec(self):
+
+        container_obj = self.env['clouder.container']
+
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('suffix', '=', 'drupal-all')]).unlink()
+
+        super(ClouderServer, self).oneclick_purge_exec()
+
+

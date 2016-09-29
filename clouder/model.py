@@ -21,7 +21,7 @@
 ##############################################################################
 
 
-from openerp import models, fields, api, _, tools
+from openerp import models, fields, api, _, tools, release
 from openerp.exceptions import except_orm
 from openerp.addons.connector.session import ConnectorSession
 from openerp.addons.connector.queue.job import job, whitelist_unpickle_global, _UNPICKLE_WHITELIST
@@ -132,11 +132,22 @@ class ClouderModel(models.AbstractModel):
         auto_join=True, string='Jobs')
 
     @property
+    def version(self):
+        return int(release.version.split('.')[0])
+
+    @property
     def email_sysadmin(self):
         """
         Property returning the sysadmin email of the clouder.
         """
         return self.env.ref('clouder.clouder_settings').email_sysadmin
+
+    @property
+    def salt_master(self):
+        """
+        Property returning the salt master of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').salt_master_id
 
     @property
     def user_partner(self):
@@ -256,6 +267,16 @@ class ClouderModel(models.AbstractModel):
                             message + '\n'
         self.env.cr.commit()
 
+    def raise_error(self, message):
+        self.log('Raising error :' + message)
+        self.log('Version :' + str(self.version))
+        if self.version >= 9:
+            from openerp.exceptions import UserError
+            raise UserError(message)
+        else:
+            from openerp.exceptions import except_orm
+            raise except_orm(_(''), _(message))
+
     @api.multi
     def do(self, name, action, where=False):
         where = where or self
@@ -373,10 +394,13 @@ class ClouderModel(models.AbstractModel):
 
         :param vals: The values needed to create the record.
         """
+
         res = super(ClouderModel, self).create(vals)
+
         if self._autodeploy:
             res.hook_create()
             res.do('create', 'deploy_frame')
+
         return res
 
     @api.one
@@ -385,15 +409,16 @@ class ClouderModel(models.AbstractModel):
         Override the default unlink function to create log and call purge hook.
         """
         if self._autodeploy:
-            self.purge()
-            res = super(ClouderModel, self).unlink()
-        else:
-            res = super(ClouderModel, self).unlink()
+            try:
+                self.purge()
+            except:
+                pass
+        res = super(ClouderModel, self).unlink()
         self.env['clouder.job'].search([('res_id','=',self.id),('model_name','=',self._name)]).unlink()
         return res
 
     @api.multi
-    def connect(self, port=False, username=False):
+    def connect(self, server_name='', port=False, username=False):
         """
         Method which can be used to get an ssh connection to execute command.
 
@@ -407,8 +432,11 @@ class ClouderModel(models.AbstractModel):
             username = False
             server = self.server_id
 
+        if not server_name:
+            server_name = server.fulldomain
+
         global ssh_connections
-        host_fullname = server.name + \
+        host_fullname = server_name + \
             (port and ('_' + port) or '') + \
             (username and ('_' + username) or '')
         if host_fullname not in ssh_connections\
@@ -422,7 +450,7 @@ class ClouderModel(models.AbstractModel):
             if os.path.exists(user_config_file):
                 with open(user_config_file) as f:
                     ssh_config.parse(f)
-            user_config = ssh_config.lookup(server.name)
+            user_config = ssh_config.lookup(server_name)
 
             identityfile = None
             if 'identityfile' in user_config:
@@ -434,9 +462,7 @@ class ClouderModel(models.AbstractModel):
                     port = user_config['port']
 
             if identityfile is None:
-                raise except_orm(
-                    _('Data error!'),
-                    _("It seems Clouder have no record in the ssh config to "
+                self.raise_error("It seems Clouder have no record in the ssh config to "
                       "connect to your server.\nMake sure there is a '"
                       + self.name + ""
                       "' record in the ~/.ssh/config of the Clouder "
@@ -444,7 +470,7 @@ class ClouderModel(models.AbstractModel):
                       "To easily add this record, depending if Clouder try to "
                       "connect to a server or a container, you can click on the"
                       " 'reinstall' button of the server record or 'reset key' "
-                      "button of the container record you try to access."))
+                      "button of the container record you try to access.")
 
             # Security with latest version of Paramiko
             # https://github.com/clouder-community/clouder/issues/11
@@ -462,11 +488,11 @@ class ClouderModel(models.AbstractModel):
                       + ", type : " + type(identityfile)))
 
             self.log('connect: ssh ' + (username and username + '@' or '') +
-                     server.name + (port and ' -p ' + str(port) or ''))
+                     host + (port and ' -p ' + str(port) or ''))
 
             try:
                 ssh.connect(
-                    server.ip, port=int(port), username=username,
+                    host, port=int(port), username=username,
                     key_filename=os.path.expanduser(identityfile))
             except Exception as inst:
                 raise except_orm(
@@ -477,17 +503,17 @@ class ClouderModel(models.AbstractModel):
                       "If you were trying to connect to a container, a click on"
                       " the 'reset key' button on the container record may "
                       "resolve the problem.\n"
-                      "Target : " + server.name + " / " + server.ip + "\n"
+                      "Target : " + host + "\n"
                       "Error : " + str(inst)))
             ssh_connections[host_fullname] = ssh
         else:
             ssh = ssh_connections[host_fullname]
 
-        return {'ssh': ssh, 'server': server}
+        return {'ssh': ssh, 'host': server_name, 'server': server}
 
     @api.multi
     def execute(self, cmd, stdin_arg=False,
-                path=False, ssh=False, username=False):
+                path=False, ssh=False, server_name='', username=False, executor='bash'):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -497,14 +523,17 @@ class ClouderModel(models.AbstractModel):
         :param path: The path where the command need to be executed.
         """
 
-        res_ssh = self.connect(username=username)
-        ssh, server = res_ssh['ssh'], res_ssh['server']
+        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].execute(cmd, stdin_arg=stdin_arg, path=path, ssh=ssh, server_name=server_name, username=username, executor=executor)
+
+        res_ssh = self.connect(server_name=server_name, username=username)
+        ssh, host = res_ssh['ssh'], res_ssh['host']
 
         if path:
             self.log('path : ' + path)
             cmd.insert(0, 'cd ' + path + ';')
 
-        if self != server:
+        if self._name == 'clouder.container':
             cmd_temp = []
             first = True
             for c in cmd:
@@ -515,12 +544,12 @@ class ClouderModel(models.AbstractModel):
                 cmd_temp.append(c)
             cmd = cmd_temp
             cmd.append('"')
-            cmd.insert(0, self.name + ' bash -c ')
+            cmd.insert(0, self.name + ' ' + executor + ' -c ')
             if username:
                 cmd.insert(0, '-u ' + username)
             cmd.insert(0, 'docker exec')
 
-        self.log('host : ' + server.name)
+        self.log('host : ' + host)
         self.log('command : ' + ' '.join(cmd))
         cmd = [c.replace('$$$', '') for c in cmd]
 
@@ -593,6 +622,9 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
+        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].get(source, destination, ssh=ssh)
+
         host = self.name
         if self._name == 'clouder.container':
             # TODO
@@ -616,6 +648,9 @@ class ClouderModel(models.AbstractModel):
         :param source: The path we need to get the file.
         :param destination: The path we need to send the file.
         """
+
+        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].send(source, destination, ssh=ssh, username=username)
 
         res_ssh = self.connect(username=username)
         ssh, server = res_ssh['ssh'], res_ssh['server']
@@ -726,18 +761,18 @@ class ClouderModel(models.AbstractModel):
         return os.path.isdir(localdir)
 
     @api.multi
-    def execute_write_file(self, localfile, value):
+    def execute_write_file(self, localfile, value, operator='a'):
         """
         Method which write in a file on the local system.
 
         :param localfile: The path to the file we need to write.
         :param value: The value we need to write in the file.
         """
-        f = open(localfile, 'a')
+        f = open(localfile, operator)
         f.write(value)
         f.close()
 
-    def request(self, url, method='get', headers={}, data={}, params={}):
+    def request(self, url, method='get', headers={}, data={}, params={}, files={}):
         self.log('request ' + method + ' ' + url)
         if headers:
             self.log('headers ' + str(headers))
@@ -745,10 +780,51 @@ class ClouderModel(models.AbstractModel):
             self.log('data ' + str(data))
         if params:
             self.log('params ' + str(params))
-        result = requests.request(method, url, headers=headers, data=data, params=params, verify=False)
+        if files:
+            self.log('files ' + str(files))
+        result = requests.request(method, url, headers=headers, data=data, params=params, files=files, verify=False)
         self.log('status ' + str(result.status_code) + ' ' + result.reason)
         self.log('result ' + str(result.json()))
         return result
+
+
+class ClouderTemplateOne2many(models.AbstractModel):
+
+    _name = 'clouder.template.one2many'
+
+    @api.multi
+    def reset_template(self, records=[]):
+        if self.template_id:
+            if not records:
+                records = self.env[self._template_parent_model].search([('template_ids', 'in', self.template_id.id)])
+            for record in records:
+                name = hasattr(self.name, 'id') and self.name.id or self.name
+                childs = self.search([(self._template_parent_many2one, '=', record.id),('name','=', name)])
+                vals = {}
+                for field in self._template_fields:
+                    vals[field] = getattr(self, field)
+                if childs:
+                    for child in childs:
+                        child.write(vals)
+                else:
+                    vals.update({self._template_parent_many2one: record.id, 'name': name})
+                    self.create(vals)
+
+    @api.model
+    def create(self, vals):
+        """
+        """
+        res = super(ClouderTemplateOne2many, self).create(vals)
+        self.reset_template()
+        return res
+
+    @api.multi
+    def write(self, vals):
+        """
+        """
+        res = super(ClouderTemplateOne2many, self).write(vals)
+        self.reset_template()
+        return res
 
 
 def generate_random_password(size):

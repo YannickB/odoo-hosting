@@ -46,7 +46,7 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).generate_cert_exec()
         link_obj = self.env['clouder.base.link']
-        proxy_links = link_obj.search([('base_id','=',self.id),('name.name.type_id.name','=','proxy'),('target','!=',False)])
+        proxy_links = link_obj.search([('base_id','=',self.id),('name.type_id.name','=','proxy'),('target','!=',False)])
         if proxy_links:
             proxy_link = proxy_links[0]
             proxy = proxy_link.target
@@ -94,7 +94,7 @@ class ClouderBase(models.Model):
     def renew_cert_exec(self):
         res = super(ClouderBase, self).renew_cert_exec()
         link_obj = self.env['clouder.base.link']
-        proxy_links = link_obj.search([('base_id','=',self.id),('name.name.type_id.name','=','proxy'),('target','!=',False)])
+        proxy_links = link_obj.search([('base_id','=',self.id),('name.type_id.name','=','proxy'),('target','!=',False)])
         if proxy_links:
             proxy_link = proxy_links[0]
             proxy = proxy_link.target
@@ -128,17 +128,26 @@ class ClouderBaseLink(models.Model):
         Configure the proxy to redirect to the application port.
         """
         super(ClouderBaseLink, self).deploy_link()
-        if self.name.name.code == 'proxy':
+        if self.name.type_id.name == 'proxy':
             if not self.base_id.ssl_only:
                 configfile = 'proxy.config'
             else:
                 configfile = 'proxy-sslonly.config'
             target = self.target
-            target.send(
-                modules.get_module_path(
-                    'clouder_template_' +
-                    self.base_id.application_id.type_id.name
-                ) + '/res/' + configfile, self.base_id.nginx_configfile)
+            module_path = modules.get_module_path('clouder_template_' + self.base_id.application_id.type_id.name)
+            flag = True
+            if module_path:
+                configtemplate = module_path + '/res/' + configfile
+                if self.local_file_exist(configtemplate):
+                    target.send(
+                        configtemplate, self.base_id.nginx_configfile)
+                    flag = False
+            if flag:
+                target.send(
+                    modules.get_module_path(
+                        'clouder_template_proxy'
+                    ) + '/res/' + configfile, self.base_id.nginx_configfile)
+
             if self.base_id.is_root:
                 target.send(
                     modules.get_module_path(
@@ -209,7 +218,7 @@ class ClouderBaseLink(models.Model):
         Remove the redirection.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.name.code == 'proxy':
+        if self.name.type_id.name == 'proxy':
             target = self.target
             target.execute([
                 'rm',

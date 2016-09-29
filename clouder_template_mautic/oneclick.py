@@ -20,19 +20,34 @@
 #
 ##############################################################################
 
-{
-    'name': 'Clouder Template Glances',
-    'version': '1.0',
-    'category': 'Clouder',
-    'depends': ['clouder', 'clouder_template_shinken'],
-    'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
-    'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder Template Glances
-    """,
-    'demo': [],
-    'data': ['template.xml'],
-    'installable': True,
-    'application': True,
-}
+from openerp import models, api, modules
+
+
+class ClouderServer(models.Model):
+    """
+    Add methods to manage the postgres specificities.
+    """
+
+    _inherit = 'clouder.server'
+
+    @api.multi
+    def oneclick_deploy_exec(self):
+
+        super(ClouderServer, self).oneclick_deploy_exec()
+
+        for oneclick in self.oneclick_ids:
+            if oneclick.code == 'mautic':
+                self.oneclick_deploy_element('container', 'mautic-all')
+                self.oneclick_deploy_element('base', 'mautic', code_container='mautic-all-mautic')
+
+    @api.multi
+    def oneclick_purge_exec(self):
+
+        container_obj = self.env['clouder.container']
+
+        container_obj.search([('environment_id', '=', self.environment_id.id),
+                              ('suffix', '=', 'mautic-all')]).unlink()
+
+        super(ClouderServer, self).oneclick_purge_exec()
+
+

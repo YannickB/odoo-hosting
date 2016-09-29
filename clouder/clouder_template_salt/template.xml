@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="tag_no_salt" model="clouder.application.tag">
+            <field name="name">no-salt</field>
+        </record>
+
+        <record id="application_type_salt_master" model="clouder.application.type">
+            <field name="name">salt-master</field>
+            <field name="system_user">root</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_no_backup'),ref('tag_no_salt')])]"/>
+        </record>
+
+        <record id="image_template_salt_master_data" model="clouder.image.template">
+            <field name="name">image_template_salt_master_data</field>
+        </record>
+        <record id="image_template_salt_master_data_volume_salt" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_salt_master_data"/>
+            <field name="name">/srv/salt</field>
+        </record>
+        <record id="image_template_salt_master_data_volume_pillar" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_salt_master_data"/>
+            <field name="name">/srv/pillar</field>
+        </record>
+
+
+        <record id="image_template_salt_master_exec" model="clouder.image.template">
+            <field name="name">image_template_salt_master_exec</field>
+        </record>
+        <record id="image_template_salt_master_exec_port_ssh" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_master_exec"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_template_salt_master_exec_port_salt" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_master_exec"/>
+            <field name="name">salt</field>
+            <field name="localport">4505</field>
+            <field name="expose">internet</field>
+            <field name="use_hostport" eval="True"/>
+        </record>
+        <record id="image_template_salt_master_exec_port_saltret" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_master_exec"/>
+            <field name="name">saltret</field>
+            <field name="localport">4506</field>
+            <field name="expose">internet</field>
+            <field name="use_hostport" eval="True"/>
+        </record>
+        <record id="image_template_salt_master_exec_port_api" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_master_exec"/>
+            <field name="name">api</field>
+            <field name="localport">8080</field>
+            <field name="expose">internet</field>
+        </record>
+
+        <record id="image_salt_master_data" model="clouder.image">
+            <field name="name">image_salt_master_data</field>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_salt_master_data')])]"/>
+            <field name="parent_from">clouder/clouder-salt-master-data</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+
+        <record id="image_salt_master_exec" model="clouder.image">
+            <field name="name">image_salt_master_exec</field>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_salt_master_exec')])]"/>
+            <field name="parent_from">clouder/clouder-salt-master-exec</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
+        </record>
+
+        <record id="application_salt_master_data" model="clouder.application">
+            <field name="name">Salt Master Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_salt_master_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
+        </record>
+        <record id="application_salt_master_exec" model="clouder.application">
+            <field name="name">Salt Master Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_salt_master_exec"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
+        </record>
+        <record id="application_salt_master" model="clouder.application">
+            <field name="name">Salt Master</field>
+            <field name="code">salt-master</field>
+            <field name="type_id" ref="application_type_salt_master"/>
+            <field name="child_ids" eval="[(4, [ref('application_salt_master_data'),ref('application_salt_master_exec')])]"/>
+        </record>
+
+
+        <record id="application_type_salt_minion" model="clouder.application.type">
+            <field name="name">salt-minion</field>
+            <field name="system_user">root</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_no_backup'),ref('tag_no_salt')])]"/>
+        </record>
+
+        <record id="image_template_salt_minion" model="clouder.image.template">
+            <field name="name">image_template_salt_minion</field>
+        </record>
+        <record id="image_template_salt_minion_volume_etc" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_salt_minion"/>
+            <field name="name">/etc/nagios</field>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_template_salt_minion_volume_docker" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_salt_minion"/>
+            <field name="name">/var/run/docker.sock</field>
+            <field name="hostpath">/var/run/docker.sock</field>
+            <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_template_salt_minion_port_nrpe" model="clouder.image.port">
+            <field name="template_id" ref="image_template_salt_minion"/>
+            <field name="name">nrpe</field>
+            <field name="localport">5666</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_salt_minion" model="clouder.image">
+            <field name="name">image_salt_minion</field>
+            <field name="type_id" ref="application_type_salt_minion"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_salt_minion')])]"/>
+            <field name="parent_from">clouder/clouder-salt-master-minion</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+
+        <record id="application_salt_minion" model="clouder.application">
+            <field name="name">Salt Minion</field>
+            <field name="code">salt-minion</field>
+            <field name="type_id" ref="application_type_salt_minion"/>
+            <field name="default_image_id" ref="image_salt_minion"/>
+        </record>
+
+    </data>
+</openerp>

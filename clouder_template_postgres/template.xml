@@ -3,62 +3,107 @@
     <data>
 
 
-        <record id="apptype_postgres" model="clouder.application.type">
+        <record id="application_type_postgres" model="clouder.application.type">
             <field name="name">postgres</field>
             <field name="system_user">postgres</field>
-            <field name="role_ids" eval="[(6, 0, [ref('clouder.role_database')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_database')])]"/>
         </record>
-        <record id="apptype_postgres_option_network" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_postgres"/>
+        <record id="application_type_postgres_option_network" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_postgres"/>
             <field name="name">network</field>
             <field name="type">container</field>
             <field name="default">172.17.0.0/16</field>
         </record>
-        <record id="apptype_postgres_option_listen" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_postgres"/>
+        <record id="application_type_postgres_option_listen" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_postgres"/>
             <field name="name">listen</field>
             <field name="type">container</field>
             <field name="default">*</field>
         </record>
 
-        <record id="image_postgres" model="clouder.image">
-            <field name="name">img_postgres</field>
-            <field name="current_version">9.4</field>
-            <field name="parent_from">postgres:9.4</field>
+        <record id="image_template_postgres_data" model="clouder.image.template">
+            <field name="name">image_template_postgres_data</field>
         </record>
-        <record id="image_postgres_volume_etc" model="clouder.image.volume">
-            <field name="image_id" ref="image_postgres"/>
+        <record id="image_template_postgres_data_volume_etc" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_postgres_data"/>
             <field name="name">/etc/postgresql</field>
             <field name="user">postgres</field>
         </record>
-        <record id="image_postgres_volume_log" model="clouder.image.volume">
-            <field name="image_id" ref="image_postgres"/>
+        <record id="image_template_postgres_data_volume_log" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_postgres_data"/>
             <field name="name">/var/log/postgresql</field>
             <field name="user">postgres</field>
         </record>
-        <record id="image_postgres_volume_lib" model="clouder.image.volume">
-            <field name="image_id" ref="image_postgres"/>
+        <record id="image_template_postgres_data_volume_lib" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_postgres_data"/>
             <field name="name">/var/lib/postgresql</field>
             <field name="user">postgres</field>
         </record>
-        <record id="image_postgres_port_portgres" model="clouder.image.port">
-            <field name="image_id" ref="image_postgres"/>
+        <record id="image_postgres_data" model="clouder.image">
+            <field name="name">image_postgres_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_postgres_data')])]"/>
+            <field name="parent_from">clouder/clouder-postgres-data</field>
+        </record>
+        
+        <record id="image_template_postgres_exec" model="clouder.image.template">
+            <field name="name">image_template_postgres_exec</field>
+        </record>
+        <record id="image_template_postgres_exec_port_portgres" model="clouder.image.port">
+            <field name="template_id" ref="image_template_postgres_data"/>
             <field name="name">postgres</field>
             <field name="localport">5432</field>
         </record>
+        <record id="image_postgres_exec" model="clouder.image">
+            <field name="name">image_postgres_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_postgres_exec')])]"/>
+            <field name="parent_from">postgres</field>
+            <field name="volumes_from">data</field>
+        </record>
 
-        <record id="app_postgres" model="clouder.application">
+
+        <record id="application_postgres_data" model="clouder.application">
+            <field name="name">Postgresql Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="application_type_postgres"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_postgres_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+        </record>
+
+        <record id="application_postgres_exec" model="clouder.application">
+            <field name="name">Postgresql Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="application_type_postgres"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_postgres_exec"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
+        </record>
+
+        <record id="application_postgres" model="clouder.application">
             <field name="name">Postgresql</field>
             <field name="code">postgres</field>
-            <field name="type_id" ref="apptype_postgres"/>
-            <field name="default_image_id" ref="image_postgres"/>
+            <field name="type_id" ref="application_type_postgres"/>
+            <field name="child_ids" eval="[(4, [ref('application_postgres_data'),ref('application_postgres_exec')])]"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
         </record>
-        <record id="app_postgres_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_postgres"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+
+        <record id="application_template_container_postgres" model="clouder.application.template">
+            <field name="name">Container Postgres</field>
+        </record>
+        <record id="application_template_container_postgres_link_postgres" model="clouder.application.link">
+            <field name="template_id" ref="application_template_container_postgres"/>
+            <field name="name" ref="application_postgres"/>
             <field name="container" eval="True"/>
+            <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
+            <field name="make_link" eval="True"/>
         </record>
+
 
     </data>
 </openerp>

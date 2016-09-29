@@ -42,7 +42,7 @@ class ClouderDomain(models.Model):
 
     name = fields.Char('Domain name', required=True)
     organisation = fields.Char('Organisation', required=True)
-    dns_id = fields.Many2one('clouder.container', 'DNS Server', required=True)
+    dns_id = fields.Many2one('clouder.container', 'DNS Server', required=False)
     cert_key = fields.Text('Wildcard Cert Key')
     cert_cert = fields.Text('Wildcart Cert')
     public = fields.Boolean('Public?')
@@ -64,6 +64,17 @@ class ClouderDomain(models.Model):
         if not re.match("^[\w\d.-]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits - and dot"))
+
+    @api.multi
+    def write(self, vals):
+
+        if 'dns_id' in vals:
+            self.purge()
+
+        super(ClouderDomain, self).write(vals)
+
+        if 'dns_id' in vals:
+            self.deploy()
 
 
 class ClouderBase(models.Model):
@@ -97,7 +108,7 @@ class ClouderBase(models.Model):
     build = fields.Selection(
         [('none', 'No action'), ('build', 'Build'), ('restore', 'Restore')],
         'Build?', default='build')
-    ssl_only = fields.Boolean('SSL Only?')
+    ssl_only = fields.Boolean('SSL Only?', default=True)
     test = fields.Boolean('Test?')
     lang = fields.Selection(
         [('en_US', 'en_US'), ('fr_FR', 'fr_FR')],
@@ -116,7 +127,7 @@ class ClouderBase(models.Model):
     save_expiration = fields.Integer('Days before save expiration')
     date_next_save = fields.Datetime('Next save planned')
     save_comment = fields.Text('Save Comment')
-    autosave = fields.Boolean('Save?')
+    autosave = fields.Boolean('Save?', default=True)
     reset_each_day = fields.Boolean('Reset each day?')
     cert_key = fields.Text('Cert Key')
     cert_cert = fields.Text('Cert')
@@ -182,6 +193,11 @@ class ClouderBase(models.Model):
         return ','.join([d for k, d in self.databases.iteritems()])
 
     @property
+    def http_port(self):
+        return self.container_id.childs['exec'] and \
+            self.container_id.childs['exec'].ports['http']['hostport']
+
+    @property
     def options(self):
         """
         Property returning a dictionary containing the value of all options
@@ -198,6 +214,17 @@ class ClouderBase(models.Model):
                                          'name': option.name.id,
                                          'value': option.value}
         return options
+
+    @property
+    def links(self):
+        """
+        Property returning a dictionary containing the value of all links
+        for this base.
+        """
+        links = {}
+        for link in self.link_ids:
+            links[link.name.name.code] = link
+        return links
 
     _sql_constraints = [
         ('name_uniq', 'unique (name,domain_id)',
@@ -285,8 +312,7 @@ class ClouderBase(models.Model):
                     if option['name'] and option['name'].id in option_sources:
                         option['source'] = option_sources[option['name'].id]
 
-                        if option['source'].type == 'base' and option['source'].auto and \
-                                not (option['source'].app_code and option['source'].app_code != application.code):
+                        if option['source'].type == 'base' and option['source'].auto:
                             # Updating the default value if there is no current one set
                             options.append((0, 0, {
                                 'name': option['source'].id,
@@ -297,11 +323,7 @@ class ClouderBase(models.Model):
 
             # Adding missing option from sources
             for def_opt_key in sources_to_add:
-                if option_sources[def_opt_key].type == 'base' and option_sources[def_opt_key].auto and \
-                        not (
-                                    option_sources[def_opt_key].app_code and
-                                    option_sources[def_opt_key].app_code != application.code
-                        ):
+                if option_sources[def_opt_key].type == 'base' and option_sources[def_opt_key].auto:
                     options.append((0, 0, {
                             'name': option_sources[def_opt_key].id,
                             'value': option_sources[def_opt_key].get_default
@@ -310,7 +332,7 @@ class ClouderBase(models.Model):
             # Replacing old options
             vals['option_ids'] = options
 
-            link_sources = {x.id: x for x in application.link_ids}
+            link_sources = {x.id: x for code, x in application.links.iteritems()}
             sources_to_add = link_sources.keys()
             links_to_process = []
             # Checking old links
@@ -320,6 +342,8 @@ class ClouderBase(models.Model):
                     if isinstance(link, (list, tuple)):
                         link = {
                             'name': link[2].get('name', False),
+                            'required': link[2].get('required', False),
+                            'auto': link[2].get('auto', False),
                             'next': link[2].get('next', False)
                         }
                         # This case means we do not have an odoo recordset and need to load the link manually
@@ -328,6 +352,8 @@ class ClouderBase(models.Model):
                     else:
                         link = {
                             'name': getattr(link, 'name', False),
+                            'required': getattr(link, 'required', False),
+                            'auto': getattr(link, 'auto', False),
                             'next': getattr(link, 'next', False)
                         }
                     # Keeping the link if there is a match with the sources
@@ -342,6 +368,8 @@ class ClouderBase(models.Model):
             for def_key_link in sources_to_add:
                 link = {
                     'name': getattr(link_sources[def_key_link], 'name', False),
+                    'required': getattr(link_sources[def_key_link], 'required', False),
+                    'auto': getattr(link_sources[def_key_link], 'auto', False),
                     'next': getattr(link_sources[def_key_link], 'next', False),
                     'source': link_sources[def_key_link]
                 }
@@ -372,7 +400,9 @@ class ClouderBase(models.Model):
                             ('parent_id', '=', False)])
                         if target_ids:
                             next_id = target_ids[0].id
-                    links.append((0, 0, {'name': link['source'].id,
+                    links.append((0, 0, {'name': link['source'].name.id,
+                                         'required': link['required'],
+                                         'auto': link['auto'],
                                          'target': next_id}))
             # Replacing old links
             vals['link_ids'] = links
@@ -705,7 +735,8 @@ class ClouderBase(models.Model):
             base_reset_fullname_=base_reset_id.fullname_)
         base = base.with_context(
             container_reset_name=base_reset_id.container_id.name)
-        base.update_base()
+        base.deploy_salt()
+        base.update_exec()
         base.post_reset()
         base.deploy_post()
 
@@ -773,6 +804,8 @@ class ClouderBase(models.Model):
                 child.create_child_exec()
             return
 
+        self.deploy_salt()
+
         self.deploy_database()
         self.log('Database created')
 
@@ -796,6 +829,13 @@ class ClouderBase(models.Model):
         self = self.with_context(save_comment='First save')
         self.save_exec(no_enqueue=True)
 
+        if self.application_id.update_bases:
+            self.container_id.deploy_salt()
+        for key, child in self.container_id.childs.iteritems():
+            if child.application_id.update_bases:
+                child.deploy_salt()
+
+
     @api.multi
     def purge_post(self):
         """
@@ -818,15 +858,29 @@ class ClouderBase(models.Model):
         """
         self.purge_database()
         self.purge_post()
+        self.purge_salt()
+
+        if self.application_id.update_bases:
+            self.container_id.deploy_salt()
+        for key, child in self.container_id.childs.iteritems():
+            if child.application_id.update_bases:
+                child.deploy_salt()
+
         super(ClouderBase, self).purge()
-        
 
     @api.multi
-    def update_base(self):
+    def update(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('update', 'update_exec')
+
+    @api.multi
+    def update_exec(self):
         """
         Hook which can be called by submodules to execute commands when we
         want to update a base.
         """
+        self = self.with_context(save_comment='Before update')
+        self.save_exec(no_enqueue=True)
         return
 
     @api.multi
@@ -900,9 +954,11 @@ class ClouderBaseLink(models.Model):
 
     base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade",
                               required=True)
-    name = fields.Many2one('clouder.application.link', 'Application Link',
+    name = fields.Many2one('clouder.application', 'Application',
                            required=True)
     target = fields.Many2one('clouder.container', 'Target')
+    required = fields.Boolean('Required?')
+    auto = fields.Boolean('Auto?')
     deployed = fields.Boolean('Deployed?', readonly=True)
 
     @property
@@ -920,12 +976,12 @@ class ClouderBaseLink(models.Model):
         Check that we specify a value for the link
         if this link is required.
         """
-        if self.name.required and not self.target:
+        if self.required and not self.target:
             raise except_orm(
                 _('Data error!'),
-                _("You need to specify a link to " +
-                  self.name.name.name + " for the base " +
-                  self.base_id.name)
+                _("You need to specify a link to "
+                  + self.name.name + " for the base "
+                  + self.base_id.name)
             )
 
     @api.multi
@@ -955,15 +1011,12 @@ class ClouderBaseLink(models.Model):
             self.log(
                 'The target isnt configured in the link, skipping deploy link')
             return False
-        if not self.name.base:
-            self.log('This application isnt for base, skipping deploy link')
-            return False
         return True
 
     @api.multi
     def deploy_(self):
         self = self.with_context(no_enqueue=True)
-        self.do('deploy_link ' + self.name.name.name, 'deploy_exec', where=self.base_id)
+        self.do('deploy_link ' + self.name.name, 'deploy_exec', where=self.base_id)
 
     @api.multi
     def deploy_exec(self):
@@ -975,7 +1028,7 @@ class ClouderBaseLink(models.Model):
     @api.multi
     def purge_(self):
         self = self.with_context(no_enqueue=True)
-        self.do('purge_link ' + self.name.name.name, 'purge_exec', where=self.base_id)
+        self.do('purge_link ' + self.name.name, 'purge_exec', where=self.base_id)
 
     @api.multi
     def purge_exec(self):

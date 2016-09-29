@@ -3,43 +3,84 @@
     <data>
 
 
-        <record id="apptype_bind" model="clouder.application.type">
+        <record id="application_type_bind" model="clouder.application.type">
             <field name="name">bind</field>
             <field name="system_user">bind</field>
-            <field name="role_ids" eval="[(6, 0, [ref('clouder.role_dns')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_dns')])]"/>
         </record>
-        <record id="apptype_bind_option_slaveip" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_bind"/>
+        <record id="application_type_bind_option_slaveip" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_bind"/>
             <field name="name">slave_ip</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
         </record>
 
-        <record id="image_bind" model="clouder.image">
-            <field name="name">img_bind</field>
-            <field name="current_version">1</field>
+        <record id="image_template_bind_data" model="clouder.image.template">
+            <field name="name">image_template_bind_data</field>
+        </record>
+        <record id="image_template_bind_data_volume_bind" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_bind_data"/>
+            <field name="name">/etc/bind</field>
+        </record>
+        <record id="image_bind_data" model="clouder.image">
+            <field name="name">image_bind_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_bind_data')])]"/>
             <field name="parent_from">clouder/clouder-bind</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_bind_volume_bind" model="clouder.image.volume">
-            <field name="image_id" ref="image_bind"/>
-            <field name="name">/etc/bind</field>
+
+        <record id="image_template_bind_exec" model="clouder.image.template">
+            <field name="name">image_template_bind_exec</field>
         </record>
-        <record id="image_bind_port_bind" model="clouder.image.port">
-            <field name="image_id" ref="image_bind"/>
+        <record id="image_template_bind_exec_port_bind" model="clouder.image.port">
+            <field name="template_id" ref="image_template_bind_exec"/>
             <field name="name">bind</field>
             <field name="localport">53</field>
             <field name="udp" eval="True"/>
             <field name="expose">internet</field>
         </record>
+        <record id="image_bind_exec" model="clouder.image">
+            <field name="name">image_bind_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_bind_exec')])]"/>
+            <field name="parent_from">clouder/clouder-bind</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+            <field name="volumes_from">data</field>
+        </record>
 
-
-        <record id="app_bind" model="clouder.application">
+        <record id="application_bind_data" model="clouder.application">
+            <field name="name">Bind Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="application_type_bind"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_bind_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+        </record>
+        <record id="application_bind_exec" model="clouder.application">
+            <field name="name">Bind Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="application_type_bind"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_bind_exec"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
+        </record>
+        <record id="application_bind" model="clouder.application">
             <field name="name">Bind</field>
             <field name="code">bind</field>
-            <field name="type_id" ref="apptype_bind"/>
-            <field name="default_image_id" ref="image_bind"/>
+            <field name="type_id" ref="application_type_bind"/>
+            <field name="child_ids" eval="[(4, [ref('application_bind_data'),ref('application_bind_exec')])]"/>
+        </record>
+
+        <record id="application_template_base_www_link_bind" model="clouder.application.link">
+            <field name="template_id" ref="clouder.application_template_base_www"/>
+            <field name="name" ref="application_bind"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
         </record>
 
     </data>

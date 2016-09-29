@@ -29,6 +29,7 @@ Clouder.run = function($){
         $clouder_form.find('input[name="clouder_partner_id"]').val(Clouder.params['partner_id']);
         $clouder_form.find('input[name="db"]').val(Clouder.params['db']);
         $clouder_form.find('input[name="lang"]').val(Clouder.params['lang']);
+        $clouder_form.find('input[name="hostname"]').val(Clouder.pluginPath);
 
         // Controls the state of env_prefix input depending on env_id
         $clouder_form.on('change', "select[name='environment_id']", function(){
@@ -666,9 +667,11 @@ Clouder.loadJQueryPlugins = function() {
 
 Clouder.loadPhp = function ($) {
     $('#ClouderPlugin').css('min-height', '52px');
+    var ajx_params = Clouder.params;
+    ajx_params.hostname = Clouder.pluginPath;
     $.ajax({
         url: Clouder.pluginPath + 'clouder_form/request_form',
-        data: Clouder.params,
+        data: ajx_params,
         method: 'POST', type: 'POST',
         dataType: 'html',
         cache: false,

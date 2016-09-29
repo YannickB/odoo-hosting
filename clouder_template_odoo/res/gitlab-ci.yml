@@ -1,0 +1,78 @@
+image: ubuntu:latest
+
+variables:
+  VERSION: "9.0"
+  TESTS: "0"
+  LINT_CHECK: "0"
+  TRANSIFEX: "0"
+  CONTAINER_TEST_IMAGE: $REGISTRY_IP/CI_PROJECT_NAMESPACE/CI_PROJECT_NAME:$CI_BUILD_REF_NAME
+  CONTAINER_RELEASE_IMAGE: $REGISTRY_IP/CI_PROJECT_NAMESPACE/CI_PROJECT_NAME:latest
+
+before_script:
+  - apt-get update
+  - apt-get install -qq git python-lxml python-setuptools python-pip expect-dev wget npm
+  - pip install --upgrade pip
+  - git clone https://github.com/OCA/maintainer-quality-tools.git ${HOME}/maintainer-quality-tools
+  - export PATH=${HOME}/maintainer-quality-tools/travis:${PATH}
+  - travis_install_nightly
+
+stages:
+  - build
+  - test
+  - release
+  - staging
+  - deploy
+
+build
+  image: docker:latest
+  services:
+  - docker:dind
+  stage: build
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.example.com
+  script:
+    - docker build --pull -t $CONTAINER_TEST_IMAGE .
+    - docker push $CONTAINER_TEST_IMAGE
+
+lint:
+  variables:
+    LINT_CHECK: "1"
+  script:
+    - travis_run_tests
+  stage: test
+
+test:
+  variables:
+    TESTS: "1"
+    ODOO_REPO: "odoo/odoo"
+  script:
+    - travis_run_tests
+  stage: test
+
+release
+  image: docker:latest
+  services:
+  - docker:dind
+  stage: release
+  before_script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.example.com
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
+    - docker push $CONTAINER_RELEASE_IMAGE
+  only:
+    - master
+
+staging:
+  stage: staging
+  script:
+    - ./deploy.sh
+  only:
+    - master
+
+deploy:
+  stage: deploy
+  script:
+    - ./deploy.sh
+  only:
+    - master

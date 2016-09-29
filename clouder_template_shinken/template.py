@@ -36,7 +36,7 @@ class ClouderServer(models.Model):
         """
         Property returning the shinken config file.
         """
-        return '/usr/local/shinken/etc/hosts/' + self.name + '.cfg'
+        return '/usr/local/shinken/etc/hosts/' + self.fulldomain + '.cfg'
 
 
 class ClouderContainer(models.Model):
@@ -99,7 +99,7 @@ class ClouderContainer(models.Model):
         Add the general configuration files.
         """
         super(ClouderContainer, self).deploy_post()
-        if self.application_id.type_id.name == 'shinken':
+        if self.application_id.type_id.name == 'shinken' and self.application_id.check_tags(['data']):
             self.send(
                 modules.get_module_path('clouder_template_shinken') +
                 '/res/general-shinken.config',
@@ -177,49 +177,48 @@ class ClouderContainerLink(models.Model):
         Deploy the configuration file to watch the container.
         """
         super(ClouderContainerLink, self).deploy_link()
-        if self.name.name.code == 'shinken':
-            config_file = 'container-shinken'
-            if not self.container_id.autosave:
-                config_file = 'container-shinken-nosave'
-            self.target.send(
-                modules.get_module_path('clouder_template_shinken') +
-                '/res/' + config_file + '.config',
-                self.container_id.shinken_configfile, username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/BACKUPIP/' +
-                self.container_id.backup_ids[0].server_id.ip + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/PORT/' +
-                self.container_id.backup_ids[0].ports['nrpe']['hostport']
-                + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i', '"s/METHOD/' +
-                self.container_id.backup_ids[0].backup_method + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i', '"s/TYPE/container/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/BACKUPIP/' +
-                self.container_id.backup_ids[0].server_id.ip + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/UNIQUE_NAME/' + self.container_id.fullname + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
-            self.target.execute([
-                'sed', '-i',
-                '"s/HOST/' + self.container_id.server_id.name + '/g"',
-                self.container_id.shinken_configfile], username='shinken')
+        if self.name.type_id.name == 'shinken':
+            if self.container_id.autosave:
+                config_file = 'container-shinken'
+                self.target.send(
+                    modules.get_module_path('clouder_template_shinken') +
+                    '/res/' + config_file + '.config',
+                    self.container_id.shinken_configfile, username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/BACKUPIP/' +
+                    self.container_id.backup_ids[0].server_id.ip + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/PORT/' +
+                    self.container_id.backup_ids[0].ports['nrpe']['hostport']
+                    + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i', '"s/METHOD/' +
+                    self.container_id.backup_ids[0].backup_method + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i', '"s/TYPE/container/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/BACKUPIP/' +
+                    self.container_id.backup_ids[0].server_id.ip + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/UNIQUE_NAME/' + self.container_id.fullname + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
+                self.target.execute([
+                    'sed', '-i',
+                    '"s/HOST/' + self.container_id.server_id.name + '/g"',
+                    self.container_id.shinken_configfile], username='shinken')
 
-            self.target.execute(
-                ['/usr/local/shinken/bin/init.d/shinken', 'reload'],
-                username='shinken')
+                self.target.execute(
+                    ['/usr/local/shinken/bin/init.d/shinken', 'reload'],
+                    username='shinken')
 
     @api.multi
     def purge_link(self):
@@ -227,7 +226,7 @@ class ClouderContainerLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderContainerLink, self).purge_link()
-        if self.name.name.code == 'shinken':
+        if self.name.type_id.name == 'shinken':
             self.target.execute(['rm', self.container_id.shinken_configfile],
                                 username='shinken')
             self.target.execute(
@@ -248,7 +247,7 @@ class ClouderBaseLink(models.Model):
         Deploy the configuration file to watch the base.
         """
         super(ClouderBaseLink, self).deploy_link()
-        if self.name.name.code == 'shinken':
+        if self.name.type_id.name == 'shinken':
             config_file = 'base-shinken'
             if not self.base_id.autosave:
                 config_file = 'base-shinken-nosave'
@@ -298,7 +297,7 @@ class ClouderBaseLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.name.code == 'shinken':
+        if self.name.type_id.name == 'shinken':
             self.target.execute(['rm', self.base_id.shinken_configfile],
                                 username='shinken')
             self.target.execute(

@@ -23,6 +23,7 @@
                         <input type="hidden" name="clouder_partner_id" value=""/>
                         <input type="hidden" name="lang" value=""/>
                         <input type="hidden" name="db" value=""/>
+                        <input type="hidden" name="hostname" value=""/>
 
                         <fieldset class="CL_Step CL_Step1">
                             <div class="row">

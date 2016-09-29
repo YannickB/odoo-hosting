@@ -35,8 +35,8 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
 
-        if self.application_id.type_id.name == 'mautic':
-            package_name = self.image_id.current_version + '.zip'
+        if self.application_id.type_id.name == 'mautic' and self.application_id.check_tags(['data']):
+            package_name = self.application_id.current_version + '.zip'
             self.execute(
                          ['wget', '-q', 'https://s3.amazonaws.com/mautic/releases/' + package_name,
                          ], path='/var/www/', username='www-data')
@@ -105,7 +105,7 @@ class ClouderBase(models.Model):
         Update odoo configuration.
         """
         res = super(ClouderBase, self).deploy_post()
-        if self.application_id.type_id.name == 'mautic':
+        if self.application_id.type_id.name == 'mautic' and self.application_id.check_tags(['exec']):
             return
             baseUrl = "http://" + self.name + "." + self.domain_id.name
             installerUrl = "/index.php/installer/step/"

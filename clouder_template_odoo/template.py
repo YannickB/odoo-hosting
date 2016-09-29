@@ -25,6 +25,8 @@ import time
 import erppeek
 
 
+
+
 class ClouderContainer(models.Model):
     """
     Add methods to manage the postgres specificities.
@@ -32,12 +34,12 @@ class ClouderContainer(models.Model):
 
     _inherit = 'clouder.container'
 
-    @property
-    def base_backup_container(self):
-        res = super(ClouderContainer, self).base_backup_container
-        if self.application_id.type_id.name == 'odoo':
-            res = self.childs['exec']
-        return res
+    # @property
+    # def base_backup_container(self):
+    #     res = super(ClouderContainer, self).base_backup_container
+    #     if self.application_id.type_id.name == 'odoo':
+    #         res = self.childs['exec']
+    #     return res
 
     @api.multi
     def deploy_post(self):
@@ -46,7 +48,7 @@ class ClouderContainer(models.Model):
             config_file = '/opt/odoo/etc/odoo.conf'
             if self.application_id.code == 'data':
                 self.execute(['sed', '-i', '"s/APPLICATION/' +
-                             self.application_id.parent_id.fullcode
+                             self.parent_id.container_id.application_id.fullcode
                              .replace('-', '_') + '/g"', config_file])
                 self.execute(['sed', '-i', 's/DB_SERVER/' +
                              self.db_server + '/g',
@@ -59,6 +61,7 @@ class ClouderContainer(models.Model):
                     'sed', '-i', 's/DB_PASSWORD/' +
                     self.db_password + '/g',
                     config_file])
+
             if self.application_id.code == 'exec':
                 addons_path = \
                     '/opt/odoo/files/odoo/addons,/opt/odoo/extra-addons,'
@@ -71,7 +74,8 @@ class ClouderContainer(models.Model):
                     'sed', '-i', '"s/ADDONS_PATH/' +
                     addons_path.replace('/', '\/') + '/g"',
                     config_file])
-            if self.application_id.code == 'ssh':                
+
+            if self.application_id.code == 'ssh':
                 self.execute(['mkdir /root/.ssh'])
                 self.execute(['echo "' + self.options['ssh_publickey']['value'] + '" > /root/.ssh/authorized_keys'])
 
@@ -381,28 +385,30 @@ class ClouderBase(models.Model):
         return res
 
     @api.multi
-    def update_base(self):
+    def update_exec(self):
         """
         Update base module to update all others modules.
         """
-        res = super(ClouderBase, self).update_base()
+        res = super(ClouderBase, self).update_exec()
         if self.application_id.type_id.name == 'odoo':
-            try:
-                self.log("client = erppeek.Client('http://" +
-                         self.container_id.server_id.ip + ":" +
-                         self.odoo_port + "," +
-                         "db=" + self.fullname_ + "," + "user=" +
-                         self.admin_name + ", password=$$$" +
-                         self.admin_password + "$$$)")
-                client = erppeek.Client(
-                    'http://' + self.container_id.server_id.ip +
-                    ':' + self.odoo_port,
-                    db=self.fullname_, user=self.admin_name,
-                    password=self.admin_password)
-                self.log("client.upgrade('base')")
-                client.upgrade('base')
-            except:
-                pass
+            # try:
+            #     self.log("client = erppeek.Client('http://" +
+            #              self.container_id.server_id.ip + ":" +
+            #              self.odoo_port + "," +
+            #              "db=" + self.fullname_ + "," + "user=" +
+            #              self.admin_name + ", password=$$$" +
+            #              self.admin_password + "$$$)")
+            #     client = erppeek.Client(
+            #         'http://' + self.container_id.server_id.ip +
+            #         ':' + self.odoo_port,
+            #         db=self.fullname_, user=self.admin_name,
+            #         password=self.admin_password)
+            #     self.log("client.upgrade('base')")
+            #     client.upgrade('base')
+            # except:
+            #     pass
+
+            self.salt_master.execute(['salt', self.container_id.server_id.fulldomain, 'state.apply', 'base_update', "pillar=\"{'base_name': '" + self.fullname_ + "'}\""])
 
         return res
 
@@ -430,7 +436,7 @@ class ClouderBaseLink(models.Model):
     def nginx_config_update(self, target):
         res = super(ClouderBaseLink, self).nginx_config_update(target)
 
-        if self.name.name.code == 'proxy' \
+        if self.name.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'odoo':
 
             target.execute([
@@ -446,8 +452,11 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
 
-        if self.name.name.code == 'postfix' \
+        if self.name.type_id.name == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
+
+            if 'base_restoration' in self.env.context and self.env.context['base_restoration']:
+                return
 
             self.log("client = erppeek.Client('http://" +
                      self.base_id.container_id.server_id.ip +
@@ -488,7 +497,7 @@ class ClouderBaseLink(models.Model):
             self.target.execute([
                 "echo '" + self.base_id.fullname_ +
                 ": \"|openerp_mailgate.py --host=" +
-                self.base_id.container_id.server_id.name +
+                self.base_id.container_id.server_id.ip +
                 " --port=" +
                 self.base_id.odoo_port +
                 " -u 1 -p $$$" + self.base_id.admin_password + "$$$ -d " +
@@ -503,7 +512,7 @@ class ClouderBaseLink(models.Model):
         Purge postfix configuration.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.name.code == 'postfix' \
+        if self.name.type_id.name == 'postfix' \
                 and self.base_id.application_id.type_id.name == 'odoo':
             self.target.execute([
                 'sed', '-i',

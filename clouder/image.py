@@ -27,6 +27,17 @@ import re
 from datetime import datetime
 
 
+class ClouderImageTemplate(models.Model):
+    """
+    """
+
+    _name = 'clouder.image.template'
+
+    name = fields.Char('Image name', required=True)
+    volume_ids = fields.One2many('clouder.image.volume', 'template_id', 'Volumes')
+    port_ids = fields.One2many('clouder.image.port', 'template_id', 'Ports')
+
+
 class ClouderImage(models.Model):
     """
     Define the image object, which represent the container image which
@@ -37,13 +48,16 @@ class ClouderImage(models.Model):
 
     name = fields.Char('Image name', required=True)
     type_id = fields.Many2one('clouder.application.type', 'Application Type')
-    current_version = fields.Char('Current version', required=True)
+    template_ids = fields.Many2many(
+        'clouder.image.template', 'clouder_image_template_rel',
+        'image_id', 'template_id', 'Templates')
     parent_id = fields.Many2one('clouder.image', 'Parent image')
     parent_version_id = fields.Many2one(
         'clouder.image.version', 'Parent version')
     parent_from = fields.Char('From')
     registry_id = fields.Many2one('clouder.container', 'Registry')
     dockerfile = fields.Text('DockerFile')
+    volumes_from = fields.Char('Volumes from')
     volume_ids = fields.One2many('clouder.image.volume', 'image_id', 'Volumes')
     port_ids = fields.One2many('clouder.image.port', 'image_id', 'Ports')
     version_ids = fields.One2many(
@@ -64,6 +78,34 @@ class ClouderImage(models.Model):
                 return True
         return False
 
+    @property
+    def computed_dockerfile(self):
+        dockerfile = 'FROM '
+        if self.parent_id and self.parent_version_id:
+            dockerfile += self.parent_version_id.fullpath
+        elif self.parent_from:
+            dockerfile += self.parent_from
+        else:
+            raise except_orm(_('Data error!'),
+                             _("You need to specify the image to inherit!"))
+
+        dockerfile += '\nMAINTAINER ' + self.env['clouder.model'].email_sysadmin + '\n'
+
+        dockerfile += self.dockerfile or ''
+        volumes = ''
+        for volume in self.volume_ids:
+            volumes += volume.name + ' '
+        if volumes:
+            dockerfile += '\nVOLUME ' + volumes
+
+        ports = ''
+        for port in self.port_ids:
+            ports += port.localport + ' '
+        if ports:
+            dockerfile += '\nEXPOSE ' + ports
+
+        return dockerfile
+
     @api.one
     @api.constrains('name')
     def _check_name(self):
@@ -76,12 +118,18 @@ class ClouderImage(models.Model):
                 "Name can only contains letters, digits and underscore"))
 
     @api.multi
+    def build_image(self, model, server, runner=False, expose_ports=[], salt=True):
+        """
+        """
+        return
+
+    @api.multi
     def build(self):
         """
         Method to generate a new image version.
         """
 
-        if not self.registry_id and self.name != 'img_registry':
+        if not self.registry_id:
             raise except_orm(
                 _('Date error!'),
                 _("You need to specify the registry "
@@ -93,6 +141,33 @@ class ClouderImage(models.Model):
             'registry_id': self.registry_id and self.registry_id.id,
             'parent_id': self.parent_version_id and self.parent_version_id.id})
 
+    @api.model
+    def create(self, vals):
+        """
+        """
+        res = super(ClouderImage, self).create(vals)
+        if 'template_ids' in vals:
+            for template in res.template_ids:
+                for volume in self.env['clouder.image.volume'].search([('template_id', '=', template.id)]):
+                    volume.reset_template(records=[res])
+                for port in self.env['clouder.image.port'].search([('template_id', '=', template.id)]):
+                    port.reset_template(records=[res])
+        return res
+
+    @api.multi
+    def write(self, vals):
+        """
+        """
+        res = super(ClouderImage, self).write(vals)
+        if 'template_ids' in vals:
+            self = self.browse(self.id)
+            for template in self.template_ids:
+                for volume in self.env['clouder.image.volume'].search([('template_id', '=', template.id)]):
+                    volume.reset_template(records=[self])
+                for port in self.env['clouder.image.port'].search([('template_id', '=', template.id)]):
+                    port.reset_template(records=[self])
+        return res
+
 
 class ClouderImageVolume(models.Model):
     """
@@ -103,17 +178,23 @@ class ClouderImageVolume(models.Model):
 
     _name = 'clouder.image.volume'
 
+    _inherit = ['clouder.template.one2many']
+
+    _template_parent_model = 'clouder.image'
+    _template_parent_many2one = 'image_id'
+    _template_fields = ['hostpath', 'user', 'readonly', 'nosave']
+
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
-                               required=True)
+                               required=False)
+    template_id = fields.Many2one('clouder.image.template', 'Template', ondelete="cascade")
     name = fields.Char('Path', required=True)
-    from_code = fields.Char('From')
     hostpath = fields.Char('Host path')
     user = fields.Char('System User')
     readonly = fields.Boolean('Readonly?')
     nosave = fields.Boolean('No save?')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)',
+        ('name_uniq', 'unique(image_id,template_id,name)',
          'Volume name must be unique per image!')
     ]
 
@@ -127,17 +208,25 @@ class ClouderImagePort(models.Model):
 
     _name = 'clouder.image.port'
 
+    _inherit = ['clouder.template.one2many']
+
+    _template_parent_model = 'clouder.image'
+    _template_parent_many2one = 'image_id'
+    _template_fields = ['localport', 'expose', 'udp', 'use_hostport']
+
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
-                               required=True)
+                               required=False)
+    template_id = fields.Many2one('clouder.image.template', 'Template', ondelete="cascade")
     name = fields.Char('Name', required=True)
     localport = fields.Char('Local port', required=True)
     expose = fields.Selection(
         [('internet', 'Internet'), ('local', 'Local'), ('none', 'None')],
         'Expose?', required=True, default='local')
     udp = fields.Boolean('UDP?')
+    use_hostport = fields.Boolean('Use hostport?')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)',
+        ('name_uniq', 'unique(image_id,template_id,name)',
          'Port name must be unique per image!')
     ]
 
@@ -175,8 +264,8 @@ class ClouderImageVersion(models.Model):
         Property returning the address of the registry where is hosted
         the image version.
         """
-        return self.registry_id and self.registry_id.server_id.ip + ':' + \
-            self.registry_id.ports['registry-ssl']['hostport']
+        return self.registry_id and self.registry_id.base_ids[0].fulldomainserver_id.ip + ':' + \
+            self.registry_id.ports['http']['hostport']
 
     @property
     def fullpath(self):
@@ -193,7 +282,7 @@ class ClouderImageVersion(models.Model):
         registry is on the same server.
         """
         return self.registry_id and 'localhost:' + \
-            self.registry_id.ports['registry']['hostport'] +\
+            self.registry_id.ports['http']['hostport'] +\
             '/' + self.fullname
 
     _order = 'create_date desc'
@@ -234,7 +323,7 @@ class ClouderImageVersion(models.Model):
         return super(ClouderImageVersion, self).unlink()
 
     @api.multi
-    def hook_build(self, dockerfile):
+    def hook_build(self):
         return
 
     @api.multi
@@ -251,35 +340,7 @@ class ClouderImageVersion(models.Model):
         Build a new image and store it to the registry.
         """
 
-        dockerfile = 'FROM '
-        if self.image_id.parent_id and self.parent_id:
-            if self.registry_id.server_id == \
-                    self.parent_id.registry_id.server_id:
-                dockerfile += self.parent_id.fullpath_localhost
-            else:
-                dockerfile += self.parent_id.fullpath
-        elif self.image_id.parent_from:
-            dockerfile += self.image_id.parent_from
-        else:
-            raise except_orm(_('Data error!'),
-                             _("You need to specify the image to inherit!"))
-
-        dockerfile += '\nMAINTAINER ' + self.email_sysadmin + '\n'
-
-        dockerfile += self.image_id.dockerfile or ''
-        volumes = ''
-        for volume in self.image_id.volume_ids:
-            volumes += volume.name + ' '
-        if volumes:
-            dockerfile += '\nVOLUME ' + volumes
-
-        ports = ''
-        for port in self.image_id.port_ids:
-            ports += port.localport + ' '
-        if ports:
-            dockerfile += '\nEXPOSE ' + ports
-
-        self.hook_build(dockerfile)
+        self.hook_build()
 
         return
 

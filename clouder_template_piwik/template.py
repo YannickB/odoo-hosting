@@ -128,7 +128,7 @@ class ClouderBaseLink(models.Model):
         Add the website in piwik.
         """
         super(ClouderBaseLink, self).deploy_link()
-        if self.name.name.code == 'piwik':
+        if self.name.type_id.name == 'piwik':
             ssh = self.connect(self.target.fullname)
             piwik_id = self.execute(ssh, [
                 'mysql', self.target_base.fullname_,
@@ -173,7 +173,7 @@ class ClouderBaseLink(models.Model):
         Remove the website from piwik.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.name.code == 'piwik':
+        if self.name.type_id.name == 'piwik':
             ssh = self.connect(self.target.fullname)
             piwik_id = self.execute(ssh, [
                 'mysql', self.target_base.fullname_,

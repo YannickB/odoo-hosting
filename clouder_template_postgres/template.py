@@ -37,22 +37,22 @@ class ClouderContainer(models.Model):
             db_type = 'pgsql'
         return db_type
 
-    @api.multi
-    def deploy_post(self):
-        """
-        Allow ip from options.
-        """
-        super(ClouderContainer, self).deploy_post()
-        if self.application_id.type_id.name == 'postgres':
-            self.execute([
-                'echo "host all  all    ' +
-                self.options['network']['value'] +
-                ' md5" >> /etc/postgresql/' +
-                self.image_id.current_version + '/main/pg_hba.conf'])
-            self.execute([
-                'echo "listen_addresses=\'' +
-                self.options['listen']['value'] + '\'" >> /etc/postgresql/' +
-                self.image_id.current_version + '/main/postgresql.conf'])
+    # @api.multi
+    # def deploy_post(self):
+    #     """
+    #     Allow ip from options.
+    #     """
+    #     super(ClouderContainer, self).deploy_post()
+    #     if self.application_id.type_id.name == 'postgres' and self.application_id.check_tags(['exec']):
+    #         self.execute([
+    #             'echo "host all  all    ' +
+    #             self.options['network']['value'] +
+    #             ' md5" >> /etc/postgresql/' +
+    #             self.image_id.current_version + '/main/pg_hba.conf'])
+    #         self.execute([
+    #             'echo "listen_addresses=\'' +
+    #             self.options['listen']['value'] + '\'" >> /etc/postgresql/' +
+    #             self.image_id.current_version + '/main/postgresql.conf'])
 
 
 class ClouderContainerLink(models.Model):
@@ -68,7 +68,7 @@ class ClouderContainerLink(models.Model):
         Deploy the configuration file to watch the container.
         """
         super(ClouderContainerLink, self).deploy_link()
-        if self.name.name.code == 'postgres':
+        if self.name.type_id.name == 'postgres' and self.container_id.application_id.check_tags(['data']):
             self.log('Creating database user')
 
             container = self.container_id
@@ -99,7 +99,7 @@ class ClouderContainerLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderContainerLink, self).purge_link()
-        if self.name.name.code == 'postgres':
+        if self.name.type_id.name == 'postgres' and self.container_id.application_id.check_tags(['data']):
             container = self.container_id
             container.database.execute([
                 'psql', '-c', '"DROP USER ' + container.db_user + ';"'],

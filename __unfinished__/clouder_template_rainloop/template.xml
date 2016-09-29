@@ -3,12 +3,12 @@
     <data>
 
 
-        <record id="apptype_wordpress" model="clouder.application.type">
+        <record id="application_type_wordpress" model="clouder.application.type">
             <field name="name">wordpress</field>
             <field name="system_user">www-data</field>
         </record>
-        <record id="apptype_wordpress_option_db_password" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_wordpress"/>
+        <record id="application_type_wordpress_option_db_password" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_wordpress"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
             <field name="auto" eval="True"/>
@@ -38,55 +38,55 @@
         </record>
 
 
-        <record id="app_wordpress" model="clouder.application">
+        <record id="application_wordpress" model="clouder.application">
             <field name="name">Wordpress</field>
             <field name="code">wp</field>
-            <field name="type_id" ref="apptype_wordpress"/>
+            <field name="type_id" ref="application_type_wordpress"/>
             <field name="default_image_id" ref="image_wordpress"/>
             <field name="current_version">8.0</field>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_wordpress"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
+        <record id="application_wordpress_link_bind" model="clouder.application.link">
+            <field name="application_id" ref="application_wordpress"/>
+            <field name="name" ref="clouder_template_bind.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_wordpress"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
+        <record id="application_wordpress_link_shinken" model="clouder.application.link">
+            <field name="application_id" ref="application_wordpress"/>
+            <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="container" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="app_wordpress"/>
-            <field name="name" ref="clouder_template_mysql.app_mysql"/>
+        <record id="application_wordpress_link_mysql" model="clouder.application.link">
+            <field name="application_id" ref="application_wordpress"/>
+            <field name="name" ref="clouder_template_mysql.application_mysql"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="container" eval="True"/>
         </record>
-        <record id="app_wordpress_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_wordpress"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
+        <record id="application_wordpress_link_postfix" model="clouder.application.link">
+            <field name="application_id" ref="application_wordpress"/>
+            <field name="name" ref="clouder_template_postfix.application_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_wordpress"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
+        <record id="application_wordpress_link_proxy" model="clouder.application.link">
+            <field name="application_id" ref="application_wordpress"/>
+            <field name="name" ref="clouder_template_proxy.application_proxy"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_wordpress_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_wordpress"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
+        <record id="application_wordpress_link_piwik" model="clouder.application.link">
+            <field name="application_id" ref="application_wordpress"/>
+            <field name="name" ref="clouder_template_piwik.application_piwik"/>
             <field name="base" eval="True"/>
         </record>
 

@@ -51,8 +51,10 @@ class ClouderConfigSettings(models.Model):
 
     name = fields.Char('Name')
     email_sysadmin = fields.Char('Email SysAdmin')
+    salt_master_id = fields.Many2one('clouder.container', 'Salt Master', readonly=True)
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')
+    end_update_containers = fields.Datetime('Last Update Containers ended at')
     end_reset_bases = fields.Datetime('Last Reset Bases ended at')
     end_certs_renewal = fields.Datetime('Last Certs Renewal ended at')
 
@@ -120,7 +122,7 @@ class ClouderConfigSettings(models.Model):
 
         links = self.env['clouder.container.link'].search(
             [('container_id.application_id.type_id.name', '=', 'backup'),
-             ('name.name.code', '=', 'backup-upl')])
+             ('name.code', '=', 'backup-upload')])
         for link in links:
             link.deploy_exec()
 
@@ -166,6 +168,22 @@ class ClouderConfigSettings(models.Model):
              self.now_date + ' ' + self.now_hour_regular)])
         for base in bases:
             base.save_exec()
+
+    @api.multi
+    def update_containers(self):
+        self.do('update_containers', 'update_containers_exec')
+
+    @api.multi
+    def update_containers_exec(self):
+        """
+        """
+        containers = self.env['clouder.container'].search(
+            [('application_id.update_strategy', '=', 'auto')])
+        containers.update_exec()
+
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.env.ref('clouder.clouder_settings').end_update_containers = now
+        self.env.cr.commit()
 
     @api.multi
     def reset_bases(self):

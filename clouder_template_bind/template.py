@@ -25,6 +25,8 @@ from openerp import models, api
 from openerp import modules
 from datetime import datetime
 
+import socket
+
 class ClouderDomain(models.Model):
     """
     Add method to manage domain general configuration on the bind container.
@@ -41,15 +43,23 @@ class ClouderDomain(models.Model):
         return'/etc/bind/db.' + self.name
 
     @api.multi
-    def refresh_serial(self):
+    def refresh_serial(self, domain=False):
         """
         Refresh the serial number in the config file
         """
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
             self.dns_id.execute([
-                'sed', '-i', '"s/[0-9]* ;serial/' + datetime.now().strftime('%Y%m%d%H') + ' ;serial/g"',
+                'sed', '-i', '"s/[0-9]* ;serial/' + datetime.now().strftime('%m%d%H%M%S') + ' ;serial/g"',
                 self.configfile])
             self.dns_id.execute(['/etc/init.d/bind9 reload'])
+
+            if domain:
+                try:
+                    socket.gethostbyname(domain)
+                except:
+                    self.dns_id.start()
+                    pass
+
 
     @api.multi
     def deploy(self):
@@ -111,13 +121,13 @@ class ClouderBaseLink(models.Model):
     @api.multi
     def deploy_bind_config(self, name):
         proxy_link = self.search([('base_id', '=', self.base_id.id), (
-            'name.application_id.code', '=', 'proxy')])
+            'name.type_id.name', '=', 'proxy')])
         self.target.execute([
             'echo "' + name + ' IN A ' +
             (proxy_link and proxy_link[0].target.server_id.ip
              or self.base_id.container_id.server_id.ip) +
             '" >> ' + self.base_id.domain_id.configfile])
-        self.base_id.domain_id.refresh_serial()
+        self.base_id.domain_id.refresh_serial(self.base_id.fulldomain)
 
     @api.multi
     def purge_bind_config(self, name):
@@ -134,10 +144,16 @@ class ClouderBaseLink(models.Model):
         base has a postfix link.
         """
         super(ClouderBaseLink, self).deploy_link()
-        if self.name.name.code == 'bind':
+        if self.name.type_id.name == 'bind':
             if self.base_id.is_root:
                 self.deploy_bind_config('@')
             self.deploy_bind_config(self.base_id.name)
+
+            proxy_link = self.search([
+                ('base_id', '=', self.base_id.id),
+                ('name.type_id.name', '=', 'proxy')])
+            if proxy_link and proxy_link.target and not self.base_id.cert_key and not self.base_id.cert_cert:
+                self.base_id.generate_cert_exec()
 
     @api.multi
     def purge_link(self):
@@ -145,7 +161,7 @@ class ClouderBaseLink(models.Model):
         Remove base records on the bind container.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.name.code == 'bind':
+        if self.name.type_id.name == 'bind':
             if self.base_id.is_root:
                 self.purge_bind_config('@')
             self.purge_bind_config(self.base_id.name)

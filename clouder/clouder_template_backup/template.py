@@ -55,7 +55,7 @@ class ClouderContainerLink(models.Model):
         """
         Upload the whole backups to a distant container.
         """
-        if self.name.name.code == 'backup-upl' \
+        if self.name.type_id.name == 'backup-upload' \
                 and self.container_id.application_id.type_id.name == 'backup':
             filegz = self.container_id.fullname + '.tar.gz'
             file_destination = '/opt/upload/' + filegz
@@ -68,20 +68,20 @@ class ClouderContainerLink(models.Model):
             container.send(self.home_directory + '/.ssh/config',
                       '/home/backup/.ssh/config', username='backup')
             container.send(self.home_directory + '/.ssh/keys/' +
-                      self.target.server_id.name + '.pub',
+                      self.target.server_id.fulldomain + '.pub',
                       '/home/backup/.ssh/keys/' +
-                      self.target.server_id.name + '.pub', username='backup')
+                      self.target.server_id.fulldomain + '.pub', username='backup')
             container.send(self.home_directory + '/.ssh/keys/' +
-                      self.target.server_id.name,
+                      self.target.server_id.fulldomain,
                       '/home/backup/.ssh/keys/' +
-                      self.target.server_id.name, username='backup')
+                      self.target.server_id.fulldomain, username='backup')
             container.execute(['chmod', '-R', '700',
                                '/home/backup/.ssh'], username='backup')
 
             self.target.server_id.execute(['mkdir', '-p', '/tmp/backup-upload'])
             container.execute([
                 'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-                tmp_file, self.target.server_id.name + ':' + tmp_file],
+                tmp_file, self.target.server_id.fulldomain + ':' + tmp_file],
                 username='backup')
             container.execute(['rm', tmp_file])
             self.target.server_id.execute([
@@ -103,7 +103,7 @@ class ClouderContainerLink(models.Model):
         """
         Remove the backups on the distant container.
         """
-        if self.name.name.code == 'backup-upl' \
+        if self.name.type_id.name == 'backup-upload' \
                 and self.container_id.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.container_id.name
             self.target.execute(['rm', '-rf', directory])

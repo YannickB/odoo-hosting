@@ -2,7 +2,7 @@
 <openerp>
     <data>
 
-        <record id="apptype_openshift" model="clouder.application.type">
+        <record id="application_type_openshift" model="clouder.application.type">
             <field name="name">openshift</field>
             <field name="system_user">openshift</field>
         </record>
@@ -62,11 +62,11 @@
 
 
 
-        <record id="app_openshift" model="clouder.application">
+        <record id="application_openshift" model="clouder.application">
             <field name="name">openshift</field>
             <field name="code">openshift</field>
             <field name="current_version">1</field>
-            <field name="type_id" ref="apptype_openshift"/>
+            <field name="type_id" ref="application_type_openshift"/>
             <field name="default_image_id" ref="image_openshift"/>
             <field name="container_time_between_save">9999</field>
             <field name="container_saverepo_change">30</field>

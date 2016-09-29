@@ -2,1290 +2,394 @@
 <openerp>
     <data>
 
-        <record id="oneclick_clouder" model="clouder.oneclick">
-            <field name="name">Clouder</field>
-            <field name="function">oneclick_clouder</field>
+        <record id="oneclick_odoo" model="clouder.oneclick">
+            <field name="name">Odoo</field>
+            <field name="code">odoo</field>
         </record>
 
-        <record id="apptype_odoo" model="clouder.application.type">
+        <record id="application_type_odoo" model="clouder.application.type">
             <field name="name">odoo</field>
             <field name="system_user">odoo</field>
             <field name="symlink" eval="True"/>
             <field name="localpath">/opt/versions</field>
             <field name="localpath_services">/opt/odoo</field>
         </record>
-        <record id="apptype_odoo_option_default_account_chart" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_odoo"/>
+        <record id="application_type_odoo_option_default_account_chart" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">default_account_chart</field>
             <field name="type">application</field>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_odoo_option_account_chart" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_odoo"/>
+        <record id="application_type_odoo_option_account_chart" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">account_chart</field>
             <field name="type">base</field>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_odoo_option_install_modules" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_odoo"/>
+        <record id="application_type_odoo_option_install_modules" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">install_modules</field>
             <field name="type">application</field>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_odoo_option_test_install_modules" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_odoo"/>
+        <record id="application_type_odoo_option_test_install_modules" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">test_install_modules</field>
             <field name="type">application</field>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_odoo_option_poweruser_groups" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_odoo"/>
+        <record id="application_type_odoo_option_poweruser_groups" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">poweruser_group</field>
             <field name="type">application</field>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_odoo_option_db_password" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_odoo"/>
+        <record id="application_type_odoo_option_db_password" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">db_password</field>
             <field name="type">container</field>
-            <field name="app_code">data</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_odoo_option_ssh_privatekey" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_odoo"/>
+        <record id="application_type_odoo_option_registry_password" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_odoo"/>
+            <field name="name">registry_password</field>
+            <field name="type">container</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_files')])]"/>
+            <field name="auto" eval="True"/>
+        </record>
+        <record id="application_type_odoo_option_ssh_privatekey" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">ssh_privatekey</field>
             <field name="type">container</field>
-            <field name="app_code">ssh</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_ssh')])]"/>
             <field name="auto" eval="True"/>
         </record>
-        <record id="apptype_odoo_option_ssh_publickey" model="clouder.application.type.option">
-            <field name="apptype_id" ref="apptype_odoo"/>
+        <record id="application_type_odoo_option_ssh_publickey" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_odoo"/>
             <field name="name">ssh_publickey</field>
             <field name="type">container</field>
-            <field name="app_code">ssh</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_ssh')])]"/>
             <field name="auto" eval="True"/>
+        </record>
+
+        <record id="image_template_odoo_data" model="clouder.image.template">
+            <field name="name">image_template_odoo_data</field>
+        </record>
+        <record id="image_template_odoo_data_volume_home" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_odoo_data"/>
+            <field name="name">/home/odoo</field>
+        </record>
+        <record id="image_template_odoo_data_volume_data" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_odoo_data"/>
+            <field name="name">/opt/odoo/data</field>
+        </record>
+        <record id="image_template_odoo_data_volume_etc" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_odoo_data"/>
+            <field name="name">/opt/odoo/etc</field>
+        </record>
+        <record id="image_template_odoo_data_volume_extra_addons" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_odoo_data"/>
+            <field name="name">/opt/odoo/extra-addons</field>
+        </record>
+        <record id="image_template_odoo_data_volume_var" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_odoo_data"/>
+            <field name="name">/opt/odoo/var</field>
+        </record>
+
+        <record id="image_template_odoo_files" model="clouder.image.template">
+            <field name="name">image_template_odoo_files</field>
+        </record>
+        <record id="image_template_odoo_data_volume_files" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_odoo_files"/>
+            <field name="name">/opt/odoo/files</field>
+            <field name="nosave" eval="True"/>
+        </record>
+
+        <record id="image_template_odoo_exec" model="clouder.image.template">
+            <field name="name">image_template_odoo_exec</field>
+        </record>
+        <record id="image_template_odoo_exec_port_http" model="clouder.image.port">
+            <field name="template_id" ref="image_template_odoo_exec"/>
+            <field name="name">http</field>
+            <field name="localport">8069</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_template_odoo_exec_port_longpolling" model="clouder.image.port">
+            <field name="template_id" ref="image_template_odoo_exec"/>
+            <field name="name">longpolling</field>
+            <field name="localport">8072</field>
+            <field name="expose">internet</field>
+        </record>
+
+        <record id="image_template_odoo_ssh" model="clouder.image.template">
+            <field name="name">image_template_odoo_ssh</field>
+        </record>
+        <record id="image_template_odoo_ssh_port_ssh" model="clouder.image.port">
+            <field name="template_id" ref="image_template_odoo_ssh"/>
+            <field name="name">ssh</field>
+            <field name="localport">22</field>
+            <field name="expose">internet</field>
         </record>
 
         <record id="image_odoo_data" model="clouder.image">
             <field name="name">img_odoo_data</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="current_version">8.0</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_odoo_data')])]"/>
             <field name="parent_from">clouder/clouder-odoo-data</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_odoo_data_volume_data" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_data"/>
-            <field name="name">/opt/odoo/data</field>
-        </record>
-        <record id="image_odoo_data_volume_etc" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_data"/>
-            <field name="name">/opt/odoo/etc</field>
-        </record>
-        <record id="image_odoo_data_volume_extra_addons" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_data"/>
-            <field name="name">/opt/odoo/extra-addons</field>
-        </record>
-        <record id="image_odoo_data_volume_var" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_data"/>
-            <field name="name">/opt/odoo/var</field>
-        </record>
-        <record id="image_odoo_data_volume_home" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_data"/>
-            <field name="name">/home/odoo</field>
-        </record>
 
 
-        <record id="image_odoo_files8" model="clouder.image">
+        <record id="image_odoo8_files" model="clouder.image">
             <field name="name">img_odoo_files8</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="current_version">8.0</field>
-            <field name="parent_from">clouder/clouder-odoo-files8</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
+            <field name="parent_from">clouder/clouder-odoo8-files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_odoo_files8_volume_files" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_files8"/>
-            <field name="name">/opt/odoo/files</field>
-            <field name="nosave" eval="True"/>
-        </record>
 
-        <record id="image_odoo_exec" model="clouder.image">
-            <field name="name">img_odoo_exec</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="current_version">8.0</field>
-            <field name="parent_from">clouder/clouder-odoo-exec</field>
-            <field name="parent_id"/>
-            <field name="dockerfile"/>
-        </record>
-        <record id="image_odoo_exec_volume_var" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/var</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_exec_volume_etc" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/etc</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_exec_volume_extra_addons" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/extra-addons</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_exec_volume_data" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/data</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_exec_volume_home" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_exec"/>
-            <field name="name">/home/odoo</field>
-        </record>
-        <record id="image_odoo_exec_volume_files" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_exec"/>
-            <field name="from_code">files</field>
-            <field name="name">/opt/odoo/files</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_exec_port_http" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo_exec"/>
-            <field name="name">http</field>
-            <field name="localport">8069</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_odoo_exec_port_longpolling" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo_exec"/>
-            <field name="name">longpolling</field>
-            <field name="localport">8072</field>
-            <field name="expose">internet</field>
-        </record>
-
-
-        <record id="image_odoo_ssh" model="clouder.image">
-            <field name="name">img_odoo_ssh</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="current_version">8.0</field>
-            <field name="parent_from">clouder/clouder-odoo-ssh</field>
-            <field name="parent_id"/>
-            <field name="dockerfile"/>
-        </record>
-        <record id="image_odoo_ssh_volume_var" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_ssh"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/var</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_ssh_volume_etc" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_ssh"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/etc</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_ssh_volume_extra_addons" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_ssh"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/extra-addons</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_ssh_volume_data" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_ssh"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/data</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_ssh_volume_home" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_ssh"/>
-            <field name="from_code">data</field>
-            <field name="name">/home/odoo</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_ssh_volume_files" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_ssh"/>
-            <field name="from_code">files</field>
-            <field name="name">/opt/odoo/files</field>
-            <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_ssh_port_ssh" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo_ssh"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
-        </record>
-
-
-        <record id="app_odoo" model="clouder.application">
-            <field name="name">Odoo</field>
-            <field name="code">odoo</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="default_image_id" ref="image_odoo_data"/>
-            <field name="base" eval="True"/>
-            <field name="current_version">8.0</field>
-        </record>
-        <record id="app_odoo_link_gitlab" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="app_odoo_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="app_odoo_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
-            <field name="base" eval="True"/>
-        </record>
-
-        <record id="app_odoo_data" model="clouder.application">
-            <field name="name">Odoo Data</field>
-            <field name="code">data</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo"/>
-            <field name="default_image_id" ref="image_odoo_data"/>
-            <field name="sequence">1</field>
-            <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
-        </record>
-        <record id="app_odoo_data_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_data"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="container" eval="True"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <record id="app_odoo_data_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_data"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-
-        <record id="app_odoo_files" model="clouder.application">
-            <field name="name">Odoo Files</field>
-            <field name="code">files</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo"/>
-            <field name="default_image_id" ref="image_odoo_files8"/>
-            <field name="sequence">2</field>
-            <field name="required" eval="True"/>
-        </record>
-
-        <record id="app_odoo_exec" model="clouder.application">
-            <field name="name">Odoo Exec</field>
-            <field name="code">exec</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo"/>
-            <field name="default_image_id" ref="image_odoo_exec"/>
-            <field name="sequence">3</field>
-            <field name="required" eval="True"/>
-        </record>
-        <record id="app_odoo_exec_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_exec"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <record id="app_odoo_exec_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_exec"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-
-        <record id="app_odoo_ssh" model="clouder.application">
-            <field name="name">Odoo SSH</field>
-            <field name="code">ssh</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo"/>
-            <field name="default_image_id" ref="image_odoo_ssh"/>
-            <field name="sequence">4</field>
-        </record>
-
-        <record id="image_odoo_files9" model="clouder.image">
+        <record id="image_odoo9_files" model="clouder.image">
             <field name="name">img_odoo_files9</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="current_version">9.0</field>
-            <field name="parent_from">clouder/clouder-odoo-files9</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
+            <field name="parent_from">clouder/clouder-odoo9-files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_odoo_files9_volume_files" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_files9"/>
-            <field name="name">/opt/odoo/files</field>
-            <field name="nosave" eval="True"/>
-        </record>
 
-        <record id="app_odoo9" model="clouder.application">
-            <field name="name">Odoo 9</field>
-            <field name="code">odoo9</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="default_image_id" ref="image_odoo_data"/>
-            <field name="base" eval="True"/>
-            <field name="current_version">9.0</field>
-        </record>
-        <record id="app_odoo9_link_gitlab" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9"/>
-            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="app_odoo9_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo9_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo9_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="app_odoo9_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo9_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo9_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
-            <field name="base" eval="True"/>
-        </record>
-
-        <record id="app_odoo9_data" model="clouder.application">
-            <field name="name">Odoo 9 Data</field>
-            <field name="code">data</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo9"/>
-            <field name="default_image_id" ref="image_odoo_data"/>
-            <field name="sequence">1</field>
-            <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
-        </record>
-        <record id="app_odoo9_data_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_data"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="container" eval="True"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <record id="app_odoo9_data_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_data"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-
-        <record id="app_odoo9_files" model="clouder.application">
-            <field name="name">Odoo 9 Files</field>
-            <field name="code">files</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo9"/>
-            <field name="default_image_id" ref="image_odoo_files9"/>
-            <field name="sequence">2</field>
-            <field name="required" eval="True"/>
-        </record>
-
-        <record id="app_odoo9_exec" model="clouder.application">
-            <field name="name">Odoo 9 Exec</field>
-            <field name="code">exec</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo9"/>
-            <field name="default_image_id" ref="image_odoo_exec"/>
-            <field name="sequence">3</field>
-            <field name="required" eval="True"/>
-        </record>
-        <record id="app_odoo9_exec_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_exec"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <record id="app_odoo9_exec_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_exec"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-
-        <record id="app_odoo9_ssh" model="clouder.application">
-            <field name="name">Odoo 9 SSH</field>
-            <field name="code">ssh</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo9"/>
-            <field name="default_image_id" ref="image_odoo_ssh"/>
-            <field name="sequence">4</field>
-        </record>
-
-
-        <record id="image_odoo_clouder_files8" model="clouder.image">
-            <field name="name">img_odoo_clouder_files8</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="current_version">8.0</field>
-            <field name="parent_from">clouder/clouder-odoo-clouder-files8</field>
+        <record id="image_odoo8_clouder_files" model="clouder.image">
+            <field name="name">img_odoo8_clouder_files</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
+            <field name="parent_from">clouder/clouder-odoo8-clouder-files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_odoo_clouder_files8_volume_files" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_clouder_files8"/>
-            <field name="name">/opt/odoo/files</field>
-            <field name="nosave" eval="True"/>
-        </record>
-
-        <record id="image_odoo_clouder_exec" model="clouder.image">
-            <field name="name">img_odoo_clouder_exec</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="current_version">8.0</field>
-            <field name="parent_from">clouder/clouder-odoo-clouder-exec</field>
-            <field name="parent_id"/>
-            <field name="dockerfile"/>
-        </record>
-        <record id="image_odoo_clouder_exec_volume_var" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_clouder_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/var</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_clouder_exec_volume_etc" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_clouder_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/etc</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_clouder_exec_volume_extra_addons" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_clouder_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/extra-addons</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_clouder_exec_volume_data" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_clouder_exec"/>
-            <field name="from_code">data</field>
-            <field name="name">/opt/odoo/data</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_clouder_exec_volume_home" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_clouder_exec"/>
-            <field name="name">/home/odoo</field>
-        </record>
-        <record id="image_odoo_clouder_exec_volume_files" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo_clouder_exec"/>
-            <field name="from_code">files</field>
-            <field name="name">/opt/odoo/files</field>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_clouder_exec_port_http" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo_clouder_exec"/>
-            <field name="name">http</field>
-            <field name="localport">8069</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_odoo_clouder_exec_port_longpolling" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo_clouder_exec"/>
-            <field name="name">longpolling</field>
-            <field name="localport">8072</field>
-            <field name="expose">internet</field>
-        </record>
-
-        <record id="app_odoo_clouder" model="clouder.application">
-            <field name="name">Clouder</field>
-            <field name="code">clouder</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="default_image_id" ref="image_odoo_data"/>
-            <field name="base" eval="True"/>
-            <field name="current_version">8.0</field>
-        </record>
-        <record id="app_odoo_clouder_link_gitlab" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_option_install_modules" model="clouder.application.option">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="apptype_odoo_option_install_modules"/>
-            <field name="value">clouder</field>
-        </record>
-
-        <record id="app_odoo_clouder_data" model="clouder.application">
-            <field name="name">Clouder Data</field>
-            <field name="code">data</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo_clouder"/>
-            <field name="default_image_id" ref="image_odoo_data"/>
-            <field name="sequence">1</field>
-            <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_data_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder_data"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="container" eval="True"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_data_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder_data"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-
-        <record id="app_odoo_clouder_files" model="clouder.application">
-            <field name="name">Clouder Files</field>
-            <field name="code">files</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo_clouder"/>
-            <field name="default_image_id" ref="image_odoo_clouder_files8"/>
-            <field name="sequence">2</field>
-            <field name="required" eval="True"/>
-        </record>
-
-        <record id="app_odoo_clouder_exec" model="clouder.application">
-            <field name="name">Clouder Exec</field>
-            <field name="code">exec</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo_clouder"/>
-            <field name="default_image_id" ref="image_odoo_clouder_exec"/>
-            <field name="sequence">3</field>
-            <field name="required" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_exec_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder_exec"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_exec_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder_exec"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-
-        <record id="app_odoo_clouder_ssh" model="clouder.application">
-            <field name="name">Clouder SSH</field>
-            <field name="code">ssh</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo_clouder"/>
-            <field name="default_image_id" ref="image_odoo_ssh"/>
-            <field name="sequence">4</field>
-        </record>
-
 
         <record id="image_odoo9_clouder_files" model="clouder.image">
             <field name="name">img_odoo9_clouder_files</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="current_version">9.0</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
             <field name="parent_from">clouder/clouder-odoo9-clouder-files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
-        <record id="image_odoo9_clouder_files_volume_files" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo9_clouder_files"/>
-            <field name="name">/opt/odoo/files</field>
-            <field name="nosave" eval="True"/>
+
+        <record id="image_odoo_exec" model="clouder.image">
+            <field name="name">img_odoo_exec</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_odoo_exec')])]"/>
+            <field name="parent_from">clouder/clouder-odoo-exec</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+            <field name="volumes_from">data,files</field>
         </record>
 
-        <record id="app_odoo9_clouder" model="clouder.application">
-            <field name="name">Clouder 9</field>
-            <field name="code">clouder9</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="default_image_id" ref="image_odoo_data"/>
-            <field name="base" eval="True"/>
-            <field name="current_version">9.0</field>
-        </record>
-        <record id="app_odoo9_clouder_link_gitlab" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder"/>
-            <field name="name" ref="clouder_template_gitlab.app_gitlab"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_option_install_modules" model="clouder.application.option">
-            <field name="application_id" ref="app_odoo9_clouder"/>
-            <field name="name" ref="apptype_odoo_option_install_modules"/>
-            <field name="value">clouder</field>
+        <record id="image_odoo_clouder_exec" model="clouder.image">
+            <field name="name">img_odoo_clouder_exec</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_odoo_exec')])]"/>
+            <field name="parent_from">clouder/clouder-odoo-clouder-exec</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+            <field name="volumes_from">data,files</field>
         </record>
 
-        <record id="app_odoo9_clouder_data" model="clouder.application">
-            <field name="name">Clouder 9 Data</field>
+        <record id="image_odoo_ssh" model="clouder.image">
+            <field name="name">img_odoo_ssh</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('image_template_odoo_ssh')])]"/>
+            <field name="parent_from">clouder/clouder-odoo-ssh</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+            <field name="volumes_from">data,files</field>
+        </record>
+
+
+
+        <record id="application_odoo_data" model="clouder.application">
+            <field name="name">Odoo Data</field>
             <field name="code">data</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo9_clouder"/>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
             <field name="autosave" eval="True"/>
         </record>
-        <record id="app_odoo9_clouder_data_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder_data"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="container" eval="True"/>
+
+        <record id="application_odoo8_files" model="clouder.application">
+            <field name="name">Odoo 8 Files</field>
+            <field name="code">files</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
+            <field name="default_image_id" ref="image_odoo8_files"/>
+            <field name="sequence">2</field>
             <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_data_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder_data"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="update_strategy">manual</field>
+            <field name="update_bases" eval="True"/>
         </record>
 
-        <record id="app_odoo9_clouder_files" model="clouder.application">
+        <record id="application_odoo9_files" model="clouder.application">
+            <field name="name">Odoo 9 Files</field>
+            <field name="code">files</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
+            <field name="default_image_id" ref="image_odoo9_files"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">manual</field>
+            <field name="update_bases" eval="True"/>
+        </record>
+
+        <record id="application_odoo8_clouder_files" model="clouder.application">
+            <field name="name">Clouder 8 Files</field>
+            <field name="code">files</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
+            <field name="default_image_id" ref="image_odoo8_clouder_files"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">manual</field>
+            <field name="update_bases" eval="True"/>
+        </record>
+
+        <record id="application_odoo9_clouder_files" model="clouder.application">
             <field name="name">Clouder 9 Files</field>
             <field name="code">files</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo9_clouder"/>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_gitlab.application_template_container_gitlab')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_files')])]"/>
             <field name="default_image_id" ref="image_odoo9_clouder_files"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
+            <field name="update_strategy">manual</field>
+            <field name="update_bases" eval="True"/>
         </record>
 
-        <record id="app_odoo9_clouder_exec" model="clouder.application">
-            <field name="name">Clouder 9 Exec</field>
+        <record id="application_odoo_exec" model="clouder.application">
+            <field name="name">Odoo Exec</field>
             <field name="code">exec</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo9_clouder"/>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_odoo_exec"/>
+            <field name="sequence">3</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
+        </record>
+
+        <record id="application_odoo_clouder_exec" model="clouder.application">
+            <field name="name">Clouder Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_exec_link_postgres" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder_exec"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
-        <record id="app_odoo9_clouder_exec_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo9_clouder_exec"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
+            <field name="update_strategy">auto</field>
         </record>
 
-        <record id="app_odoo9_clouder_ssh" model="clouder.application">
-            <field name="name">Clouder 9 SSH</field>
+        <record id="application_odoo_ssh" model="clouder.application">
+            <field name="name">Odoo SSH</field>
             <field name="code">ssh</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="parent_id" ref="app_odoo9_clouder"/>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_ssh')])]"/>
             <field name="default_image_id" ref="image_odoo_ssh"/>
             <field name="sequence">4</field>
+            <field name="update_strategy">auto</field>
         </record>
 
-
-
-
-<!--
-
-
-
-
-
-        <record id="image_odoo" model="clouder.image">
-            <field name="name">img_odoo</field>
-            <field name="current_version">8.0</field>
-            <field name="parent_id" ref="clouder.image_base"/>
-            <field name="dockerfile"><![CDATA[
-RUN echo "deb http://http.debian.net/debian wheezy main" >> /etc/apt/sources.list
-RUN echo "deb http://http.debian.net/debian wheezy-backports main" >> /etc/apt/sources.list
-RUN apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-dateutil python-feedparser python-gdata python-ldap python-libxslt1 python-lxml python-mako python-openid python-passlib python-psycopg2 python-pybabel python-pychart python-pydot python-pyparsing python-reportlab python-simplejson python-tz python-vatnumber python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi python-decorator python-unittest2 python-psutil python-requests python-jinja2 python-pypdf python-docutils python-paramiko postgresql-client libfontenc1 libxfont1 xfonts-75dpi xfonts-base xfonts-encodings xfonts-utils libjpeg8
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y -qq install python-pip
-
-RUN wget http://downloads.sourceforge.net/wkhtmltopdf/wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb -O /tmp/wkhtmltox.deb
-RUN dpkg -i /tmp/wkhtmltox.deb
-
-# Note: The official Debian and Ubuntu images automatically ``apt-get clean``
-# after each ``apt-get``
-RUN pip install psycogreen
-RUN pip install erppeek
-
-#echo "deb http://ftp.us.debian.org/debian wheezy-backports main" >> /etc/apt/sources.list
-
-RUN useradd -m -s /bin/bash odoo
-USER odoo
-RUN mkdir /home/odoo/.ssh
-RUN mkdir /home/odoo/.ssh/keys
-RUN ln -s /opt/keys/authorized_keys /home/odoo/.ssh/authorized_keys
-
-
-
-USER root
-
-RUN mkdir /opt/versions
-RUN mkdir /opt/odoo
-RUN mkdir /opt/odoo/logs
-
-RUN touch /opt/odoo/supervisor.conf
-RUN ln -s /opt/odoo/supervisor.conf /etc/supervisor/conf.d/odoo.conf
-
-RUN chown -R odoo /opt/odoo
-RUN chmod 644 /opt/odoo/supervisor.conf
-
-RUN mkdir /base-backup
-RUN chown -R odoo /base-backup
-VOLUME /base-backup
-]]></field>
-        </record>
-        <record id="image_odoo_volume1" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">/opt/versions</field>
-            <field name="hostpath">/opt/services</field>
-            <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
-        </record>
-        <record id="image_odoo_volume2" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">/opt/odoo</field>
-            <field name="user">odoo</field>
-        </record>
-        <record id="image_odoo_volume3" model="clouder.image.volume">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">/home/odoo</field>
-            <field name="user">odoo</field>
-        </record>
-        <record id="image_odoo_port1" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">ssh</field>
-            <field name="localport">22</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_odoo_port2" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">odoo1</field>
-            <field name="localport">8069</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_odoo_port3" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">odoo2</field>
-            <field name="localport">7069</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_odoo_port4" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">odoo3</field>
-            <field name="localport">6069</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_odoo_port5" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">port-formation</field>
-            <field name="localport">5069</field>
-            <field name="expose">internet</field>
-        </record>
-        <record id="image_odoo_port6" model="clouder.image.port">
-            <field name="image_id" ref="image_odoo"/>
-            <field name="name">port-test</field>
-            <field name="localport">4069</field>
-            <field name="expose">internet</field>
-        </record>
-
-        <record id="app_odoo" model="clouder.application">
-            <field name="name">Odoo</field>
-            <field name="code">odoo</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="default_image_id" ref="image_odoo"/>
-            <field name="current_version">8.0</field>
-            <field name="buildfile"><![CDATA[
-git clone http://github.com/odoo/odoo.git parts/odoo -b 8.0
-git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
-git clone http://github.com/OCA/website.git extra/website -b 8.0
-
-#[buildout]
-#parts = odoo
-#extensions = gp.vcsdevelop
-#vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/1.8#egg=aro-1.8
-#vcs-update = True
-#find-links = http://download.gna.org/pychart/
-
-#[versions]
-# in some cases that's needed
-#anybox.recipe.openerp =
-
-#[odoo]
-#recipe = anybox.recipe.openerp:server
-#version = git http://github.com/odoo/odoo.git odoo 8.0
-#addons = git http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting master
-
-#[versions]
-#reportlab = 2.7
-#pypdf = 1.13
-]]></field>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
-            <field name="base_time_between_save">9999</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-            <field name="base_save_expiration">5</field>
-        </record>
-        <record id="app_odoo_link1" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
+        <record id="application_odoo8" model="clouder.application">
+            <field name="name">Odoo 8</field>
+            <field name="code">odoo8</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
+            <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo8_files'),ref('application_odoo_exec'),ref('application_odoo_ssh')])]"/>
+            <field name="sequence">2</field>
             <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_link2" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_link3" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
-        </record>
-        <record id="app_odoo_link4" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_link5" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_link6" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
             <field name="base" eval="True"/>
         </record>
 
+        <record id="application_odoo9" model="clouder.application">
+            <field name="name">Odoo 9</field>
+            <field name="code">odoo9</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
+            <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo9_files'),ref('application_odoo_exec'),ref('application_odoo_ssh')])]"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
 
-        <record id="app_odoo_clouder" model="clouder.application">
-            <field name="name">Clouder</field>
-            <field name="code">clouder</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="default_image_id" ref="image_odoo"/>
-            <field name="current_version">8.0</field>
-            <field name="buildfile"><![CDATA[
-git clone http://github.com/odoo/odoo.git parts/odoo -b 8.0
-git clone http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting -b master
-git clone http://github.com/clouder-community/clouder.git extra/clouder -b 8.0
-git clone http://github.com/OCA/website.git extra/website -b 8.0
-
-#[buildout]
-#parts = odoo
-#extensions = gp.vcsdevelop
-#vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/1.8#egg=aro-1.8
-#vcs-update = True
-#find-links = http://download.gna.org/pychart/
-
-#[versions]
-# in some cases that's needed
-#anybox.recipe.openerp =
-
-#[odoo]
-#recipe = anybox.recipe.openerp:server
-#version = git http://github.com/odoo/odoo.git odoo 8.0
-#addons = git http://github.com/YannickB/odoo-hosting.git extra/odoo-hosting master
-#         git http://github.com/odoo-vertical-hosting/odoo-hosting-orchestrator.git extra/orchestrator master
-#
-#[versions]
-#reportlab = 2.7
-#pypdf = 1.13
-]]></field>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
-            <field name="base_time_between_save">9999</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-            <field name="base_save_expiration">5</field>
-        </record>
-        <record id="app_odoo_clouder_link1" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
+        <record id="application_odoo8_clouder" model="clouder.application">
+            <field name="name">Clouder 8</field>
+            <field name="code">clouder8</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
+            <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo8_clouder_files'),ref('application_odoo_clouder_exec'),ref('application_odoo_ssh')])]"/>
+            <field name="sequence">2</field>
             <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_odoo_clouder_link2" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link3" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link4" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link5" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_link6" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_clouder_option3" model="clouder.application.option">
-            <field name="application_id" ref="app_odoo_clouder"/>
-            <field name="name" ref="apptype_odoo_option3"/>
+        <record id="application_odoo8_clouder_option_install_modules" model="clouder.application.option">
+            <field name="application_id" ref="application_odoo8_clouder"/>
+            <field name="name" ref="application_type_odoo_option_install_modules"/>
             <field name="value">clouder</field>
         </record>
 
-        <record id="app_odoo_connector" model="clouder.application">
-            <field name="name">Odoo + Connector</field>
-            <field name="code">odoo-connector</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="default_image_id" ref="image_odoo"/>
-            <field name="current_version">8.0</field>
-            <field name="buildfile"><![CDATA[
-[buildout]
-parts = openerp
-versions = versions
-find-links = http://download.gna.org/pychart/
-
-# just for issue 9 of sphinx-intl
-extensions = gp.vcsdevelop
-vcs-extend-develop = hg+http://bitbucket.org/ccomb/sphinx-intl#egg=sphinx-intl
-vcs-update = True
-
-[openerp]
-recipe = anybox.recipe.odoo:server
-version = git https://github.com/anybox/odoo.git odoo 8.0
-addons = git https://github.com/anybox/connector.git connector 8.0
-
-eggs = anybox.testing.openerp
-       nose
-       sphinx
-       sphinx_bootstrap_theme
-       sphinx-intl
-
-openerp_scripts = nosetests=nosetests command-line-options=-d
-                  sphinx-build=sphinx-build command-line-options=-d
-                  sphinx-apidoc=sphinx-apidoc command-line-options=-d
-                  sphinx-intl=sphinx-intl command-line-options=-d
-
-
-[static-analysis]
-recipe = zc.recipe.egg
-eggs = flake8
-
-[versions]
-#lxml = 2.3.3
-#pyparsing = 1.5.7
-#Werkzeug = 0.8.3
-]]></field>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
-            <field name="base_time_between_save">9999</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-            <field name="base_save_expiration">5</field>
-        </record>
-        <record id="app_odoo_connector_link1" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
+        <record id="application_odoo9_clouder" model="clouder.application">
+            <field name="name">Clouder 9</field>
+            <field name="code">clouder9</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
+            <field name="child_ids" eval="[(4, [ref('application_odoo_data'),ref('application_odoo9_clouder_files'),ref('application_odoo_clouder_exec'),ref('application_odoo_ssh')])]"/>
+            <field name="sequence">2</field>
             <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
         </record>
-        <record id="app_odoo_connector_link2" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_connector_link3" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
-        </record>
-        <record id="app_odoo_connector_link4" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_connector_link5" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_connector_link6" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_connector_option3" model="clouder.application.option">
-            <field name="application_id" ref="app_odoo_connector"/>
-            <field name="name" ref="apptype_odoo_option3"/>
-            <field name="value">connector</field>
+        <record id="application_odoo9_clouder_option_install_modules" model="clouder.application.option">
+            <field name="application_id" ref="application_odoo9_clouder"/>
+            <field name="name" ref="application_type_odoo_option_install_modules"/>
+            <field name="value">clouder</field>
         </record>
 
-        <record id="app_odoo_connector_custom" model="clouder.application">
-            <field name="name">Odoo + Connector Custom</field>
-            <field name="code">odoo-connector-custo</field>
-            <field name="type_id" ref="apptype_odoo"/>
-            <field name="default_image_id" ref="image_odoo"/>
-            <field name="current_version">8.0</field>
-            <field name="buildfile"><![CDATA[
-[custom]
-git clone https://github.com/guewen/odoo-connector-magento-buildout.git ./
-./bootstrap.sh
-bin/buildout
-]]></field>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
-            <field name="base_time_between_save">9999</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-            <field name="base_save_expiration">5</field>
+        <record id="application_odoo8_all" model="clouder.application">
+            <field name="name">Odoo 8 + Postgres</field>
+            <field name="code">odoo8-all</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo8')])]"/>
         </record>
-        <record id="app_odoo_connector_custom_link1" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector_custom"/>
-            <field name="name" ref="clouder_template_bind.app_bind"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
+
+        <record id="application_odoo9_all" model="clouder.application">
+            <field name="name">Odoo 9 + Postgres</field>
+            <field name="code">odoo9-all</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo9')])]"/>
         </record>
-        <record id="app_odoo_connector_custom_link2" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector_custom"/>
-            <field name="name" ref="clouder_template_shinken.app_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
-            <field name="base" eval="True"/>
+
+        <record id="application_odoo8_clouder_all" model="clouder.application">
+            <field name="name">Clouder 8 + Postgres</field>
+            <field name="code">clouder8-all</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo8_clouder')])]"/>
         </record>
-        <record id="app_odoo_connector_custom_link3" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector_custom"/>
-            <field name="name" ref="clouder_template_postgres.app_postgres"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
+
+        <record id="application_odoo9_clouder_all" model="clouder.application">
+            <field name="name">Clouder 9 + Postgres</field>
+            <field name="code">clouder9-all</field>
+            <field name="type_id" ref="application_type_odoo"/>
+            <field name="child_ids" eval="[(4, [ref('clouder_template_postgres.application_postgres'),ref('application_odoo9_clouder')])]"/>
         </record>
-        <record id="app_odoo_connector_custom_link4" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector_custom"/>
-            <field name="name" ref="clouder_template_postfix.app_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_connector_custom_link5" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector_custom"/>
-            <field name="name" ref="clouder_template_proxy.app_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_connector_custom_link6" model="clouder.application.link">
-            <field name="application_id" ref="app_odoo_connector_custom"/>
-            <field name="name" ref="clouder_template_piwik.app_piwik"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="app_odoo_connector_custom_option3" model="clouder.application.option">
-            <field name="application_id" ref="app_odoo_connector_custom"/>
-            <field name="name" ref="apptype_odoo_option3"/>
-            <field name="value">connector</field>
-        </record>
--->
+
+
     </data>
 </openerp>
