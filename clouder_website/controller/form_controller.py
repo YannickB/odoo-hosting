@@ -87,7 +87,6 @@ class FormController(http.Controller):
             "error": desc
         }
         return request.make_response(json.dumps(response), headers=HEADERS)
-        return response
 
     def hook_next(self, data):
         """
@@ -142,6 +141,8 @@ class FormController(http.Controller):
         Generates and returns the HTML base form
         """
         # Check parameters
+        if 'hostname' not in post or not post['hostname']:
+            return self.bad_request(_("Missing argument hostname"))
         lang = 'en_US'
         if 'lang' in post:
             lang = post['lang']
@@ -171,7 +172,7 @@ class FormController(http.Controller):
 }
         """ % {
             'path':
-                request.httprequest.url_root.rstrip('/') +
+                post['hostname'].rstrip('/') +
                 "/clouder_form/fontawesome/fontawesome-webfont",
         }
 
@@ -181,7 +182,7 @@ class FormController(http.Controller):
             'domains': domains.sorted(key=lambda r: self.uni_norm(r.name)),
             'countries': countries.sorted(key=lambda r: self.uni_norm(r.name)),
             'states': states.sorted(key=lambda r: self.uni_norm(r.name)),
-            'hostname': request.httprequest.url_root.rstrip('/'),
+            'hostname': post['hostname'].rstrip('/'),
             'font_awesome_definition': font_awesome
         }
         html = request.env.ref('clouder_website.plugin_form').render(
@@ -221,6 +222,9 @@ class FormController(http.Controller):
             post['environment_id'] = False
         if 'environment_prefix' not in post or not post['environment_prefix']:
             post['environment_prefix'] = False
+        if 'hostname' not in post or not post['hostname']:
+            return self.bad_request(_("Missing argument hostname"))
+
         # Check parameters
         lang = 'en_US'
         if 'lang' in post:

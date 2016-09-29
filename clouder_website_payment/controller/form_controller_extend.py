@@ -90,7 +90,7 @@ class FormControllerExtend(FormController):
         # Render the form
         qweb_context = {
             'acquirers': acquirers,
-            'hostname': request.httprequest.url_root.rstrip('/')
+            'hostname': data['post_data']['hostname'].rstrip('/')
         }
         html = request.env.ref('clouder_website_payment.payment_buttons').render(
             qweb_context,
