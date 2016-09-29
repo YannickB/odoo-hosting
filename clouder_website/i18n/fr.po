@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 8.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-07-23 16:00+0000\n"
-"PO-Revision-Date: 2016-07-23 16:00+0000\n"
+"POT-Creation-Date: 2016-09-16 14:28+0000\n"
+"PO-Revision-Date: 2016-09-16 14:28+0000\n"
 "Last-Translator: <>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,16 +16,14 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:835
-#, python-format
-msgid "... or use an existing one"
-msgstr "... ou choisir parmis:"
+#: view:website:clouder_website.plugin_form
+msgid "... or use an existing one:"
+msgstr "... ou selectionnez dans la liste:"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:837
-#, python-format
+#: view:website:clouder_website.plugin_form
 msgid "<= Use new name"
-msgstr "<= Utiliser un nouvel environement"
+msgstr "<= Utilisez un nouveau nom"
 
 #. module: clouder_website
 #: code:addons/clouder_website/controller/main.py:187
@@ -40,6 +38,15 @@ msgid "<br/>Please change the environment or prefix."
 msgstr "<br/>Veuillez choisir un autre environement ou préfixe."
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:378
+#: code:addons/clouder_website/controller/form_controller.py:395
+#, python-format
+msgid "<br/>Please change the environment or suffix."
+msgstr "<br/>Veuillez changer l'environnement ou le suffixe."
+
+#. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:468
+#: code:addons/clouder_website/controller/form_controller.py:494
 #: code:addons/clouder_website/controller/main.py:277
 #: code:addons/clouder_website/controller/main.py:303
 #, python-format
@@ -47,6 +54,8 @@ msgid "<br/>Please change the prefix or domain."
 msgstr "<br/>Veuillez choisir un autre domaine ou préfixe de domaine."
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:416
+#: code:addons/clouder_website/controller/form_controller.py:438
 #: code:addons/clouder_website/controller/main.py:225
 #: code:addons/clouder_website/controller/main.py:247
 #, python-format
@@ -54,17 +63,19 @@ msgid "<br/>Please use a different environment or environment prefix."
 msgstr "<br/>Veuillez choisir un autre environement ou préfixe d'environement."
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:796
 #: field:clouder.web.session,application_id:0
-#, python-format
 msgid "Application"
 msgstr "Application"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:798
-#, python-format
-msgid "Application..."
-msgstr "Application..."
+#: view:website:clouder_website.plugin_form
+msgid "Application...:"
+msgstr "Application...:"
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Application:"
+msgstr "Application:"
 
 #. module: clouder_website
 #: selection:clouder.application,web_create_type:0
@@ -72,12 +83,14 @@ msgid "Base"
 msgstr "Base"
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:493
 #: code:addons/clouder_website/controller/main.py:302
 #, python-format
 msgid "Base prefix is already in reserved for this domain."
 msgstr "Ce préfixe est déjà reservé sur ce domaine."
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:467
 #: code:addons/clouder_website/controller/main.py:276
 #, python-format
 msgid "Base prefix is already in use for this domain."
@@ -96,22 +109,14 @@ msgid "Base with domain '{0}' and name '{1}' is already reserved."
 msgstr "Une base de données nommée '{1}' est déjà réservée sur le domaine '{0}'."
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:860
-#, python-format
-msgid "City"
-msgstr "Ville"
+#: view:website:clouder_website.plugin_form
+msgid "City:"
+msgstr "Ville:"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:518
-#, python-format
-msgid "Clouder instance request form"
-msgstr "Formulaire de demande d'instance Clouder"
-
-#. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:850
-#, python-format
-msgid "Company Name"
-msgstr "Société"
+#: view:website:clouder_website.plugin_form
+msgid "Company Name:"
+msgstr "Société:"
 
 #. module: clouder_website
 #: selection:clouder.application,web_create_type:0
@@ -125,6 +130,7 @@ msgid "Container already exists with environment {0} and prefix {1}"
 msgstr "Un contenaire utilise déjà le préfixe {1} sur l'environement {0}."
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:377
 #: code:addons/clouder_website/controller/main.py:186
 #, python-format
 msgid "Container name already un use for this environment."
@@ -137,38 +143,64 @@ msgid "Container prefix already reserved for this environment."
 msgstr "Ce préfixe de contenaire est déjé réservé sur cet environement."
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:876
+#: code:addons/clouder_website/controller/form_controller.py:394
 #, python-format
-msgid "Country"
-msgstr "Pays"
+msgid "Container suffix already reserved for this environment."
+msgstr "Ce suffixe de contenaire est déjà réservé sur cet environnement."
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:878
+#: view:website:clouder_website.plugin_form
+msgid "Container suffix can only contain alphanumeric characters and hyphens (-)."
+msgstr "Le suffixe d'un contenaire peut seulement contenir des caractères alphanumériques ou des tirets (-)."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Container suffix:"
+msgstr "Suffixe du contenaire:"
+
+#. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:557
 #, python-format
+msgid "Could not login with given credentials."
+msgstr "Impossible de s'identifier avec la composition email/mot de passe donnée."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
 msgid "Country..."
 msgstr "Pays..."
 
 #. module: clouder_website
-#: field:clouder.web.helper,create_uid:0
+#: view:website:clouder_website.plugin_form
+msgid "Country:"
+msgstr "Pays:"
+
+#. module: clouder_website
 #: field:clouder.web.session,create_uid:0
 msgid "Created by"
 msgstr "Créé par"
 
 #. module: clouder_website
-#: field:clouder.web.helper,create_date:0
 #: field:clouder.web.session,create_date:0
 msgid "Created on"
 msgstr "Créé le"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:59
-#: code:addons/clouder_website/clouder_website.py:63
-#: code:addons/clouder_website/clouder_website.py:67
+#: code:addons/clouder_website/clouder_website.py:58
+#: code:addons/clouder_website/clouder_website.py:62
+#: code:addons/clouder_website/clouder_website.py:66
 #: code:addons/clouder_website/clouder_website.py:290
-#: code:addons/clouder_website/clouder_website.py:296
+#: code:addons/clouder_website/clouder_website.py:295
+#: code:addons/clouder_website/clouder_website.py:300
+#: code:addons/clouder_website/clouder_website.py:306
+#: code:addons/clouder_website/clouder_website.py:311
 #, python-format
 msgid "Data error!"
 msgstr "Erreur de données!"
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Database title:"
+msgstr "Titre de la base de données:"
 
 #. module: clouder_website
 #: selection:clouder.application,web_create_type:0
@@ -176,7 +208,6 @@ msgid "Disabled"
 msgstr "Désactivé"
 
 #. module: clouder_website
-#: field:clouder.web.helper,display_name:0
 #: field:clouder.web.session,display_name:0
 msgid "Display Name"
 msgstr "Label"
@@ -187,22 +218,19 @@ msgid "Domain"
 msgstr "Domaine"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:812
-#, python-format
-msgid "Domain Name"
-msgstr "Nom de domaine"
+#: view:website:clouder_website.plugin_form
+msgid "Domain Name:"
+msgstr "Nom de Domaine:"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:814
-#, python-format
+#: view:website:clouder_website.plugin_form
 msgid "Domain..."
 msgstr "Domaine..."
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:820
-#, python-format
-msgid "Email"
-msgstr "Email"
+#: view:website:clouder_website.plugin_form
+msgid "Email:"
+msgstr "Courriel:"
 
 #. module: clouder_website
 #: field:clouder.web.session,environment_id:0
@@ -227,60 +255,96 @@ msgid "Environment prefix '{0}' is already reserved."
 msgstr "Le préfixe d'environement '{0}' est déjà réservé."
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:415
 #: code:addons/clouder_website/controller/main.py:224
 #, python-format
 msgid "Environment prefix already in use."
 msgstr "Le préfixe d'environement est déjà utilisé."
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:437
 #: code:addons/clouder_website/controller/main.py:246
 #, python-format
 msgid "Environment prefix already reserved."
 msgstr "Le préfixe d'environement est déjà réservé."
 
 #. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Environment prefix can only contain alphanumeric characters."
+msgstr "Un préfixe d'environnement ne peut contenir que des caractères alphanumériques."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Error: could not check data with the server."
+msgstr "Erreur: impossible de se connecter au serveur."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Error: failed to connect to login server."
+msgstr "Erreur: impossible de contacter le serveur d'identification."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Error: failed to get environment information from the server."
+msgstr "Erreur: impossible d'obtenir la liste des environnements."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Error: failed to undertand server response."
+msgstr "Erreur: la réponse du serveur est incorrecte."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Error: form submission to the server failed."
+msgstr "Erreur: impossible de soumettre les données au serveur."
+
+#. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:108
 #: code:addons/clouder_website/controller/main.py:94
 #, python-format
 msgid "Error: instance creation failed."
 msgstr "Erreur: la création d'instance à échouée."
 
 #. module: clouder_website
-#: field:clouder.web.helper,id:0
 #: field:clouder.web.session,id:0
 msgid "ID"
 msgstr "ID"
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:342
 #: code:addons/clouder_website/controller/main.py:165
 #, python-format
 msgid "Incorrect inst_type parameter: {0}"
 msgstr "Paramètre inst_type incorrect: {0}"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:803
+#: code:addons/clouder_website/controller/form_controller.py:362
 #, python-format
-msgid "Instance title"
-msgstr "Nom de l'instance"
+msgid "Invalid environment_id: {0}."
+msgstr "environement_id invalide: {0}."
 
 #. module: clouder_website
-#: field:clouder.web.helper,__last_update:0
+#: view:website:clouder_website.plugin_form
+msgid "Invalid password for registered user."
+msgstr "Mot de passe incorrect."
+
+#. module: clouder_website
 #: field:clouder.web.session,__last_update:0
 msgid "Last Modified on"
 msgstr "Dernière modification le"
 
 #. module: clouder_website
-#: field:clouder.web.helper,write_uid:0
 #: field:clouder.web.session,write_uid:0
 msgid "Last Updated by"
 msgstr "Dernière mise-à-jour par"
 
 #. module: clouder_website
-#: field:clouder.web.helper,write_date:0
 #: field:clouder.web.session,write_date:0
 msgid "Last Updated on"
 msgstr "Dernière mise-à-jour le"
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:453
 #: code:addons/clouder_website/controller/main.py:171
 #: code:addons/clouder_website/controller/main.py:262
 #, python-format
@@ -288,6 +352,7 @@ msgid "Missing argument for check."
 msgstr "Argument manquant."
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:339
 #: code:addons/clouder_website/controller/main.py:162
 #, python-format
 msgid "Missing inst_type parameter"
@@ -299,14 +364,12 @@ msgid "Name"
 msgstr "Nom"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:830
-#, python-format
-msgid "New environment name"
-msgstr "Nom du nouvel environnement"
+#: view:website:clouder_website.plugin_form
+msgid "New environment name:"
+msgstr "Nom du nouvel environnement:"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:897
-#, python-format
+#: view:website:clouder_website.plugin_form
 msgid "Next"
 msgstr "Suivant"
 
@@ -316,37 +379,65 @@ msgid "Partner"
 msgstr "Partenaire"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:824
-#, python-format
-msgid "Password"
-msgstr "Mot de passe"
+#: view:website:clouder_website.plugin_form
+msgid "Password:"
+msgstr "Mot de passe:"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:871
-#, python-format
-msgid "Phone"
-msgstr "Téléphone"
+#: view:website:clouder_website.plugin_form
+msgid "Phone:"
+msgstr "Téléphone:"
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Please enter a valid email."
+msgstr "Veuillez saisir un email valide."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Please enter a valid phone number."
+msgstr "Veuillez saisir un numéro de téléphone valide."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Please fill in the required fields."
+msgstr "Veuillez saisir les champs requis."
 
 #. module: clouder_website
 #: field:clouder.web.session,prefix:0
+#: field:clouder.web.session,suffix:0
 msgid "Prefix"
 msgstr "Préfixe"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:902
+#: code:addons/clouder_website/controller/form_controller.py:349
 #, python-format
+msgid "Prefix and either environment_id or environment_prefix are required."
+msgstr "Le prefixe et soit environement_prefix soit environement_id sont requis."
+
+#. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:353
+#, python-format
+msgid "Prefix and either environment_id or environment_prefix should not be empty."
+msgstr "Le prefixe et soit environement_prefix soit environement_id ne doivent pas êtres nuls."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
+msgid "Prefix can only contain alphanumeric characters, hyphens (-) and dots (.)."
+msgstr "Le préfixe ne peut contenir que des caractères alphanumériques, des tirets (-) ou des points (.)."
+
+#. module: clouder_website
+#: view:website:clouder_website.plugin_form
 msgid "Previous"
 msgstr "Précédent"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:786
-#, python-format
+#: view:website:clouder_website.plugin_form
 msgid "Request a Clouder Instance"
-msgstr "Demander une instance Clouder"
+msgstr "Demande d'instance Clouder"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:911
-#, python-format
+#: view:website:clouder_website.plugin_form
 msgid "Retry"
 msgstr "Re-essayer"
 
@@ -356,8 +447,7 @@ msgid "Sales Partner"
 msgstr "Partenaire de vente"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:887
-#, python-format
+#: view:website:clouder_website.plugin_form
 msgid "Select..."
 msgstr "Selectionnez..."
 
@@ -376,33 +466,30 @@ msgstr "Une session existe déjà avec l'environnement {0} avec le préfixe {1}"
 #: code:addons/clouder_website/clouder_website.py:274
 #, python-format
 msgid "Session duplicate error!"
-msgstr "Session duplicate error!"
+msgstr "Données redondantes dans les sessions!"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:884
-#, python-format
-msgid "State / Province"
-msgstr "Etat / Département"
+#: view:website:clouder_website.plugin_form
+msgid "State / Province:"
+msgstr "Etat / Province:"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:856
-#, python-format
-msgid "Street"
-msgstr "Rue"
+#: view:website:clouder_website.plugin_form
+msgid "Street:"
+msgstr "Rue:"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:808
-#, python-format
-msgid "Subdomain"
-msgstr "Sous-domaine"
+#: view:website:clouder_website.plugin_form
+msgid "Subdomain:"
+msgstr "Sous-domaine:"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:904
-#, python-format
+#: view:website:clouder_website.plugin_form
 msgid "Submit"
-msgstr "Valider"
+msgstr "Envoyer"
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:113
 #: code:addons/clouder_website/controller/main.py:99
 #, python-format
 msgid "Thank you for your interest in Clouder!"
@@ -419,50 +506,67 @@ msgid "Web creation"
 msgstr "Création via requette web"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:60
+#: code:addons/clouder_website/clouder_website.py:59
 #, python-format
 msgid "You cannot attribute the web type 'Base' to an application that cannot have bases."
 msgstr "Vous ne pouvez pas atribuer le type de création web 'Base' sur une application qui ne déploie pas de bases."
 
 #. module: clouder_website
+#: code:addons/clouder_website/clouder_website.py:301
+#, python-format
+msgid "You need to specify a domain when applying for a base"
+msgstr "Vous devez spécifier un domaine pour la base"
+
+#. module: clouder_website
+#: code:addons/clouder_website/clouder_website.py:296
+#, python-format
+msgid "You need to specify a prefix when applying for a base"
+msgstr "Vous devez spécifier un préfixe pour la base"
+
+#. module: clouder_website
+#: code:addons/clouder_website/clouder_website.py:307
+#, python-format
+msgid "You need to specify a suffix when applying for a container"
+msgstr "Vous devez spécifier un suffixe pour le contenaire"
+
+#. module: clouder_website
 #: code:addons/clouder_website/clouder_website.py:291
 #, python-format
 msgid "You need to specify a title when applying for a base"
-msgstr "Vous devez spécifier un titre pour demander une base"
+msgstr "Vous devez spécifier un titre pour la base"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:297
+#: code:addons/clouder_website/clouder_website.py:312
 #, python-format
 msgid "You need to specify an existing or new environment when applying for a container"
 msgstr "Vous devez spéricier un environnement, nouveau ou existant, pour demander un contenaire"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:64
+#: code:addons/clouder_website/clouder_website.py:63
 #, python-format
 msgid "You need to specify the next container for web type 'Base'"
 msgstr "Vous devez spécifier le prochain contenaire utilisé pour le type de création web 'Base'"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:68
+#: code:addons/clouder_website/clouder_website.py:67
 #, python-format
 msgid "You need to specify the next server for web type 'Container'"
 msgstr "Vous devez spécifier le prochain serveur utilisé pour le type de création web 'Container'"
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:845
-#, python-format
-msgid "Your Name"
-msgstr "Votre Nom"
+#: view:website:clouder_website.plugin_form
+msgid "Your Name:"
+msgstr "Nom:"
 
 #. module: clouder_website
+#: code:addons/clouder_website/controller/form_controller.py:112
 #: code:addons/clouder_website/controller/main.py:98
 #, python-format
 msgid "Your request for a Clouder instance has been sent."
 msgstr "Nous avons bien reçu votre demande de création d'instance sur Clouder."
 
 #. module: clouder_website
-#: code:addons/clouder_website/clouder_website.py:866
-#, python-format
-msgid "Zip / Postal Code"
-msgstr "Zip / Code Postal"
+#: view:website:clouder_website.plugin_form
+msgid "Zip / Postal Code:"
+msgstr "Code Postal / Zip:"
 

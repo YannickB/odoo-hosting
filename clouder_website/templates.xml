@@ -2,155 +2,316 @@
 <openerp>
     <data>
         <template id="plugin_form">
-            <html>
-                <head>
-                    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-                    <title>Clouder instance request form</title>
-                    <link
-                            rel="stylesheet"
-                            type="text/css"
-                            t-att-href="'%s/clouder_website/static/src/css/plugin.css' % (hostname)"
-                    />
-                </head>
-                <body>
-                    <p class="CL_Title">Request a Clouder Instance</p>
-                    <div class="CL_Loading"/>
+            <style><t t-raw="font_awesome_definition"/></style>
+            <link
+                rel="stylesheet"
+                type="text/css"
+                t-att-href="'%s/clouder_website/static/lib/fontawesome/css/font-awesome.css' % (hostname)"
+            />
+            <link
+                rel="stylesheet"
+                type="text/css"
+                t-att-href="'%s/clouder_website/static/src/css/plugin.css' % (hostname)"
+            />
+            <div class="col-md-6">
+                <div class="padding">
+                    <h3 class="nmt CL_Title">Request a Clouder Instance</h3>
+                    <div class="CL_Loading">
+                        <i class="fa fa-spinner fa-pulse fa-3x fa-fw margin-bottom"></i>
+                    </div>
                     <form id="ClouderForm" method="POST" action="">
                         <input type="hidden" name="clouder_partner_id" value=""/>
                         <input type="hidden" name="lang" value=""/>
                         <input type="hidden" name="db" value=""/>
 
-
                         <fieldset class="CL_Step CL_Step1">
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="application_id">Application</label>
-                                <select name="application_id" class="CL_form-control">
-                                    <option value="">Application...</option>
-                                    <t t-foreach="applications or []" t-as="app">
-                                        <option t-att-inst_type="app.web_create_type" t-att-value="app.id" t-esc="app.name"/>
-                                    </t>
-                                </select>
+                            <div class="row">
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-dropdown-label ui-dropdown-label-required">
+                                        Application:
+                                    </div>
+                                    <div class="ui-dropdown-values">
+                                        <div class="ui-dropdown">
+                                            <span class="fa fa-sort"></span>
+                                            <select name="application_id" class="CL_form-control">
+                                                <option value="">Application...:</option>
+                                                <t t-foreach="applications or []" t-as="app">
+                                                    <option t-att-inst_type="app.web_create_type" t-att-value="app.id" t-esc="app.name"/>
+                                                </t>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="CL_clearfix"/>
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="email">Email</label>
-                                <input type="email" name="email" class="CL_form-control"/>
+                            <div class="row">
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-textbox-container">
+                                        <div class="ui-textbox-label ui-textbox-label-required">
+                                            Email:
+                                        </div>
+                                        <div class="ui-textbox">
+                                            <input type="email" name="email" class="CL_form-control"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-textbox-container">
+                                        <div class="ui-textbox-label ui-textbox-label-required">
+                                            Password:
+                                        </div>
+                                        <div class="ui-textbox">
+                                            <input type="password" name="password" class="CL_form-control"/>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="password">Password</label>
-                                <input type="password" name="password" class="CL_form-control"/>
-                            </div>
-                            <div class="CL_clearfix"/>
 
                             <div class="CL_base_form">
-                                <div class="CL_form-group CL_col-lg-6">
-                                    <label class="CL_control-label" for="prefix">Subdomain</label>
-                                    <input type="text" name="prefix" class="CL_form-control"/>
+                                <div class="row">
+                                    <div class="CL_form-group col-md-6 m">
+                                        <div class="ui-textbox-container">
+                                            <div class="ui-textbox-label ui-textbox-label-required">
+                                                Subdomain:
+                                            </div>
+                                            <div class="ui-textbox">
+                                                <input type="text" name="prefix" class="CL_form-control"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="CL_form-group col-md-6 m">
+                                        <div class="ui-dropdown-label ui-dropdown-label-required">
+                                            Domain Name:
+                                        </div>
+                                        <div class="ui-dropdown-values">
+                                            <div class="ui-dropdown">
+                                                <span class="fa fa-sort"></span>
+                                                <select name="domain_id" class="CL_form-control">
+                                                    <option value="">Domain...</option>
+                                                    <t t-foreach="domains or []" t-as="domain">
+                                                        <option t-att-value="domain.id" t-esc="domain.name"/>
+                                                    </t>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="CL_form-group CL_col-lg-6">
-                                    <label class="CL_control-label" for="domain_id">Domain Name</label>
-                                    <select name="domain_id" class="CL_form-control">
-                                        <option value="">Domain...</option>
-                                        <t t-foreach="domains or []" t-as="domain">
-                                            <option t-att-value="domain.id" t-esc="domain.name"/>
-                                        </t>
-                                    </select>
-                                </div>
-                                <div class="CL_clearfix"/>
-                                <div class="CL_form-group CL_col-lg-6">
-                                    <label class="CL_control-label" for="title">Database title</label>
-                                    <input type="text" name="title" class="CL_form-control"/>
+                                <div class="row">
+                                    <div class="CL_form-group col-md-6 m">
+                                        <div class="ui-textbox-container">
+                                            <div class="ui-textbox-label ui-textbox-label-required">
+                                                Database title:
+                                            </div>
+                                            <div class="ui-textbox">
+                                                <input type="text" name="title" class="CL_form-control"/>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="CL_clearfix"/>
 
                             <div class="CL_container_form">
-                                <div class="CL_form-group CL_col-lg-6">
-                                    <label class="CL_control-label" for="environment_prefix">New environment name</label>
-                                    <input type="text" name="environment_prefix" class="CL_form-control"/>
+                                <div class="row">
+                                    <div class="CL_form-group col-md-6 m">
+                                        <div class="ui-textbox-container">
+                                            <div class="ui-textbox-label ui-textbox-label-required">
+                                                New environment name:
+                                            </div>
+                                            <div class="ui-textbox">
+                                                <input type="text" name="environment_prefix" class="CL_form-control"/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="CL_form-group col-md-6 m">
+                                        <div class="ui-dropdown-label ui-dropdown-label-required">
+                                            ... or use an existing one:
+                                        </div>
+                                        <div class="ui-dropdown-values">
+                                            <div class="ui-dropdown">
+                                                <span class="fa fa-sort"></span>
+                                                <select name="environment_id" class="CL_form-control">
+                                                    <option value="">&lt;= Use new name</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="CL_form-group CL_col-lg-6">
-                                    <label class="CL_control-label" for="environment_id">... or use an existing one</label>
-                                    <select name="environment_id" class="CL_form-control">
-                                        <option value="">&lt;= Use new name</option>
-                                    </select>
-                                </div>
-                                <div class="CL_clearfix"/>
-                                <div class="CL_form-group CL_col-lg-6">
-                                    <label class="CL_control-label" for="prefix">Container suffix</label>
-                                    <input type="text" name="suffix" class="CL_form-control"/>
+                                <div class="row">
+                                    <div class="CL_form-group col-md-6 m">
+                                        <div class="ui-textbox-container">
+                                            <div class="ui-textbox-label ui-textbox-label-required">
+                                                Container suffix:
+                                            </div>
+                                            <div class="ui-textbox">
+                                                <input type="text" name="suffix" class="CL_form-control"/>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </fieldset>
 
                         <fieldset class="CL_Step CL_Step2">
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="name">Your Name</label>
-                                <input type="text" name="name" class="CL_form-control"/>
+                            <div class="row">
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-textbox-container">
+                                        <div class="ui-textbox-label ui-textbox-label-required">
+                                            Your Name:
+                                        </div>
+                                        <div class="ui-textbox">
+                                            <input type="text" name="name" class="CL_form-control"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-textbox-container">
+                                        <div class="ui-textbox-label">
+                                            Company Name:
+                                        </div>
+                                        <div class="ui-textbox">
+                                            <input type="text" name="street" class="CL_form-control"/>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="street" style="font-weight: normal">Company Name</label>
-                                <input type="text" name="street" class="CL_form-control"/>
+                            <div class="row">
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-textbox-container">
+                                        <div class="ui-textbox-label ui-textbox-label-required">
+                                            Street:
+                                        </div>
+                                        <div class="ui-textbox">
+                                            <input type="text" name="street2" class="CL_form-control"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-textbox-container">
+                                        <div class="ui-textbox-label ui-textbox-label-required">
+                                            City:
+                                        </div>
+                                        <div class="ui-textbox">
+                                            <input type="text" name="city" class="CL_form-control"/>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="CL_clearfix"/>
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="street2">Street</label>
-                                <input type="text" name="street2" class="CL_form-control"/>
+                            <div class="row">
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-textbox-container">
+                                        <div class="ui-textbox-label">
+                                            Zip / Postal Code:
+                                        </div>
+                                        <div class="ui-textbox">
+                                            <input type="text" name="zip" class="CL_form-control"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-textbox-container">
+                                        <div class="ui-textbox-label ui-textbox-label-required">
+                                            Phone:
+                                        </div>
+                                        <div class="ui-textbox">
+                                            <input type="tel" name="phone" class="CL_form-control"/>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="city">City</label>
-                                <input type="text" name="city" class="CL_form-control"/>
+                            <div class="row">
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-dropdown-label ui-dropdown-label-required">
+                                        Country:
+                                    </div>
+                                    <div class="ui-dropdown-values">
+                                        <div class="ui-dropdown">
+                                            <span class="fa fa-sort"></span>
+                                            <select name="country_id" class="CL_form-control">
+                                                <option value="">Country...</option>
+                                                <t t-foreach="countries or []" t-as="country">
+                                                    <option t-att-value="country.id" t-esc="country.name"/>
+                                                </t>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="CL_form-group col-md-6 m">
+                                    <div class="ui-dropdown-label">
+                                        State / Province:
+                                    </div>
+                                    <div class="ui-dropdown-values">
+                                        <div class="ui-dropdown">
+                                            <span class="fa fa-sort"></span>
+                                            <select name="state_id" class="CL_form-control">
+                                                <option value="">Select...</option>
+                                                <t t-foreach="states or []" t-as="state">
+                                                    <option t-att-value="state.id" t-att-country_id="state.country_id.id" t-esc="state.name"/>
+                                                </t>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="CL_clearfix"/>
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="zip" style="font-weight: normal">Zip / Postal Code</label>
-                                <input type="text" name="zip" class="CL_form-control"/>
-                            </div>
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="phone">Phone</label>
-                                <input type="tel" name="phone" class="CL_form-control"/>
-                            </div>
-                            <div class="CL_clearfix"/>
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="country_id">Country</label>
-                                <select name="country_id" class="CL_form-control">
-                                    <option value="">Country...</option>
-                                    <t t-foreach="countries or []" t-as="country">
-                                        <option t-att-value="country.id" t-esc="country.name"/>
-                                    </t>
-                                </select>
-                            </div>
-                            <div class="CL_form-group CL_col-lg-6">
-                                <label class="CL_control-label" for="state_id" style="font-weight: normal">State / Province</label>
-                                <select name="state_id" class="CL_form-control">
-                                    <option value="">Select...</option>
-                                    <t t-foreach="states or []" t-as="state">
-                                        <option t-att-value="state.id" t-att-country_id="state.country_id.id" t-esc="state.name"/>
-                                    </t>
-                                </select>
+                            <div class="row">
+                                <div class="b ui-checkbox solorow" style="">
+                                    <label>
+                                        <input class="condition" type="checkbox" name="agree"/>
+                                        <span class="icon"><i class="fa fa-check"></i></span>
+                                        <span>I agree with the </span>
+                                        <a t-att-href="'%s/clouder_form/tos' % (hostname)" target="_blank">
+                                            <span>terms and conditions</span>
+                                        </a>
+                                    </label>
+                                </div>
                             </div>
                         </fieldset>
 
                         <div class="CL_hint">
                         </div>
 
-                        <div class="CL_Step CL_Step1 CL_clearfix">
-                            <a class="CL_btn CL_pull-right CL_mb32 CL_a-next">Next<span class="CL_fa"/></a>
+                        <div class="CL_Step CL_Step1 row">
+                            <div class="col-md-6">
+                                <button type="button" class="button button-small CL_pull-right CL_mb32 CL_next">Next<span class="CL_fa"/></button>
+                            </div>
                         </div>
 
-                        <div class="CL_Step CL_Step2 CL_clearfix">
-                            <a class="CL_btn CL_pull-left CL_mb32 CL_a-prev">Previous<span class="CL_fa"/></a>
-                            <a class="CL_btn CL_pull-right CL_mb32 CL_a-submit">Submit<span class="CL_fa"/></a>
+                        <div class="CL_Step CL_Step2 row">
+                            <div class="col-md-6">
+                                <button type="button" class="button button-small CL_pull-left CL_mb32 CL_prev">Previous<span class="CL_fa"/></button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="button button-small CL_pull-right CL_mb32 CL_submit">Submit<span class="CL_fa"/></button>
+                            </div>
                         </div>
                     </form>
 
-                    <div class="CL_final_error">
-                        <span class="CL_Error_msg"/>
-                        <div class="CL_clearfix"/>
-                        <a class="CL_btn CL_pull-left CL_mb32 CL_a-retry">Retry<span class="CL_fa"/></a>
+                    <div class="CL_final_error row">
+                        <div class="col-md-6">
+                            <span class="CL_Error_msg"></span>
+                            <button type="button" class="button button-small CL_pull-left CL_mb32 CL_retry">Retry<span class="CL_fa"/></button>
+                        </div>
                     </div>
-                </body>
-            </html>
+                    <div id="CL_ERROR_MESSAGES" style="display: none;">
+                        <p id="CL_ERR_CHECK_INST">Error: could not check data with the server.</p>
+                        <p id="CL_ERR_SUB_FORM">Error: form submission to the server failed.</p>
+                        <p id="CL_ERR_GET_ENV">Error: failed to get environment information from the server.</p>
+                        <p id="CL_ERR_LOGIN">Error: failed to connect to login server.</p>
+                        <p id="CL_ERR_SERV_RESP">Error: failed to undertand server response.</p>
+                    </div>
+                    <div id="CL_HINT_MESSAGES" style="display: none;">
+                        <p id="CL_HINT_PASSWORD">Invalid password for registered user.</p>
+                        <p id="CL_HINT_EMAIL">Please enter a valid email.</p>
+                        <p id="CL_HINT_SUFFIX">Container suffix can only contain alphanumeric characters and hyphens (-).</p>
+                        <p id="CL_HINT_ENV_PREFIX">Environment prefix can only contain alphanumeric characters.</p>
+                        <p id="CL_HINT_PREFIX">Prefix can only contain alphanumeric characters, hyphens (-) and dots (.).</p>
+                        <p id="CL_HINT_PHONE">Please enter a valid phone number.</p>
+                        <p id="CL_HINT_GENERAL">Please fill in the required fields.</p>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <template id="form_tos">
+            <!-- TODO: have someone make the actual TOS page -->
+            <span>Placeholder for actual TOS</span>
         </template>
     </data>
 </openerp>
