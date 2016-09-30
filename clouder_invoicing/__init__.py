@@ -19,5 +19,5 @@
 # <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-from __unfinished__.clouder_invoicing import clouder_invoicing
+import clouder_invoicing
 

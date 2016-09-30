@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import http, _, fields
+from openerp import http, _, fields, release
 from openerp.http import request
 from openerp.addons.clouder_website.controller.form_controller import FormController
 import json
@@ -35,6 +35,9 @@ class FormControllerExtend(FormController):
     """
     Extends clouder_website's HTTP controller to add payment capabilities
     """
+
+    def version(self):
+        return int(release.version.split('.')[0])
 
     def hook_next(self, data):
         """
@@ -58,24 +61,36 @@ class FormControllerExtend(FormController):
 
         # Setting acquirer buttons
         acquirers = []
-        render_ctx = dict(request.context, submit_class='btn btn-primary', submit_txt=_('Pay Now'))
-        for acquirer in orm_acq.search([('website_published', '=', True), ('company_id', '=', company.id)]):
-            acquirer.button = acquirer.with_context(**render_ctx).render(
-                session.reference,
-                session.amount,
-                company.currency_id.id,
-                partner_id=session.partner_id.id,
-                tx_values={
+
+        btn_args = [
+            session.reference,
+            session.amount,
+            company.currency_id.id,
+        ]
+        btn_kwargs = {
+            'partner_id': session.partner_id.id
+        }
+        # The argument changed name between v8 and v9 of Odoo
+        if self.version() >= 9:
+            btn_kwargs['values'] = {
                     'return_url': '/clouder_form/payment_complete',
                     'cancel_url': '/clouder_form/payment_cancel'
                 }
-            )[0]
+        else:
+            btn_kwargs['tx_values'] = {
+                    'return_url': '/clouder_form/payment_complete',
+                    'cancel_url': '/clouder_form/payment_cancel'
+                }
+        render_ctx = dict(request.context, submit_class='btn btn-primary', submit_txt=_('Pay Now'))
+        for acquirer in orm_acq.search([('clouder_form_enabled', '=', True), ('company_id', '=', company.id)]):
+            acquirer.button = acquirer.with_context(**render_ctx).render(
+                *btn_args, **btn_kwargs)[0]
             acquirers.append(acquirer)
 
         # Render the form
         qweb_context = {
             'acquirers': acquirers,
-            'hostname': request.httprequest.url_root
+            'hostname': data['post_data']['hostname'].rstrip('/')
         }
         html = request.env.ref('clouder_website_payment.payment_buttons').render(
             qweb_context,
@@ -151,7 +166,7 @@ class FormControllerExtend(FormController):
 
         return request.make_response(html, headers=HEADERS)
 
-    @http.route('/clouder_form/submit_acquirer', type='http', auth='public', methods=['POST'])
+    @http.route('/clouder_form/submit_acquirer', type='http', auth='public', methods=['POST'], csrf=False)
     def submit_acquirer(self, **post):
         """
         Fetches and returns the HTML base form

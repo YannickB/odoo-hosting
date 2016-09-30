@@ -34,7 +34,8 @@
     'demo': [],
     'data': [
         'templates.xml',
-        'clouder_website_payment_data.xml'
+        'clouder_website_payment_data.xml',
+        'clouder_website_payment_view.xml'
     ],
     'installable': True,
     'application': True,

@@ -1,0 +1,1671 @@
+/*!
+ *  Font Awesome 4.2.0 by @davegandy - http://fontawesome.io - @fontawesome
+ *  License - http://fontawesome.io/license (Font: SIL OFL 1.1, CSS: MIT License)
+ *  Modified for use with clouder_website's form
+ */
+
+
+#ClouderPlugin .fa {
+  display: inline-block;
+  font-family: FontAwesome !important;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+/* makes the font 33% larger relative to the icon container */
+#ClouderPlugin .fa-lg {
+  font-size: 1.33333333em;
+  line-height: 0.75em;
+  vertical-align: -15%;
+}
+#ClouderPlugin .fa-2x {
+  font-size: 2em;
+}
+#ClouderPlugin .fa-3x {
+  font-size: 3em;
+}
+#ClouderPlugin .fa-4x {
+  font-size: 4em;
+}
+#ClouderPlugin .fa-5x {
+  font-size: 5em;
+}
+#ClouderPlugin .fa-fw {
+  width: 1.28571429em;
+  text-align: center;
+}
+#ClouderPlugin .fa-ul {
+  padding-left: 0;
+  margin-left: 2.14285714em;
+  list-style-type: none;
+}
+#ClouderPlugin .fa-ul > li {
+  position: relative;
+}
+#ClouderPlugin .fa-li {
+  position: absolute;
+  left: -2.14285714em;
+  width: 2.14285714em;
+  top: 0.14285714em;
+  text-align: center;
+}
+#ClouderPlugin .fa-li.fa-lg {
+  left: -1.85714286em;
+}
+#ClouderPlugin .fa-border {
+  padding: .2em .25em .15em;
+  border: solid 0.08em #eeeeee;
+  border-radius: .1em;
+}
+#ClouderPlugin .pull-right {
+  float: right;
+}
+#ClouderPlugin .pull-left {
+  float: left;
+}
+#ClouderPlugin .fa.pull-left {
+  margin-right: .3em;
+}
+#ClouderPlugin .fa.pull-right {
+  margin-left: .3em;
+}
+#ClouderPlugin .fa-spin {
+  -webkit-animation: fa-spin 2s infinite linear;
+  animation: fa-spin 2s infinite linear;
+}
+#ClouderPlugin .fa-pulse {
+  -webkit-animation: fa-spin 1s infinite steps(8);
+  animation: fa-spin 1s infinite steps(8);
+}
+@-webkit-keyframes fa-spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@keyframes fa-spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+#ClouderPlugin .fa-rotate-90 {
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=1);
+  -webkit-transform: rotate(90deg);
+  -ms-transform: rotate(90deg);
+  transform: rotate(90deg);
+}
+#ClouderPlugin .fa-rotate-180 {
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2);
+  -webkit-transform: rotate(180deg);
+  -ms-transform: rotate(180deg);
+  transform: rotate(180deg);
+}
+#ClouderPlugin .fa-rotate-270 {
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+  -webkit-transform: rotate(270deg);
+  -ms-transform: rotate(270deg);
+  transform: rotate(270deg);
+}
+#ClouderPlugin .fa-flip-horizontal {
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=0, mirror=1);
+  -webkit-transform: scale(-1, 1);
+  -ms-transform: scale(-1, 1);
+  transform: scale(-1, 1);
+}
+#ClouderPlugin .fa-flip-vertical {
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2, mirror=1);
+  -webkit-transform: scale(1, -1);
+  -ms-transform: scale(1, -1);
+  transform: scale(1, -1);
+}
+:root #ClouderPlugin .fa-rotate-90,
+:root #ClouderPlugin .fa-rotate-180,
+:root #ClouderPlugin .fa-rotate-270,
+:root #ClouderPlugin .fa-flip-horizontal,
+:root #ClouderPlugin .fa-flip-vertical {
+  filter: none;
+}
+#ClouderPlugin .fa-stack {
+  position: relative;
+  display: inline-block;
+  width: 2em;
+  height: 2em;
+  line-height: 2em;
+  vertical-align: middle;
+}
+#ClouderPlugin .fa-stack-1x,
+#ClouderPlugin .fa-stack-2x {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  text-align: center;
+}
+#ClouderPlugin .fa-stack-1x {
+  line-height: inherit;
+}
+#ClouderPlugin .fa-stack-2x {
+  font-size: 2em;
+}
+#ClouderPlugin .fa-inverse {
+  color: #ffffff;
+}
+/* Font Awesome uses the Unicode Private Use Area (PUA) to ensure screen
+   readers do not read off random characters that represent icons */
+#ClouderPlugin .fa-glass:before {
+  content: "\f000";
+}
+#ClouderPlugin .fa-music:before {
+  content: "\f001";
+}
+#ClouderPlugin .fa-search:before {
+  content: "\f002";
+}
+#ClouderPlugin .fa-envelope-o:before {
+  content: "\f003";
+}
+#ClouderPlugin .fa-heart:before {
+  content: "\f004";
+}
+#ClouderPlugin .fa-star:before {
+  content: "\f005";
+}
+#ClouderPlugin .fa-star-o:before {
+  content: "\f006";
+}
+#ClouderPlugin .fa-user:before {
+  content: "\f007";
+}
+#ClouderPlugin .fa-film:before {
+  content: "\f008";
+}
+#ClouderPlugin .fa-th-large:before {
+  content: "\f009";
+}
+#ClouderPlugin .fa-th:before {
+  content: "\f00a";
+}
+#ClouderPlugin .fa-th-list:before {
+  content: "\f00b";
+}
+#ClouderPlugin .fa-check:before {
+  content: "\f00c";
+}
+#ClouderPlugin .fa-remove:before,
+#ClouderPlugin .fa-close:before,
+#ClouderPlugin .fa-times:before {
+  content: "\f00d";
+}
+#ClouderPlugin .fa-search-plus:before {
+  content: "\f00e";
+}
+#ClouderPlugin .fa-search-minus:before {
+  content: "\f010";
+}
+#ClouderPlugin .fa-power-off:before {
+  content: "\f011";
+}
+#ClouderPlugin .fa-signal:before {
+  content: "\f012";
+}
+#ClouderPlugin .fa-gear:before,
+#ClouderPlugin .fa-cog:before {
+  content: "\f013";
+}
+#ClouderPlugin .fa-trash-o:before {
+  content: "\f014";
+}
+#ClouderPlugin .fa-home:before {
+  content: "\f015";
+}
+#ClouderPlugin .fa-file-o:before {
+  content: "\f016";
+}
+#ClouderPlugin .fa-clock-o:before {
+  content: "\f017";
+}
+#ClouderPlugin .fa-road:before {
+  content: "\f018";
+}
+#ClouderPlugin .fa-download:before {
+  content: "\f019";
+}
+#ClouderPlugin .fa-arrow-circle-o-down:before {
+  content: "\f01a";
+}
+#ClouderPlugin .fa-arrow-circle-o-up:before {
+  content: "\f01b";
+}
+#ClouderPlugin .fa-inbox:before {
+  content: "\f01c";
+}
+#ClouderPlugin .fa-play-circle-o:before {
+  content: "\f01d";
+}
+#ClouderPlugin .fa-rotate-right:before,
+#ClouderPlugin .fa-repeat:before {
+  content: "\f01e";
+}
+#ClouderPlugin .fa-refresh:before {
+  content: "\f021";
+}
+#ClouderPlugin .fa-list-alt:before {
+  content: "\f022";
+}
+#ClouderPlugin .fa-lock:before {
+  content: "\f023";
+}
+#ClouderPlugin .fa-flag:before {
+  content: "\f024";
+}
+#ClouderPlugin .fa-headphones:before {
+  content: "\f025";
+}
+#ClouderPlugin .fa-volume-off:before {
+  content: "\f026";
+}
+#ClouderPlugin .fa-volume-down:before {
+  content: "\f027";
+}
+#ClouderPlugin .fa-volume-up:before {
+  content: "\f028";
+}
+#ClouderPlugin .fa-qrcode:before {
+  content: "\f029";
+}
+#ClouderPlugin .fa-barcode:before {
+  content: "\f02a";
+}
+#ClouderPlugin .fa-tag:before {
+  content: "\f02b";
+}
+#ClouderPlugin .fa-tags:before {
+  content: "\f02c";
+}
+#ClouderPlugin .fa-book:before {
+  content: "\f02d";
+}
+#ClouderPlugin .fa-bookmark:before {
+  content: "\f02e";
+}
+#ClouderPlugin .fa-print:before {
+  content: "\f02f";
+}
+#ClouderPlugin .fa-camera:before {
+  content: "\f030";
+}
+#ClouderPlugin .fa-font:before {
+  content: "\f031";
+}
+#ClouderPlugin .fa-bold:before {
+  content: "\f032";
+}
+#ClouderPlugin .fa-italic:before {
+  content: "\f033";
+}
+#ClouderPlugin .fa-text-height:before {
+  content: "\f034";
+}
+#ClouderPlugin .fa-text-width:before {
+  content: "\f035";
+}
+#ClouderPlugin .fa-align-left:before {
+  content: "\f036";
+}
+#ClouderPlugin .fa-align-center:before {
+  content: "\f037";
+}
+#ClouderPlugin .fa-align-right:before {
+  content: "\f038";
+}
+#ClouderPlugin .fa-align-justify:before {
+  content: "\f039";
+}
+#ClouderPlugin .fa-list:before {
+  content: "\f03a";
+}
+#ClouderPlugin .fa-dedent:before,
+#ClouderPlugin .fa-outdent:before {
+  content: "\f03b";
+}
+#ClouderPlugin .fa-indent:before {
+  content: "\f03c";
+}
+#ClouderPlugin .fa-video-camera:before {
+  content: "\f03d";
+}
+#ClouderPlugin .fa-photo:before,
+#ClouderPlugin .fa-image:before,
+#ClouderPlugin .fa-picture-o:before {
+  content: "\f03e";
+}
+#ClouderPlugin .fa-pencil:before {
+  content: "\f040";
+}
+#ClouderPlugin .fa-map-marker:before {
+  content: "\f041";
+}
+#ClouderPlugin .fa-adjust:before {
+  content: "\f042";
+}
+#ClouderPlugin .fa-tint:before {
+  content: "\f043";
+}
+#ClouderPlugin .fa-edit:before,
+#ClouderPlugin .fa-pencil-square-o:before {
+  content: "\f044";
+}
+#ClouderPlugin .fa-share-square-o:before {
+  content: "\f045";
+}
+#ClouderPlugin .fa-check-square-o:before {
+  content: "\f046";
+}
+#ClouderPlugin .fa-arrows:before {
+  content: "\f047";
+}
+#ClouderPlugin .fa-step-backward:before {
+  content: "\f048";
+}
+#ClouderPlugin .fa-fast-backward:before {
+  content: "\f049";
+}
+#ClouderPlugin .fa-backward:before {
+  content: "\f04a";
+}
+#ClouderPlugin .fa-play:before {
+  content: "\f04b";
+}
+#ClouderPlugin .fa-pause:before {
+  content: "\f04c";
+}
+#ClouderPlugin .fa-stop:before {
+  content: "\f04d";
+}
+#ClouderPlugin .fa-forward:before {
+  content: "\f04e";
+}
+#ClouderPlugin .fa-fast-forward:before {
+  content: "\f050";
+}
+#ClouderPlugin .fa-step-forward:before {
+  content: "\f051";
+}
+#ClouderPlugin .fa-eject:before {
+  content: "\f052";
+}
+#ClouderPlugin .fa-chevron-left:before {
+  content: "\f053";
+}
+#ClouderPlugin .fa-chevron-right:before {
+  content: "\f054";
+}
+#ClouderPlugin .fa-plus-circle:before {
+  content: "\f055";
+}
+#ClouderPlugin .fa-minus-circle:before {
+  content: "\f056";
+}
+#ClouderPlugin .fa-times-circle:before {
+  content: "\f057";
+}
+#ClouderPlugin .fa-check-circle:before {
+  content: "\f058";
+}
+#ClouderPlugin .fa-question-circle:before {
+  content: "\f059";
+}
+#ClouderPlugin .fa-info-circle:before {
+  content: "\f05a";
+}
+#ClouderPlugin .fa-crosshairs:before {
+  content: "\f05b";
+}
+#ClouderPlugin .fa-times-circle-o:before {
+  content: "\f05c";
+}
+#ClouderPlugin .fa-check-circle-o:before {
+  content: "\f05d";
+}
+#ClouderPlugin .fa-ban:before {
+  content: "\f05e";
+}
+#ClouderPlugin .fa-arrow-left:before {
+  content: "\f060";
+}
+#ClouderPlugin .fa-arrow-right:before {
+  content: "\f061";
+}
+#ClouderPlugin .fa-arrow-up:before {
+  content: "\f062";
+}
+#ClouderPlugin .fa-arrow-down:before {
+  content: "\f063";
+}
+#ClouderPlugin .fa-mail-forward:before,
+#ClouderPlugin .fa-share:before {
+  content: "\f064";
+}
+#ClouderPlugin .fa-expand:before {
+  content: "\f065";
+}
+#ClouderPlugin .fa-compress:before {
+  content: "\f066";
+}
+#ClouderPlugin .fa-plus:before {
+  content: "\f067";
+}
+#ClouderPlugin .fa-minus:before {
+  content: "\f068";
+}
+#ClouderPlugin .fa-asterisk:before {
+  content: "\f069";
+}
+#ClouderPlugin .fa-exclamation-circle:before {
+  content: "\f06a";
+}
+#ClouderPlugin .fa-gift:before {
+  content: "\f06b";
+}
+#ClouderPlugin .fa-leaf:before {
+  content: "\f06c";
+}
+#ClouderPlugin .fa-fire:before {
+  content: "\f06d";
+}
+#ClouderPlugin .fa-eye:before {
+  content: "\f06e";
+}
+#ClouderPlugin .fa-eye-slash:before {
+  content: "\f070";
+}
+#ClouderPlugin .fa-warning:before,
+#ClouderPlugin .fa-exclamation-triangle:before {
+  content: "\f071";
+}
+#ClouderPlugin .fa-plane:before {
+  content: "\f072";
+}
+#ClouderPlugin .fa-calendar:before {
+  content: "\f073";
+}
+#ClouderPlugin .fa-random:before {
+  content: "\f074";
+}
+#ClouderPlugin .fa-comment:before {
+  content: "\f075";
+}
+#ClouderPlugin .fa-magnet:before {
+  content: "\f076";
+}
+#ClouderPlugin .fa-chevron-up:before {
+  content: "\f077";
+}
+#ClouderPlugin .fa-chevron-down:before {
+  content: "\f078";
+}
+#ClouderPlugin .fa-retweet:before {
+  content: "\f079";
+}
+#ClouderPlugin .fa-shopping-cart:before {
+  content: "\f07a";
+}
+#ClouderPlugin .fa-folder:before {
+  content: "\f07b";
+}
+#ClouderPlugin .fa-folder-open:before {
+  content: "\f07c";
+}
+#ClouderPlugin .fa-arrows-v:before {
+  content: "\f07d";
+}
+#ClouderPlugin .fa-arrows-h:before {
+  content: "\f07e";
+}
+#ClouderPlugin .fa-bar-chart-o:before,
+#ClouderPlugin .fa-bar-chart:before {
+  content: "\f080";
+}
+#ClouderPlugin .fa-twitter-square:before {
+  content: "\f081";
+}
+#ClouderPlugin .fa-facebook-square:before {
+  content: "\f082";
+}
+#ClouderPlugin .fa-camera-retro:before {
+  content: "\f083";
+}
+#ClouderPlugin .fa-key:before {
+  content: "\f084";
+}
+#ClouderPlugin .fa-gears:before,
+#ClouderPlugin .fa-cogs:before {
+  content: "\f085";
+}
+#ClouderPlugin .fa-comments:before {
+  content: "\f086";
+}
+#ClouderPlugin .fa-thumbs-o-up:before {
+  content: "\f087";
+}
+#ClouderPlugin .fa-thumbs-o-down:before {
+  content: "\f088";
+}
+#ClouderPlugin .fa-star-half:before {
+  content: "\f089";
+}
+#ClouderPlugin .fa-heart-o:before {
+  content: "\f08a";
+}
+#ClouderPlugin .fa-sign-out:before {
+  content: "\f08b";
+}
+#ClouderPlugin .fa-linkedin-square:before {
+  content: "\f08c";
+}
+#ClouderPlugin .fa-thumb-tack:before {
+  content: "\f08d";
+}
+#ClouderPlugin .fa-external-link:before {
+  content: "\f08e";
+}
+#ClouderPlugin .fa-sign-in:before {
+  content: "\f090";
+}
+#ClouderPlugin .fa-trophy:before {
+  content: "\f091";
+}
+#ClouderPlugin .fa-github-square:before {
+  content: "\f092";
+}
+#ClouderPlugin .fa-upload:before {
+  content: "\f093";
+}
+#ClouderPlugin .fa-lemon-o:before {
+  content: "\f094";
+}
+#ClouderPlugin .fa-phone:before {
+  content: "\f095";
+}
+#ClouderPlugin .fa-square-o:before {
+  content: "\f096";
+}
+#ClouderPlugin .fa-bookmark-o:before {
+  content: "\f097";
+}
+#ClouderPlugin .fa-phone-square:before {
+  content: "\f098";
+}
+#ClouderPlugin .fa-twitter:before {
+  content: "\f099";
+}
+#ClouderPlugin .fa-facebook:before {
+  content: "\f09a";
+}
+#ClouderPlugin .fa-github:before {
+  content: "\f09b";
+}
+#ClouderPlugin .fa-unlock:before {
+  content: "\f09c";
+}
+#ClouderPlugin .fa-credit-card:before {
+  content: "\f09d";
+}
+#ClouderPlugin .fa-rss:before {
+  content: "\f09e";
+}
+#ClouderPlugin .fa-hdd-o:before {
+  content: "\f0a0";
+}
+#ClouderPlugin .fa-bullhorn:before {
+  content: "\f0a1";
+}
+#ClouderPlugin .fa-bell:before {
+  content: "\f0f3";
+}
+#ClouderPlugin .fa-certificate:before {
+  content: "\f0a3";
+}
+#ClouderPlugin .fa-hand-o-right:before {
+  content: "\f0a4";
+}
+#ClouderPlugin .fa-hand-o-left:before {
+  content: "\f0a5";
+}
+#ClouderPlugin .fa-hand-o-up:before {
+  content: "\f0a6";
+}
+#ClouderPlugin .fa-hand-o-down:before {
+  content: "\f0a7";
+}
+#ClouderPlugin .fa-arrow-circle-left:before {
+  content: "\f0a8";
+}
+#ClouderPlugin .fa-arrow-circle-right:before {
+  content: "\f0a9";
+}
+#ClouderPlugin .fa-arrow-circle-up:before {
+  content: "\f0aa";
+}
+#ClouderPlugin .fa-arrow-circle-down:before {
+  content: "\f0ab";
+}
+#ClouderPlugin .fa-globe:before {
+  content: "\f0ac";
+}
+#ClouderPlugin .fa-wrench:before {
+  content: "\f0ad";
+}
+#ClouderPlugin .fa-tasks:before {
+  content: "\f0ae";
+}
+#ClouderPlugin .fa-filter:before {
+  content: "\f0b0";
+}
+#ClouderPlugin .fa-briefcase:before {
+  content: "\f0b1";
+}
+#ClouderPlugin .fa-arrows-alt:before {
+  content: "\f0b2";
+}
+#ClouderPlugin .fa-group:before,
+#ClouderPlugin .fa-users:before {
+  content: "\f0c0";
+}
+#ClouderPlugin .fa-chain:before,
+#ClouderPlugin .fa-link:before {
+  content: "\f0c1";
+}
+#ClouderPlugin .fa-cloud:before {
+  content: "\f0c2";
+}
+#ClouderPlugin .fa-flask:before {
+  content: "\f0c3";
+}
+#ClouderPlugin .fa-cut:before,
+#ClouderPlugin .fa-scissors:before {
+  content: "\f0c4";
+}
+#ClouderPlugin .fa-copy:before,
+#ClouderPlugin .fa-files-o:before {
+  content: "\f0c5";
+}
+#ClouderPlugin .fa-paperclip:before {
+  content: "\f0c6";
+}
+#ClouderPlugin .fa-save:before,
+#ClouderPlugin .fa-floppy-o:before {
+  content: "\f0c7";
+}
+#ClouderPlugin .fa-square:before {
+  content: "\f0c8";
+}
+#ClouderPlugin .fa-navicon:before,
+#ClouderPlugin .fa-reorder:before,
+#ClouderPlugin .fa-bars:before {
+  content: "\f0c9";
+}
+#ClouderPlugin .fa-list-ul:before {
+  content: "\f0ca";
+}
+#ClouderPlugin .fa-list-ol:before {
+  content: "\f0cb";
+}
+#ClouderPlugin .fa-strikethrough:before {
+  content: "\f0cc";
+}
+#ClouderPlugin .fa-underline:before {
+  content: "\f0cd";
+}
+#ClouderPlugin .fa-table:before {
+  content: "\f0ce";
+}
+#ClouderPlugin .fa-magic:before {
+  content: "\f0d0";
+}
+#ClouderPlugin .fa-truck:before {
+  content: "\f0d1";
+}
+#ClouderPlugin .fa-pinterest:before {
+  content: "\f0d2";
+}
+#ClouderPlugin .fa-pinterest-square:before {
+  content: "\f0d3";
+}
+#ClouderPlugin .fa-google-plus-square:before {
+  content: "\f0d4";
+}
+#ClouderPlugin .fa-google-plus:before {
+  content: "\f0d5";
+}
+#ClouderPlugin .fa-money:before {
+  content: "\f0d6";
+}
+#ClouderPlugin .fa-caret-down:before {
+  content: "\f0d7";
+}
+#ClouderPlugin .fa-caret-up:before {
+  content: "\f0d8";
+}
+#ClouderPlugin .fa-caret-left:before {
+  content: "\f0d9";
+}
+#ClouderPlugin .fa-caret-right:before {
+  content: "\f0da";
+}
+#ClouderPlugin .fa-columns:before {
+  content: "\f0db";
+}
+#ClouderPlugin .fa-unsorted:before,
+#ClouderPlugin .fa-sort:before {
+  content: "\f0dc";
+}
+#ClouderPlugin .fa-sort-down:before,
+#ClouderPlugin .fa-sort-desc:before {
+  content: "\f0dd";
+}
+#ClouderPlugin .fa-sort-up:before,
+#ClouderPlugin .fa-sort-asc:before {
+  content: "\f0de";
+}
+#ClouderPlugin .fa-envelope:before {
+  content: "\f0e0";
+}
+#ClouderPlugin .fa-linkedin:before {
+  content: "\f0e1";
+}
+#ClouderPlugin .fa-rotate-left:before,
+#ClouderPlugin .fa-undo:before {
+  content: "\f0e2";
+}
+#ClouderPlugin .fa-legal:before,
+#ClouderPlugin .fa-gavel:before {
+  content: "\f0e3";
+}
+#ClouderPlugin .fa-dashboard:before,
+#ClouderPlugin .fa-tachometer:before {
+  content: "\f0e4";
+}
+#ClouderPlugin .fa-comment-o:before {
+  content: "\f0e5";
+}
+#ClouderPlugin .fa-comments-o:before {
+  content: "\f0e6";
+}
+#ClouderPlugin .fa-flash:before,
+#ClouderPlugin .fa-bolt:before {
+  content: "\f0e7";
+}
+#ClouderPlugin .fa-sitemap:before {
+  content: "\f0e8";
+}
+#ClouderPlugin .fa-umbrella:before {
+  content: "\f0e9";
+}
+#ClouderPlugin .fa-paste:before,
+#ClouderPlugin .fa-clipboard:before {
+  content: "\f0ea";
+}
+#ClouderPlugin .fa-lightbulb-o:before {
+  content: "\f0eb";
+}
+#ClouderPlugin .fa-exchange:before {
+  content: "\f0ec";
+}
+#ClouderPlugin .fa-cloud-download:before {
+  content: "\f0ed";
+}
+#ClouderPlugin .fa-cloud-upload:before {
+  content: "\f0ee";
+}
+#ClouderPlugin .fa-user-md:before {
+  content: "\f0f0";
+}
+#ClouderPlugin .fa-stethoscope:before {
+  content: "\f0f1";
+}
+#ClouderPlugin .fa-suitcase:before {
+  content: "\f0f2";
+}
+#ClouderPlugin .fa-bell-o:before {
+  content: "\f0a2";
+}
+#ClouderPlugin .fa-coffee:before {
+  content: "\f0f4";
+}
+#ClouderPlugin .fa-cutlery:before {
+  content: "\f0f5";
+}
+#ClouderPlugin .fa-file-text-o:before {
+  content: "\f0f6";
+}
+#ClouderPlugin .fa-building-o:before {
+  content: "\f0f7";
+}
+#ClouderPlugin .fa-hospital-o:before {
+  content: "\f0f8";
+}
+#ClouderPlugin .fa-ambulance:before {
+  content: "\f0f9";
+}
+#ClouderPlugin .fa-medkit:before {
+  content: "\f0fa";
+}
+#ClouderPlugin .fa-fighter-jet:before {
+  content: "\f0fb";
+}
+#ClouderPlugin .fa-beer:before {
+  content: "\f0fc";
+}
+#ClouderPlugin .fa-h-square:before {
+  content: "\f0fd";
+}
+#ClouderPlugin .fa-plus-square:before {
+  content: "\f0fe";
+}
+#ClouderPlugin .fa-angle-double-left:before {
+  content: "\f100";
+}
+#ClouderPlugin .fa-angle-double-right:before {
+  content: "\f101";
+}
+#ClouderPlugin .fa-angle-double-up:before {
+  content: "\f102";
+}
+#ClouderPlugin .fa-angle-double-down:before {
+  content: "\f103";
+}
+#ClouderPlugin .fa-angle-left:before {
+  content: "\f104";
+}
+#ClouderPlugin .fa-angle-right:before {
+  content: "\f105";
+}
+#ClouderPlugin .fa-angle-up:before {
+  content: "\f106";
+}
+#ClouderPlugin .fa-angle-down:before {
+  content: "\f107";
+}
+#ClouderPlugin .fa-desktop:before {
+  content: "\f108";
+}
+#ClouderPlugin .fa-laptop:before {
+  content: "\f109";
+}
+#ClouderPlugin .fa-tablet:before {
+  content: "\f10a";
+}
+#ClouderPlugin .fa-mobile-phone:before,
+#ClouderPlugin .fa-mobile:before {
+  content: "\f10b";
+}
+#ClouderPlugin .fa-circle-o:before {
+  content: "\f10c";
+}
+#ClouderPlugin .fa-quote-left:before {
+  content: "\f10d";
+}
+#ClouderPlugin .fa-quote-right:before {
+  content: "\f10e";
+}
+#ClouderPlugin .fa-spinner:before {
+  content: "\f110";
+}
+#ClouderPlugin .fa-circle:before {
+  content: "\f111";
+}
+#ClouderPlugin .fa-mail-reply:before,
+#ClouderPlugin .fa-reply:before {
+  content: "\f112";
+}
+#ClouderPlugin .fa-github-alt:before {
+  content: "\f113";
+}
+#ClouderPlugin .fa-folder-o:before {
+  content: "\f114";
+}
+#ClouderPlugin .fa-folder-open-o:before {
+  content: "\f115";
+}
+#ClouderPlugin .fa-smile-o:before {
+  content: "\f118";
+}
+#ClouderPlugin .fa-frown-o:before {
+  content: "\f119";
+}
+#ClouderPlugin .fa-meh-o:before {
+  content: "\f11a";
+}
+#ClouderPlugin .fa-gamepad:before {
+  content: "\f11b";
+}
+#ClouderPlugin .fa-keyboard-o:before {
+  content: "\f11c";
+}
+#ClouderPlugin .fa-flag-o:before {
+  content: "\f11d";
+}
+#ClouderPlugin .fa-flag-checkered:before {
+  content: "\f11e";
+}
+#ClouderPlugin .fa-terminal:before {
+  content: "\f120";
+}
+#ClouderPlugin .fa-code:before {
+  content: "\f121";
+}
+#ClouderPlugin .fa-mail-reply-all:before,
+#ClouderPlugin .fa-reply-all:before {
+  content: "\f122";
+}
+#ClouderPlugin .fa-star-half-empty:before,
+#ClouderPlugin .fa-star-half-full:before,
+#ClouderPlugin .fa-star-half-o:before {
+  content: "\f123";
+}
+#ClouderPlugin .fa-location-arrow:before {
+  content: "\f124";
+}
+#ClouderPlugin .fa-crop:before {
+  content: "\f125";
+}
+#ClouderPlugin .fa-code-fork:before {
+  content: "\f126";
+}
+#ClouderPlugin .fa-unlink:before,
+#ClouderPlugin .fa-chain-broken:before {
+  content: "\f127";
+}
+#ClouderPlugin .fa-question:before {
+  content: "\f128";
+}
+#ClouderPlugin .fa-info:before {
+  content: "\f129";
+}
+#ClouderPlugin .fa-exclamation:before {
+  content: "\f12a";
+}
+#ClouderPlugin .fa-superscript:before {
+  content: "\f12b";
+}
+#ClouderPlugin .fa-subscript:before {
+  content: "\f12c";
+}
+#ClouderPlugin .fa-eraser:before {
+  content: "\f12d";
+}
+#ClouderPlugin .fa-puzzle-piece:before {
+  content: "\f12e";
+}
+#ClouderPlugin .fa-microphone:before {
+  content: "\f130";
+}
+#ClouderPlugin .fa-microphone-slash:before {
+  content: "\f131";
+}
+#ClouderPlugin .fa-shield:before {
+  content: "\f132";
+}
+#ClouderPlugin .fa-calendar-o:before {
+  content: "\f133";
+}
+#ClouderPlugin .fa-fire-extinguisher:before {
+  content: "\f134";
+}
+#ClouderPlugin .fa-rocket:before {
+  content: "\f135";
+}
+#ClouderPlugin .fa-maxcdn:before {
+  content: "\f136";
+}
+#ClouderPlugin .fa-chevron-circle-left:before {
+  content: "\f137";
+}
+#ClouderPlugin .fa-chevron-circle-right:before {
+  content: "\f138";
+}
+#ClouderPlugin .fa-chevron-circle-up:before {
+  content: "\f139";
+}
+#ClouderPlugin .fa-chevron-circle-down:before {
+  content: "\f13a";
+}
+#ClouderPlugin .fa-html5:before {
+  content: "\f13b";
+}
+#ClouderPlugin .fa-css3:before {
+  content: "\f13c";
+}
+#ClouderPlugin .fa-anchor:before {
+  content: "\f13d";
+}
+#ClouderPlugin .fa-unlock-alt:before {
+  content: "\f13e";
+}
+#ClouderPlugin .fa-bullseye:before {
+  content: "\f140";
+}
+#ClouderPlugin .fa-ellipsis-h:before {
+  content: "\f141";
+}
+#ClouderPlugin .fa-ellipsis-v:before {
+  content: "\f142";
+}
+#ClouderPlugin .fa-rss-square:before {
+  content: "\f143";
+}
+#ClouderPlugin .fa-play-circle:before {
+  content: "\f144";
+}
+#ClouderPlugin .fa-ticket:before {
+  content: "\f145";
+}
+#ClouderPlugin .fa-minus-square:before {
+  content: "\f146";
+}
+#ClouderPlugin .fa-minus-square-o:before {
+  content: "\f147";
+}
+#ClouderPlugin .fa-level-up:before {
+  content: "\f148";
+}
+#ClouderPlugin .fa-level-down:before {
+  content: "\f149";
+}
+#ClouderPlugin .fa-check-square:before {
+  content: "\f14a";
+}
+#ClouderPlugin .fa-pencil-square:before {
+  content: "\f14b";
+}
+#ClouderPlugin .fa-external-link-square:before {
+  content: "\f14c";
+}
+#ClouderPlugin .fa-share-square:before {
+  content: "\f14d";
+}
+#ClouderPlugin .fa-compass:before {
+  content: "\f14e";
+}
+#ClouderPlugin .fa-toggle-down:before,
+#ClouderPlugin .fa-caret-square-o-down:before {
+  content: "\f150";
+}
+#ClouderPlugin .fa-toggle-up:before,
+#ClouderPlugin .fa-caret-square-o-up:before {
+  content: "\f151";
+}
+#ClouderPlugin .fa-toggle-right:before,
+#ClouderPlugin .fa-caret-square-o-right:before {
+  content: "\f152";
+}
+#ClouderPlugin .fa-euro:before,
+#ClouderPlugin .fa-eur:before {
+  content: "\f153";
+}
+#ClouderPlugin .fa-gbp:before {
+  content: "\f154";
+}
+#ClouderPlugin .fa-dollar:before,
+#ClouderPlugin .fa-usd:before {
+  content: "\f155";
+}
+#ClouderPlugin .fa-rupee:before,
+#ClouderPlugin .fa-inr:before {
+  content: "\f156";
+}
+#ClouderPlugin .fa-cny:before,
+#ClouderPlugin .fa-rmb:before,
+#ClouderPlugin .fa-yen:before,
+#ClouderPlugin .fa-jpy:before {
+  content: "\f157";
+}
+#ClouderPlugin .fa-ruble:before,
+#ClouderPlugin .fa-rouble:before,
+#ClouderPlugin .fa-rub:before {
+  content: "\f158";
+}
+#ClouderPlugin .fa-won:before,
+#ClouderPlugin .fa-krw:before {
+  content: "\f159";
+}
+#ClouderPlugin .fa-bitcoin:before,
+#ClouderPlugin .fa-btc:before {
+  content: "\f15a";
+}
+#ClouderPlugin .fa-file:before {
+  content: "\f15b";
+}
+#ClouderPlugin .fa-file-text:before {
+  content: "\f15c";
+}
+#ClouderPlugin .fa-sort-alpha-asc:before {
+  content: "\f15d";
+}
+#ClouderPlugin .fa-sort-alpha-desc:before {
+  content: "\f15e";
+}
+#ClouderPlugin .fa-sort-amount-asc:before {
+  content: "\f160";
+}
+#ClouderPlugin .fa-sort-amount-desc:before {
+  content: "\f161";
+}
+#ClouderPlugin .fa-sort-numeric-asc:before {
+  content: "\f162";
+}
+#ClouderPlugin .fa-sort-numeric-desc:before {
+  content: "\f163";
+}
+#ClouderPlugin .fa-thumbs-up:before {
+  content: "\f164";
+}
+#ClouderPlugin .fa-thumbs-down:before {
+  content: "\f165";
+}
+#ClouderPlugin .fa-youtube-square:before {
+  content: "\f166";
+}
+#ClouderPlugin .fa-youtube:before {
+  content: "\f167";
+}
+#ClouderPlugin .fa-xing:before {
+  content: "\f168";
+}
+#ClouderPlugin .fa-xing-square:before {
+  content: "\f169";
+}
+#ClouderPlugin .fa-youtube-play:before {
+  content: "\f16a";
+}
+#ClouderPlugin .fa-dropbox:before {
+  content: "\f16b";
+}
+#ClouderPlugin .fa-stack-overflow:before {
+  content: "\f16c";
+}
+#ClouderPlugin .fa-instagram:before {
+  content: "\f16d";
+}
+#ClouderPlugin .fa-flickr:before {
+  content: "\f16e";
+}
+#ClouderPlugin .fa-adn:before {
+  content: "\f170";
+}
+#ClouderPlugin .fa-bitbucket:before {
+  content: "\f171";
+}
+#ClouderPlugin .fa-bitbucket-square:before {
+  content: "\f172";
+}
+#ClouderPlugin .fa-tumblr:before {
+  content: "\f173";
+}
+#ClouderPlugin .fa-tumblr-square:before {
+  content: "\f174";
+}
+#ClouderPlugin .fa-long-arrow-down:before {
+  content: "\f175";
+}
+#ClouderPlugin .fa-long-arrow-up:before {
+  content: "\f176";
+}
+#ClouderPlugin .fa-long-arrow-left:before {
+  content: "\f177";
+}
+#ClouderPlugin .fa-long-arrow-right:before {
+  content: "\f178";
+}
+#ClouderPlugin .fa-apple:before {
+  content: "\f179";
+}
+#ClouderPlugin .fa-windows:before {
+  content: "\f17a";
+}
+#ClouderPlugin .fa-android:before {
+  content: "\f17b";
+}
+#ClouderPlugin .fa-linux:before {
+  content: "\f17c";
+}
+#ClouderPlugin .fa-dribbble:before {
+  content: "\f17d";
+}
+#ClouderPlugin .fa-skype:before {
+  content: "\f17e";
+}
+#ClouderPlugin .fa-foursquare:before {
+  content: "\f180";
+}
+#ClouderPlugin .fa-trello:before {
+  content: "\f181";
+}
+#ClouderPlugin .fa-female:before {
+  content: "\f182";
+}
+#ClouderPlugin .fa-male:before {
+  content: "\f183";
+}
+#ClouderPlugin .fa-gittip:before {
+  content: "\f184";
+}
+#ClouderPlugin .fa-sun-o:before {
+  content: "\f185";
+}
+#ClouderPlugin .fa-moon-o:before {
+  content: "\f186";
+}
+#ClouderPlugin .fa-archive:before {
+  content: "\f187";
+}
+#ClouderPlugin .fa-bug:before {
+  content: "\f188";
+}
+#ClouderPlugin .fa-vk:before {
+  content: "\f189";
+}
+#ClouderPlugin .fa-weibo:before {
+  content: "\f18a";
+}
+#ClouderPlugin .fa-renren:before {
+  content: "\f18b";
+}
+#ClouderPlugin .fa-pagelines:before {
+  content: "\f18c";
+}
+#ClouderPlugin .fa-stack-exchange:before {
+  content: "\f18d";
+}
+#ClouderPlugin .fa-arrow-circle-o-right:before {
+  content: "\f18e";
+}
+#ClouderPlugin .fa-arrow-circle-o-left:before {
+  content: "\f190";
+}
+#ClouderPlugin .fa-toggle-left:before,
+#ClouderPlugin .fa-caret-square-o-left:before {
+  content: "\f191";
+}
+#ClouderPlugin .fa-dot-circle-o:before {
+  content: "\f192";
+}
+#ClouderPlugin .fa-wheelchair:before {
+  content: "\f193";
+}
+#ClouderPlugin .fa-vimeo-square:before {
+  content: "\f194";
+}
+#ClouderPlugin .fa-turkish-lira:before,
+#ClouderPlugin .fa-try:before {
+  content: "\f195";
+}
+#ClouderPlugin .fa-plus-square-o:before {
+  content: "\f196";
+}
+#ClouderPlugin .fa-space-shuttle:before {
+  content: "\f197";
+}
+#ClouderPlugin .fa-slack:before {
+  content: "\f198";
+}
+#ClouderPlugin .fa-envelope-square:before {
+  content: "\f199";
+}
+#ClouderPlugin .fa-wordpress:before {
+  content: "\f19a";
+}
+#ClouderPlugin .fa-openid:before {
+  content: "\f19b";
+}
+#ClouderPlugin .fa-institution:before,
+#ClouderPlugin .fa-bank:before,
+#ClouderPlugin .fa-university:before {
+  content: "\f19c";
+}
+#ClouderPlugin .fa-mortar-board:before,
+#ClouderPlugin .fa-graduation-cap:before {
+  content: "\f19d";
+}
+#ClouderPlugin .fa-yahoo:before {
+  content: "\f19e";
+}
+#ClouderPlugin .fa-google:before {
+  content: "\f1a0";
+}
+#ClouderPlugin .fa-reddit:before {
+  content: "\f1a1";
+}
+#ClouderPlugin .fa-reddit-square:before {
+  content: "\f1a2";
+}
+#ClouderPlugin .fa-stumbleupon-circle:before {
+  content: "\f1a3";
+}
+#ClouderPlugin .fa-stumbleupon:before {
+  content: "\f1a4";
+}
+#ClouderPlugin .fa-delicious:before {
+  content: "\f1a5";
+}
+#ClouderPlugin .fa-digg:before {
+  content: "\f1a6";
+}
+#ClouderPlugin .fa-pied-piper:before {
+  content: "\f1a7";
+}
+#ClouderPlugin .fa-pied-piper-alt:before {
+  content: "\f1a8";
+}
+#ClouderPlugin .fa-drupal:before {
+  content: "\f1a9";
+}
+#ClouderPlugin .fa-joomla:before {
+  content: "\f1aa";
+}
+#ClouderPlugin .fa-language:before {
+  content: "\f1ab";
+}
+#ClouderPlugin .fa-fax:before {
+  content: "\f1ac";
+}
+#ClouderPlugin .fa-building:before {
+  content: "\f1ad";
+}
+#ClouderPlugin .fa-child:before {
+  content: "\f1ae";
+}
+#ClouderPlugin .fa-paw:before {
+  content: "\f1b0";
+}
+#ClouderPlugin .fa-spoon:before {
+  content: "\f1b1";
+}
+#ClouderPlugin .fa-cube:before {
+  content: "\f1b2";
+}
+#ClouderPlugin .fa-cubes:before {
+  content: "\f1b3";
+}
+#ClouderPlugin .fa-behance:before {
+  content: "\f1b4";
+}
+#ClouderPlugin .fa-behance-square:before {
+  content: "\f1b5";
+}
+#ClouderPlugin .fa-steam:before {
+  content: "\f1b6";
+}
+#ClouderPlugin .fa-steam-square:before {
+  content: "\f1b7";
+}
+#ClouderPlugin .fa-recycle:before {
+  content: "\f1b8";
+}
+#ClouderPlugin .fa-automobile:before,
+#ClouderPlugin .fa-car:before {
+  content: "\f1b9";
+}
+#ClouderPlugin .fa-cab:before,
+#ClouderPlugin .fa-taxi:before {
+  content: "\f1ba";
+}
+#ClouderPlugin .fa-tree:before {
+  content: "\f1bb";
+}
+#ClouderPlugin .fa-spotify:before {
+  content: "\f1bc";
+}
+#ClouderPlugin .fa-deviantart:before {
+  content: "\f1bd";
+}
+#ClouderPlugin .fa-soundcloud:before {
+  content: "\f1be";
+}
+#ClouderPlugin .fa-database:before {
+  content: "\f1c0";
+}
+#ClouderPlugin .fa-file-pdf-o:before {
+  content: "\f1c1";
+}
+#ClouderPlugin .fa-file-word-o:before {
+  content: "\f1c2";
+}
+#ClouderPlugin .fa-file-excel-o:before {
+  content: "\f1c3";
+}
+#ClouderPlugin .fa-file-powerpoint-o:before {
+  content: "\f1c4";
+}
+#ClouderPlugin .fa-file-photo-o:before,
+#ClouderPlugin .fa-file-picture-o:before,
+#ClouderPlugin .fa-file-image-o:before {
+  content: "\f1c5";
+}
+#ClouderPlugin .fa-file-zip-o:before,
+#ClouderPlugin .fa-file-archive-o:before {
+  content: "\f1c6";
+}
+#ClouderPlugin .fa-file-sound-o:before,
+#ClouderPlugin .fa-file-audio-o:before {
+  content: "\f1c7";
+}
+#ClouderPlugin .fa-file-movie-o:before,
+#ClouderPlugin .fa-file-video-o:before {
+  content: "\f1c8";
+}
+#ClouderPlugin .fa-file-code-o:before {
+  content: "\f1c9";
+}
+#ClouderPlugin .fa-vine:before {
+  content: "\f1ca";
+}
+#ClouderPlugin .fa-codepen:before {
+  content: "\f1cb";
+}
+#ClouderPlugin .fa-jsfiddle:before {
+  content: "\f1cc";
+}
+#ClouderPlugin .fa-life-bouy:before,
+#ClouderPlugin .fa-life-buoy:before,
+#ClouderPlugin .fa-life-saver:before,
+#ClouderPlugin .fa-support:before,
+#ClouderPlugin .fa-life-ring:before {
+  content: "\f1cd";
+}
+#ClouderPlugin .fa-circle-o-notch:before {
+  content: "\f1ce";
+}
+#ClouderPlugin .fa-ra:before,
+#ClouderPlugin .fa-rebel:before {
+  content: "\f1d0";
+}
+#ClouderPlugin .fa-ge:before,
+#ClouderPlugin .fa-empire:before {
+  content: "\f1d1";
+}
+#ClouderPlugin .fa-git-square:before {
+  content: "\f1d2";
+}
+#ClouderPlugin .fa-git:before {
+  content: "\f1d3";
+}
+#ClouderPlugin .fa-hacker-news:before {
+  content: "\f1d4";
+}
+#ClouderPlugin .fa-tencent-weibo:before {
+  content: "\f1d5";
+}
+#ClouderPlugin .fa-qq:before {
+  content: "\f1d6";
+}
+#ClouderPlugin .fa-wechat:before,
+#ClouderPlugin .fa-weixin:before {
+  content: "\f1d7";
+}
+#ClouderPlugin .fa-send:before,
+#ClouderPlugin .fa-paper-plane:before {
+  content: "\f1d8";
+}
+#ClouderPlugin .fa-send-o:before,
+#ClouderPlugin .fa-paper-plane-o:before {
+  content: "\f1d9";
+}
+#ClouderPlugin .fa-history:before {
+  content: "\f1da";
+}
+#ClouderPlugin .fa-circle-thin:before {
+  content: "\f1db";
+}
+#ClouderPlugin .fa-header:before {
+  content: "\f1dc";
+}
+#ClouderPlugin .fa-paragraph:before {
+  content: "\f1dd";
+}
+#ClouderPlugin .fa-sliders:before {
+  content: "\f1de";
+}
+#ClouderPlugin .fa-share-alt:before {
+  content: "\f1e0";
+}
+#ClouderPlugin .fa-share-alt-square:before {
+  content: "\f1e1";
+}
+#ClouderPlugin .fa-bomb:before {
+  content: "\f1e2";
+}
+#ClouderPlugin .fa-soccer-ball-o:before,
+#ClouderPlugin .fa-futbol-o:before {
+  content: "\f1e3";
+}
+#ClouderPlugin .fa-tty:before {
+  content: "\f1e4";
+}
+#ClouderPlugin .fa-binoculars:before {
+  content: "\f1e5";
+}
+#ClouderPlugin .fa-plug:before {
+  content: "\f1e6";
+}
+#ClouderPlugin .fa-slideshare:before {
+  content: "\f1e7";
+}
+#ClouderPlugin .fa-twitch:before {
+  content: "\f1e8";
+}
+#ClouderPlugin .fa-yelp:before {
+  content: "\f1e9";
+}
+#ClouderPlugin .fa-newspaper-o:before {
+  content: "\f1ea";
+}
+#ClouderPlugin .fa-wifi:before {
+  content: "\f1eb";
+}
+#ClouderPlugin .fa-calculator:before {
+  content: "\f1ec";
+}
+#ClouderPlugin .fa-paypal:before {
+  content: "\f1ed";
+}
+#ClouderPlugin .fa-google-wallet:before {
+  content: "\f1ee";
+}
+#ClouderPlugin .fa-cc-visa:before {
+  content: "\f1f0";
+}
+#ClouderPlugin .fa-cc-mastercard:before {
+  content: "\f1f1";
+}
+#ClouderPlugin .fa-cc-discover:before {
+  content: "\f1f2";
+}
+#ClouderPlugin .fa-cc-amex:before {
+  content: "\f1f3";
+}
+#ClouderPlugin .fa-cc-paypal:before {
+  content: "\f1f4";
+}
+#ClouderPlugin .fa-cc-stripe:before {
+  content: "\f1f5";
+}
+#ClouderPlugin .fa-bell-slash:before {
+  content: "\f1f6";
+}
+#ClouderPlugin .fa-bell-slash-o:before {
+  content: "\f1f7";
+}
+#ClouderPlugin .fa-trash:before {
+  content: "\f1f8";
+}
+#ClouderPlugin .fa-copyright:before {
+  content: "\f1f9";
+}
+#ClouderPlugin .fa-at:before {
+  content: "\f1fa";
+}
+#ClouderPlugin .fa-eyedropper:before {
+  content: "\f1fb";
+}
+#ClouderPlugin .fa-paint-brush:before {
+  content: "\f1fc";
+}
+#ClouderPlugin .fa-birthday-cake:before {
+  content: "\f1fd";
+}
+#ClouderPlugin .fa-area-chart:before {
+  content: "\f1fe";
+}
+#ClouderPlugin .fa-pie-chart:before {
+  content: "\f200";
+}
+#ClouderPlugin .fa-line-chart:before {
+  content: "\f201";
+}
+#ClouderPlugin .fa-lastfm:before {
+  content: "\f202";
+}
+#ClouderPlugin .fa-lastfm-square:before {
+  content: "\f203";
+}
+#ClouderPlugin .fa-toggle-off:before {
+  content: "\f204";
+}
+#ClouderPlugin .fa-toggle-on:before {
+  content: "\f205";
+}
+#ClouderPlugin .fa-bicycle:before {
+  content: "\f206";
+}
+#ClouderPlugin .fa-bus:before {
+  content: "\f207";
+}
+#ClouderPlugin .fa-ioxhost:before {
+  content: "\f208";
+}
+#ClouderPlugin .fa-angellist:before {
+  content: "\f209";
+}
+#ClouderPlugin .fa-cc:before {
+  content: "\f20a";
+}
+#ClouderPlugin .fa-shekel:before,
+#ClouderPlugin .fa-sheqel:before,
+#ClouderPlugin .fa-ils:before {
+  content: "\f20b";
+}
+#ClouderPlugin .fa-meanpath:before {
+  content: "\f20c";
+}
