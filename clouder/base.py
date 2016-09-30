@@ -27,6 +27,9 @@ import re
 from datetime import datetime, timedelta
 import model
 
+import logging
+_logger = logging.getLogger(__name__)
+
 
 class ClouderDomain(models.Model):
     """
@@ -119,6 +122,7 @@ class ClouderBase(models.Model):
     parent_id = fields.Many2one('clouder.base.child', 'Parent')
     child_ids = fields.One2many('clouder.base.child',
                                 'base_id', 'Childs')
+    metadata_ids = fields.One2many('clouder.base.metadata', 'base_id', 'Metadata')
     time_between_save = fields.Integer('Minutes between each save')
     save_expiration = fields.Integer('Days before save expiration')
     date_next_save = fields.Datetime('Next save planned')
@@ -451,6 +455,54 @@ class ClouderBase(models.Model):
             # Replacing old childs
             vals['child_ids'] = childs
 
+            # Processing Metadata
+            metadata_vals = []
+            metadata_sources = {x.id: x for x in application.metadata_ids if x.clouder_type == 'base'}
+            sources_to_add = metadata_sources.keys()
+            metadata_to_process = []
+            if 'metadata_ids' in vals:
+                for metadata in vals['metadata_ids']:
+                    # Standardizing for possible odoo x2m input
+                    if isinstance(metadata, (list, tuple)):
+                        metadata = {
+                            'name': metadata[2].get('name', False),
+                            'value_data': metadata[2].get('value_data', False)
+                        }
+                        # This case means we do not have an odoo recordset and need to load the link manually
+                        if isinstance(metadata['name'], int):
+                            metadata['name'] = self.env['clouder.application'].browse(metadata['name'])
+                    else:
+                        metadata = {
+                            'name': getattr(metadata, 'name', False),
+                            'value_data': getattr(metadata, 'value_data', False)
+                        }
+                    # Processing metadata and adding to list
+                    if metadata['name'] and metadata['name'].id in metadata_sources:
+                        metadata['source'] = metadata_sources[metadata['name'].id]
+                        metadata['value_data'] = metadata['value_data'] or metadata['source'].default_value
+                        metadata_to_process.append(metadata)
+
+                        # Removing from sources
+                        sources_to_add.remove(metadata['name'].id)
+
+            # Adding remaining metadata from source
+            for metadata_key in sources_to_add:
+                metadata = {
+                    'name': getattr(metadata_sources[metadata_key], 'name', False),
+                    'value_data': metadata_sources[metadata_key].default_value,
+                    'source': metadata_sources[metadata_key]
+                }
+                metadata_to_process.append(metadata)
+
+            # Processing new metadata
+            for metadata in metadata_to_process:
+                if metadata['source'].clouder_type == 'base':
+                    metadata_vals.append((0, 0, {
+                        'name': metadata['source'].id, 'value_data':  metadata['value_data']}))
+
+            # Replacing old metadata
+            vals['metadata_ids'] = metadata_vals
+
             if 'backup_ids' not in vals or not vals['backup_ids']:
                 if application.base_backup_ids:
                     vals['backup_ids'] = [(6, 0, [
@@ -481,6 +533,7 @@ class ClouderBase(models.Model):
             'option_ids': self.option_ids,
             'link_ids': self.link_ids,
             'child_ids': self.child_ids,
+            'metadata_ids': self.metadata_ids,
             'parent_id': self.parent_id and self.parent_id.id or False
             }
         vals = self.onchange_application_id_vals(vals)
@@ -884,9 +937,9 @@ class ClouderBaseOption(models.Model):
         if self.name.required and not self.value:
             raise except_orm(
                 _('Data error!'),
-                _("You need to specify a value for the option "
-                  + self.name.name + " for the base "
-                  + self.base_id.name + ".")
+                _("You need to specify a value for the option " +
+                  self.name.name + " for the base " +
+                  self.base_id.name + ".")
             )
 
 
@@ -1049,3 +1102,80 @@ class ClouderBaseChild(models.Model):
     @api.multi
     def delete_child_exec(self):
         self.child_id and self.child_id.unlink()
+
+
+class ClouderBaseMetadata(models.Model):
+    """
+    Defines an object to store metadata linked to an application
+    """
+
+    _name = 'clouder.base.metadata'
+
+    name = fields.Many2one('clouder.application.metadata', 'Application Metadata', ondelete="cascade", required=True)
+    base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade", required=True)
+    value_data = fields.Text('Value')
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(name, base_id)', 'Metadata must be unique per container!'),
+    ]
+
+    @property
+    def value(self):
+        """
+        Property that returns the value formatted by type
+        """
+        def _missing_function():
+            # If the function is missing, raise an exception
+            raise except_orm(
+                _('Base Metadata error!'),
+                _("Invalid function name {0} for clouder.base".format(self.name.func_name))
+            )
+
+        # Computing the function if needed
+        val_to_convert = self.value_data
+        if self.name.is_function:
+            val_to_convert = "{0}".format(getattr(self.base_id, self.name.func_name, _missing_function)())
+            # If it is a function, the text version should be updated for display
+            self.with_context(skip_check=True).write({'value_data': val_to_convert})
+
+        # Empty value
+        if not val_to_convert:
+            return False
+
+        # value_type cases
+        if self.name.value_type == 'int':
+            return int(val_to_convert)
+        elif self.name.value_type == 'float':
+            return float(val_to_convert)
+        # Defaults to char
+        return str(val_to_convert)
+
+    @api.one
+    @api.constrains('name')
+    def _check_clouder_type(self):
+        """
+        Checks that the metadata is intended for containers
+        """
+        if self.name.clouder_type != 'base':
+            raise except_orm(
+                _('Base Metadata error!'),
+                _("This metadata is intended for {0} only.".format(self.name.clouder_type))
+            )
+
+    @api.one
+    @api.constrains('name', 'value_data')
+    def _check_object(self):
+        """
+        Checks if the data can be loaded properly
+        """
+        if 'skip_check' in self.env.context and self.env.context['skip_check']:
+            return
+        # call the value property to see if the metadata can be loaded properly
+        try:
+            self.value
+        except ValueError as e:
+            # User display
+            raise except_orm(
+                _('Base Metadata error!'),
+                _("Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data))
+            )

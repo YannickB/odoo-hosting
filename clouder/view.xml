@@ -131,7 +131,7 @@
                             <button name="update" string="Update" type="object"/>
                             <field name="job_ids" colspan="4"/>
                         </page>
-                        <page string="Save">
+                        <page name="save" string="Save">
                             <group col="4">
                                 <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
                                 <field name="time_between_save"/>
@@ -141,6 +141,14 @@
                                 <field name="save_comment"/>
                             </group>
                             <button name="save" string="Save" type="object"/>
+                        </page>
+                        <page string="Metadata">
+                            <field name="metadata_ids" colspan="4">
+                                <tree string="Metadata" readonly="1">
+                                    <field name="name"/>
+                                    <field name="value_data"/>
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
                 </form>
@@ -256,7 +264,7 @@
                                 <button name="install_subservice" string="Install Subservice" type="object"/>
                             </group>
                         </page>
-                        <page string="Save">
+                        <page name="save" string="Save">
                             <group col="4">
                                 <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
                                 <field name="autosave"/>
@@ -267,6 +275,14 @@
                                 <field name="save_comment"/>
                             </group>
                             <button name="save" string="Save" type="object"/>
+                        </page>
+                        <page string="Metadata">
+                            <field name="metadata_ids" colspan="4">
+                                <tree string="Metadata" readonly="1">
+                                    <field name="name"/>
+                                    <field name="value_data"/>
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
 
@@ -402,7 +418,7 @@
                                 <field name="container_links"/>
                                 <field name="container_volumes_comma"/>
                                 <field name="container_volumes"/>
-                            </group>  
+                            </group>
                        </page>
                         <page string="Base" attrs="{'invisible':[('base_fullname','=',False)]}">
                             <group col="4">
@@ -421,7 +437,7 @@
                                 <field name="base_autosave"/>
                                 <field name="base_options"/>
                                 <field name="base_links"/>
-                            </group>  
+                            </group>
                        </page>
                     </notebook>
                     <group col="4">
@@ -708,7 +724,7 @@
                                 </tree>
                             </field>
                         </page>
-                        <page string="Save">
+                        <page name="save" string="Save">
                             <group>
                                 <field name="autosave"/>
                                 <newline/>
@@ -719,6 +735,18 @@
                                 <field name="container_save_expiration"/>
                                 <field name="base_save_expiration"/>
                             </group>
+                        </page>
+                        <page name="metadata" string="Metadata">
+                            <field name="metadata_ids" colspan="4">
+                                <tree string="Metadata" editable="bottom">
+                                    <field name="name"/>
+                                    <field name="clouder_type"/>
+                                    <field name="value_type"/>
+                                    <field name="is_function"/>
+                                    <field name="func_name"/>
+                                    <field name="default_value"/>
+                                </tree>
+                            </field>
                         </page>
                     </notebook>
                 </form>
@@ -734,6 +762,43 @@
                     <field name="code"/>
                     <field name="tag_ids" widget="many2many_tags"/>
                 </tree>
+            </field>
+        </record>
+
+
+        <record id="view_clouder_application_metadata_tree" model="ir.ui.view">
+            <field name="name">clouder.application.metadata.tree</field>
+            <field name="model">clouder.application.metadata</field>
+            <field name="arch" type="xml">
+                <tree string="Application Metadata">
+                    <field name="application_id"/>
+                    <field name="name"/>
+                    <field name="clouder_type"/>
+                    <field name="value_type"/>
+                    <field name="is_function"/>
+                    <field name="func_name"/>
+                    <field name="default_value"/>
+                </tree>
+            </field>
+        </record>
+        <record id="view_clouder_application_metadata_form" model="ir.ui.view">
+            <field name="name">clouder.application.metadata.form</field>
+            <field name="model">clouder.application.metadata</field>
+            <field name="arch" type="xml">
+                <form string="Application Metadata" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="application_id"/>
+                        <newline/>
+                        <field name="clouder_type"/>
+                        <newline/>
+                        <field name="value_type"/>
+                        <field name="default_value"/>
+                        <newline/>
+                        <field name="is_function"/>
+                        <field name="func_name" attrs="{'invisible': [('is_function','=', False)], 'required': [('is_function','=', True)]}"/>
+                    </group>
+                </form>
             </field>
         </record>
 
@@ -949,6 +1014,6 @@
           <field name="function">launch_next_saves</field>
           <field name="args">([1])</field>
         </record>
-        
+
     </data>
 </openerp>
