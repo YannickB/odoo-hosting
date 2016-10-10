@@ -269,7 +269,7 @@ class ClouderSave(models.Model):
         self.log('Saving ' + self.name)
         self.log('Comment: ' + self.comment)
 
-        container = self.container_id
+        container = 'exec' in self.container_id.childs and self.container_id.childs['exec'] or self.container_id
         if self.base_fullname:
             container = container.base_backup_container
             container.execute([

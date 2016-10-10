@@ -24,16 +24,17 @@
     'name': 'Clouder Invoicing',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['base'],
-    'author': 'Yannick Buron (Clouder)',
+    'depends': ['base', 'clouder', 'account', 'account_accountant', 'product'],
+    'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
-    Clouder
+    Adds invoicing capabilities to clouder container/bases
     """,
     'demo': [],
     'data': [
         'clouder_invoicing_view.xml',
+        'clouder_invoicing_data.xml'
     ],
     'installable': True,
     'application': True,

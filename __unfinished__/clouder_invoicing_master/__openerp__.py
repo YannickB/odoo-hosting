@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Author: Yannick Buron, Nicolas Petit
+# Author: Yannick Buron
 # Copyright 2015, TODAY Clouder SASU
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,22 +21,19 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Website',
+    'name': 'Clouder Invoicing Master',
     'version': '1.0',
     'category': 'Clouder',
-    'depends': ['base', 'auth_signup', 'clouder'],
+    'depends': ['base', 'clouder_template_odoo', 'clouder_invoicing'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'description': """
-    Creates an HTTP controller that serves a form to create new clouder instances from an external website
-
-    Uses Font Awesome by Dave Gandy - http://fontawesome.io
+    Pilots sub-clouder instances and invoicing
     """,
     'demo': [],
     'data': [
-        'clouder_website_view.xml',
-        'templates.xml'
+        'clouder_invoicing_master_view.xml',
     ],
     'installable': True,
     'application': True,

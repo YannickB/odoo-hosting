@@ -168,6 +168,7 @@ class ClouderContainerLink(models.Model):
                     if project.status_code != 200:
                         project = self.request(self.gitlab_url + '/projects', headers=self.gitlab_headers, method='post', data={'name': self.container_id.name, 'namespace_id': group_id}).json()
                         self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
+                        self.gitlab_ressource('variable', 'REGISTRY_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
                         self.gitlab_ressource('variable', 'SALT_DOMAIN', project_id=str(project['id']), data={'value': self.salt_master.server_id.fulldomain + ':'  + self.salt_master.ports['api']['hostport']})
                         self.gitlab_ressource('variable', 'PRODUCTION_SERVER', project_id=str(project['id']), data={'value': self.container_id.server_id.fulldomain})
                         self.gitlab_ressource('variable', 'PRODUCTION_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
@@ -177,6 +178,7 @@ class ClouderContainerLink(models.Model):
                     else:
                         project = project.json()
                         self.gitlab_ressource('variable', 'REGISTRY_DOMAIN', project_id=str(project['id']), data={'value': self.container_id.links['registry'].target.base_ids[0].fulldomain + ':'  + self.container_id.links['registry'].target.ports['http']['hostport']})
+                        self.gitlab_ressource('variable', 'REGISTRY_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
                         self.gitlab_ressource('variable', 'PRODUCTION_PASSWORD', project_id=str(project['id']), data={'value': self.container_id.options['registry_password']['value']})
 
                 else:
