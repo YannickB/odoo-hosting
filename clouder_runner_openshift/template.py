@@ -30,8 +30,15 @@ class ClouderContainer(models.Model):
     _inherit = 'clouder.container'
 
     @api.multi
-    def hook_deploy_source(self):
-        if self.image_id.name == 'img_openshift':
-            return 'openshift/origin start'
+    def hook_deploy_special_args(self, cmd):
+        cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)
+        if self.application_id.type_id.name == 'openshift':
+            cmd.extend(['--net=host', '--privileged'])
+        return cmd
+
+    @api.multi
+    def hook_deploy_special_cmd(self):
+        if self.application_id.type_id.name == 'openshift':
+            return 'start'
         else:
-            return super(ClouderContainer, self).hook_deploy_source()
+            return super(ClouderContainer, self).hook_deploy_special_cmd()

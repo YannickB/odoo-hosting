@@ -162,6 +162,10 @@ class ClouderContainer(models.Model):
         return cmd
 
     @api.multi
+    def hook_deploy_special_cmd(self):
+        return ''
+
+    @api.multi
     def hook_deploy(self):
         """
         Deploy the container in the server.
@@ -202,6 +206,8 @@ class ClouderContainer(models.Model):
                     cmd.extend([self.image_id.build_image(self, self.server_id, expose_ports=res['expose_ports'], salt=False)])
                 else:
                     cmd.extend([self.hook_deploy_source()])
+
+                cmd.extend([self.hook_deploy_special_cmd()])
 
                 # Run container
                 self.server_id.execute(cmd)

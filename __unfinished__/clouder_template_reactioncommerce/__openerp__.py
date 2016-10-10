@@ -20,5 +20,26 @@
 #
 ##############################################################################
 
-# import runner
-import template
+{
+    'name': 'Clouder Template ReactionCommerce',
+    'version': '1.0',
+    'category': 'Clouder',
+    'depends': [
+        'clouder_template_bind',
+        'clouder_template_shinken',
+        'clouder_template_postfix',
+        'clouder_template_proxy',
+    ],
+    'author': 'Yannick Buron (Clouder)',
+    'license': 'Other OSI approved licence',
+    'website': 'https://github.com/clouder-community/clouder',
+    'description': """
+    Clouder Reaction Commerce
+    """,
+    'demo': [],
+    'data': [
+        'template.xml'
+    ],
+    'installable': True,
+    'application': True,
+}
