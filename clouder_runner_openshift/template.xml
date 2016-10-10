@@ -5,6 +5,7 @@
         <record id="application_type_openshift" model="clouder.application.type">
             <field name="name">openshift</field>
             <field name="system_user">openshift</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_no_backup'),ref('clouder.tag_no_salt')])]"/>
         </record>
 
         <record id="image_openshift" model="clouder.image">

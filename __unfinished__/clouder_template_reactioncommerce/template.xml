@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="application_type_reactioncommerce" model="clouder.application.type">
+            <field name="name">reactioncommerce</field>
+            <field name="system_user">www-data</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_no_salt')])]"/>
+        </record>
+        <record id="application_type_reactioncommerce_option_db_password" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_reactioncommerce"/>
+            <field name="name">db_password</field>
+            <field name="type">container</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
+            <field name="auto" eval="True"/>
+        </record>
+        
+        <record id="image_template_reactioncommerce_data" model="clouder.image.template">
+            <field name="name">image_template_reactioncommerce_data</field>
+        </record>
+        <!--<record id="image_template_reactioncommerce_data_volume_reactioncommerce" model="clouder.image.volume">-->
+            <!--<field name="template_id" ref="image_template_reactioncommerce_data"/>-->
+            <!--<field name="name">/etc/reactioncommerce</field>-->
+        <!--</record>-->
+        <!--<record id="image_template_reactioncommerce_data_volume_www" model="clouder.image.volume">-->
+            <!--<field name="template_id" ref="image_template_reactioncommerce_data"/>-->
+            <!--<field name="name">/var/www</field>-->
+        <!--</record>-->
+        <!--<record id="image_template_reactioncommerce_data_volume_ssl" model="clouder.image.volume">-->
+            <!--<field name="template_id" ref="image_template_reactioncommerce_data"/>-->
+            <!--<field name="name">/etc/ssl</field>-->
+        <!--</record>-->
+        <record id="image_reactioncommerce_data" model="clouder.image">
+            <field name="name">image_reactioncommerce_data</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_reactioncommerce_data')])]"/>
+            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"/>
+        </record>
+
+        <record id="image_template_reactioncommerce_exec" model="clouder.image.template">
+            <field name="name">image_template_reactioncommerce_exec</field>
+        </record>
+        <record id="image_template_reactioncommerce_exec_port_http" model="clouder.image.port">
+            <field name="template_id" ref="image_template_reactioncommerce_exec"/>
+            <field name="name">http</field>
+            <field name="localport">3000</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_reactioncommerce_exec" model="clouder.image">
+            <field name="name">image_reactioncommerce_exec</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_reactioncommerce_exec')])]"/>
+            <field name="parent_from">clouder/clouder-base</field>
+            <field name="parent_id"/>
+            <field name="dockerfile"><![CDATA[
+RUN apt-get update
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y -q install curl ca-certificates bzip2 git build-essential python graphicsmagick npm nodejs-legacy
+RUN npm install -g npm
+RUN npm install -g reaction-cli
+RUN cd /opt; echo 'Y' | reaction init
+WORKDIR /opt/reaction
+CMD reaction
+
+
+
+]]></field>
+            <field name="volumes_from">data</field>
+        </record>
+
+
+        <record id="application_reactioncommerce_data" model="clouder.application">
+            <field name="name">ReactionCommerce Data</field>
+            <field name="code">data</field>
+            <field name="type_id" ref="application_type_reactioncommerce"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken')])]"/>
+            <field name="current_version">2.1.0</field>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
+            <field name="default_image_id" ref="image_reactioncommerce_data"/>
+            <field name="sequence">1</field>
+            <field name="required" eval="True"/>
+            <field name="autosave" eval="True"/>
+        </record>
+
+        <record id="application_reactioncommerce_exec" model="clouder.application">
+            <field name="name">ReactionCommerce Exec</field>
+            <field name="code">exec</field>
+            <field name="type_id" ref="application_type_reactioncommerce"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix')])]"/>
+            <field name="current_version">2.1.0</field>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="image_reactioncommerce_exec"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="update_strategy">auto</field>
+        </record>
+
+        <record id="application_reactioncommerce" model="clouder.application">
+            <field name="name">ReactionCommerce</field>
+            <field name="code">reactioncommerce</field>
+            <field name="type_id" ref="application_type_reactioncommerce"/>
+            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
+            <field name="current_version">2.1.0</field>
+            <field name="child_ids" eval="[(4, [ref('application_reactioncommerce_data'),ref('application_reactioncommerce_exec')])]"/>
+            <field name="sequence">2</field>
+            <field name="required" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
+
+    </data>
+</openerp>

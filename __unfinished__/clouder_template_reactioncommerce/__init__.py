@@ -20,5 +20,4 @@
 #
 ##############################################################################
 
-# import runner
-import template
+from __unfinished__.clouder_template_reactioncommerce import template
