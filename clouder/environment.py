@@ -59,7 +59,8 @@ class ClouderEnvironment(models.Model):
         """
         Check that the prefix does not contain any forbidden
         characters.
-        Also checks that you cannot remove a prefix when containers are linked to the environment
+        Also checks that you cannot remove a prefix
+        when containers are linked to the environment
         """
         if self.prefix and not re.match("^[\w]*$", self.prefix):
             raise except_orm(

@@ -24,7 +24,7 @@
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 from datetime import datetime
-import re, json
+import re
 
 import model
 
@@ -167,7 +167,8 @@ class ClouderApplication(models.Model):
     next_server_id = fields.Many2one('clouder.server', 'Next server')
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=False)
-    next_image_version_id = fields.Many2one('clouder.image.version', 'Next Image Version')
+    next_image_version_id = fields.Many2one(
+        'clouder.image.version', 'Next Image Version')
     base = fields.Boolean('Can have base?')
     tag_ids = fields.Many2many(
         'clouder.application.tag', 'clouder_application_tag_rel',
@@ -182,7 +183,8 @@ class ClouderApplication(models.Model):
                                'Links')
     link_target_ids = fields.One2many('clouder.application.link', 'name',
                                       'Links Targets')
-    metadata_ids = fields.One2many('clouder.application.metadata', 'application_id', 'Metadata')
+    metadata_ids = fields.One2many(
+        'clouder.application.metadata', 'application_id', 'Metadata')
     required = fields.Boolean('Required?')
     sequence = fields.Integer('Sequence')
     child_ids = fields.Many2many(
@@ -190,7 +192,9 @@ class ClouderApplication(models.Model):
         'parent_id', 'child_id', 'Childs')
     container_ids = fields.One2many('clouder.container', 'application_id',
                                     'Containers')
-    update_strategy = fields.Selection([('never','Never'),('manual','Manual'),('auto','Automatic')], string='Container Update Strategy', required=True, default='never')
+    update_strategy = fields.Selection([
+        ('never', 'Never'), ('manual', 'Manual'), ('auto', 'Automatic')],
+        string='Container Update Strategy', required=True, default='never')
     update_bases = fields.Boolean('Update bases?')
     autosave = fields.Boolean('Save?')
     container_backup_ids = fields.Many2many(
@@ -357,7 +361,8 @@ class ClouderApplication(models.Model):
         res = super(ClouderApplication, self).create(vals)
         if 'template_ids' in vals:
             for template in res.template_ids:
-                for link in self.env['clouder.application.link'].search([('template_id', '=', template.id)]):
+                for link in self.env['clouder.application.link'].search([
+                        ('template_id', '=', template.id)]):
                     link.reset_template(records=[res])
         return res
 
@@ -375,7 +380,8 @@ class ClouderApplication(models.Model):
         if 'template_id' in vals:
             self = self.browse(self.id)
             for template in self.template_ids:
-                for link in self.env['clouder.application.link'].search([('template_id', '=', template.id)]):
+                for link in self.env['clouder.application.link'].search([
+                        ('template_id', '=', template.id)]):
                     link.reset_template(records=[self])
         return res
 
@@ -390,8 +396,8 @@ class ClouderApplicationOption(models.Model):
 
     application_id = fields.Many2one('clouder.application', 'Application',
                                      ondelete="cascade", required=False)
-    template_id = fields.Many2one('clouder.application.template', 'Template',
-                                     ondelete="cascade")
+    template_id = fields.Many2one(
+        'clouder.application.template', 'Template', ondelete="cascade")
     name = fields.Many2one('clouder.application.type.option', 'Option',
                            required=True)
     value = fields.Text('Value')
@@ -418,8 +424,9 @@ class ClouderApplicationLink(models.Model):
 
     application_id = fields.Many2one('clouder.application', 'Application',
                                      ondelete="cascade", required=False)
-    template_id = fields.Many2one('clouder.application.template', 'Template',
-                                     ondelete="cascade", required=False)
+    template_id = fields.Many2one(
+        'clouder.application.template', 'Template',
+        ondelete="cascade", required=False)
     name = fields.Many2one('clouder.application', 'Application', required=True)
     required = fields.Boolean('Required?')
     auto = fields.Boolean('Auto?')
@@ -441,14 +448,17 @@ class ClouderApplicationMetadata(models.Model):
 
     _name = 'clouder.application.metadata'
 
-    application_id = fields.Many2one('clouder.application', 'Application', ondelete="cascade", required=True)
+    application_id = fields.Many2one(
+        'clouder.application', 'Application', ondelete="cascade", required=True)
     name = fields.Char('Name', required=True, size=64)
     clouder_type = fields.Selection(
         [
             ('container', 'Container'),
             ('base', 'Base')
         ], 'Type', required=True)
-    is_function = fields.Boolean('Function', help="Is the value computed by a function?", required=False, default=False)
+    is_function = fields.Boolean(
+        'Function', help="Is the value computed by a function?",
+        required=False, default=False)
     func_name = fields.Char('Function Name', size=64)
     default_value = fields.Text('Default Value')
     value_type = fields.Selection(
@@ -459,26 +469,30 @@ class ClouderApplicationMetadata(models.Model):
         ], 'Data Type', required=True)
 
     _sql_constraints = [
-        ('name_uniq', 'unique(application_id,name, clouder_type)', 'Metadata must be unique per application!'),
+        ('name_uniq', 'unique(application_id,name, clouder_type)',
+         'Metadata must be unique per application!'),
     ]
 
     @api.depends('is_function', 'func_name')
     @api.multi
     def _check_function(self):
         """
-        Checks that the function name is defined and exists if is_functions is set to True
+        Checks that the function name is defined
+        and exists if is_functions is set to True
         """
         for metadata in self:
             if metadata.is_function:
                 if not metadata.func_name:
                     raise except_orm(
                         _('Data error!'),
-                        _("You must enter the function name to set is_function to true.")
+                        _("You must enter the function name "
+                          "to set is_function to true.")
                     )
                 else:
                     obj_env = self.env['clouder.'+self.clouder_type]
                     if not getattr(obj_env, self.func_name, False):
                         raise except_orm(
                             _('Base Metadata error!'),
-                            _("Invalid function name {0} for clouder.base".format(self.name.func_name))
+                            _("Invalid function name {0} for clouder.base".
+                              format(self.name.func_name))
                         )

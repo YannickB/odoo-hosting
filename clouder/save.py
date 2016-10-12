@@ -110,7 +110,7 @@ class ClouderSave(models.Model):
         """
         Property returning the dumpfile name.
         """
-        return self.base_fullname.replace('.', '_').replace('-','_') + '.dump'
+        return self.base_fullname.replace('.', '_').replace('-', '_') + '.dump'
 
     @property
     def computed_restore_to_environment(self):
@@ -225,7 +225,8 @@ class ClouderSave(models.Model):
                 'base_name': base.name,
                 'base_domain': base.domain_id.name,
                 'base_title': base.title,
-                'base_container_environment': base.container_id.environment_id.prefix,
+                'base_container_environment':
+                    base.container_id.environment_id.prefix,
                 'base_container_suffix': base.container_id.suffix,
                 'base_container_server':
                 base.container_id.server_id.fulldomain,
@@ -269,7 +270,8 @@ class ClouderSave(models.Model):
         self.log('Saving ' + self.name)
         self.log('Comment: ' + self.comment)
 
-        container = 'exec' in self.container_id.childs and self.container_id.childs['exec'] or self.container_id
+        container = 'exec' in self.container_id.childs \
+                    and self.container_id.childs['exec'] or self.container_id
         if self.base_fullname:
             container = container.base_backup_container
             container.execute([
@@ -450,7 +452,6 @@ class ClouderSave(models.Model):
                 _("Couldn't find application " + self.container_app +
                   ", aborting restoration."))
 
-
         if self.container_restore_to_suffix or not self.container_id:
 
             imgs = image_obj.search([('name', '=', self.container_img)])
@@ -464,7 +465,8 @@ class ClouderSave(models.Model):
                 [('name', '=', self.container_img_version)])
             # upgrade = True
             if not img_versions:
-                self.log("Warning, couldn't find the image version, using latest")
+                self.log(
+                    "Warning, couldn't find the image version, using latest")
                 # We do not want to force the upgrade if we had to use latest
                 # upgrade = False
                 versions = imgs[0].version_ids
@@ -476,7 +478,8 @@ class ClouderSave(models.Model):
                 img_versions = [versions[0]]
 
             containers = container_obj.search([
-                ('environment_id.prefix', '=', self.computed_restore_to_environment),
+                ('environment_id.prefix', '=',
+                 self.computed_restore_to_environment),
                 ('suffix', '=', self.computed_container_restore_to_suffix),
                 ('server_id.name', '=',
                  self.computed_container_restore_to_server)
@@ -681,7 +684,8 @@ class ClouderSave(models.Model):
             '/home/backup/.ssh/keys/' + container.server_id.fulldomain + '.pub',
             username='backup')
         backup.send(
-            self.home_directory + '/.ssh/keys/' + container.server_id.fulldomain,
+            self.home_directory + '/.ssh/keys/' +
+            container.server_id.fulldomain,
             '/home/backup/.ssh/keys/' + container.server_id.fulldomain,
             username='backup')
         backup.execute(['chmod', '-R', '700', '/home/backup/.ssh'],

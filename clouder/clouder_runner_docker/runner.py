@@ -36,9 +36,11 @@ class ClouderImage(models.Model):
 
     _inherit = 'clouder.image'
 
-    def build_image(self, model, server, runner=False, expose_ports=[], salt=True):
+    def build_image(
+            self, model, server, runner=False, expose_ports=[], salt=True):
 
-        res = super(ClouderImage, self).build_image(model, server, runner=runner, expose_ports=expose_ports, salt=salt)
+        res = super(ClouderImage, self).build_image(
+            model, server, runner=runner, expose_ports=expose_ports, salt=salt)
 
         if not runner or runner.application_id.type_id.name == 'docker':
 
@@ -58,7 +60,8 @@ class ClouderImage(models.Model):
             server.execute(['mkdir', '-p', build_dir])
 
             if self.type_id:
-                if self.type_id.name in ['backup', 'salt-master', 'salt-minion']:
+                if self.type_id.name in \
+                        ['backup', 'salt-master', 'salt-minion']:
                     sources_path = \
                         modules.get_module_path('clouder') + '/sources'
                 else:
@@ -66,7 +69,8 @@ class ClouderImage(models.Model):
                         'clouder_template_' + self.type_id.name
                     )
                     sources_path = module_path and module_path + '/sources'
-                if sources_path and self.env['clouder.model'].local_dir_exist(sources_path):
+                if sources_path and \
+                        self.env['clouder.model'].local_dir_exist(sources_path):
                     server.send_dir(sources_path, build_dir + '/sources')
 
             server.execute([
@@ -182,8 +186,15 @@ class ClouderContainer(models.Model):
             if not self.application_id.check_tags(['no-salt']):
 
                 self.deploy_salt()
-                self.salt_master.execute(['rm', '-rf', '/var/cache/salt/master/file_lists/roots/'])
-                self.salt_master.execute(['salt', self.server_id.fulldomain, 'state.apply', 'container_deploy', "pillar=\"{'container_name': '" + self.name + "', 'image': '" + self.name + '-' + datetime.now().strftime('%Y%m%d.%H%M%S') + "', 'build': True}\""])
+                self.salt_master.execute([
+                    'rm', '-rf', '/var/cache/salt/master/file_lists/roots/'])
+                self.salt_master.execute([
+                    'salt', self.server_id.fulldomain, 'state.apply',
+                    'container_deploy',
+                    "pillar=\"{'container_name': '" + self.name +
+                    "', 'image': '" + self.name + '-' +
+                    datetime.now().strftime('%Y%m%d.%H%M%S') +
+                    "', 'build': True}\""])
 
             else:
 
@@ -203,7 +214,10 @@ class ClouderContainer(models.Model):
                 cmd.extend(['--name', self.name])
 
                 if not self.image_version_id:
-                    cmd.extend([self.image_id.build_image(self, self.server_id, expose_ports=res['expose_ports'], salt=False)])
+                    cmd.extend([
+                        self.image_id.build_image(
+                            self, self.server_id,
+                            expose_ports=res['expose_ports'], salt=False)])
                 else:
                     cmd.extend([self.hook_deploy_source()])
 
@@ -226,7 +240,10 @@ class ClouderContainer(models.Model):
                 == 'docker':
 
             if not self.application_id.check_tags(['no-salt']):
-                self.salt_master.execute(['salt', self.server_id.fulldomain, 'state.apply', 'container_purge', "pillar=\"{'container_name': '" + self.name + "'}\""])
+                self.salt_master.execute([
+                    'salt', self.server_id.fulldomain,
+                    'state.apply', 'container_purge',
+                    "pillar=\"{'container_name': '" + self.name + "'}\""])
             else:
                 self.server_id.execute(['docker', 'rm', '-v', self.name])
 
@@ -248,7 +265,10 @@ class ClouderContainer(models.Model):
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
             if not self.application_id.check_tags(['no-salt']):
-                self.salt_master.execute(['salt', self.server_id.fulldomain, 'state.apply', 'container_stop', "pillar=\"{'container_name': '" + self.name + "'}\""])
+                self.salt_master.execute([
+                    'salt', self.server_id.fulldomain, 'state.apply',
+                    'container_stop',
+                    "pillar=\"{'container_name': '" + self.name + "'}\""])
             else:
                 self.server_id.execute(['docker', 'stop', self.name])
 
@@ -271,7 +291,10 @@ class ClouderContainer(models.Model):
                 == 'docker':
 
             if not self.application_id.check_tags(['no-salt']):
-                self.salt_master.execute(['salt', self.server_id.fulldomain, 'state.apply', 'container_start', "pillar=\"{'container_name': '" + self.name + "'}\""])
+                self.salt_master.execute([
+                    'salt', self.server_id.fulldomain,
+                    'state.apply', 'container_start',
+                    "pillar=\"{'container_name': '" + self.name + "'}\""])
             else:
                 self.server_id.execute(['docker', 'start', self.name])
 
