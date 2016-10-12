@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, modules
+from openerp import models, api
 
 
 class ClouderContainer(models.Model):
@@ -32,6 +32,7 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def send_drush_file(self):
+        from openerp import modules
         self.send(
             modules.get_module_path('clouder_template_drupal') +
             '/res/drush.make', '/var/www/drush.make',
@@ -70,6 +71,7 @@ class ClouderBase(models.Model):
         Build the drupal by calling drush site-install, and installing the
         specified modules and themes.
         """
+        from openerp import modules
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'drupal':
             config_file = '/etc/nginx/sites-available/' + self.fullname
