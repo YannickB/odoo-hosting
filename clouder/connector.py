@@ -54,7 +54,7 @@ _logger = logging.getLogger(__name__)
 #                 type_, value, traceback = sys.exc_info()
 #                 # change the exception type but keep the original
 #                 # traceback and message:
-#                 # http://blog.ianbicking.org/2007/09/12/re-raising-exceptions/
+#                 #http://blog.ianbicking.org/2007/09/12/re-raising-exceptions/
 #                 new_exc = FailedJobError("Max. retries (%d) reached: %s" %
 #                                          (self.max_retries, value or type_)
 #                                          )

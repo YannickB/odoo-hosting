@@ -69,7 +69,8 @@ class ClouderEnvironment(models.Model):
         if self.container_ids and not self.prefix:
             raise except_orm(
                 _('Data error!'),
-                _("You cannot have an empty prefix when containers are linked"))
+                _("You cannot have an empty prefix when "
+                  "containers are linked"))
 
     @api.multi
     def write(self, vals):
@@ -79,6 +80,7 @@ class ClouderEnvironment(models.Model):
         if 'prefix' in vals and self.container_ids:
             raise except_orm(
                 _('Data error!'),
-                _("You cannot have an empty prefix when containers are linked"))
+                _("You cannot have an empty prefix "
+                  "when containers are linked"))
 
         super(ClouderEnvironment, self).write(vals)

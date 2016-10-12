@@ -82,7 +82,8 @@ class ClouderContainerLink(models.Model):
             container.execute([
                 'chmod', '-R', '700', '/home/backup/.ssh'], username='backup')
 
-            self.target.server_id.execute(['mkdir', '-p', '/tmp/backup-upload'])
+            self.target.server_id.execute([
+                'mkdir', '-p', '/tmp/backup-upload'])
             container.execute([
                 'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
                 tmp_file, self.target.server_id.fulldomain + ':' + tmp_file],

@@ -181,9 +181,10 @@ class ClouderContainer(models.Model):
 
         if self.application_id.type_id.name == 'salt-master' \
                 and self.application_id.check_tags(['exec']):
-            self.execute(['sed', '-i', '"s/#publish_port: 4505/publish_port: ' +
-                         self.ports['salt']['hostport'] + '/g"',
-                         '/etc/salt/master'])
+            self.execute(['sed', '-i',
+                          '"s/#publish_port: 4505/publish_port: ' +
+                          self.ports['salt']['hostport'] + '/g"',
+                          '/etc/salt/master'])
             self.execute(['sed', '-i', '"s/#ret_port: 4506/ret_port: ' +
                          self.ports['saltret']['hostport'] + '/g"',
                          '/etc/salt/master'])

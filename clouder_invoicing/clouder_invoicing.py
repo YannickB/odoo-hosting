@@ -191,14 +191,12 @@ class ClouderInvoicingPricegridLine(models.Model):
                     # Preventing possible future type errors
                     raise except_orm(
                         _('Pricegrid invoice_amount error!'),
-                        _(
-                            "Unknown type '{0}' in pricegrid line for {1} '{2}'"
+                        _("Unknown type '{0}' in pricegrid line for {1} '{2}'"
                             ".".format(
                                 lines[index].type,
                                 lines[index].link_type,
                                 lines[index].link.name
-                            )
-                        )
+                            ))
                     )
         return amount
 
@@ -239,7 +237,8 @@ class ClouderApplication(models.Model):
         if self.initial_invoice_amount < 0.0:
             raise except_orm(
                 _('Application invoice error!'),
-                _("You cannot set a negative amount as instance creation fees.")
+                _("You cannot set a negative amount "
+                  "as instance creation fees.")
             )
 
     @api.one
@@ -385,7 +384,8 @@ class ClouderContainer(models.Model):
                 # Invoicing per container
                 curr_res = {
                     'id': container.id,
-                    'product_id': container.application_id.invoicing_product_id,
+                    'product_id':
+                        container.application_id.invoicing_product_id,
                     'partner_id': container.environment_id.partner_id.id,
 
                     'amount': container.pricegrid_ids.invoice_amount()
@@ -603,7 +603,8 @@ class AccountInvoice(models.Model):
     @api.model
     def create_clouder_supplier_invoice(self, amount):
         """
-        Creates a supplier invoice from the master clouder with the given amount
+        Creates a supplier invoice from the
+        master clouder with the given amount
         """
         # TODO: create a real invoice
         _logger.info('\nINVOICING FROM MASTER FOR {0}\n'.format(amount))

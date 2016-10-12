@@ -423,7 +423,8 @@ class ClouderModel(models.AbstractModel):
                 pass
         res = super(ClouderModel, self).unlink()
         self.env['clouder.job'].search([
-            ('res_id', '=', self.id), ('model_name', '=', self._name)]).unlink()
+            ('res_id', '=', self.id),
+            ('model_name', '=', self._name)]).unlink()
         return res
 
     @api.multi
@@ -507,12 +508,12 @@ class ClouderModel(models.AbstractModel):
             except Exception as inst:
                 raise except_orm(
                     _('Connect error!'),
-                    _("We were not able to connect to your server. Please make "
-                      "sure you add the public key in the authorized_keys file "
-                      "of your root user on your server.\n"
-                      "If you were trying to connect to a container, a click on"
-                      " the 'reset key' button on the container record may "
-                      "resolve the problem.\n"
+                    _("We were not able to connect to your server. Please "
+                      "make sure you add the public key in the "
+                      "authorized_keys file of your root user on your server."
+                      "\nIf you were trying to connect to a container, "
+                      "a click on the 'reset key' button on the container "
+                      "record may resolve the problem.\n"
                       "Target : " + host + "\n"
                       "Error : " + str(inst)))
             ssh_connections[host_fullname] = ssh

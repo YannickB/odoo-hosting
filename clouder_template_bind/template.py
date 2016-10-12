@@ -81,7 +81,8 @@ class ClouderDomain(models.Model):
                 self.configfile])
             self.dns_id.execute([
                 "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
-            self.dns_id.execute(['echo "type master;" >> /etc/bind/named.conf'])
+            self.dns_id.execute([
+                'echo "type master;" >> /etc/bind/named.conf'])
 
             # Configure this only if the option is set
             if self.dns_id.options['slave_ip']['value']:

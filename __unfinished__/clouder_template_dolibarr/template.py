@@ -148,7 +148,7 @@ class ClouderBase(models.Model):
 
             """
             pageParser = BeautifulSoup(mautic.text, 'html.parser')
-            form =  pageParser.find_all(id=re.compile("install_doctrine_step_"))
+            form = pageParser.find_all(id=re.compile("install_doctrine_step_"))
 
             arr = get_form(form)
 

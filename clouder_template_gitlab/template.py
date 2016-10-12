@@ -148,7 +148,8 @@ class ClouderContainerLink(models.Model):
                 res = self.request(
                     self.gitlab_url + '/projects/' + project_id +
                     '/variables/' + name,
-                    headers=self.gitlab_headers, method='put', data=data).json()
+                    headers=self.gitlab_headers, method='put',
+                    data=data).json()
 
         if type == 'file':
             with open(modules.get_module_path(
@@ -173,7 +174,8 @@ class ClouderContainerLink(models.Model):
         super(ClouderContainerLink, self).deploy_link()
 
         if self.name.type_id.name == 'gitlab' \
-                and self.container_id.application_id.type_id.name == 'gitlabci':
+                and self.container_id.application_id.type_id.name \
+                == 'gitlabci':
             if self.target.base_ids:
                 container = self.target.childs['data']
                 base = self.target.base_ids[0]
@@ -191,7 +193,8 @@ class ClouderContainerLink(models.Model):
                     '--executor', 'docker',
                     '--docker-image', 'docker:latest',
                     # '--docker-privileged'
-                    '--docker-volumes /var/run/docker.sock:/var/run/docker.sock'
+                    '--docker-volumes '
+                    '/var/run/docker.sock:/var/run/docker.sock'
                 ])
                 self.container_id.execute([
                     'sed', '-i',
@@ -258,7 +261,8 @@ class ClouderContainerLink(models.Model):
                             'file', '.gitignore',
                             project_id=str(project['id']))
                         self.gitlab_ressource(
-                            'file', 'Dockerfile', project_id=str(project['id']))
+                            'file', 'Dockerfile',
+                            project_id=str(project['id']))
                         self.gitlab_ressource(
                             'file', '.gitlab-ci.yml',
                             project_id=str(project['id']))
@@ -323,7 +327,8 @@ class ClouderContainerLink(models.Model):
         super(ClouderContainerLink, self).purge_link()
 
         if self.name.type_id.name == 'gitlab' \
-                and self.container_id.application_id.type_id.name == 'gitlabci':
+                and self.container_id.application_id.type_id.name \
+                == 'gitlabci':
             if self.target.base_ids and 'exec' in self.container_id.childs:
                 container = self.container_id.childs['exec']
                 base = self.target.base_ids[0]
@@ -415,7 +420,8 @@ class ClouderBase(models.Model):
             self.container_id.execute([
                 'ln', '-s', '/etc/nginx/sites-available/' + self.fullname,
                 '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.execute(['chown', '-R', 'git:git', '/opt/gitlab'])
+            self.container_id.execute([
+                'chown', '-R', 'git:git', '/opt/gitlab'])
             self.container_id.start()
         return res
 

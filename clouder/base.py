@@ -498,7 +498,8 @@ class ClouderBase(models.Model):
                     else:
                         metadata = {
                             'name': getattr(metadata, 'name', False),
-                            'value_data': getattr(metadata, 'value_data', False)
+                            'value_data': getattr(
+                                metadata, 'value_data', False)
                         }
                     # Processing metadata and adding to list
                     if metadata['name'] \
@@ -1095,7 +1096,8 @@ class ClouderBaseChild(models.Model):
         'clouder.container', 'Container')
     child_id = fields.Many2one(
         'clouder.container', 'Container')
-    save_id = fields.Many2one('clouder.save', 'Restore this save on deployment')
+    save_id = fields.Many2one('clouder.save',
+                              'Restore this save on deployment')
 
     _order = 'sequence'
 
@@ -1119,7 +1121,8 @@ class ClouderBaseChild(models.Model):
         self = self.with_context(autocreate=True)
         self.delete_child_exec()
         self.child_id = self.env['clouder.base'].create({
-            'name': self.domainname or self.base_id.name + '-' + self.name.code,
+            'name':
+                self.domainname or self.base_id.name + '-' + self.name.code,
             'domain_id':
                 self.domainname and
                 self.domain_id or self.base_id.domain_id.id,

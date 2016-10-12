@@ -62,9 +62,9 @@ class ClouderServer(models.Model):
                 _("You need to specify the sysadmin email in configuration"))
 
         self.execute_local(['mkdir', '/tmp/key_' + str(self.env.uid)])
-        self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
-                            self.email_sysadmin, '-f',
-                            '/tmp/key_' + str(self.env.uid) + '/key', '-N', ''])
+        self.execute_local([
+            'ssh-keygen', '-t', 'rsa', '-C', self.email_sysadmin, '-f',
+            '/tmp/key_' + str(self.env.uid) + '/key', '-N', ''])
         return True
 
     @api.multi
@@ -108,8 +108,8 @@ class ClouderServer(models.Model):
             self._create_key()
             destroy = False
 
-        key = self.execute_local(['cat',
-                                  '/tmp/key_' + str(self.env.uid) + '/key.pub'])
+        key = self.execute_local([
+            'cat', '/tmp/key_' + str(self.env.uid) + '/key.pub'])
 
         if destroy:
             self._destroy_key()
@@ -149,8 +149,9 @@ class ClouderServer(models.Model):
             self.execute_local(['chmod', '700', key_file])
             self.execute_write_file(self.home_directory +
                                     '/.ssh/config', 'Host ' + name)
-            self.execute_write_file(server.home_directory +
-                                    '/.ssh/config', '\n  HostName ' + server.ip)
+            self.execute_write_file(
+                server.home_directory +
+                '/.ssh/config', '\n  HostName ' + server.ip)
             self.execute_write_file(server.home_directory +
                                     '/.ssh/config', '\n  Port ' +
                                     str(server.ssh_port))
@@ -171,7 +172,8 @@ class ClouderServer(models.Model):
         for server in self:
             self.execute_local(
                 ['mkdir', '-p', server.home_directory + '/.ssh/keys'])
-            key_file = server.home_directory + '/.ssh/keys/' + server.fulldomain
+            key_file = \
+                server.home_directory + '/.ssh/keys/' + server.fulldomain
             self.execute_write_file(
                 key_file + '.pub', server.public_key, operator='w')
             self.execute_local(['chmod', '700', key_file + '.pub'])
@@ -996,7 +998,8 @@ class ClouderContainer(models.Model):
                     else:
                         metadata = {
                             'name': getattr(metadata, 'name', False),
-                            'value_data': getattr(metadata, 'value_data', False)
+                            'value_data': getattr(
+                                metadata, 'value_data', False)
                         }
                     # Processing metadata and adding to list
                     if metadata['name'] \
@@ -1128,7 +1131,8 @@ class ClouderContainer(models.Model):
                             'localport': getattr(port, 'localport', False),
                             'expose': getattr(port, 'expose', False),
                             'udp': getattr(port, 'udp', False),
-                            'use_hostport': getattr(port, 'use_hostport', False)
+                            'use_hostport': getattr(
+                                port, 'use_hostport', False)
                         }
                     # Keeping the port if there is a match with the sources
                     if port['name'] in port_sources:
@@ -1387,7 +1391,7 @@ class ClouderContainer(models.Model):
         #             or 'volume_ids' in vals:
         #         flag = True
         #         if 'image_version_id' in vals:
-        #             new_version = version_obj.browse(vals['image_version_id'])
+        #             ew_version = version_obj.browse(vals['image_version_id'])
         #             self = self.with_context(
         #                 save_comment='Before upgrade from ' +
         #                              self.image_version_id.name +
@@ -1521,7 +1525,8 @@ class ClouderContainer(models.Model):
     @api.multi
     def hook_deploy_source(self):
         """
-        Hook which can be called by submodules to change the source of the image
+        Hook which can be called by submodules
+        to change the source of the image
         """
         return
 
@@ -1921,7 +1926,8 @@ class ClouderContainerChild(models.Model):
         'clouder.server', 'Server')
     child_id = fields.Many2one(
         'clouder.container', 'Container')
-    save_id = fields.Many2one('clouder.save', 'Restore this save on deployment')
+    save_id = fields.Many2one(
+        'clouder.save', 'Restore this save on deployment')
 
     _order = 'sequence'
 

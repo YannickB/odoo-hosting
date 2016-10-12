@@ -449,7 +449,8 @@ class ClouderApplicationMetadata(models.Model):
     _name = 'clouder.application.metadata'
 
     application_id = fields.Many2one(
-        'clouder.application', 'Application', ondelete="cascade", required=True)
+        'clouder.application', 'Application',
+        ondelete="cascade", required=True)
     name = fields.Char('Name', required=True, size=64)
     clouder_type = fields.Selection(
         [

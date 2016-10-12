@@ -249,9 +249,8 @@ class ClouderWebSession(models.Model):
             if session:
                 raise except_orm(
                     _('Session duplicate error!'),
-                    _('Environment prefix \'{0}\' is already reserved.').format(
-                        self.environment_prefix
-                    )
+                    _('Environment prefix \'{0}\' is already reserved.')
+                    .format(self.environment_prefix)
                 )
 
     @api.one

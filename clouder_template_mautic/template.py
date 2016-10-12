@@ -146,7 +146,7 @@ class ClouderBase(models.Model):
                 baseUrl + ":" + port + installerUrl + "1", headers=headers)
             """
             pageParser = BeautifulSoup(mautic.text, 'html.parser')
-            form =  pageParser.find_all(id=re.compile("install_doctrine_step_"))
+            form = pageParser.find_all(id=re.compile("install_doctrine_step_"))
 
             arr = get_form(form)
 
@@ -190,7 +190,7 @@ class ClouderBase(models.Model):
             # if mautic.headers.get("Location"):
             # --- page 3 ---
 
-            mautic = requests.get(baseUrl + installerUrl + "3", headers=headers)
+            mautic =requests.get(baseUrl + installerUrl + "3", headers=headers)
             pageParser = BeautifulSoup(mautic.text, 'html.parser')
             form = pageParser.find_all(id="install_email_step_")
 

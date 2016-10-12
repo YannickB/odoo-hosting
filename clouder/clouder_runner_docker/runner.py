@@ -69,8 +69,8 @@ class ClouderImage(models.Model):
                         'clouder_template_' + self.type_id.name
                     )
                     sources_path = module_path and module_path + '/sources'
-                if sources_path and \
-                        self.env['clouder.model'].local_dir_exist(sources_path):
+                if sources_path and self.env['clouder.model']\
+                        .local_dir_exist(sources_path):
                     server.send_dir(sources_path, build_dir + '/sources')
 
             server.execute([

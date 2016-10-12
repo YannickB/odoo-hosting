@@ -45,12 +45,13 @@ class ClouderContainer(models.Model):
         if self.application_id.type_id.name == 'odoo':
             config_file = '/opt/odoo/etc/odoo.conf'
             if self.application_id.code == 'data':
-                self.execute(['sed', '-i', '"s/APPLICATION/' +
-                             self.parent_id.container_id.application_id.fullcode
-                             .replace('-', '_') + '/g"', config_file])
-                self.execute(['sed', '-i', 's/DB_SERVER/' +
-                             self.db_server + '/g',
-                             config_file])
+                self.execute([
+                    'sed', '-i', '"s/APPLICATION/' +
+                    self.parent_id.container_id.application_id.fullcode
+                    .replace('-', '_') + '/g"', config_file])
+                self.execute([
+                    'sed', '-i', 's/DB_SERVER/' + self.db_server + '/g',
+                    config_file])
                 self.execute([
                     'sed', '-i',
                     's/DB_USER/' + self.db_user + '/g',
