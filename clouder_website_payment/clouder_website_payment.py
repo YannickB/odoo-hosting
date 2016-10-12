@@ -260,38 +260,37 @@ class PaymentTransaction(models.Model):
     """
     _inherit = 'payment.transaction'
 
-    # Comment for travis TODO migrate to new api
-    # def form_feedback(self, cr, uid, data, acquirer_name, context=None):
-    #     # Process payment
-    #     result = super(PaymentTransaction, self)\
-    #         .form_feedback(cr, uid, data, acquirer_name, context=context)
-    #
-    #     # Since this is an old-api definition we need to
-    #     # make the new environment ourselves
-    #     env = api.Environment(cr, uid, context)
-    #
-    #     # Search for corresponding web session
-    #     orm_clws = env['clouder.web.session'].sudo()
-    #     session = orm_clws.search([('reference', '=', data['item_number'])])
-    #
-    #     # If no session is found, skip and proceed as usual
-    #     if not session:
-    #         return result
-    #     session = session[0]
-    #
-    #     # Finding transaction
-    #     tx = None
-    #     tx_find_method_name = '_%s_form_get_tx_from_data' % acquirer_name
-    #     if hasattr(self, tx_find_method_name):
-    #         tx = getattr(
-    #             self, tx_find_method_name)(cr, uid, data, context=context)
-    #
-    #     if tx and tx.state in ['cancel', 'error']:
-    #         # Cancel session
-    #         session.write({'state', 'canceled'})
-    #     elif tx and tx.state in ['pending', 'done']:
-    #         # Change session state
-    #         session.write({'state': 'payment_processed'})
-    #
-    #     # Return the result from super at the end
-    #     return result
+    def form_feedback(self, cr, uid, data, acquirer_name, context=None):
+        # Process payment
+        result = super(PaymentTransaction, self)\
+            .form_feedback(cr, uid, data, acquirer_name, context=context)
+
+        # Since this is an old-api definition we need to
+        # make the new environment ourselves
+        env = api.Environment(cr, uid, context)
+
+        # Search for corresponding web session
+        orm_clws = env['clouder.web.session'].sudo()
+        session = orm_clws.search([('reference', '=', data['item_number'])])
+
+        # If no session is found, skip and proceed as usual
+        if not session:
+            return result
+        session = session[0]
+
+        # Finding transaction
+        tx = None
+        tx_find_method_name = '_%s_form_get_tx_from_data' % acquirer_name
+        if hasattr(self, tx_find_method_name):
+            tx = getattr(
+                self, tx_find_method_name)(cr, uid, data, context=context)
+
+        if tx and tx.state in ['cancel', 'error']:
+            # Cancel session
+            session.write({'state', 'canceled'})
+        elif tx and tx.state in ['pending', 'done']:
+            # Change session state
+            session.write({'state': 'payment_processed'})
+
+        # Return the result from super at the end
+        return result
