@@ -30,6 +30,7 @@
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': [
+        'security/ir.model.access.csv',
         'clouder_invoicing_view.xml',
         'clouder_invoicing_data.xml'
     ],
