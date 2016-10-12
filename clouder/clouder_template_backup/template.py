@@ -65,18 +65,22 @@ class ClouderContainerLink(models.Model):
             container.execute(['mkdir', '-p', '/tmp/backup-upload'])
             container.execute(['tar', 'czf', tmp_file, '-C /opt/backup', '.'])
 
-            container.send(self.home_directory + '/.ssh/config',
-                      '/home/backup/.ssh/config', username='backup')
-            container.send(self.home_directory + '/.ssh/keys/' +
-                      self.target.server_id.fulldomain + '.pub',
-                      '/home/backup/.ssh/keys/' +
-                      self.target.server_id.fulldomain + '.pub', username='backup')
-            container.send(self.home_directory + '/.ssh/keys/' +
-                      self.target.server_id.fulldomain,
-                      '/home/backup/.ssh/keys/' +
-                      self.target.server_id.fulldomain, username='backup')
-            container.execute(['chmod', '-R', '700',
-                               '/home/backup/.ssh'], username='backup')
+            container.send(
+                self.home_directory + '/.ssh/config',
+                '/home/backup/.ssh/config', username='backup')
+            container.send(
+                self.home_directory + '/.ssh/keys/' +
+                self.target.server_id.fulldomain + '.pub',
+                '/home/backup/.ssh/keys/' +
+                self.target.server_id.fulldomain + '.pub',
+                username='backup')
+            container.send(
+                self.home_directory + '/.ssh/keys/' +
+                self.target.server_id.fulldomain,
+                '/home/backup/.ssh/keys/' +
+                self.target.server_id.fulldomain, username='backup')
+            container.execute([
+                'chmod', '-R', '700', '/home/backup/.ssh'], username='backup')
 
             self.target.server_id.execute(['mkdir', '-p', '/tmp/backup-upload'])
             container.execute([
@@ -86,15 +90,25 @@ class ClouderContainerLink(models.Model):
             container.execute(['rm', tmp_file])
             self.target.server_id.execute([
                 'docker', 'cp',
-                 tmp_file, self.target.name + ':' + file_destination])
+                tmp_file, self.target.name + ':' + file_destination])
             self.target.server_id.execute(['rm', tmp_file])
 
 #            container.self.execute(['rm', '/home/backup/.ssh/keys/*'],
 #                                   username='backup')
             
             if self.target.options['protocol']['value'] == 'ftp':
-                self.target.execute(['lftp', 'ftp://' + self.target.options['login']['value'] + ':' + self.target.options['password']['value'] + '@' + self.target.options['host']['value'], '-e', '"rm ' + filegz + '; quit"'])
-                self.target.execute(['lftp', 'ftp://' + self.target.options['login']['value'] + ':' + self.target.options['password']['value'] + '@' + self.target.options['host']['value'], '-e', '"put ' + file_destination + '; quit"'])
+                self.target.execute([
+                    'lftp',
+                    'ftp://' + self.target.options['login']['value'] +
+                    ':' + self.target.options['password']['value'] + '@' +
+                    self.target.options['host']['value'],
+                    '-e', '"rm ' + filegz + '; quit"'])
+                self.target.execute([
+                    'lftp',
+                    'ftp://' + self.target.options['login']['value'] +
+                    ':' + self.target.options['password']['value'] + '@' +
+                    self.target.options['host']['value'],
+                    '-e', '"put ' + file_destination + '; quit"'])
 
         return super(ClouderContainerLink, self).deploy_link()
 

@@ -27,6 +27,7 @@ from datetime import datetime
 
 import socket
 
+
 class ClouderDomain(models.Model):
     """
     Add method to manage domain general configuration on the bind container.
@@ -49,7 +50,9 @@ class ClouderDomain(models.Model):
         """
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
             self.dns_id.execute([
-                'sed', '-i', '"s/[0-9]* ;serial/' + datetime.now().strftime('%m%d%H%M%S') + ' ;serial/g"',
+                'sed', '-i',
+                '"s/[0-9]* ;serial/' +
+                datetime.now().strftime('%m%d%H%M%S') + ' ;serial/g"',
                 self.configfile])
             self.dns_id.execute(['/etc/init.d/bind9 reload'])
 
@@ -59,7 +62,6 @@ class ClouderDomain(models.Model):
                 except:
                     self.dns_id.start()
                     pass
-
 
     @api.multi
     def deploy(self):
@@ -84,7 +86,7 @@ class ClouderDomain(models.Model):
             # Configure this only if the option is set
             if self.dns_id.options['slave_ip']['value']:
                 self.dns_id.execute([
-                    'echo "allow-transfer { '+
+                    'echo "allow-transfer { ' +
                     self.dns_id.options['slave_ip']['value'] + ';};" '
                     '>> /etc/bind/named.conf'])
             
@@ -152,7 +154,8 @@ class ClouderBaseLink(models.Model):
             proxy_link = self.search([
                 ('base_id', '=', self.base_id.id),
                 ('name.type_id.name', '=', 'proxy')])
-            if proxy_link and proxy_link.target and not self.base_id.cert_key and not self.base_id.cert_cert:
+            if proxy_link and proxy_link.target and not self.base_id.cert_key \
+                    and not self.base_id.cert_cert:
                 self.base_id.generate_cert_exec()
 
     @api.multi

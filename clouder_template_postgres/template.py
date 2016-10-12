@@ -43,7 +43,8 @@ class ClouderContainer(models.Model):
     #     Allow ip from options.
     #     """
     #     super(ClouderContainer, self).deploy_post()
-    #     if self.application_id.type_id.name == 'postgres' and self.application_id.check_tags(['exec']):
+    #     if self.application_id.type_id.name == 'postgres'
+    # and self.application_id.check_tags(['exec']):
     #         self.execute([
     #             'echo "host all  all    ' +
     #             self.options['network']['value'] +
@@ -68,7 +69,8 @@ class ClouderContainerLink(models.Model):
         Deploy the configuration file to watch the container.
         """
         super(ClouderContainerLink, self).deploy_link()
-        if self.name.type_id.name == 'postgres' and self.container_id.application_id.check_tags(['data']):
+        if self.name.type_id.name == 'postgres' \
+                and self.container_id.application_id.check_tags(['data']):
             self.log('Creating database user')
 
             container = self.container_id
@@ -99,7 +101,8 @@ class ClouderContainerLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderContainerLink, self).purge_link()
-        if self.name.type_id.name == 'postgres' and self.container_id.application_id.check_tags(['data']):
+        if self.name.type_id.name == 'postgres' \
+                and self.container_id.application_id.check_tags(['data']):
             container = self.container_id
             container.database.execute([
                 'psql', '-c', '"DROP USER ' + container.db_user + ';"'],
@@ -127,9 +130,9 @@ class ClouderBase(models.Model):
 
         if self.container_id.db_type == 'pgsql':
             for key, database in self.databases.iteritems():
-                self.container_id.base_backup_container.execute(['createdb', '-h',
-                                           self.container_id.db_server, '-U',
-                                           self.container_id.db_user, database])
+                self.container_id.base_backup_container.execute([
+                    'createdb', '-h', self.container_id.db_server, '-U',
+                    self.container_id.db_user, database])
 
         return super(ClouderBase, self).deploy_database()
 

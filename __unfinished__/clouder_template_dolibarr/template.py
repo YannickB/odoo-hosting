@@ -21,8 +21,10 @@
 ##############################################################################
 
 from openerp import models, api, modules
-import requests, re, logging
-#from bs4 import BeautifulSoup
+import requests
+import logging
+# from bs4 import BeautifulSoup
+
 
 class ClouderContainer(models.Model):
     """
@@ -36,9 +38,9 @@ class ClouderContainer(models.Model):
         super(ClouderContainer, self).deploy_post()
 
         if self.application_id.type_id.name == 'dolibarr':
-            self.execute(
-                         ['wget', '-q', 'http://www.dolibarr.org/files/dolibarr.tgz',
-                          'dolibarr.tgz'], path='/var/www/', username='www-data')
+            self.execute([
+                'wget', '-q', 'http://www.dolibarr.org/files/dolibarr.tgz',
+                'dolibarr.tgz'], path='/var/www/', username='www-data')
             self.execute(['tar', '-xzf', 'dolibarr.tgz'],
                          path='/var/www', username='www-data')
             self.execute(['rm', '-rf', './*.tgz'],
@@ -68,16 +70,19 @@ class ClouderBase(models.Model):
 
             config_file = '/etc/nginx/sites-available/' + self.fullname
             self.container_id.send(
-                      modules.get_module_path('clouder_template_dolibarr') +
-                      '/res/nginx.config', config_file)
-            self.container_id.execute(['sed', '-i', '"s/BASE/' + self.name + '/g"',
-                               config_file])
+                modules.get_module_path('clouder_template_dolibarr') +
+                '/res/nginx.config', config_file)
             self.container_id.execute(['sed', '-i',
-                               '"s/DOMAIN/' + self.domain_id.name + '/g"',
-                               config_file])
-            self.container_id.execute(['ln', '-s',
-                               '/etc/nginx/sites-available/' + self.fullname,
-                               '/etc/nginx/sites-enabled/' + self.fullname])
+                                       '"s/BASE/' + self.name + '/g"',
+                                       config_file])
+            self.container_id.execute([
+                'sed', '-i',
+                '"s/DOMAIN/' + self.domain_id.name + '/g"',
+                config_file])
+            self.container_id.execute([
+                'ln', '-s',
+                '/etc/nginx/sites-available/' + self.fullname,
+                '/etc/nginx/sites-enabled/' + self.fullname])
             self.container_id.execute(['/etc/init.d/nginx', 'reload'])
 
         return res
@@ -89,13 +94,11 @@ class ClouderBase(models.Model):
         """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'dolibarr':
-            self.container_id.execute(['rm', '-rf',
-                               '/etc/nginx/sites-enabled/' + self.fullname])
             self.container_id.execute([
-
+                'rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname])
+            self.container_id.execute([
                 'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname])
             self.container_id.execute(['/etc/init.d/nginx', 'reload'])
-
 
     @api.multi
     def deploy_post(self):
@@ -104,24 +107,31 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'mautic':
-            baseUrl = "http://" + str(self.name) + "." + str(self.domain_id.name)
-            installerUrl = "/index.php/installer/step/"
+            base_url = \
+                "http://" + str(self.name) + "." + str(self.domain_id.name)
+            installer_url = "/index.php/installer/step/"
             mysql_pswd = "5DJqJcT26FgMCqRa"
             logging.info("-----------------")
-	    logging.info(baseUrl + " " + installerUrl + " " + mysql_pswd )
+            logging.info(base_url + " " + installer_url + " " + mysql_pswd)
             logging.info("-----------------")
-	    
-	    #self.link_ids
+
+            # self.link_ids
 
             port = str(80)
 
-            #logging.info(self.link_ids)
+            # logging.info(self.link_ids)
 
-            #logging.info("test connect to " + baseUrl + ":" + port + installerUrl + " using db password " + mysql_pswd)
+            # logging.info("test connect to " +
+            #  baseUrl + ":" + port + installerUrl +
+            # " using db password " + mysql_pswd)
 
             headers = dict()
-            headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:47.0) Gecko/20100101 Firefox/47.0"
-            headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            headers["User-Agent"] = \
+                "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:47.0)" \
+                " Gecko/20100101 Firefox/47.0"
+            headers["Accept"] = \
+                "text/html,application/xhtml+xml," \
+                "application/xml;q=0.9,*/*;q=0.8"
             headers["Accept-Language"] = "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3"
             headers["Connection"] = "keep-alive"
             headers["Content-Type"] = "application/x-www-form-urlencoded"
@@ -129,13 +139,14 @@ class ClouderBase(models.Model):
             # --- page 1 ---
             # if mautic.status_code == 200:
 
-            #try:
-	    
-	    mautic = requests.get(baseUrl + ":" + port + installerUrl + "1", headers=headers)
+            # try:
 
-            #except 
-	    
-"""
+            mautic = requests.get(
+                baseUrl + ":" + port + installerUrl + "1", headers=headers)
+
+            # except
+
+            """
             pageParser = BeautifulSoup(mautic.text, 'html.parser')
             form =  pageParser.find_all(id=re.compile("install_doctrine_step_"))
 
@@ -151,13 +162,16 @@ class ClouderBase(models.Model):
                 if arr[i] == "None":
                     arr[i] = ""
 
-            #mautic = requests.post(baseUrl + ":" + port + installerUrl + "1", data=arr, headers=headers)
+            #mautic = requests.post(baseUrl + ":" + port + installerUrl + "1",
+            data=arr, headers=headers)
 
-            # mautic = requests.post(baseUrl + installerUrl + "1:" + port, data=arr)
+            # mautic = requests.post(baseUrl +
+            installerUrl + "1:" + port, data=arr)
 
             # --- page 2 ---
 
-            #mautic = requests.get(baseUrl + ":" + port + installerUrl + "2", headers=headers)
+            #mautic = requests.get(baseUrl + ":" + port + installerUrl + "2",
+             headers=headers)
 
             pageParser = BeautifulSoup(mautic.text, 'html.parser')
             form =  pageParser.find_all(id=re.compile("install_user_step_"))
@@ -169,21 +183,26 @@ class ClouderBase(models.Model):
             arr["install_user_step[password]"] = self.container_id.db_password
             arr["install_user_step[username]"] = "admin"
 
-            #logging.info("usernames will be " + self.admin_name + " and root pswd is " + self.container_id.db_password + " and admin email is " + self.admin_email)
+            #logging.info("usernames will be " + self.admin_name + " and root
+            pswd is " + self.container_id.db_password + "
+            and admin email is " + self.admin_email)
 
 
-            #mautic = requests.post(baseUrl + installerUrl + "2", data=arr, headers=headers)
+            #mautic = requests.post(baseUrl + installerUrl + "2",
+            data=arr, headers=headers)
             # if mautic.headers.get("Location"):
             # --- page 3 ---
 
-            #mautic = requests.get(baseUrl + installerUrl + "3", headers=headers)
+            #mautic = requests.get(baseUrl + installerUrl +
+            "3", headers=headers)
 
             pageParser = BeautifulSoup(mautic.text, 'html.parser')
             form = pageParser.find_all(id="install_email_step_")
 
             arr = get_form(form)
 
-            #mautic = requests.post(baseUrl + installerUrl + "3", data=arr, headers=headers)
+            #mautic = requests.post(baseUrl + installerUrl + "3",
+            data=arr, headers=headers)
 
             #mautic = requests.get(baseUrl)
 
@@ -192,7 +211,8 @@ class ClouderBase(models.Model):
         arr = dict()
         for data in form:
             if data.name == "input":
-                if data.get("type") == "radio" and data.get("checked") == "checked":
+                if data.get("type") == "radio"
+                and data.get("checked") == "checked":
                     data_name = str(data.get("name"))
                     data_value = str(data.get("value"))
                 else:
@@ -201,7 +221,8 @@ class ClouderBase(models.Model):
             elif data.name == "select":
                 select = BeautifulSoup(data.prettify())
                 data_name = str(data.get("name"))
-                data_value = str(select.find('option', selected=True).get("value"))
+                data_value = str(select.find('option',
+                selected=True).get("value"))
             else:
                 continue
             arr[data_name] = data_value

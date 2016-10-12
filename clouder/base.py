@@ -122,7 +122,8 @@ class ClouderBase(models.Model):
     parent_id = fields.Many2one('clouder.base.child', 'Parent')
     child_ids = fields.One2many('clouder.base.child',
                                 'base_id', 'Childs')
-    metadata_ids = fields.One2many('clouder.base.metadata', 'base_id', 'Metadata')
+    metadata_ids = fields.One2many(
+        'clouder.base.metadata', 'base_id', 'Metadata')
     time_between_save = fields.Integer('Minutes between each save')
     save_expiration = fields.Integer('Days before save expiration')
     date_next_save = fields.Datetime('Next save planned')
@@ -152,7 +153,8 @@ class ClouderBase(models.Model):
         """
         Property returning the full name of the base.
         """
-        return self.application_id.fullcode + '-' + self.fulldomain.replace('.', '-')
+        return self.application_id.fullcode + '-' + \
+            self.fulldomain.replace('.', '-')
 
     @property
     def fullname_(self):
@@ -280,8 +282,8 @@ class ClouderBase(models.Model):
 
             if 'admin_name' not in vals or not vals['admin_name']:
                 vals['admin_name'] = application.admin_name \
-                     and application.admin_name \
-                     or self.email_sysadmin
+                    and application.admin_name \
+                    or self.email_sysadmin
             if 'admin_email' not in vals or not vals['admin_email']:
                 vals['admin_email'] = application.admin_email \
                     and application.admin_email \
@@ -300,9 +302,12 @@ class ClouderBase(models.Model):
                             'name': option[2].get('name', False),
                             'value': option[2].get('value', False)
                         }
-                        # This case means we do not have an odoo recordset and need to load the link manually
+                        # This case means we do not have an odoo recordset
+                        # and need to load the link manually
                         if isinstance(option['name'], int):
-                            option['name'] = self.env['clouder.application.type.option'].browse(option['name'])
+                            option['name'] = \
+                                self.env['clouder.application.type.option'].\
+                                browse(option['name'])
                     else:
                         option = {
                             'name': getattr(option, 'name', False),
@@ -312,27 +317,32 @@ class ClouderBase(models.Model):
                     if option['name'] and option['name'].id in option_sources:
                         option['source'] = option_sources[option['name'].id]
 
-                        if option['source'].type == 'base' and option['source'].auto:
-                            # Updating the default value if there is no current one set
+                        if option['source'].type == 'base' \
+                                and option['source'].auto:
+                            # Updating the default value
+                            # if there is no current one set
                             options.append((0, 0, {
                                 'name': option['source'].id,
-                                'value': option['value'] or option['source'].get_default}))
+                                'value': option['value']
+                                            or option['source'].get_default}))
 
                             # Removing the source id from those to add later
                             sources_to_add.remove(option['name'].id)
 
             # Adding missing option from sources
             for def_opt_key in sources_to_add:
-                if option_sources[def_opt_key].type == 'base' and option_sources[def_opt_key].auto:
+                if option_sources[def_opt_key].type == 'base' \
+                        and option_sources[def_opt_key].auto:
                     options.append((0, 0, {
-                            'name': option_sources[def_opt_key].id,
-                            'value': option_sources[def_opt_key].get_default
+                        'name': option_sources[def_opt_key].id,
+                        'value': option_sources[def_opt_key].get_default
                     }))
 
             # Replacing old options
             vals['option_ids'] = options
 
-            link_sources = {x.id: x for code, x in application.links.iteritems()}
+            link_sources = {
+                x.id: x for code, x in application.links.iteritems()}
             sources_to_add = link_sources.keys()
             links_to_process = []
             # Checking old links
@@ -346,9 +356,12 @@ class ClouderBase(models.Model):
                             'auto': link[2].get('auto', False),
                             'next': link[2].get('next', False)
                         }
-                        # This case means we do not have an odoo recordset and need to load the link manually
+                        # This case means we do not have an odoo recordset
+                        # and need to load the link manually
                         if isinstance(link['name'], int):
-                            link['name'] = self.env['clouder.application.link'].browse(link['name'])
+                            link['name'] = \
+                                self.env['clouder.application.link'].\
+                                browse(link['name'])
                     else:
                         link = {
                             'name': getattr(link, 'name', False),
@@ -368,7 +381,8 @@ class ClouderBase(models.Model):
             for def_key_link in sources_to_add:
                 link = {
                     'name': getattr(link_sources[def_key_link], 'name', False),
-                    'required': getattr(link_sources[def_key_link], 'required', False),
+                    'required': getattr(
+                        link_sources[def_key_link], 'required', False),
                     'auto': getattr(link_sources[def_key_link], 'auto', False),
                     'next': getattr(link_sources[def_key_link], 'next', False),
                     'source': link_sources[def_key_link]
@@ -396,7 +410,8 @@ class ClouderBase(models.Model):
                         next_id = link['source'].next.id
                     if not next_id:
                         target_ids = self.env['clouder.container'].search([
-                            ('application_id.code', '=', link['source'].name.code),
+                            ('application_id.code', '=',
+                             link['source'].name.code),
                             ('parent_id', '=', False)])
                         if target_ids:
                             next_id = target_ids[0].id
@@ -422,9 +437,11 @@ class ClouderBase(models.Model):
                             'name': child[2].get('name', False),
                             'sequence': child[2].get('sequence', False)
                         }
-                        # This case means we do not have an odoo recordset and need to load the link manually
+                        # This case means we do not have an odoo recordset
+                        # and need to load the link manually
                         if isinstance(child['name'], int):
-                            child['name'] = self.env['clouder.application'].browse(child['name'])
+                            child['name'] = self.env['clouder.application'].\
+                                browse(child['name'])
                     else:
                         child = {
                             'name': getattr(child, 'name', False),
@@ -440,8 +457,10 @@ class ClouderBase(models.Model):
             # Adding remaining childs from source
             for def_child_key in sources_to_add:
                 child = {
-                    'name': getattr(child_sources[def_child_key], 'name', False),
-                    'sequence': getattr(child_sources[def_child_key], 'sequence', False),
+                    'name': getattr(
+                        child_sources[def_child_key], 'name', False),
+                    'sequence': getattr(
+                        child_sources[def_child_key], 'sequence', False),
                     'source': child_sources[def_child_key]
                 }
                 childs_to_process.append(child)
@@ -450,14 +469,17 @@ class ClouderBase(models.Model):
             for child in childs_to_process:
                 if child['source'].required and child['source'].base:
                     childs.append((0, 0, {
-                        'name': child['source'].id, 'sequence':  child['sequence']}))
+                        'name': child['source'].id,
+                        'sequence':  child['sequence']}))
 
             # Replacing old childs
             vals['child_ids'] = childs
 
             # Processing Metadata
             metadata_vals = []
-            metadata_sources = {x.id: x for x in application.metadata_ids if x.clouder_type == 'base'}
+            metadata_sources = {
+                x.id: x for x in application.metadata_ids
+                if x.clouder_type == 'base'}
             sources_to_add = metadata_sources.keys()
             metadata_to_process = []
             if 'metadata_ids' in vals:
@@ -468,18 +490,24 @@ class ClouderBase(models.Model):
                             'name': metadata[2].get('name', False),
                             'value_data': metadata[2].get('value_data', False)
                         }
-                        # This case means we do not have an odoo recordset and need to load the link manually
+                        # This case means we do not have an odoo recordset
+                        # and need to load the link manually
                         if isinstance(metadata['name'], int):
-                            metadata['name'] = self.env['clouder.application'].browse(metadata['name'])
+                            metadata['name'] = self.env['clouder.application'].\
+                                browse(metadata['name'])
                     else:
                         metadata = {
                             'name': getattr(metadata, 'name', False),
                             'value_data': getattr(metadata, 'value_data', False)
                         }
                     # Processing metadata and adding to list
-                    if metadata['name'] and metadata['name'].id in metadata_sources:
-                        metadata['source'] = metadata_sources[metadata['name'].id]
-                        metadata['value_data'] = metadata['value_data'] or metadata['source'].default_value
+                    if metadata['name'] \
+                            and metadata['name'].id in metadata_sources:
+                        metadata['source'] = \
+                            metadata_sources[metadata['name'].id]
+                        metadata['value_data'] = \
+                            metadata['value_data'] \
+                            or metadata['source'].default_value
                         metadata_to_process.append(metadata)
 
                         # Removing from sources
@@ -488,7 +516,8 @@ class ClouderBase(models.Model):
             # Adding remaining metadata from source
             for metadata_key in sources_to_add:
                 metadata = {
-                    'name': getattr(metadata_sources[metadata_key], 'name', False),
+                    'name': getattr(
+                        metadata_sources[metadata_key], 'name', False),
                     'value_data': metadata_sources[metadata_key].default_value,
                     'source': metadata_sources[metadata_key]
                 }
@@ -498,7 +527,8 @@ class ClouderBase(models.Model):
             for metadata in metadata_to_process:
                 if metadata['source'].clouder_type == 'base':
                     metadata_vals.append((0, 0, {
-                        'name': metadata['source'].id, 'value_data':  metadata['value_data']}))
+                        'name': metadata['source'].id,
+                        'value_data':  metadata['value_data']}))
 
             # Replacing old metadata
             vals['metadata_ids'] = metadata_vals
@@ -527,7 +557,9 @@ class ClouderBase(models.Model):
     def onchange_application_id(self):
         vals = {
             'application_id': self.application_id.id,
-            'container_id': self.application_id.next_container_id and self.application_id.next_container_id.id or False,
+            'container_id':
+                self.application_id.next_container_id
+                and self.application_id.next_container_id.id or False,
             'admin_name': self.admin_name,
             'admin_email': self.admin_email,
             'option_ids': self.option_ids,
@@ -587,7 +619,8 @@ class ClouderBase(models.Model):
                 'server_id': application.next_server_id.id,
                 'application_id': application.id,
                 'image_id': application.default_image_id.id,
-                'image_version_id': application.default_image_id.version_ids[0].id,
+                'image_version_id':
+                    application.default_image_id.version_ids[0].id,
                 'environment_id': vals['environment_id'],
                 'suffix': vals['name']
             }
@@ -619,7 +652,8 @@ class ClouderBase(models.Model):
             self.deploy()
             save.restore()
             self.end_log()
-        if 'autosave' in vals and self.autosave != vals['autosave'] or 'ssl_only' in vals and self.ssl_only != vals['ssl_only']:
+        if 'autosave' in vals and self.autosave != vals['autosave'] \
+                or 'ssl_only' in vals and self.ssl_only != vals['ssl_only']:
             self.deploy_links()
 
         return res
@@ -672,7 +706,9 @@ class ClouderBase(models.Model):
                     days=self.save_expiration
                     or self.application_id.base_save_expiration)
                 ).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in self.env.context and self.env.context['save_comment'] or self.save_comment or 'Manual',
+                'comment': 'save_comment' in self.env.context
+                           and self.env.context['save_comment']
+                           or self.save_comment or 'Manual',
                 'now_bup': self.now_bup,
                 'container_id': self.container_id.id,
                 'base_id': self.id,
@@ -835,7 +871,6 @@ class ClouderBase(models.Model):
             if child.application_id.update_bases:
                 child.deploy_salt()
 
-
     @api.multi
     def purge_post(self):
         """
@@ -888,7 +923,6 @@ class ClouderBase(models.Model):
         self = self.with_context(no_enqueue=True)
         self.do('generate_cert', 'generate_cert_exec')
 
-
     @api.multi
     def generate_cert_exec(self):
         """
@@ -901,13 +935,13 @@ class ClouderBase(models.Model):
         self = self.with_context(no_enqueue=True)
         self.do('renew_cert', 'renew_cert_exec')
 
-
     @api.multi
     def renew_cert_exec(self):
         """
         Renew a certificate
         """
         return True
+
 
 class ClouderBaseOption(models.Model):
     """
@@ -1016,7 +1050,8 @@ class ClouderBaseLink(models.Model):
     @api.multi
     def deploy_(self):
         self = self.with_context(no_enqueue=True)
-        self.do('deploy_link ' + self.name.name, 'deploy_exec', where=self.base_id)
+        self.do(
+            'deploy_link ' + self.name.name, 'deploy_exec', where=self.base_id)
 
     @api.multi
     def deploy_exec(self):
@@ -1028,7 +1063,8 @@ class ClouderBaseLink(models.Model):
     @api.multi
     def purge_(self):
         self = self.with_context(no_enqueue=True)
-        self.do('purge_link ' + self.name.name, 'purge_exec', where=self.base_id)
+        self.do(
+            'purge_link ' + self.name.name, 'purge_exec', where=self.base_id)
 
     @api.multi
     def purge_exec(self):
@@ -1074,7 +1110,9 @@ class ClouderBaseChild(models.Model):
     @api.multi
     def create_child(self):
         self = self.with_context(no_enqueue=True)
-        self.do('create_child ' + self.name.name, 'create_child_exec', where=self.base_id)
+        self.do(
+            'create_child ' + self.name.name,
+            'create_child_exec', where=self.base_id)
 
     @api.multi
     def create_child_exec(self):
@@ -1097,7 +1135,9 @@ class ClouderBaseChild(models.Model):
 
     @api.multi
     def delete_child(self):
-        self.do('delete_child ' + self.name.name, 'delete_child_exec', where=self.base_id)
+        self.do(
+            'delete_child ' + self.name.name,
+            'delete_child_exec', where=self.base_id)
 
     @api.multi
     def delete_child_exec(self):
@@ -1111,12 +1151,16 @@ class ClouderBaseMetadata(models.Model):
 
     _name = 'clouder.base.metadata'
 
-    name = fields.Many2one('clouder.application.metadata', 'Application Metadata', ondelete="cascade", required=True)
-    base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade", required=True)
+    name = fields.Many2one(
+        'clouder.application.metadata', 'Application Metadata',
+        ondelete="cascade", required=True)
+    base_id = fields.Many2one(
+        'clouder.base', 'Base', ondelete="cascade", required=True)
     value_data = fields.Text('Value')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(name, base_id)', 'Metadata must be unique per container!'),
+        ('name_uniq', 'unique(name, base_id)',
+         'Metadata must be unique per container!'),
     ]
 
     @property
@@ -1128,15 +1172,19 @@ class ClouderBaseMetadata(models.Model):
             # If the function is missing, raise an exception
             raise except_orm(
                 _('Base Metadata error!'),
-                _("Invalid function name {0} for clouder.base".format(self.name.func_name))
+                _("Invalid function name {0} for clouder.base".
+                  format(self.name.func_name))
             )
 
         # Computing the function if needed
         val_to_convert = self.value_data
         if self.name.is_function:
-            val_to_convert = "{0}".format(getattr(self.base_id, self.name.func_name, _missing_function)())
-            # If it is a function, the text version should be updated for display
-            self.with_context(skip_check=True).write({'value_data': val_to_convert})
+            val_to_convert = "{0}".format(getattr(
+                self.base_id, self.name.func_name, _missing_function)())
+            # If it is a function,
+            # the text version should be updated for display
+            self.with_context(skip_check=True).write({
+                'value_data': val_to_convert})
 
         # Empty value
         if not val_to_convert:
@@ -1159,7 +1207,8 @@ class ClouderBaseMetadata(models.Model):
         if self.name.clouder_type != 'base':
             raise except_orm(
                 _('Base Metadata error!'),
-                _("This metadata is intended for {0} only.".format(self.name.clouder_type))
+                _("This metadata is intended for {0} only.".
+                  format(self.name.clouder_type))
             )
 
     @api.one
@@ -1177,5 +1226,6 @@ class ClouderBaseMetadata(models.Model):
             # User display
             raise except_orm(
                 _('Base Metadata error!'),
-                _("Invalid value for type {0}: \n\t'{1}'\n".format(self.name.value_type, self.value_data))
+                _("Invalid value for type {0}: \n\t'{1}'\n".
+                  format(self.name.value_type, self.value_data))
             )

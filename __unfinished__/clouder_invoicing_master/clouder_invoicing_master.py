@@ -40,10 +40,12 @@ class AccountInvoice(models.Model):
         :param base - the child clouder base
         :param amount - the amount of the invoice
         """
-        url = "http://{0}:{1}".format(base.container_id.server_id.ip, base.odoo_port)
+        url = "http://{0}:{1}".\
+            format(base.container_id.server_id.ip, base.odoo_port)
         conn = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
         dbname = base.fullname.replace('-', '_')
-        uid = conn.authenticate(dbname, base.admin_name, base.admin_password, {})
+        uid = conn.authenticate(
+            dbname, base.admin_name, base.admin_password, {})
         model = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(url))
 
         return model.execute_kw(
@@ -61,13 +63,17 @@ class AccountInvoice(models.Model):
         # Gathering invoice data from containers
         invoice_data = containers.get_invoicing_data()
 
-        # Processing bases only, since there is no container-based invoicing on clouder
+        # Processing bases only,
+        # since there is no container-based invoicing on clouder
         for base_data in invoice_data['invoice_base_data']:
             # TODO: create a real invoice
-            _logger.info('\nINVOICING BASE {0} FOR {1}\n'.format(base_data['id'], base_data['amount']))
+            _logger.info(
+                '\nINVOICING BASE {0} FOR {1}\n'.format(base_data['id'],
+                                                        base_data['amount']))
 
             # Updating date for base
-            base = self.env['clouder.base'].search([('id', '=', base_data['id'])])[0]
+            base = self.env['clouder.base'].search(
+                [('id', '=', base_data['id'])])[0]
             base.write({'last_invoiced': fields.Date.today()})
 
             # Making a supplier invoice in child clouder instance
@@ -87,9 +93,11 @@ class AccountInvoice(models.Model):
         ]
 
         # Invoicing all non-clouder containers
-        containers = self.env['clouder.container'].search([('application_id', 'not in', clouder_app_ids)])
+        containers = self.env['clouder.container'].search(
+            [('application_id', 'not in', clouder_app_ids)])
         self.invoice_containers(containers)
 
         # Invoicing all clouder containers
-        clouder_containers = self.env['clouder.container'].search([('application_id', 'in', clouder_app_ids)])
+        clouder_containers = self.env['clouder.container'].search(
+            [('application_id', 'in', clouder_app_ids)])
         self.invoice_master_clouder_containers(clouder_containers)

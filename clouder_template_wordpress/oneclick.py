@@ -38,8 +38,9 @@ class ClouderServer(models.Model):
         for oneclick in self.oneclick_ids:
             if oneclick.code == 'wordpress':
                 self.oneclick_deploy_element('container', 'wordpress-all')
-                self.oneclick_deploy_element('base', 'wordpress', code_container='wordpress-all-wordpress')
-
+                self.oneclick_deploy_element(
+                    'base', 'wordpress',
+                    code_container='wordpress-all-wordpress')
 
     @api.multi
     def oneclick_purge_exec(self):

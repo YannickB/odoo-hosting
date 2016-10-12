@@ -22,7 +22,8 @@
 
 from openerp import http, _, fields, release
 from openerp.http import request
-from openerp.addons.clouder_website.controller.form_controller import FormController
+from openerp.addons.clouder_website.controller.form_controller \
+    import FormController
 import json
 import logging
 
@@ -73,16 +74,20 @@ class FormControllerExtend(FormController):
         # The argument changed name between v8 and v9 of Odoo
         if self.version() >= 9:
             btn_kwargs['values'] = {
-                    'return_url': '/clouder_form/payment_complete',
-                    'cancel_url': '/clouder_form/payment_cancel'
-                }
+                'return_url': '/clouder_form/payment_complete',
+                'cancel_url': '/clouder_form/payment_cancel'
+            }
         else:
             btn_kwargs['tx_values'] = {
-                    'return_url': '/clouder_form/payment_complete',
-                    'cancel_url': '/clouder_form/payment_cancel'
-                }
-        render_ctx = dict(request.context, submit_class='btn btn-primary', submit_txt=_('Pay Now'))
-        for acquirer in orm_acq.search([('clouder_form_enabled', '=', True), ('company_id', '=', company.id)]):
+                'return_url': '/clouder_form/payment_complete',
+                'cancel_url': '/clouder_form/payment_cancel'
+            }
+        render_ctx = dict(
+            request.context, submit_class='btn btn-primary',
+            submit_txt=_('Pay Now'))
+        for acquirer in orm_acq.search([
+                ('clouder_form_enabled', '=', True),
+                ('company_id', '=', company.id)]):
             acquirer.button = acquirer.with_context(**render_ctx).render(
                 *btn_args, **btn_kwargs)[0]
             acquirers.append(acquirer)
@@ -92,7 +97,8 @@ class FormControllerExtend(FormController):
             'acquirers': acquirers,
             'hostname': data['post_data']['hostname'].rstrip('/')
         }
-        html = request.env.ref('clouder_website_payment.payment_buttons').render(
+        html = request.env.ref(
+            'clouder_website_payment.payment_buttons').render(
             qweb_context,
             engine='ir.qweb',
             context=request.context
@@ -104,12 +110,15 @@ class FormControllerExtend(FormController):
             'html': html,
             'div_id': 'CL_payment',
             'js': [
-                'clouder_website_payment/static/src/js/clouder_website_payment.js'
+                'clouder_website_payment/static/src/'
+                'js/clouder_website_payment.js'
             ]
         }
         return request.make_response(json.dumps(resp), headers=HEADERS)
 
-    @http.route('/clouder_form/payment_complete', type='http', auth='public', methods=['GET'])
+    @http.route(
+        '/clouder_form/payment_complete', type='http',
+        auth='public', methods=['GET'])
     def payment_complete(self, **post):
         """
         Redirect page after a successful payment
@@ -120,7 +129,8 @@ class FormControllerExtend(FormController):
             lang = post['lang']
         request.env = self.env_with_context({'lang': lang})
 
-        html = request.env.ref('clouder_website_payment.payment_success').render(
+        html = request.env.ref(
+            'clouder_website_payment.payment_success').render(
             {},
             engine='ir.qweb',
             context=request.context
@@ -128,7 +138,9 @@ class FormControllerExtend(FormController):
 
         return request.make_response(html, headers=HEADERS)
 
-    @http.route('/clouder_form/payment_cancel', type='http', auth='public', methods=['GET'])
+    @http.route(
+        '/clouder_form/payment_cancel', type='http',
+        auth='public', methods=['GET'])
     def payment_cancel(self, **post):
         """
         Redirect page after a cancelled payment
@@ -147,7 +159,9 @@ class FormControllerExtend(FormController):
 
         return request.make_response(html, headers=HEADERS)
 
-    @http.route('/clouder_form/payment_popup_wait', type='http', auth='public', methods=['GET'])
+    @http.route(
+        '/clouder_form/payment_popup_wait', type='http',
+        auth='public', methods=['GET'])
     def payment_cancel(self, **post):
         """
         Redirect page after a cancelled payment
@@ -166,7 +180,9 @@ class FormControllerExtend(FormController):
 
         return request.make_response(html, headers=HEADERS)
 
-    @http.route('/clouder_form/submit_acquirer', type='http', auth='public', methods=['POST'], csrf=False)
+    @http.route(
+        '/clouder_form/submit_acquirer', type='http',
+        auth='public', methods=['POST'], csrf=False)
     def submit_acquirer(self, **post):
         """
         Fetches and returns the HTML base form
@@ -199,7 +215,8 @@ class FormControllerExtend(FormController):
             'reference': session.reference,
         })
 
-        html = request.env.ref('clouder_website_payment.payment_form_popup_message').render(
+        html = request.env.ref(
+            'clouder_website_payment.payment_form_popup_message').render(
             {},
             engine='ir.qweb',
             context=request.context

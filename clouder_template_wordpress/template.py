@@ -34,10 +34,12 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
 
-        if self.application_id.type_id.name == 'wordpress' and self.application_id.check_tags(['data']):
-            self.execute(
-                         ['wget', '-q', 'https://wordpress.org/latest.tar.gz',
-                          'latest.tar.gz'], path='/var/www/', username='www-data')
+        if self.application_id.type_id.name == 'wordpress' \
+                and self.application_id.check_tags(['data']):
+            self.execute([
+                'wget', '-q', 'https://wordpress.org/latest.tar.gz',
+                'latest.tar.gz'],
+                path='/var/www/', username='www-data')
             self.execute(['tar', '-xzf', 'latest.tar.gz'],
                          path='/var/www', username='www-data')
             self.execute(['rm', '-rf', './*.tar.gz'],
@@ -61,16 +63,16 @@ class ClouderBase(models.Model):
 
             config_file = '/etc/nginx/sites-available/' + self.fullname
             self.container_id.send(
-                      modules.get_module_path('clouder_template_wordpress') +
-                      '/res/nginx.config', config_file)
-            self.container_id.execute(['sed', '-i', '"s/BASE/' + self.name + '/g"',
-                               config_file])
-            self.container_id.execute(['sed', '-i',
-                               '"s/DOMAIN/' + self.domain_id.name + '/g"',
-                               config_file])
-            self.container_id.execute(['ln', '-s',
-                               '/etc/nginx/sites-available/' + self.fullname,
-                               '/etc/nginx/sites-enabled/' + self.fullname])
+                modules.get_module_path('clouder_template_wordpress') +
+                '/res/nginx.config', config_file)
+            self.container_id.execute([
+                'sed', '-i', '"s/BASE/' + self.name + '/g"', config_file])
+            self.container_id.execute([
+                'sed', '-i', '"s/DOMAIN/' + self.domain_id.name + '/g"',
+                config_file])
+            self.container_id.execute([
+                'ln', '-s', '/etc/nginx/sites-available/' + self.fullname,
+                '/etc/nginx/sites-enabled/' + self.fullname])
             self.container_id.execute(['/etc/init.d/nginx', 'reload'])
 
         return res
@@ -82,8 +84,8 @@ class ClouderBase(models.Model):
         """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'wordpress':
-            self.container_id.execute(['rm', '-rf',
-                               '/etc/nginx/sites-enabled/' + self.fullname])
+            self.container_id.execute([
+                'rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname])
             self.container_id.execute([
                 'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname])
             self.container_id.execute(['/etc/init.d/nginx', 'reload'])

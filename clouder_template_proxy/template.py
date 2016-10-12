@@ -46,7 +46,9 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).generate_cert_exec()
         link_obj = self.env['clouder.base.link']
-        proxy_links = link_obj.search([('base_id','=',self.id),('name.type_id.name','=','proxy'),('target','!=',False)])
+        proxy_links = link_obj.search([
+            ('base_id', '=', self.id), ('name.type_id.name', '=', 'proxy'),
+            ('target', '!=', False)])
         if proxy_links:
             proxy_link = proxy_links[0]
             proxy = proxy_link.target
@@ -76,11 +78,22 @@ class ClouderBase(models.Model):
             domain = self.fulldomain
             if self.is_root:
                 domain = domain + ' -d ' + self.name + '.' + self.fulldomain
-            proxy.execute(['/opt/letsencrypt/letsencrypt-auto certonly --webroot -w ' + webroot + ' -d ' + domain + ' -m ' + proxy.email_sysadmin + ' --agree-tos'])
-            key = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/privkey.pem'])
-            cert = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'])
+            proxy.execute([
+                '/opt/letsencrypt/letsencrypt-auto certonly --webroot -w ' +
+                webroot + ' -d ' + domain + ' -m ' + proxy.email_sysadmin +
+                ' --agree-tos'])
+            key = proxy.execute([
+                'cat',
+                '/etc/letsencrypt/live/' + self.fulldomain + '/privkey.pem'])
+            cert = proxy.execute([
+                'cat',
+                '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'])
             if key:
-                self.write({'cert_key': key, 'cert_cert': cert, 'cert_renewal_date': (datetime.now() + timedelta(days=45)).strftime("%Y-%m-%d")})
+                self.write({
+                    'cert_key': key, 'cert_cert': cert,
+                    'cert_renewal_date':
+                        (datetime.now() +
+                         timedelta(days=45)).strftime("%Y-%m-%d")})
             proxy.execute([
                 'rm',
                 '/etc/nginx/sites-enabled/' + self.fullname])
@@ -94,21 +107,33 @@ class ClouderBase(models.Model):
     def renew_cert_exec(self):
         res = super(ClouderBase, self).renew_cert_exec()
         link_obj = self.env['clouder.base.link']
-        proxy_links = link_obj.search([('base_id','=',self.id),('name.type_id.name','=','proxy'),('target','!=',False)])
+        proxy_links = link_obj.search([
+            ('base_id', '=', self.id), ('name.type_id.name', '=', 'proxy'),
+            ('target', '!=', False)])
         if proxy_links:
             proxy_link = proxy_links[0]
             proxy = proxy_link.target
             proxy.execute([
-                'echo', '"' + self.cert_cert + '"', '>', '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'
+                'echo', '"' + self.cert_cert + '"', '>',
+                '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'
             ])
             proxy.execute([
-                'echo', '"' + self.cert_key + '"', '>', '/etc/letsencrypt/live/' + self.fulldomain + '/privkey.pem'])
-            proxy.execute(['/opt/letsencrypt/letsencrypt-auto renew --force-renew'])
-            key = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/privkey.pem'])
-            cert = proxy.execute(['cat', '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'])
-            self.write({'cert_key': key, 'cert_cert': cert, 'cert_renewal_date': (datetime.now() + timedelta(days=45)).strftime("%Y-%m-%d")})
+                'echo', '"' + self.cert_key + '"', '>',
+                '/etc/letsencrypt/live/' + self.fulldomain + '/privkey.pem'])
+            proxy.execute([
+                '/opt/letsencrypt/letsencrypt-auto renew --force-renew'])
+            key = proxy.execute([
+                'cat',
+                '/etc/letsencrypt/live/' + self.fulldomain + '/privkey.pem'])
+            cert = proxy.execute([
+                'cat',
+                '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'])
+            self.write({
+                'cert_key': key, 'cert_cert': cert,
+                'cert_renewal_date':
+                    (datetime.now() +
+                     timedelta(days=45)).strftime("%Y-%m-%d")})
         return res
-
 
 
 class ClouderBaseLink(models.Model):
@@ -134,7 +159,8 @@ class ClouderBaseLink(models.Model):
             else:
                 configfile = 'proxy-sslonly.config'
             target = self.target
-            module_path = modules.get_module_path('clouder_template_' + self.base_id.application_id.type_id.name)
+            module_path = modules.get_module_path(
+                'clouder_template_' + self.base_id.application_id.type_id.name)
             flag = True
             if module_path:
                 configtemplate = module_path + '/res/' + configfile
@@ -152,8 +178,11 @@ class ClouderBaseLink(models.Model):
                 target.send(
                     modules.get_module_path(
                         'clouder_template_proxy'
-                    ) + '/res/proxy-root.config', self.base_id.nginx_configfile + '-root')
-                target.execute(['cat', self.base_id.nginx_configfile + '-root', '>>',  self.base_id.nginx_configfile])
+                    ) + '/res/proxy-root.config',
+                    self.base_id.nginx_configfile + '-root')
+                target.execute([
+                    'cat', self.base_id.nginx_configfile + '-root',
+                    '>>',  self.base_id.nginx_configfile])
                 target.execute(['rm', self.base_id.nginx_configfile + '-root'])
             target.execute([
                 'sed', '-i', '"s/BASE/' + self.base_id.name + '/g"',

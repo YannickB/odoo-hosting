@@ -38,7 +38,8 @@ class ClouderServer(models.Model):
         for oneclick in self.oneclick_ids:
             if oneclick.code == 'mautic':
                 self.oneclick_deploy_element('container', 'mautic-all')
-                self.oneclick_deploy_element('base', 'mautic', code_container='mautic-all-mautic')
+                self.oneclick_deploy_element(
+                    'base', 'mautic', code_container='mautic-all-mautic')
 
     @api.multi
     def oneclick_purge_exec(self):

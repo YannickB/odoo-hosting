@@ -34,7 +34,8 @@ class ClouderImageTemplate(models.Model):
     _name = 'clouder.image.template'
 
     name = fields.Char('Image name', required=True)
-    volume_ids = fields.One2many('clouder.image.volume', 'template_id', 'Volumes')
+    volume_ids = fields.One2many(
+        'clouder.image.volume', 'template_id', 'Volumes')
     port_ids = fields.One2many('clouder.image.port', 'template_id', 'Ports')
 
 
@@ -89,7 +90,8 @@ class ClouderImage(models.Model):
             raise except_orm(_('Data error!'),
                              _("You need to specify the image to inherit!"))
 
-        dockerfile += '\nMAINTAINER ' + self.env['clouder.model'].email_sysadmin + '\n'
+        dockerfile += \
+            '\nMAINTAINER ' + self.env['clouder.model'].email_sysadmin + '\n'
 
         dockerfile += self.dockerfile or ''
         volumes = ''
@@ -118,7 +120,8 @@ class ClouderImage(models.Model):
                 "Name can only contains letters, digits and underscore"))
 
     @api.multi
-    def build_image(self, model, server, runner=False, expose_ports=[], salt=True):
+    def build_image(
+            self, model, server, runner=False, expose_ports=[], salt=True):
         """
         """
         return
@@ -148,9 +151,11 @@ class ClouderImage(models.Model):
         res = super(ClouderImage, self).create(vals)
         if 'template_ids' in vals:
             for template in res.template_ids:
-                for volume in self.env['clouder.image.volume'].search([('template_id', '=', template.id)]):
+                for volume in self.env['clouder.image.volume'].search(
+                        [('template_id', '=', template.id)]):
                     volume.reset_template(records=[res])
-                for port in self.env['clouder.image.port'].search([('template_id', '=', template.id)]):
+                for port in self.env['clouder.image.port'].search(
+                        [('template_id', '=', template.id)]):
                     port.reset_template(records=[res])
         return res
 
@@ -162,9 +167,11 @@ class ClouderImage(models.Model):
         if 'template_ids' in vals:
             self = self.browse(self.id)
             for template in self.template_ids:
-                for volume in self.env['clouder.image.volume'].search([('template_id', '=', template.id)]):
+                for volume in self.env['clouder.image.volume'].search(
+                        [('template_id', '=', template.id)]):
                     volume.reset_template(records=[self])
-                for port in self.env['clouder.image.port'].search([('template_id', '=', template.id)]):
+                for port in self.env['clouder.image.port'].search(
+                        [('template_id', '=', template.id)]):
                     port.reset_template(records=[self])
         return res
 
@@ -184,9 +191,10 @@ class ClouderImageVolume(models.Model):
     _template_parent_many2one = 'image_id'
     _template_fields = ['hostpath', 'user', 'readonly', 'nosave']
 
-    image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
-                               required=False)
-    template_id = fields.Many2one('clouder.image.template', 'Template', ondelete="cascade")
+    image_id = fields.Many2one(
+        'clouder.image', 'Image', ondelete="cascade", required=False)
+    template_id = fields.Many2one(
+        'clouder.image.template', 'Template', ondelete="cascade")
     name = fields.Char('Path', required=True)
     hostpath = fields.Char('Host path')
     user = fields.Char('System User')
@@ -216,7 +224,8 @@ class ClouderImagePort(models.Model):
 
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
                                required=False)
-    template_id = fields.Many2one('clouder.image.template', 'Template', ondelete="cascade")
+    template_id = fields.Many2one(
+        'clouder.image.template', 'Template', ondelete="cascade")
     name = fields.Char('Name', required=True)
     localport = fields.Char('Local port', required=True)
     expose = fields.Selection(

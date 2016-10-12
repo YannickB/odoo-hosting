@@ -35,7 +35,7 @@ class ClouderContainer(models.Model):
     def base_backup_container(self):
         res = super(ClouderContainer, self).base_backup_container
         if self.application_id.type_id.name == 'magento':
-            res = self.childs['exec'] # TODO: Ask what this does
+            res = self.childs['exec']  # TODO: Ask what this does
         return res
 
     @api.multi
@@ -67,7 +67,8 @@ class ClouderContainer(models.Model):
                 self.execute([
                     'sed',
                     '-i',
-                    '"s/CLOUDER_TEMPLATE_MAGENTO_DB_HOST/{replace}/g"'.format(replace=self.db_server),
+                    '"s/CLOUDER_TEMPLATE_MAGENTO_DB_HOST/{replace}/g"'.format(
+                        replace=self.db_server),
                     config_file
                 ])
                 self.execute([
@@ -82,9 +83,8 @@ class ClouderContainer(models.Model):
                     self.execute([
                         'sed',
                         '-i',
-                        '"s/CLOUDER_TEMPLATE_MAGENTO_LOCALE/{replace}/g"'.format(
-                            replace=self.options['locale']['value']
-                        ),
+                        '"s/CLOUDER_TEMPLATE_MAGENTO_LOCALE/{replace}/g"'
+                        .format(replace=self.options['locale']['value']),
                         config_file
                     ])
                 if 'timezone' in self.options:
@@ -92,7 +92,8 @@ class ClouderContainer(models.Model):
                         'sed',
                         '-i',
                         '"s/CLOUDER_TEMPLATE_MAGENTO_TZ/{replace}/g"'.format(
-                            replace=self.options['timezone']['value'].replace("/", "\\\/")
+                            replace=self.options['timezone']['value']
+                            .replace("/", "\\\/")
                         ),
                         config_file
                     ])
@@ -107,20 +108,32 @@ class ClouderContainer(models.Model):
     #             self.execute([
     #                 '/opt/magento/bin/magento',
     #                 'setup:install',
-    #                 '--base-url={domain}:{port}/'.format(domain=self.server_id.ip, port=self.ports['web']['hostport']),
+    #                 '--base-url={domain}:{port}/'.
+    # format(domain=self.server_id.ip, port=self.ports['web']['hostport']),
     #                 '--db-host={db_host}'.format(dbhost=self.db_server),
-    #                 '--db-name={dbname}'.format(dbname=self.name.replace('-', '_')),
+    #                 '--db-name={dbname}'.
+    # format(dbname=self.name.replace('-', '_')),
     #                 '--db-user={dbuser}'.format(db_user=self.db_user),
-    #                 '--db-password={dbpass}'.format(dbpass=self.options['db_password']['value']),
-    #                 '--admin-firstname={adm_firstname}'.format(adm_firstname=self.options['admin_firstname']['value']),
-    #                 '--admin-lastname={adm_firstname}'.format(adm_lastname=self.options['admin_lastname']['value']),
-    #                 '--admin-email={adm_email}'.format(adm_email=self.options['admin_email']['value']),
-    #                 '--admin-user={adm_login}'.format(adm_login=self.options['admin_user']['value']),
-    #                 '--admin-password={adm_pass}'.format(adm_pass=self.options['admin_password']['value']),
-    #                 '--language={locale}'.format(locale=self.options['locale']['value']),
-    #                 '--currency={currency}'.format(currency=self.options['currency']['value']),
-    #                 '--timezone={tz}'.format(tz=self.options['timezone']['value']),
-    #                 '--use-rewrites={rewrite}'.format(rewrite=self.options['use_rewrites']['value'])
+    #                 '--db-password={dbpass}'.
+    # format(dbpass=self.options['db_password']['value']),
+    #                 '--admin-firstname={adm_firstname}'.
+    # format(adm_firstname=self.options['admin_firstname']['value']),
+    #                 '--admin-lastname={adm_firstname}'.
+    # format(adm_lastname=self.options['admin_lastname']['value']),
+    #                 '--admin-email={adm_email}'.
+    # format(adm_email=self.options['admin_email']['value']),
+    #                 '--admin-user={adm_login}'.
+    # format(adm_login=self.options['admin_user']['value']),
+    #                 '--admin-password={adm_pass}'.
+    # format(adm_pass=self.options['admin_password']['value']),
+    #                 '--language={locale}'.
+    # format(locale=self.options['locale']['value']),
+    #                 '--currency={currency}'.
+    # format(currency=self.options['currency']['value']),
+    #                 '--timezone={tz}'.
+    # format(tz=self.options['timezone']['value']),
+    #                 '--use-rewrites={rewrite}'.
+    # format(rewrite=self.options['use_rewrites']['value'])
     #             ])
 
 
@@ -155,7 +168,9 @@ class ClouderBase(models.Model):
                     "mysql -u root -p'"
                     + self.container_id.database.root_password
                     + "' -se \"create user '" + self.container_id.db_user
-                    + "'@'%' IDENTIFIED BY '" + self.container_id.childs['data'].options['db_password']['value']
+                    + "'@'%' IDENTIFIED BY '" +
+                    self.container_id.childs['data']
+                        .options['db_password']['value']
                     + "';\""
                 ])
                 # Grant user rights on database

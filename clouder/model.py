@@ -24,7 +24,8 @@
 from openerp import models, fields, api, _, tools, release
 from openerp.exceptions import except_orm
 from openerp.addons.connector.session import ConnectorSession
-from openerp.addons.connector.queue.job import job, whitelist_unpickle_global, _UNPICKLE_WHITELIST
+from openerp.addons.connector.queue.job import\
+    job, whitelist_unpickle_global, _UNPICKLE_WHITELIST
 
 from datetime import datetime, timedelta
 import subprocess
@@ -49,7 +50,8 @@ ssh_connections = {}
 
 @job
 def connector_enqueue(
-        session, model_name, record_id, func_name, action, job_id, context, *args, **kargs):
+        session, model_name, record_id, func_name,
+        action, job_id, context, *args, **kargs):
 
     context = context.copy()
     context.update(session.env.context.copy())
@@ -58,7 +60,7 @@ def connector_enqueue(
 
     job = record.env['queue.job'].search([
         ('uuid', '=', record.env.context['job_uuid'])])
-    clouder_jobs = record.env['clouder.job'].search([('job_id','=',job.id)])
+    clouder_jobs = record.env['clouder.job'].search([('job_id', '=', job.id)])
     clouder_jobs.write({'log': False})
     job.env.cr.commit()
 
@@ -77,7 +79,7 @@ def connector_enqueue(
     job.search([('state', '=', 'failed')]).write({'state': 'pending'})
     return res
 
-#Add function in connector whitelist
+# Add function in connector whitelist
 whitelist_unpickle_global(copy_reg._reconstructor)
 whitelist_unpickle_global(tools.misc.frozendict)
 whitelist_unpickle_global(dict)
@@ -86,7 +88,8 @@ whitelist_unpickle_global(connector_enqueue)
 
 class ClouderJob(models.Model):
     """
-    Define the clouder.job, used to store the log and it needed link to the connector job.
+    Define the clouder.job,
+    used to store the log and it needed link to the connector job.
     """
 
     _name = 'clouder.job'
@@ -101,15 +104,16 @@ class ClouderJob(models.Model):
     start_date = fields.Datetime('Started at')
     end_date = fields.Datetime('Ended at')
     job_id = fields.Many2one('queue.job', 'Connector Job')
-    job_state = fields.Selection(
-          [('pending', 'Pending'),
-          ('enqueud', 'Enqueued'),
-          ('started', 'Started'),
-          ('done', 'Done'),
-          ('failed', 'Failed')], 'Job State', related='job_id.state', readonly=True)
-    state = fields.Selection([('started','Started'),('done','Done'),('failed','Failed')], 'State', readonly=True,
-                             required=True,
-                             select=True)
+    job_state = fields.Selection([
+        ('pending', 'Pending'),
+        ('enqueud', 'Enqueued'),
+        ('started', 'Started'),
+        ('done', 'Done'),
+        ('failed', 'Failed')], 'Job State',
+        related='job_id.state', readonly=True)
+    state = fields.Selection([
+        ('started', 'Started'), ('done', 'Done'), ('failed', 'Failed')],
+        'State', readonly=True, required=True, select=True)
 
     _order = 'create_date desc'
 
@@ -227,7 +231,8 @@ class ClouderModel(models.AbstractModel):
         Check that we specified the sysadmin email in configuration before
         making any action.
         """
-        if self._name != 'clouder.config.settings' and not self.env.ref('clouder.clouder_settings').email_sysadmin:
+        if self._name != 'clouder.config.settings' and not \
+                self.env.ref('clouder.clouder_settings').email_sysadmin:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify the sysadmin email in configuration"))
@@ -236,7 +241,8 @@ class ClouderModel(models.AbstractModel):
     def check_priority(self):
         priority = False
         for job in self.job_ids:
-            if job.job_id and job.job_id.state != 'done' and job.job_id.priority <= 999:
+            if job.job_id and job.job_id.state != 'done' and \
+                    job.job_id.priority <= 999:
                 priority = job.job_id.priority
         return priority
 
@@ -259,7 +265,7 @@ class ClouderModel(models.AbstractModel):
 
         if 'clouder_jobs' in self.env.context:
             for key, job_id in self.env.context['clouder_jobs'].iteritems():
-                if job_obj.search([('id','=',job_id)]):
+                if job_obj.search([('id', '=', job_id)]):
                     job = job_obj.browse(job_id)
                     if job.state == 'started': 
                         job.log = (job.log or '') +\
@@ -280,12 +286,14 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def do(self, name, action, where=False):
         where = where or self
-        if not 'clouder_jobs' in self.env.context:
+        if 'clouder_jobs' not in self.env.context:
             self = self.with_context(clouder_jobs={})
         job_id = False
         key = where._name + '_' + str(where.id)
         if key not in self.env.context['clouder_jobs']:
-            job = self.env['clouder.job'].create({'name': name, 'action': action, 'model_name': where._name, 'res_id': where.id, 'state': 'started'})
+            job = self.env['clouder.job'].create({
+                'name': name, 'action': action, 'model_name': where._name,
+                'res_id': where.id, 'state': 'started'})
             jobs = self.env.context['clouder_jobs']
             jobs[key] = job.id
             self = self.with_context(clouder_jobs=jobs)
@@ -318,13 +326,13 @@ class ClouderModel(models.AbstractModel):
         try:
             getattr(self, action)()
             if job_id:
-                job.write({'end_date': self.now, 'state':'done'})
+                job.write({'end_date': self.now, 'state': 'done'})
         except:
             self.log('===================')
             self.log('FAIL!')
             self.log('===================')
             if job_id:
-                job.write({'end_date': self.now, 'state':'failed'})
+                job.write({'end_date': self.now, 'state': 'failed'})
             raise
 
     @api.multi
@@ -414,7 +422,8 @@ class ClouderModel(models.AbstractModel):
             except:
                 pass
         res = super(ClouderModel, self).unlink()
-        self.env['clouder.job'].search([('res_id','=',self.id),('model_name','=',self._name)]).unlink()
+        self.env['clouder.job'].search([
+            ('res_id', '=', self.id), ('model_name', '=', self._name)]).unlink()
         return res
 
     @api.multi
@@ -462,15 +471,16 @@ class ClouderModel(models.AbstractModel):
                     port = user_config['port']
 
             if identityfile is None:
-                self.raise_error("It seems Clouder have no record in the ssh config to "
-                      "connect to your server.\nMake sure there is a '"
-                      + self.name + ""
-                      "' record in the ~/.ssh/config of the Clouder "
-                      "system user.\n"
-                      "To easily add this record, depending if Clouder try to "
-                      "connect to a server or a container, you can click on the"
-                      " 'reinstall' button of the server record or 'reset key' "
-                      "button of the container record you try to access.")
+                self.raise_error(
+                    "It seems Clouder have no record in the ssh config to "
+                    "connect to your server.\nMake sure there is a '"
+                    + self.name + ""
+                    "' record in the ~/.ssh/config of the Clouder "
+                    "system user.\n"
+                    "To easily add this record, depending if Clouder try to "
+                    "connect to a server or a container, you can click on the"
+                    " 'reinstall' button of the server record or 'reset key' "
+                    "button of the container record you try to access.")
 
             # Security with latest version of Paramiko
             # https://github.com/clouder-community/clouder/issues/11
@@ -513,7 +523,8 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def execute(self, cmd, stdin_arg=False,
-                path=False, ssh=False, server_name='', username=False, executor='bash'):
+                path=False, ssh=False, server_name='',
+                username=False, executor='bash'):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -523,8 +534,11 @@ class ClouderModel(models.AbstractModel):
         :param path: The path where the command need to be executed.
         """
 
-        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
-            return self.childs['exec'].execute(cmd, stdin_arg=stdin_arg, path=path, ssh=ssh, server_name=server_name, username=username, executor=executor)
+        if self._name == 'clouder.container' \
+                and self.childs and 'exec' in self.childs:
+            return self.childs['exec'].execute(
+                cmd, stdin_arg=stdin_arg, path=path, ssh=ssh,
+                server_name=server_name, username=username, executor=executor)
 
         res_ssh = self.connect(server_name=server_name, username=username)
         ssh, host = res_ssh['ssh'], res_ssh['host']
@@ -622,7 +636,8 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
-        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
+        if self._name == 'clouder.container' and self.childs \
+                and 'exec' in self.childs:
             return self.childs['exec'].get(source, destination, ssh=ssh)
 
         host = self.name
@@ -649,8 +664,10 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
-        if self._name == 'clouder.container' and self.childs and 'exec' in self.childs:
-            return self.childs['exec'].send(source, destination, ssh=ssh, username=username)
+        if self._name == 'clouder.container' and self.childs \
+                and 'exec' in self.childs:
+            return self.childs['exec'].send(
+                source, destination, ssh=ssh, username=username)
 
         res_ssh = self.connect(username=username)
         ssh, server = res_ssh['ssh'], res_ssh['server']
@@ -772,7 +789,8 @@ class ClouderModel(models.AbstractModel):
         f.write(value)
         f.close()
 
-    def request(self, url, method='get', headers={}, data={}, params={}, files={}):
+    def request(
+            self, url, method='get', headers={}, data={}, params={}, files={}):
         self.log('request ' + method + ' ' + url)
         if headers:
             self.log('headers ' + str(headers))
@@ -782,7 +800,9 @@ class ClouderModel(models.AbstractModel):
             self.log('params ' + str(params))
         if files:
             self.log('files ' + str(files))
-        result = requests.request(method, url, headers=headers, data=data, params=params, files=files, verify=False)
+        result = requests.request(
+            method, url, headers=headers, data=data,
+            params=params, files=files, verify=False)
         self.log('status ' + str(result.status_code) + ' ' + result.reason)
         self.log('result ' + str(result.json()))
         return result
@@ -796,10 +816,13 @@ class ClouderTemplateOne2many(models.AbstractModel):
     def reset_template(self, records=[]):
         if self.template_id:
             if not records:
-                records = self.env[self._template_parent_model].search([('template_ids', 'in', self.template_id.id)])
+                records = self.env[self._template_parent_model].search(
+                    [('template_ids', 'in', self.template_id.id)])
             for record in records:
                 name = hasattr(self.name, 'id') and self.name.id or self.name
-                childs = self.search([(self._template_parent_many2one, '=', record.id),('name','=', name)])
+                childs = self.search([
+                    (self._template_parent_many2one, '=', record.id),
+                    ('name', '=', name)])
                 vals = {}
                 for field in self._template_fields:
                     vals[field] = getattr(self, field)
@@ -807,7 +830,9 @@ class ClouderTemplateOne2many(models.AbstractModel):
                     for child in childs:
                         child.write(vals)
                 else:
-                    vals.update({self._template_parent_many2one: record.id, 'name': name})
+                    vals.update({
+                        self._template_parent_many2one: record.id,
+                        'name': name})
                     self.create(vals)
 
     @api.model

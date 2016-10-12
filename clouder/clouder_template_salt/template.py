@@ -61,7 +61,9 @@ class ClouderServer(models.Model):
 
         master.execute(['salt-key', '-y', '--accept=' + self.fulldomain])
 
-        master.execute(['echo "  \'' + self.fulldomain + '\':\n#END ' + self.fulldomain + '" >> /srv/pillar/top.sls'])
+        master.execute([
+            'echo "  \'' + self.fulldomain + '\':\n#END ' +
+            self.fulldomain + '" >> /srv/pillar/top.sls'])
 
     @api.multi
     def purge(self):
@@ -72,18 +74,25 @@ class ClouderServer(models.Model):
             try:
                 master.execute([
                     'sed', '-i',
-                    '"/  \'' + self.fulldomain + '\'/,/END\s' + self.fulldomain + '/d"',
+                    '"/  \'' + self.fulldomain + '\'/,/END\s' +
+                    self.fulldomain + '/d"',
                     '/srv/pillar/top.sls'])
-                master.execute(['rm', '/etc/salt/pki/master/minions/' + self.fulldomain])
-                master.execute(['rm', '/etc/salt/pki/master/minions_denied/' + self.fulldomain])
+                master.execute([
+                    'rm', '/etc/salt/pki/master/minions/' + self.fulldomain])
+                master.execute([
+                    'rm', '/etc/salt/pki/master/minions_denied/' +
+                    self.fulldomain])
             except:
                 pass
         try:
-            minion = self.env['clouder.container'].search([('environment_id', '=', self.environment_id.id), ('server_id', '=', self.id), ('suffix', '=', 'salt-minion')])
+            minion = self.env['clouder.container'].search(
+                [('environment_id', '=', self.environment_id.id),
+                 ('server_id', '=', self.id), ('suffix', '=', 'salt-minion')])
             minion.unlink()
         except:
             pass
         super(ClouderServer, self).purge()
+
 
 class ClouderContainer(models.Model):
     """
@@ -105,20 +114,25 @@ class ClouderContainer(models.Model):
 
         # if not self.childs_ids:
         res = self.get_container_res()
-        self.image_id.build_image(self, self.salt_master, expose_ports=res['expose_ports'])
+        self.image_id.build_image(
+            self, self.salt_master, expose_ports=res['expose_ports'])
 
         data = {
             'name': self.name,
-            'image':self.name,
+            'image': self.name,
             'from': self.image_id.parent_from,
-            'secretkey': 'registry_password' in self.options and self.options['registry_password']['value'],
+            'secretkey': 'registry_password' in self.options and
+                         self.options['registry_password']['value'],
         }
         bases = {}
         if self.application_id.update_bases:
-            for base in self.env['clouder.base'].search([('container_id', '=', self.id)]):
+            for base in self.env['clouder.base'].search(
+                    [('container_id', '=', self.id)]):
                 bases[base.fullname_] = base.fullname_
             if self.parent_id:
-                for base in self.env['clouder.base'].search([('container_id', '=', self.parent_id.container_id.id)]):
+                for base in self.env['clouder.base'].search(
+                        [('container_id', '=',
+                          self.parent_id.container_id.id)]):
                     bases[base.fullname_] = base.fullname_
         data['bases'] = [base for key, base in bases.iteritems()]
         data.update(self.get_container_res())
@@ -126,26 +140,35 @@ class ClouderContainer(models.Model):
         data = {self.name: data}
 
         if 'registry' in self.links:
-            registry_domain = self.links['registry'].target.base_ids[0].fulldomain
+            registry_domain = \
+                self.links['registry'].target.base_ids[0].fulldomain
             data[self.name + '-docker-registries'] = {
-               'https://' + registry_domain + '/v1/': {
-                   'email': 'admin@example.net',
-                   'username': self.name,
-                   'password': self.options['registry_password']['value']
-               }
+                'https://' + registry_domain + '/v1/': {
+                    'email': 'admin@example.net',
+                    'username': self.name,
+                    'password': self.options['registry_password']['value']
+                }
             }
 
         data = yaml.safe_dump(data, default_flow_style=False)
-        self.salt_master.execute(['echo "' + data + '" > /srv/pillar/containers/' + self.name + '.sls'])
-        self.salt_master.execute(['sed', '-i', '"/' + self.server_id.fulldomain + '\':/a +++    - containers/' + self.name + '"',  '/srv/pillar/top.sls'])
-        self.salt_master.execute(['sed', '-i', '"s/+++//g"', '/srv/pillar/top.sls'])
-        self.salt_master.execute(['salt', self.server_id.fulldomain, 'saltutil.refresh_pillar'])
+        self.salt_master.execute(
+            ['echo "' + data + '" > /srv/pillar/containers/' +
+             self.name + '.sls'])
+        self.salt_master.execute(
+            ['sed', '-i', '"/' + self.server_id.fulldomain +
+             '\':/a +++    - containers/' + self.name + '"',
+             '/srv/pillar/top.sls'])
+        self.salt_master.execute(
+            ['sed', '-i', '"s/+++//g"', '/srv/pillar/top.sls'])
+        self.salt_master.execute(
+            ['salt', self.server_id.fulldomain, 'saltutil.refresh_pillar'])
 
     @api.multi
     def deploy(self):
         if self.application_id.type_id.name == 'salt-master':
             if not self.env.ref('clouder.clouder_settings').salt_master_id:
-                self.env.ref('clouder.clouder_settings').salt_master_id = self.id
+                self.env.ref('clouder.clouder_settings').salt_master_id = \
+                    self.id
 
         if self.application_id.type_id.name == 'salt-minion':
             if not self.server_id.salt_minion_id:
@@ -156,7 +179,8 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
 
-        if self.application_id.type_id.name == 'salt-master' and self.application_id.check_tags(['exec']):
+        if self.application_id.type_id.name == 'salt-master' \
+                and self.application_id.check_tags(['exec']):
             self.execute(['sed', '-i', '"s/#publish_port: 4505/publish_port: ' +
                          self.ports['salt']['hostport'] + '/g"',
                          '/etc/salt/master'])
@@ -178,18 +202,34 @@ class ClouderContainer(models.Model):
 
         if self.application_id.type_id.name == 'salt-minion':
             config_file = '/etc/salt/minion'
-            self.execute(['sed', '-i', '"s/#master: salt/master: ' + self.env.ref('clouder.clouder_settings').salt_master_id.server_id.ip + '/g"', config_file])
-            self.execute(['sed', '-i', '"s/#master_port: 4506/master_port: ' + str(self.env.ref('clouder.clouder_settings').salt_master_id.ports['saltret']['hostport']) + '/g"', config_file])
-            self.execute(['sed', '-i', '"s/#id:/id: ' + self.server_id.fulldomain + '/g"', config_file])
+            self.execute([
+                'sed', '-i',
+                '"s/#master: salt/master: ' +
+                self.env.ref('clouder.clouder_settings').
+                salt_master_id.server_id.ip + '/g"',
+                config_file])
+            self.execute([
+                'sed', '-i',
+                '"s/#master_port: 4506/master_port: ' +
+                str(self.env.ref('clouder.clouder_settings').
+                    salt_master_id.ports['saltret']['hostport']) + '/g"',
+                config_file])
+            self.execute([
+                'sed', '-i',
+                '"s/#id:/id: ' + self.server_id.fulldomain + '/g"',
+                config_file])
 
     @api.multi
     def purge_salt(self):
 
         if self.salt_master:
             self.salt_master.execute([
-                'sed', '-i', '"/containers\/' + self.name + '/d"', '/srv/pillar/top.sls'])
-            self.salt_master.execute(['rm', '-rf', '/srv/salt/containers/build_' + self.name])
-            self.salt_master.execute(['rm', '-rf', '/srv/pillar/containers/' + self.name + '.sls'])
+                'sed', '-i', '"/containers\/' + self.name + '/d"',
+                '/srv/pillar/top.sls'])
+            self.salt_master.execute([
+                'rm', '-rf', '/srv/salt/containers/build_' + self.name])
+            self.salt_master.execute([
+                'rm', '-rf', '/srv/pillar/containers/' + self.name + '.sls'])
 
 
 class ClouderContainerLink(models.Model):
@@ -204,7 +244,8 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).deploy_link()
         if self.name.type_id.name == 'shinken' \
-                and self.container_id.application_id.type_id.name == 'salt-minion':
+                and self.container_id.application_id.type_id.name == \
+                'salt-minion':
 
             self.target.deploy_shinken_server(self.container_id)
 
@@ -214,9 +255,11 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).purge_link()
         if self.name.type_id.name == 'shinken' \
-                and self.container_id.application_id.type_id.name == 'salt-minion':
+                and self.container_id.application_id.type_id.name == \
+                'salt-minion':
 
             self.target.purge_shinken_server(self.container_id)
+
 
 class ClouderBase(models.Model):
     """
@@ -231,21 +274,31 @@ class ClouderBase(models.Model):
 
         data = {
             'name': self.fullname_,
-            'host':self.fulldomain,
-            'user':self.admin_name,
-            'password':self.admin_password,
+            'host': self.fulldomain,
+            'user': self.admin_name,
+            'password': self.admin_password,
         }
         data = yaml.safe_dump({self.fullname_: data}, default_flow_style=False)
-        self.salt_master.execute(['echo "' + data + '" > /srv/pillar/bases/' + self.fullname_ + '.sls'])
-        self.salt_master.execute(['sed', '-i', '"/' + self.container_id.server_id.name + '\':/a +++    - bases/' + self.fullname_ + '"',  '/srv/pillar/top.sls'])
-        self.salt_master.execute(['sed', '-i', '"s/+++//g"', '/srv/pillar/top.sls'])
-        self.salt_master.execute(['salt', self.container_id.server_id.fulldomain, 'saltutil.refresh_pillar'])
-
+        self.salt_master.execute([
+            'echo "' + data + '" > /srv/pillar/bases/' +
+            self.fullname_ + '.sls'])
+        self.salt_master.execute([
+            'sed', '-i',
+            '"/' + self.container_id.server_id.name +
+            '\':/a +++    - bases/' + self.fullname_ +
+            '"',  '/srv/pillar/top.sls'])
+        self.salt_master.execute([
+            'sed', '-i', '"s/+++//g"', '/srv/pillar/top.sls'])
+        self.salt_master.execute([
+            'salt', self.container_id.server_id.fulldomain,
+            'saltutil.refresh_pillar'])
 
     @api.multi
     def purge_salt(self):
 
         self.salt_master.execute([
-            'sed', '-i', '"/bases\/' + self.name + '/d"', '/srv/pillar/top.sls'])
-        self.salt_master.execute(['rm', '-rf', '/srv/pillar/bases/' + self.name + '.sls'])
+            'sed', '-i', '"/bases\/' + self.name + '/d"',
+            '/srv/pillar/top.sls'])
+        self.salt_master.execute([
+            'rm', '-rf', '/srv/pillar/bases/' + self.name + '.sls'])
 
