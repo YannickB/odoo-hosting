@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, http, release, _
+from openerp import models, fields, api, release, _
 from openerp.exceptions import except_orm
 import openerp
 import threading

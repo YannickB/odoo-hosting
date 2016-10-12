@@ -153,15 +153,15 @@ class ClouderBase(models.Model):
         if self.container_id.db_type == 'mysql':
             for key, database in self.databases.iteritems():
                 self.container_id.database.execute([
-                    "mysql -u root -p'"
-                    + self.container_id.database.root_password
-                    + "' -se \"create database " + database + ";\""
+                    "mysql -u root -p'" +
+                    self.container_id.database.root_password +
+                    "' -se \"create database " + database + ";\""
                 ])
                 self.container_id.database.execute([
-                    "mysql -u root -p'"
-                    + self.container_id.database.root_password
-                    + "' -se \"grant all on " + database
-                    + ".* to '" + self.container_id.db_user + "';\""
+                    "mysql -u root -p'" +
+                    self.container_id.database.root_password +
+                    "' -se \"grant all on " + database +
+                    ".* to '" + self.container_id.db_user + "';\""
                 ])
         return super(ClouderBase, self).deploy_database()
 

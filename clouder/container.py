@@ -801,8 +801,8 @@ class ClouderContainer(models.Model):
                                 options.append((0, 0, {
                                     'name': option['source'].id,
                                     'value':
-                                        option['value']
-                                        or option['source'].get_default
+                                        option['value'] or
+                                        option['source'].get_default
                                 }))
 
                             # Removing the source id from those to add later
@@ -993,8 +993,9 @@ class ClouderContainer(models.Model):
                         # This case means we do not have an odoo recordset
                         # and need to load the link manually
                         if isinstance(metadata['name'], int):
-                            metadata['name'] = self.env['clouder.application'].\
-                                browse(metadata['name'])
+                            metadata['name'] = \
+                                self.env['clouder.application']\
+                                .browse(metadata['name'])
                     else:
                         metadata = {
                             'name': getattr(metadata, 'name', False),
@@ -1502,12 +1503,12 @@ class ClouderContainer(models.Model):
                 'backup_id': backup_server.id,
                 # 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
-                    days=self.save_expiration
-                    or self.application_id.container_save_expiration
+                    days=self.save_expiration or
+                    self.application_id.container_save_expiration
                 )).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in self.env.context
-                           and self.env.context['save_comment']
-                           or self.save_comment or 'Manual',
+                'comment': 'save_comment' in self.env.context and
+                           self.env.context['save_comment'] or
+                           self.save_comment or 'Manual',
                 #            ''save_comment' in self.env.context
                 # and self.env.context['save_comment']
                 # or self.save_comment or 'Manual',
@@ -1516,8 +1517,8 @@ class ClouderContainer(models.Model):
             }
             save = self.env['clouder.save'].create(save_vals)
         date_next_save = (datetime.now() + timedelta(
-            minutes=self.time_between_save
-            or self.application_id.container_time_between_save
+            minutes=self.time_between_save or
+            self.application_id.container_time_between_save
         )).strftime("%Y-%m-%d %H:%M:%S")
         self.write({'save_comment': False, 'date_next_save': date_next_save})
         return save
@@ -2052,7 +2053,7 @@ class ClouderContainerMetadata(models.Model):
         # call the value property to see if the metadata can be loaded properly
         try:
             self.value
-        except ValueError as e:
+        except ValueError:
             # User display
             raise except_orm(
                 _('Container Metadata error!'),

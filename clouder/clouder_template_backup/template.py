@@ -60,7 +60,7 @@ class ClouderContainerLink(models.Model):
             filegz = self.container_id.fullname + '.tar.gz'
             file_destination = '/opt/upload/' + filegz
             tmp_file = '/tmp/backup-upload/' + filegz
-       
+
             container = self.container_id
             container.execute(['mkdir', '-p', '/tmp/backup-upload'])
             container.execute(['tar', 'czf', tmp_file, '-C /opt/backup', '.'])
@@ -96,7 +96,7 @@ class ClouderContainerLink(models.Model):
 
 #            container.self.execute(['rm', '/home/backup/.ssh/keys/*'],
 #                                   username='backup')
-            
+
             if self.target.options['protocol']['value'] == 'ftp':
                 self.target.execute([
                     'lftp',
@@ -123,4 +123,3 @@ class ClouderContainerLink(models.Model):
             directory = '/opt/upload/' + self.container_id.name
             self.target.execute(['rm', '-rf', directory])
         return super(ClouderContainerLink, self).purge_link()
-

@@ -22,7 +22,6 @@
 
 from openerp import http, api, _
 from openerp.http import request
-from werkzeug.exceptions import HTTPException, NotFound, BadRequest
 from werkzeug.wsgi import wrap_file
 from werkzeug.wrappers import Response
 from xmlrpclib import ServerProxy
@@ -392,8 +391,8 @@ class FormController(http.Controller):
         if post['inst_type'] == 'container':
             # Check that the required data has been passed
             if ('environment_id' not in post
-                    and 'environment_prefix' not in post) \
-                    or 'suffix' not in post:
+                    and 'environment_prefix' not in post) or \
+                    'suffix' not in post:
                 result = {
                     'error': _('Prefix and either environment_id or '
                                'environment_prefix are required.')}

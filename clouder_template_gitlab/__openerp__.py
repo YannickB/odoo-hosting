@@ -44,4 +44,3 @@ Clouder Template GitLab
     'installable': True,
     'application': True,
 }
-

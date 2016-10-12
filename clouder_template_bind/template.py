@@ -90,7 +90,7 @@ class ClouderDomain(models.Model):
                     'echo "allow-transfer { ' +
                     self.dns_id.options['slave_ip']['value'] + ';};" '
                     '>> /etc/bind/named.conf'])
-            
+
             self.dns_id.execute([
                 "echo 'file \"/etc/bind/db." +
                 self.name + "\";' >> /etc/bind/named.conf"])
@@ -127,8 +127,8 @@ class ClouderBaseLink(models.Model):
             'name.type_id.name', '=', 'proxy')])
         self.target.execute([
             'echo "' + name + ' IN A ' +
-            (proxy_link and proxy_link[0].target.server_id.ip
-             or self.base_id.container_id.server_id.ip) +
+            (proxy_link and proxy_link[0].target.server_id.ip or
+             self.base_id.container_id.server_id.ip) +
             '" >> ' + self.base_id.domain_id.configfile])
         self.base_id.domain_id.refresh_serial(self.base_id.fulldomain)
 

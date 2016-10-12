@@ -21,7 +21,6 @@
 ##############################################################################
 
 from openerp import models, api
-from openerp import modules
 
 
 class ClouderContainer(models.Model):
@@ -68,8 +67,8 @@ class ClouderContainer(models.Model):
                     'sed', '-i',
                     '"/relayhost =/d" ' + '/etc/postfix/main.cf']),
                 self.execute([
-                    'echo "relayhost = ' + options['smtp_relayhost']['value']
-                    + '" >> /etc/postfix/main.cf'])
+                    'echo "relayhost = ' + options['smtp_relayhost']['value'] +
+                    '" >> /etc/postfix/main.cf'])
 
             self.execute([
                 'sed', '-i',

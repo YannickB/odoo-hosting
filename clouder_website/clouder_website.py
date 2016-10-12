@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, http, _
+from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 import logging
 
@@ -127,8 +127,8 @@ class ClouderApplication(models.Model):
                 'application_id': data.application_id.id,
                 'poweruser_name': data.partner_id.email,
                 'poweruser_email': data.partner_id.email,
-                'lang': 'lang' in self.env.context
-                        and self.env.context['lang'] or 'en_US',
+                'lang': 'lang' in self.env.context and
+                        self.env.context['lang'] or 'en_US',
                 'ssl_only': True,
                 'autosave': True,
             })
@@ -158,8 +158,8 @@ class ClouderWebSession(models.Model):
             )
         elif self.application_id.web_create_type == 'container':
             name += "_{0}-{1}".format(
-                self.environment_id and self.environment_id.prefix
-                or self.environment_prefix,
+                self.environment_id and self.environment_id.prefix or
+                self.environment_prefix,
                 self.prefix
             )
         self.name = name

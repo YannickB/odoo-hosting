@@ -25,9 +25,9 @@ from openerp import models, fields, api, _, tools, release
 from openerp.exceptions import except_orm
 from openerp.addons.connector.session import ConnectorSession
 from openerp.addons.connector.queue.job import\
-    job, whitelist_unpickle_global, _UNPICKLE_WHITELIST
+    job, whitelist_unpickle_global
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import subprocess
 import paramiko
 import os.path
@@ -240,10 +240,10 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def check_priority(self):
         priority = False
-        for job in self.job_ids:
-            if job.job_id and job.job_id.state != 'done' and \
-                    job.job_id.priority <= 999:
-                priority = job.job_id.priority
+        for record_job in self.job_ids:
+            if record_job.job_id and record_job.job_id.state != 'done' and \
+                    record_job.job_id.priority <= 999:
+                priority = record_job.job_id.priority
         return priority
 
     @api.multi
@@ -267,7 +267,7 @@ class ClouderModel(models.AbstractModel):
             for key, job_id in self.env.context['clouder_jobs'].iteritems():
                 if job_obj.search([('id', '=', job_id)]):
                     job = job_obj.browse(job_id)
-                    if job.state == 'started': 
+                    if job.state == 'started':
                         job.log = (job.log or '') +\
                             now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
                             message + '\n'
@@ -474,8 +474,8 @@ class ClouderModel(models.AbstractModel):
             if identityfile is None:
                 self.raise_error(
                     "It seems Clouder have no record in the ssh config to "
-                    "connect to your server.\nMake sure there is a '"
-                    + self.name + ""
+                    "connect to your server.\nMake sure there is a '" +
+                    self.name + ""
                     "' record in the ~/.ssh/config of the Clouder "
                     "system user.\n"
                     "To easily add this record, depending if Clouder try to "
@@ -495,8 +495,8 @@ class ClouderModel(models.AbstractModel):
                     _("For unknown reason, it seems the variable identityfile "
                       "in the connect ssh function is invalid. Please report "
                       "this message.\n"
-                      "Identityfile : " + str(identityfile)
-                      + ", type : " + type(identityfile)))
+                      "Identityfile : " + str(identityfile) +
+                      ", type : " + type(identityfile)))
 
             self.log('connect: ssh ' + (username and username + '@' or '') +
                      host + (port and ' -p ' + str(port) or ''))
@@ -551,12 +551,12 @@ class ClouderModel(models.AbstractModel):
         if self._name == 'clouder.container':
             cmd_temp = []
             first = True
-            for c in cmd:
-                c = c.replace('"', '\\"')
+            for cmd_arg in cmd:
+                cmd_arg = cmd_arg.replace('"', '\\"')
                 if first:
-                    c = '"' + c
+                    cmd_arg = '"' + cmd_arg
                 first = False
-                cmd_temp.append(c)
+                cmd_temp.append(cmd_arg)
             cmd = cmd_temp
             cmd.append('"')
             cmd.insert(0, self.name + ' ' + executor + ' -c ')
@@ -860,7 +860,6 @@ def generate_random_password(size):
     :param size: The size of the random string we need to generate.
     """
     return ''.join(
-        random.choice(string.ascii_uppercase + string.ascii_lowercase
-                      + string.digits)
+        random.choice(string.ascii_uppercase + string.ascii_lowercase +
+                      string.digits)
         for _ in range(size))
-

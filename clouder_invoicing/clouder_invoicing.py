@@ -210,9 +210,10 @@ class ClouderApplication(models.Model):
     @api.model
     def _get_default_product(self):
         product = \
-            self.env.ref('clouder_invoicing.container_instance_product', False)\
-            and self.env.ref('clouder_invoicing.container_instance_product') \
-            or self.env['product.product']
+            self.env.ref(
+                'clouder_invoicing.container_instance_product', False) and \
+            self.env.ref('clouder_invoicing.container_instance_product') or \
+            self.env['product.product']
         return product
 
     pricegrid_ids = fields.One2many(

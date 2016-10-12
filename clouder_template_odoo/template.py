@@ -20,8 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, modules
-import time
+from openerp import models, api
 import erppeek
 
 
@@ -449,6 +448,7 @@ class ClouderBaseLink(models.Model):
                 'sed', '-i', '"s/LONGPOLLING/' +
                 self.base_id.container_id.ports['longpolling']['hostport'] +
                 '/g"', self.base_id.nginx_configfile])
+        return res
 
     @api.multi
     def deploy_link(self):
@@ -467,8 +467,8 @@ class ClouderBaseLink(models.Model):
             self.log("client = erppeek.Client('http://" +
                      self.base_id.container_id.server_id.ip +
                      ":" +
-                     self.base_id.odoo_port
-                     + "," + "db=" + self.base_id.fullname_ + "," +
+                     self.base_id.odoo_port +
+                     "," + "db=" + self.base_id.fullname_ + "," +
                      "user=" + self.base_id.admin_name + ", password=$$$" +
                      self.base_id.admin_password + "$$$)")
             client = erppeek.Client(

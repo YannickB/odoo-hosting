@@ -302,4 +302,3 @@ class ClouderBase(models.Model):
             '/srv/pillar/top.sls'])
         self.salt_master.execute([
             'rm', '-rf', '/srv/pillar/bases/' + self.name + '.sls'])
-

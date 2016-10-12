@@ -119,4 +119,3 @@ class ClouderContainer(models.Model):
                     'echo "' + self.options['public_key']['value'] +
                     '" > /root/.ssh/authorized_keys2'])
                 ssh.close()
-

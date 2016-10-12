@@ -20,9 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, _, modules
-from openerp.exceptions import except_orm
-import time
+from openerp import models, api, modules
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -54,7 +52,7 @@ class ClouderContainer(models.Model):
                 ports_dict += '"targetPort": ' + port.hostport + ','
                 ports_dict += '"nodePort": 0}'
             ports_dict += ']'
-                
+
             volume_mounts_dict = []
             volumes_dict = []
             for volume in volumes:

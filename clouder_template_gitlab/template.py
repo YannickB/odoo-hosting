@@ -330,7 +330,6 @@ class ClouderContainerLink(models.Model):
                 and self.container_id.application_id.type_id.name \
                 == 'gitlabci':
             if self.target.base_ids and 'exec' in self.container_id.childs:
-                container = self.container_id.childs['exec']
                 base = self.target.base_ids[0]
                 self.container_id.execute([
                     'gitlab-runner', 'unregister',
@@ -375,8 +374,8 @@ class ClouderBase(models.Model):
                 '"update pg_database set datallowconn = \'false\' '
                 'where datname = \'' + self.fullname_ + '\'; '
                 'SELECT pg_terminate_backend(pid) '
-                'FROM pg_stat_activity WHERE datname = \''
-                + self.fullname_ + '\';"'
+                'FROM pg_stat_activity WHERE datname = \'' +
+                self.fullname_ + '\';"'
             ], username='postgres')
             self.container_id.execute([
                 'yes', 'yes', '|', 'bundle', 'exec', 'rake',
@@ -388,7 +387,7 @@ class ClouderBase(models.Model):
                 'bundle', 'exec', 'rake', 'assets:precompile',
                 'RAILS_ENV=production'], path='/opt/gitlab/files',
                 username='git')
-            container = self.container_id.childs['data']
+
             self.container_id.execute([
                 'psql', '-h', 'postgres', '-U',
                 self.container_id.db_user, '-c',

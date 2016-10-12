@@ -323,8 +323,9 @@ class ClouderBase(models.Model):
                             # if there is no current one set
                             options.append((0, 0, {
                                 'name': option['source'].id,
-                                'value': option['value']
-                                            or option['source'].get_default}))
+                                'value':
+                                    option['value'] or
+                                    option['source'].get_default}))
 
                             # Removing the source id from those to add later
                             sources_to_add.remove(option['name'].id)
@@ -398,7 +399,8 @@ class ClouderBase(models.Model):
                         parent = self.env['clouder.base.child'].browse(
                             vals['parent_id'])
                         for parent_link in parent.base_id.link_ids:
-                            if link['source'].name.code == parent_link.name.name.code \
+                            if link['source'].name.code == \
+                                    parent_link.name.name.code \
                                     and parent_link.target:
                                 next_id = parent_link.target.id
                     context = self.env.context
@@ -559,8 +561,8 @@ class ClouderBase(models.Model):
         vals = {
             'application_id': self.application_id.id,
             'container_id':
-                self.application_id.next_container_id
-                and self.application_id.next_container_id.id or False,
+                self.application_id.next_container_id and
+                self.application_id.next_container_id.id or False,
             'admin_name': self.admin_name,
             'admin_email': self.admin_email,
             'option_ids': self.option_ids,
@@ -704,20 +706,20 @@ class ClouderBase(models.Model):
                 'backup_id': backup_server.id,
                 # 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
-                    days=self.save_expiration
-                    or self.application_id.base_save_expiration)
+                    days=self.save_expiration or
+                         self.application_id.base_save_expiration)
                 ).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in self.env.context
-                           and self.env.context['save_comment']
-                           or self.save_comment or 'Manual',
+                'comment': 'save_comment' in self.env.context and
+                           self.env.context['save_comment'] or
+                           self.save_comment or 'Manual',
                 'now_bup': self.now_bup,
                 'container_id': self.container_id.id,
                 'base_id': self.id,
             }
             save = self.env['clouder.save'].create(save_vals)
         date_next_save = (datetime.now() + timedelta(
-            minutes=self.time_between_save
-            or self.application_id.base_time_between_save)
+            minutes=self.time_between_save or
+                    self.application_id.base_time_between_save)
         ).strftime("%Y-%m-%d %H:%M:%S")
         self.write({'save_comment': False, 'date_next_save': date_next_save})
         return save
@@ -1225,7 +1227,7 @@ class ClouderBaseMetadata(models.Model):
         # call the value property to see if the metadata can be loaded properly
         try:
             self.value
-        except ValueError as e:
+        except ValueError:
             # User display
             raise except_orm(
                 _('Base Metadata error!'),

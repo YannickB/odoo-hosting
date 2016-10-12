@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, modules
+from openerp import models, api
 
 
 class ClouderServer(models.Model):
@@ -51,5 +51,3 @@ class ClouderServer(models.Model):
                               ('suffix', '=', 'wordpress-all')]).unlink()
 
         super(ClouderServer, self).oneclick_purge_exec()
-
-

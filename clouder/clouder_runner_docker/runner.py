@@ -20,8 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, _, modules
-from openerp.exceptions import except_orm
+from openerp import models, api, modules
 import time
 from datetime import datetime
 

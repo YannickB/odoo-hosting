@@ -20,12 +20,12 @@
 #
 ##############################################################################
 
-from openerp.addons.connector.queue.job \
-    import _unpickle, job, Job, OpenERPJobStorage
-from openerp.addons.connector.queue import worker
-
-import logging
-_logger = logging.getLogger(__name__)
+# from openerp.addons.connector.queue.job \
+#     import _unpickle, job, Job, OpenERPJobStorage
+# from openerp.addons.connector.queue import worker
+#
+# import logging
+# _logger = logging.getLogger(__name__)
 
 #
 # def perform(self, session):

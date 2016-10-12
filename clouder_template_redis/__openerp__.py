@@ -41,4 +41,3 @@ Clouder Template Redis
     'installable': True,
     'application': True,
 }
-
