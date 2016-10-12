@@ -52,7 +52,8 @@ class ClouderApplication(models.Model):
         if self.web_create_type != 'disabled' and not self.pricegrid_ids:
             raise except_orm(
                 _('Application error!'),
-                _("You cannot define a web creation type without defining price grids.")
+                _("You cannot define a web creation type "
+                  "without defining price grids.")
             )
 
     @api.multi
@@ -62,10 +63,12 @@ class ClouderApplication(models.Model):
         """
         created_id = False
         try:
-            created_id = super(ClouderApplication, self).create_instance_from_request(session_id)
+            created_id = super(ClouderApplication, self)\
+                .create_instance_from_request(session_id)
         except Exception as e:
             def thread_session_update_state(dbname, uid, context):
-                # Creating a separate cursor to commit errors in case of exception thrown
+                # Creating a separate cursor to commit errors
+                # in case of exception thrown
                 with openerp.api.Environment.manage():
                     with openerp.registry(dbname).cursor() as new_cr:
                         new_env = api.Environment(new_cr, uid, context)
@@ -77,17 +80,20 @@ class ClouderApplication(models.Model):
                         # Commit the change we just made
                         new_env.cr.commit()
 
-                # Return to avoid getting back to the other instructions after this thread
+                # Return to avoid getting back to
+                # the other instructions after this thread
                 return
 
-            # Making a thread to avoid having a deadlock when updating the session
+            # Making a thread to avoid having a
+            # deadlock when updating the session
             sess_update = threading.Thread(
                 target=thread_session_update_state,
                 args=(self.env.cr.dbname, self.env.uid, self.env.context)
             )
             sess_update.start()
 
-            # Throw the error to finish the process and have it display in logs/screen
+            # Throw the error to finish the process and
+            # have it display in logs/screen
             raise e
 
         # Checking the results
@@ -149,9 +155,11 @@ class ClouderWebSession(models.Model):
         sessions_to_update = sessions_to_update - sessions[0]
 
         for session in sessions:
-            transac = orm_trans.search([('reference', '=', session.reference)])[0]
+            transac = orm_trans.search([
+                ('reference', '=', session.reference)])[0]
 
-            # Add to the sessions to update is the transaction has been completed
+            # Add to the sessions to update is
+            # the transaction has been completed
             if transac.state == 'done':
                 sessions_to_update = sessions_to_update + session
 
@@ -170,7 +178,8 @@ class ClouderWebSession(models.Model):
             if session.state != 'payment_processed' or session.invoice_id:
                 raise except_orm(
                     _('Clouder Web Session error!'),
-                    _("You cannot launch invoice creation when a session is not process or already has an invoice")
+                    _("You cannot launch invoice creation when a session "
+                      "is not process or already has an invoice")
                 )
 
             # Creating invoice
@@ -186,9 +195,11 @@ class ClouderWebSession(models.Model):
                 'origin': session.reference
             }
             if self.version() >= 9.0:
-                invoice_data['account_id'] = session.partner_id.property_account_receivable_id.id
+                invoice_data['account_id'] = \
+                    session.partner_id.property_account_receivable_id.id
             else:
-                invoice_data['account_id'] = session.partner_id.property_account_receivable.id
+                invoice_data['account_id'] = \
+                    session.partner_id.property_account_receivable.id
 
             invoice_id = orm_inv.clouder_make_invoice(invoice_data)
             invoice = orm_inv.browse([invoice_id])[0]
@@ -222,7 +233,8 @@ class ClouderWebSession(models.Model):
         Returns true if the session should be pruned from the database
         """
         d_from_str = fields.Datetime.from_string
-        last_access_days = (d_from_str(fields.Datetime.now()) - d_from_str(self.write_date)).days
+        last_access_days = (d_from_str(fields.Datetime.now()) -
+                            d_from_str(self.write_date)).days
         if self.state == 'started' and last_access_days > 9:
             return True
         elif self.state == 'cancelled' and last_access_days > 2:
@@ -250,9 +262,11 @@ class PaymentTransaction(models.Model):
 
     def form_feedback(self, cr, uid, data, acquirer_name, context=None):
         # Process payment
-        result = super(PaymentTransaction, self).form_feedback(cr, uid, data, acquirer_name, context=context)
+        result = super(PaymentTransaction, self)\
+            .form_feedback(cr, uid, data, acquirer_name, context=context)
 
-        # Since this is an old-api definition we need to make the new environment ourselves
+        # Since this is an old-api definition we need to
+        # make the new environment ourselves
         env = api.Environment(cr, uid, context)
 
         # Search for corresponding web session
@@ -268,7 +282,8 @@ class PaymentTransaction(models.Model):
         tx = None
         tx_find_method_name = '_%s_form_get_tx_from_data' % acquirer_name
         if hasattr(self, tx_find_method_name):
-            tx = getattr(self, tx_find_method_name)(cr, uid, data, context=context)
+            tx = getattr(
+                self, tx_find_method_name)(cr, uid, data, context=context)
 
         if tx and tx.state in ['cancel', 'error']:
             # Cancel session

@@ -46,25 +46,31 @@ class ClouderApplication(models.Model):
     )
 
     @api.one
-    @api.constrains('web_create_type', 'next_server_id', 'next_container_id', 'base')
+    @api.constrains('web_create_type', 'next_server_id',
+                    'next_container_id', 'base')
     def _check_web_create_type_next(self):
         """
-        Checks that the base web type can only be applied on application that can have bases
-        Checks that the next container/server is correctly set depending on the web_create type
+        Checks that the base web type can only
+        be applied on application that can have bases
+        Checks that the next container/server
+        is correctly set depending on the web_create type
         """
         if self.web_create_type == 'base':
             if not self.base:
                 raise except_orm(
                     _('Data error!'),
-                    _("You cannot attribute the web type 'Base' to an application that cannot have bases."))
+                    _("You cannot attribute the web type 'Base' to an "
+                      "application that cannot have bases."))
             if not self.next_container_id:
                 raise except_orm(
                     _('Data error!'),
-                    _("You need to specify the next container for web type 'Base'"))
+                    _("You need to specify the next container "
+                      "for web type 'Base'"))
         elif self.web_create_type == 'container' and not self.next_server_id:
             raise except_orm(
                 _('Data error!'),
-                _("You need to specify the next server for web type 'Container'"))
+                _("You need to specify the next server for "
+                  "web type 'Container'"))
 
     @api.multi
     def create_instance_from_request(self, session_id):
@@ -121,7 +127,8 @@ class ClouderApplication(models.Model):
                 'application_id': data.application_id.id,
                 'poweruser_name': data.partner_id.email,
                 'poweruser_email': data.partner_id.email,
-                'lang': 'lang' in self.env.context and self.env.context['lang'] or 'en_US',
+                'lang': 'lang' in self.env.context
+                        and self.env.context['lang'] or 'en_US',
                 'ssl_only': True,
                 'autosave': True,
             })
@@ -151,29 +158,35 @@ class ClouderWebSession(models.Model):
             )
         elif self.application_id.web_create_type == 'container':
             name += "_{0}-{1}".format(
-                self.environment_id and self.environment_id.prefix or self.environment_prefix,
+                self.environment_id and self.environment_id.prefix
+                or self.environment_prefix,
                 self.prefix
             )
         self.name = name
 
     name = fields.Char("Name", compute='_get_name', required=False)
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)
-    clouder_partner_id = fields.Many2one('res.partner', 'Sales Partner', required=True)
-    application_id = fields.Many2one('clouder.application', 'Application', required=True)
+    clouder_partner_id = fields.Many2one(
+        'res.partner', 'Sales Partner', required=True)
+    application_id = fields.Many2one(
+        'clouder.application', 'Application', required=True)
     domain_id = fields.Many2one('clouder.domain', 'Domain', required=False)
     prefix = fields.Char('Prefix', required=False)
     suffix = fields.Char('Prefix', required=False)
     title = fields.Char('Title', required=False)
-    environment_id = fields.Many2one('clouder.environment', 'Environment', required=False)
+    environment_id = fields.Many2one(
+        'clouder.environment', 'Environment', required=False)
     environment_prefix = fields.Char('Environment prefix', required=False)
 
     @api.one
     @api.constrains('environment_id', 'suffix', 'application_id')
     def _check_env_and_prefix_not_used(self):
         """
-        Checks that there is no existing container using this environment with the same container suffix
+        Checks that there is no existing container
+        using this environment with the same container suffix
         """
-        if self.application_id.web_create_type == 'container' and self.environment_id:
+        if self.application_id.web_create_type == 'container' \
+                and self.environment_id:
             container = self.env['clouder.container'].search([
                 ('suffix', '=', self.suffix),
                 ('environment_id', '=', self.environment_id.id)
@@ -182,7 +195,8 @@ class ClouderWebSession(models.Model):
             if container:
                 raise except_orm(
                     _('Session duplicate error!'),
-                    _('Container already exists with environment {0} and prefix {1}').format(
+                    _('Container already exists with environment '
+                      '{0} and prefix {1}').format(
                         self.environment_id.prefix,
                         self.suffix
                     )
@@ -195,7 +209,8 @@ class ClouderWebSession(models.Model):
             if session:
                 raise except_orm(
                     _('Session duplicate error!'),
-                    _('Session already exists with environment {0} and prefix {1}').format(
+                    _('Session already exists with environment '
+                      '{0} and prefix {1}').format(
                         self.environment_id.prefix,
                         self.suffix
                     )
@@ -207,7 +222,8 @@ class ClouderWebSession(models.Model):
         """
         Checks that there is no existing environment using the same prefix
         """
-        if self.application_id.web_create_type == 'container' and self.prefix and not self.environment_id:
+        if self.application_id.web_create_type == 'container' \
+                and self.prefix and not self.environment_id:
             env = self.env['clouder.environment'].search([
                 ('prefix', '=', self.environment_prefix)
             ])
@@ -252,7 +268,8 @@ class ClouderWebSession(models.Model):
             if base:
                 raise except_orm(
                     _('Session duplicate error!'),
-                    _('Base with domain \'{0}\' and name \'{1}\' already exists.').format(
+                    _('Base with domain \'{0}\' and name \'{1}\' '
+                      'already exists.').format(
                         self.domain_id.name,
                         self.prefix
                     )
@@ -272,14 +289,16 @@ class ClouderWebSession(models.Model):
             if session:
                 raise except_orm(
                     _('Session duplicate error!'),
-                    _('Base with domain \'{0}\' and name \'{1}\' is already reserved.').format(
+                    _('Base with domain \'{0}\' and name \'{1}\' '
+                      'is already reserved.').format(
                         self.domain_id.name,
                         self.prefix
                     )
                 )
 
     @api.one
-    @api.constrains('application_id', 'title', 'prefix', 'domain_id', 'suffix', 'environment_id', 'environment_prefix')
+    @api.constrains('application_id', 'title', 'prefix', 'domain_id',
+                    'suffix', 'environment_id', 'environment_prefix')
     def _check_complex_requirements(self):
         """
         Checks fields requirements that are dependant on others
@@ -304,10 +323,12 @@ class ClouderWebSession(models.Model):
             if not self.suffix:
                 raise except_orm(
                     _('Data error!'),
-                    _("You need to specify a suffix when applying for a container")
+                    _("You need to specify a suffix when "
+                      "applying for a container")
                 )
             if not (self.environment_id or self.environment_prefix):
                 raise except_orm(
                     _('Data error!'),
-                    _("You need to specify an existing or new environment when applying for a container")
+                    _("You need to specify an existing or new environment "
+                      "when applying for a container")
                 )
