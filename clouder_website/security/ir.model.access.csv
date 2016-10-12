@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_clouder_web_session_deployer,clouder_web_session deployer,model_clouder_web_session,clouder.group_clouder_deployer,1,1,1,1

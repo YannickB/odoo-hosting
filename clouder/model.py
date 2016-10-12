@@ -25,11 +25,10 @@ from openerp import models, fields, api, _, tools, release
 from openerp.exceptions import except_orm
 from openerp.addons.connector.session import ConnectorSession
 from openerp.addons.connector.queue.job import\
-    job, whitelist_unpickle_global, _UNPICKLE_WHITELIST
+    job, whitelist_unpickle_global
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import subprocess
-import paramiko
 import os.path
 import string
 import copy_reg
@@ -44,6 +43,11 @@ from os.path import expanduser
 
 import logging
 _logger = logging.getLogger(__name__)
+
+try:
+    import paramiko
+except ImportError:
+    _logger.debug('Cannot `import paramiko`.')
 
 ssh_connections = {}
 
@@ -224,7 +228,7 @@ class ClouderModel(models.AbstractModel):
         now = datetime.now()
         return now.strftime("%Y-%m-%d-%H%M%S")
 
-    @api.one
+    @api.multi
     @api.constrains('name')
     def _check_config(self):
         """
@@ -240,10 +244,10 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def check_priority(self):
         priority = False
-        for job in self.job_ids:
-            if job.job_id and job.job_id.state != 'done' and \
-                    job.job_id.priority <= 999:
-                priority = job.job_id.priority
+        for record_job in self.job_ids:
+            if record_job.job_id and record_job.job_id.state != 'done' and \
+                    record_job.job_id.priority <= 999:
+                priority = record_job.job_id.priority
         return priority
 
     @api.multi
@@ -267,7 +271,7 @@ class ClouderModel(models.AbstractModel):
             for key, job_id in self.env.context['clouder_jobs'].iteritems():
                 if job_obj.search([('id', '=', job_id)]):
                     job = job_obj.browse(job_id)
-                    if job.state == 'started': 
+                    if job.state == 'started':
                         job.log = (job.log or '') +\
                             now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
                             message + '\n'
@@ -280,7 +284,7 @@ class ClouderModel(models.AbstractModel):
             from openerp.exceptions import UserError
             raise UserError(message)
         else:
-            from openerp.exceptions import except_orm
+            # from openerp.exceptions import except_orm
             raise except_orm(_(''), _(message))
 
     @api.multi
@@ -411,7 +415,7 @@ class ClouderModel(models.AbstractModel):
 
         return res
 
-    @api.one
+    @api.multi
     def unlink(self):
         """
         Override the default unlink function to create log and call purge hook.
@@ -423,7 +427,8 @@ class ClouderModel(models.AbstractModel):
                 pass
         res = super(ClouderModel, self).unlink()
         self.env['clouder.job'].search([
-            ('res_id', '=', self.id), ('model_name', '=', self._name)]).unlink()
+            ('res_id', '=', self.id),
+            ('model_name', '=', self._name)]).unlink()
         return res
 
     @api.multi
@@ -473,8 +478,8 @@ class ClouderModel(models.AbstractModel):
             if identityfile is None:
                 self.raise_error(
                     "It seems Clouder have no record in the ssh config to "
-                    "connect to your server.\nMake sure there is a '"
-                    + self.name + ""
+                    "connect to your server.\nMake sure there is a '" +
+                    self.name + ""
                     "' record in the ~/.ssh/config of the Clouder "
                     "system user.\n"
                     "To easily add this record, depending if Clouder try to "
@@ -494,8 +499,8 @@ class ClouderModel(models.AbstractModel):
                     _("For unknown reason, it seems the variable identityfile "
                       "in the connect ssh function is invalid. Please report "
                       "this message.\n"
-                      "Identityfile : " + str(identityfile)
-                      + ", type : " + type(identityfile)))
+                      "Identityfile : " + str(identityfile) +
+                      ", type : " + type(identityfile)))
 
             self.log('connect: ssh ' + (username and username + '@' or '') +
                      host + (port and ' -p ' + str(port) or ''))
@@ -507,12 +512,12 @@ class ClouderModel(models.AbstractModel):
             except Exception as inst:
                 raise except_orm(
                     _('Connect error!'),
-                    _("We were not able to connect to your server. Please make "
-                      "sure you add the public key in the authorized_keys file "
-                      "of your root user on your server.\n"
-                      "If you were trying to connect to a container, a click on"
-                      " the 'reset key' button on the container record may "
-                      "resolve the problem.\n"
+                    _("We were not able to connect to your server. Please "
+                      "make sure you add the public key in the "
+                      "authorized_keys file of your root user on your server."
+                      "\nIf you were trying to connect to a container, "
+                      "a click on the 'reset key' button on the container "
+                      "record may resolve the problem.\n"
                       "Target : " + host + "\n"
                       "Error : " + str(inst)))
             ssh_connections[host_fullname] = ssh
@@ -550,12 +555,12 @@ class ClouderModel(models.AbstractModel):
         if self._name == 'clouder.container':
             cmd_temp = []
             first = True
-            for c in cmd:
-                c = c.replace('"', '\\"')
+            for cmd_arg in cmd:
+                cmd_arg = cmd_arg.replace('"', '\\"')
                 if first:
-                    c = '"' + c
+                    cmd_arg = '"' + cmd_arg
                 first = False
-                cmd_temp.append(c)
+                cmd_temp.append(cmd_arg)
             cmd = cmd_temp
             cmd.append('"')
             cmd.insert(0, self.name + ' ' + executor + ' -c ')
@@ -790,7 +795,18 @@ class ClouderModel(models.AbstractModel):
         f.close()
 
     def request(
-            self, url, method='get', headers={}, data={}, params={}, files={}):
+            self, url, method='get', headers=None,
+            data=None, params=None, files=None):
+
+        if not headers:
+            headers = {}
+        if not data:
+            data = {}
+        if not params:
+            params = {}
+        if not files:
+            files = {}
+
         self.log('request ' + method + ' ' + url)
         if headers:
             self.log('headers ' + str(headers))
@@ -813,7 +829,11 @@ class ClouderTemplateOne2many(models.AbstractModel):
     _name = 'clouder.template.one2many'
 
     @api.multi
-    def reset_template(self, records=[]):
+    def reset_template(self, records=None):
+
+        if not records:
+            records = []
+
         if self.template_id:
             if not records:
                 records = self.env[self._template_parent_model].search(
@@ -859,7 +879,6 @@ def generate_random_password(size):
     :param size: The size of the random string we need to generate.
     """
     return ''.join(
-        random.choice(string.ascii_uppercase + string.ascii_lowercase
-                      + string.digits)
+        random.choice(string.ascii_uppercase + string.ascii_lowercase +
+                      string.digits)
         for _ in range(size))
-

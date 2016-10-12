@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, modules
+from openerp import models, api
 
 
 class ClouderContainer(models.Model):
@@ -148,8 +148,8 @@ class ClouderBase(models.Model):
                     '"update pg_database set datallowconn = \'false\' '
                     'where datname = \'' + database + '\'; '
                     'SELECT pg_terminate_backend(pid) '
-                    'FROM pg_stat_activity WHERE datname = \''
-                    + database + '\';"'
+                    'FROM pg_stat_activity WHERE datname = \'' +
+                    database + '\';"'
                 ], username='postgres')
                 self.container_id.database.execute(['dropdb', database],
                                                    username='postgres')

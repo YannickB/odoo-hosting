@@ -22,20 +22,15 @@
 
 {
     'name': 'Clouder Website',
-    'version': '1.0',
+    'version': '1.0.0.0.0',
     'category': 'Clouder',
     'depends': ['base', 'auth_signup', 'clouder'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Creates an HTTP controller that serves a form to create
-    new clouder instances from an external website
-
-    Uses Font Awesome by Dave Gandy - http://fontawesome.io
-    """,
     'demo': [],
     'data': [
+        'security/ir.model.access.csv',
         'clouder_website_view.xml',
         'templates.xml'
     ],

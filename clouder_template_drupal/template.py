@@ -20,7 +20,6 @@
 #
 ##############################################################################
 
-from openerp import modules
 from openerp import models, api
 
 
@@ -33,6 +32,7 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def send_drush_file(self):
+        from openerp import modules
         self.send(
             modules.get_module_path('clouder_template_drupal') +
             '/res/drush.make', '/var/www/drush.make',
@@ -268,7 +268,8 @@ class ClouderSave(models.Model):
             # 'tar.gz'])
             self.container_id.execute([
                 'cp', '-R', '/var/www/drupal/sites/' + self.base_id.fulldomain,
-                '/base-backup/' + self.fullname + '/site'], username='www-data')
+                '/base-backup/' + self.fullname + '/site'],
+                username='www-data')
         return res
 
     @api.multi
@@ -308,7 +309,7 @@ class ClouderBaseLink(models.Model):
     #             and self.base_id.application_id.type_id.name == 'drupal':
     #         ssh = self.connect(self.container_id.fullname)
     #         self.execute(ssh,
-    #                      ['drush', 'variable-set', 'piwik_site_id', piwik_id],
+    #                     ['drush', 'variable-set', 'piwik_site_id', piwik_id],
     #                      path=self.base_id.service_id.full_localpath_files +
     #                      '/sites/' + self.base_id.fulldomain)
     #         self.execute(ssh, ['drush', 'variable-set', 'piwik_url_http',

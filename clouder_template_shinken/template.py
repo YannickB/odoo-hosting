@@ -193,8 +193,8 @@ class ClouderContainerLink(models.Model):
                 self.target.execute([
                     'sed', '-i',
                     '"s/PORT/' +
-                    self.container_id.backup_ids[0].ports['nrpe']['hostport']
-                    + '/g"',
+                    self.container_id.backup_ids[0].ports['nrpe']['hostport'] +
+                    '/g"',
                     self.container_id.shinken_configfile], username='shinken')
                 self.target.execute([
                     'sed', '-i', '"s/METHOD/' +

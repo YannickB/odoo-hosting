@@ -22,16 +22,13 @@
 
 {
     'name': 'Clouder Template MySQL',
-    'version': '1.0',
+    'version': '1.0.0.0.0',
     'category': 'Clouder',
     'depends': ['clouder',
                 'clouder_template_shinken'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder Template MySQL
-    """,
     'demo': [],
     'data': ['template.xml'],
     'installable': True,

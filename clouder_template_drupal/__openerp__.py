@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder Template Drupal',
-    'version': '1.0',
+    'version': '1.0.0.0.0',
     'category': 'Clouder',
     'depends': [
         'clouder_template_bind',
@@ -35,9 +35,6 @@
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-Clouder Template Drupal
-""",
     'demo': [],
     'data': ['template.xml'],
     'installable': True,

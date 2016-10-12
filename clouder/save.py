@@ -293,7 +293,8 @@ class ClouderSave(models.Model):
                 '/tmp/clouder'])
         else:
             for volume in self.container_volumes_comma.split(','):
-                container.server_id.execute(['mkdir', '-p', directory + volume])
+                container.server_id.execute([
+                    'mkdir', '-p', directory + volume])
                 container.server_id.execute([
                     'docker', 'cp',
                     container.name + ':' + volume,
@@ -552,7 +553,8 @@ class ClouderSave(models.Model):
                 self = self.with_context(forcesave=False)
                 self = self.with_context(nosave=True)
 
-            self = self.with_context(save_comment='Before restore ' + self.name)
+            self = self.with_context(
+                save_comment='Before restore ' + self.name)
             container.save_exec(no_enqueue=True)
 
             self.restore_action(container)
@@ -637,7 +639,8 @@ class ClouderSave(models.Model):
                 self.log("A base_id was linked in the save")
                 base = self.base_id
 
-            self = self.with_context(save_comment='Before restore ' + self.name)
+            self = self.with_context(
+                save_comment='Before restore ' + self.name)
             base.save_exec(no_enqueue=True)
 
             self.restore_action(base)
@@ -681,7 +684,8 @@ class ClouderSave(models.Model):
         backup.send(
             self.home_directory + '/.ssh/keys/' +
             container.server_id.fulldomain + '.pub',
-            '/home/backup/.ssh/keys/' + container.server_id.fulldomain + '.pub',
+            '/home/backup/.ssh/keys/' +
+            container.server_id.fulldomain + '.pub',
             username='backup')
         backup.send(
             self.home_directory + '/.ssh/keys/' +
@@ -718,7 +722,8 @@ class ClouderSave(models.Model):
 
         if not self.base_fullname:
             for volume in self.container_volumes_comma.split(','):
-                container.execute(['rm', '-rf', volume + '/*'], username='root')
+                container.execute([
+                    'rm', '-rf', volume + '/*'], username='root')
         else:
             container.execute(
                 ['rm', '-rf', '/base-backup/restore-' + self.name],

@@ -20,5 +20,5 @@
 #
 ##############################################################################
 
-import template
-import oneclick
+from . import template
+from . import oneclick

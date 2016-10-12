@@ -20,9 +20,15 @@
 #
 ##############################################################################
 
-from openerp import models, api, modules
-import time
-import erppeek
+from openerp import models, api
+
+import logging
+_logger = logging.getLogger(__name__)
+
+try:
+    import erppeek
+except ImportError:
+    _logger.debug('Cannot `import erppeek`.')
 
 
 class ClouderContainer(models.Model):
@@ -45,12 +51,13 @@ class ClouderContainer(models.Model):
         if self.application_id.type_id.name == 'odoo':
             config_file = '/opt/odoo/etc/odoo.conf'
             if self.application_id.code == 'data':
-                self.execute(['sed', '-i', '"s/APPLICATION/' +
-                             self.parent_id.container_id.application_id.fullcode
-                             .replace('-', '_') + '/g"', config_file])
-                self.execute(['sed', '-i', 's/DB_SERVER/' +
-                             self.db_server + '/g',
-                             config_file])
+                self.execute([
+                    'sed', '-i', '"s/APPLICATION/' +
+                    self.parent_id.container_id.application_id.fullcode
+                    .replace('-', '_') + '/g"', config_file])
+                self.execute([
+                    'sed', '-i', 's/DB_SERVER/' + self.db_server + '/g',
+                    config_file])
                 self.execute([
                     'sed', '-i',
                     's/DB_USER/' + self.db_user + '/g',
@@ -70,7 +77,7 @@ class ClouderContainer(models.Model):
                             '/opt/odoo/files/extra/' + extra_dir + ','
                 self.execute([
                     'sed', '-i', '"s/ADDONS_PATH/' +
-                    addons_path.replace('/', '\/') + '/g"',
+                    addons_path.replace('/', r'\/') + '/g"',
                     config_file])
 
             if self.application_id.code == 'ssh':
@@ -448,6 +455,7 @@ class ClouderBaseLink(models.Model):
                 'sed', '-i', '"s/LONGPOLLING/' +
                 self.base_id.container_id.ports['longpolling']['hostport'] +
                 '/g"', self.base_id.nginx_configfile])
+        return res
 
     @api.multi
     def deploy_link(self):
@@ -466,8 +474,8 @@ class ClouderBaseLink(models.Model):
             self.log("client = erppeek.Client('http://" +
                      self.base_id.container_id.server_id.ip +
                      ":" +
-                     self.base_id.odoo_port
-                     + "," + "db=" + self.base_id.fullname_ + "," +
+                     self.base_id.odoo_port +
+                     "," + "db=" + self.base_id.fullname_ + "," +
                      "user=" + self.base_id.admin_name + ", password=$$$" +
                      self.base_id.admin_password + "$$$)")
             client = erppeek.Client(
@@ -531,7 +539,7 @@ class ClouderBaseLink(models.Model):
             self.target.execute(['postmap', '/etc/postfix/virtual_aliases'])
             self.target.execute([
                 'sed', '-i',
-                '"/d\s' + self.base_id.fullname_ + '/d"',
+                r'"/d\s' + self.base_id.fullname_ + '/d"',
                 '/etc/aliases'])
             self.target.execute(['newaliases'])
             self.target.execute(['/etc/init.d/postfix', 'reload'])

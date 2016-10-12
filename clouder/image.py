@@ -108,22 +108,23 @@ class ClouderImage(models.Model):
 
         return dockerfile
 
-    @api.one
+    @api.multi
     @api.constrains('name')
     def _check_name(self):
         """
         Check that the image name does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d_]*$", self.name):
+        if not re.match(r"^[\w\d_]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits and underscore"))
 
     @api.multi
     def build_image(
-            self, model, server, runner=False, expose_ports=[], salt=True):
+            self, model, server, runner=False, expose_ports=None, salt=True):
         """
         """
+
         return
 
     @api.multi
@@ -273,8 +274,9 @@ class ClouderImageVersion(models.Model):
         Property returning the address of the registry where is hosted
         the image version.
         """
-        return self.registry_id and self.registry_id.base_ids[0].fulldomainserver_id.ip + ':' + \
-            self.registry_id.ports['http']['hostport']
+        return self.registry_id \
+            and self.registry_id.base_ids[0].fulldomainserver_id.ip + \
+            ':' + self.registry_id.ports['http']['hostport']
 
     @property
     def fullpath(self):
@@ -301,19 +303,19 @@ class ClouderImageVersion(models.Model):
          'Version name must be unique per image!')
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('name')
     def _check_name(self):
         """
         Check that the image version name does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d_.]*$", self.name):
+        if not re.match(r"^[\w\d_.]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Image version can only contains letters, "
                 "digits and underscore and dot"))
 
-    @api.one
+    @api.multi
     def unlink(self):
         """
         Override unlink method to prevent image version unlink if

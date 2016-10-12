@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, http, release, _
+from openerp import models, fields, api, release, _
 from openerp.exceptions import except_orm
 import openerp
 import threading
@@ -46,7 +46,7 @@ class ClouderApplication(models.Model):
 
     _inherit = 'clouder.application'
 
-    @api.one
+    @api.multi
     @api.constrains('pricegrid_ids', 'web_create_type')
     def _check_create_type_pricegrids(self):
         if self.web_create_type != 'disabled' and not self.pricegrid_ids:

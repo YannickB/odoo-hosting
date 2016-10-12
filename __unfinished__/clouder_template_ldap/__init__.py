@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-from __unfinished__.clouder_template_ldap import clouder_template_ldap
+# from . import clouder_template_ldap

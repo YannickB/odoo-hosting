@@ -20,9 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, _
-from openerp.exceptions import except_orm
-import re
+from openerp import models, api
 
 
 class ClouderContainer(models.Model):

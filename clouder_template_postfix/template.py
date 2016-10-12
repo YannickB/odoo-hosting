@@ -21,7 +21,6 @@
 ##############################################################################
 
 from openerp import models, api
-from openerp import modules
 
 
 class ClouderContainer(models.Model):
@@ -68,8 +67,8 @@ class ClouderContainer(models.Model):
                     'sed', '-i',
                     '"/relayhost =/d" ' + '/etc/postfix/main.cf']),
                 self.execute([
-                    'echo "relayhost = ' + options['smtp_relayhost']['value']
-                    + '" >> /etc/postfix/main.cf'])
+                    'echo "relayhost = ' + options['smtp_relayhost']['value'] +
+                    '" >> /etc/postfix/main.cf'])
 
             self.execute([
                 'sed', '-i',
@@ -90,7 +89,8 @@ class ClouderContainer(models.Model):
 
             if smtp_options:
                 self.execute([
-                    'echo "smtp_sasl_auth_enable = yes" >> /etc/postfix/main.cf'
+                    'echo "smtp_sasl_auth_enable = yes" '
+                    '>> /etc/postfix/main.cf'
                 ])
                 self.execute([
                     'echo "smtp_sasl_security_options = noanonymous" '
@@ -127,16 +127,18 @@ class ClouderContainerLink(models.Model):
                 "echo '#spamassassin-flag'"
                 ">> /etc/postfix/master.cf"])
             self.container_id.execute([
-                "echo 'smtp      inet  n       -       -       -       -       "
+                "echo 'smtp      inet  n       "
+                "-       -       -       -       "
                 "smtpd -o content_filter=spamassassin' "
                 ">> /etc/postfix/master.cf"])
             self.container_id.execute([
-                "echo 'spamassassin unix -     n       n       -       -       "
+                "echo 'spamassassin unix -     "
+                "n       n       -       -       "
                 "pipe user=nobody argv=/usr/bin/spamc -d " +
                 self.target.server_id.ip + " -p " +
                 self.target.ports['spamd']['hostport'] +
                 " -f -e /usr/sbin/sendmail "
-                "-oi -f \${sender} \${recipient}' "
+                r"-oi -f \${sender} \${recipient}' "
                 ">> /etc/postfix/master.cf"])
             self.container_id.execute([
                 "echo '#spamassassin-endflag'"

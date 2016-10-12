@@ -26,9 +26,9 @@ Clouder.run = function($){
 
         // Fill form data with already known variables
         $clouder_form.attr('action', Clouder.pluginPath + 'clouder_form/submit_form');
-        $clouder_form.find('input[name="clouder_partner_id"]').val(Clouder.params['partner_id']);
-        $clouder_form.find('input[name="db"]').val(Clouder.params['db']);
-        $clouder_form.find('input[name="lang"]').val(Clouder.params['lang']);
+        $clouder_form.find('input[name="clouder_partner_id"]').val(Clouder.params.partner_id);
+        $clouder_form.find('input[name="db"]').val(Clouder.params.db);
+        $clouder_form.find('input[name="lang"]').val(Clouder.params.lang);
         $clouder_form.find('input[name="hostname"]').val(Clouder.pluginPath);
 
         // Controls the state of env_prefix input depending on env_id
@@ -78,7 +78,7 @@ Clouder.run = function($){
             var $passwd = $clouder_form.find("input[name='password']");
 
             Clouder.user_login($email, $passwd, function(result){
-                if (result.response != undefined){
+                if (result.response !== undefined){
                     if (result.response){
                         $passwd.parent().addClass('CL_js_required');
                         $passwd.parent().show();
@@ -88,7 +88,7 @@ Clouder.run = function($){
                         $passwd.parent().hide();
                     }
                 }
-                else if (result.error != undefined) {
+                else if (result.error !== undefined) {
                     $form.hide();
                     $error = Clouder.$plugin.find('.CL_final_error');
                     $error.find('.CL_Error_msg').html(result.error);
@@ -113,7 +113,7 @@ Clouder.run = function($){
             if ($passwd.parents(".CL_form-group").hasClass('CL_js_required') && $passwd.val()){
                 Clouder.user_login($email, $passwd, function(result){
                     var $hint = Clouder.$plugin.find('.CL_hint');
-                    if (result.response != undefined){
+                    if (result.response !== undefined){
                         if (result.response){
                             Clouder.set_error($passwd, false);
                             $hint.hide();
@@ -126,7 +126,7 @@ Clouder.run = function($){
                             $hint.show();
                         }
                     }
-                    else if (result.error != undefined) {
+                    else if (result.error !== undefined) {
                         $form.hide();
                         $error = Clouder.$plugin.find('.CL_final_error');
                         $error.find('.CL_Error_msg').html(result.error);
@@ -195,7 +195,7 @@ Clouder.parse_check = function(data){
         delete data.next_step_validated;
 
         // Adding errors to elements
-        for (elt in data){
+        for (var elt in data){
             var err_class = "ui-textbox-invalid";
             $elt = Clouder.$plugin.find("[name='"+elt+"']");
             if ($elt[0].tagName == "SELECT"){
@@ -217,7 +217,7 @@ Clouder.check_instance_data = function(){
         'environment_prefix': $form.find('input[name="environment_prefix"]').val(),
         'domain_id': $form.find('select[name="domain_id"]').find('option:selected').val(),
         'prefix': $form.find('input[name="prefix"]').val(),
-    }
+    };
     Clouder.$.ajax({
         url: Clouder.pluginPath + 'clouder_form/check_data',
         data: ajax_data,
@@ -226,7 +226,7 @@ Clouder.check_instance_data = function(){
         dataType: 'html',
         success: function(data) {
             data = JSON.parse(data);
-            if (data.error != undefined){
+            if (data.error !== undefined){
                 $error = Clouder.$plugin.find('.CL_final_error');
                 $error.find('.CL_Error_msg').text(data.error);
 
@@ -235,7 +235,7 @@ Clouder.check_instance_data = function(){
 
                 $error.show();
             }
-            else if (data.next_step_validated != undefined){
+            else if (data.next_step_validated !== undefined){
                 Clouder.parse_check(data);
                 Clouder.loading(false, $form);
             }
@@ -260,7 +260,7 @@ Clouder.check_instance_data = function(){
 Clouder.readresponse = function(data, cleanup=true){
     if (cleanup){
         // Clean old dynamically added divs
-        for (div in Clouder.clean) {
+        for (var div in Clouder.clean) {
             Clouder.$plugin.find(Clouder.clean[i]).remove();
         }
         Clouder.clean = [];
@@ -273,7 +273,7 @@ Clouder.readresponse = function(data, cleanup=true){
     Clouder.clean.push('#'+data.div_id);
 
     $new_div.html(data.html);
-    for (i in data.js){
+    for (var i in data.js){
         Clouder.getScript(Clouder.pluginPath + data.js[i], function(){});
     }
     $new_div.show();
@@ -297,10 +297,10 @@ Clouder.loading = function(state, $selector){
 
 Clouder.getErrorMsg = function(err_id){
     return Clouder.$plugin.find('#CL_ERROR_MESSAGES>#'+err_id).html();
-}
+};
 Clouder.getHintMsg = function(hint_id){
     return Clouder.$plugin.find('#CL_HINT_MESSAGES>#'+hint_id).html();
-}
+};
 
 Clouder.submit_override = function(){
     var $form = Clouder.$plugin.find('#ClouderForm');
@@ -328,14 +328,14 @@ Clouder.submit_override = function(){
         dataType: 'html',
         success: function(data) {
             data = JSON.parse(data);
-            if (data.error != undefined){
+            if (data.error !== undefined){
                 Clouder.loading(false, $form);
                 $form.hide();
                 $error = Clouder.$plugin.find('.CL_final_error');
                 $error.find('.CL_Error_msg').html(data.error);
                 $error.show();
             }
-            else if (data.html != undefined){
+            else if (data.html !== undefined){
                 Clouder.readresponse(data);
                 Clouder.clws_id = data.clws_id;
                 Clouder.loading(false, $form);
@@ -362,16 +362,16 @@ Clouder.submit_override = function(){
 Clouder.set_error = function($elt, is_error){
     var elt_class = "ui-textbox";
     if($elt[0].tagName == "SELECT"){
-        elt_class = "ui-dropdown"
+        elt_class = "ui-dropdown";
     }
-    var err_class = elt_class + "-invalid"
+    var err_class = elt_class + "-invalid";
     if(is_error){
         $elt.parents("."+elt_class).addClass(err_class);
     }
     else {
         $elt.parents("."+elt_class).removeClass(err_class);
     }
-}
+};
 
 Clouder.add_error_to_elt = function($elt){
     is_error = !$elt.val();
@@ -387,13 +387,13 @@ Clouder.env_pref_re = /^[\w]*$/;
 Clouder.error_regexp = function($elt, re, err_msg){
     var elt_val = $elt.val();
     var $hint = Clouder.$plugin.find('.CL_hint');
-    var is_error = (elt_val == '' || !re.test(elt_val));
+    var is_error = (elt_val === '' || !re.test(elt_val));
     if (is_error) {
         $hint.html(err_msg);
     }
     Clouder.set_error($elt, is_error);
     return is_error;
-}
+};
 
 Clouder.error_step = function(step){
     var has_error = false;
@@ -528,7 +528,7 @@ Clouder.get_env = function($login, $password, when_callback){
             data: {
                 'login': $login.val(),
                 'password': $password.val(),
-                'lang': Clouder.params['lang']
+                'lang': Clouder.params.lang
             },
             method:'POST', type: 'POST',
             cache: false,
@@ -540,7 +540,7 @@ Clouder.get_env = function($login, $password, when_callback){
                 result = {'error': Clouder.getErrorMsg('CL_ERR_GET_ENV')};
             }
         });
-    };
+    }
 
     if ($login.val()){
         Clouder.$.when(ajax_get_env()).always(function(useless){
@@ -556,7 +556,7 @@ Clouder.get_env = function($login, $password, when_callback){
         Clouder.loading(false, $form);
     }
 
-}
+};
 
 /*
     If login is passed: returns true if the login exists
@@ -584,7 +584,7 @@ Clouder.user_login = function($login, $password, when_callback){
                 result = {'error': Clouder.getErrorMsg('CL_ERR_LOGIN')};
             }
         });
-    };
+    }
 
     if ($login.val()){
         Clouder.$.when(axaj_login()).always(function(useless){
@@ -594,7 +594,7 @@ Clouder.user_login = function($login, $password, when_callback){
             if (result.response && $password.val()){
                 // Read and apply partner info
 
-                for(attr_name in result.partner_info){
+                for(var attr_name in result.partner_info){
                     // Select attributes
                     if(attr_name.match(/_id$/)){
                         $select = Clouder.$plugin.find('select[name="'+attr_name+'"]');
@@ -613,12 +613,12 @@ Clouder.user_login = function($login, $password, when_callback){
                 Clouder.get_env($login, $password, function(data){
                     var first = true;
                     $hint = Clouder.$plugin.find('.CL_hint');
-                    if (data.result != undefined){
-                        for(env_id in data.result){
+                    if (data.result !== undefined){
+                        for(var env_id in data.result){
                             $env_select = Clouder.$plugin.find('select[name="environment_id"]');
 
                             // Add option for each env
-                            $env_select.append('<option value="'+env_id+'">'+data.res[env_id]['name']+'</option>');
+                            $env_select.append('<option value="'+env_id+'">'+data.res[env_id].name+'</option>');
 
                             // Select the first added env
                             if (first){
@@ -647,7 +647,7 @@ Clouder.user_login = function($login, $password, when_callback){
         Clouder.loading(false, $form);
     }
 
-}
+};
 
 // Displays the right elements, corresponding to the current step. Hides the others.
 Clouder.showStep = function(step){
@@ -680,7 +680,7 @@ Clouder.loadPhp = function ($) {
             Clouder.run($);
         },
         error: function(jq, txt, err) {
-            $('#ClouderPlugin').html("ERROR: Could not load form")
+            $('#ClouderPlugin').html("ERROR: Could not load form");
         }
     });
 };
@@ -699,7 +699,7 @@ Clouder.getScript = function (url, success) {
             success();
             script.onload = script.onreadystatechange = null;
             head.removeChild(script);
-        };
+        }
     };
     head.appendChild(script);
 };
@@ -727,4 +727,4 @@ if (typeof jQuery == 'undefined') {
 } else {
     // Loading the rest on the already loaded jQuery
     Clouder.getJqueryUi();
-};
+}

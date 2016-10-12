@@ -22,15 +22,12 @@
 
 {
     'name': 'Clouder',
-    'version': '1.0',
+    'version': '1.0.0.0.0',
     'category': 'Clouder',
     'depends': ['base', 'connector'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-Clouder
-    """,
     'demo': [],
     'data': [
         'view.xml',
@@ -42,6 +39,11 @@ Clouder
         'clouder_template_salt/template.xml',
         'clouder_runner_docker/template.xml',
     ],
+    'external_dependencies': {
+        'python': [
+            'paramiko',
+        ],
+    },
     'installable': True,
     'application': True,
 }

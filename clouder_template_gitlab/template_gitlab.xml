@@ -50,7 +50,7 @@
             <field name="template_id" ref="image_template_gitlab_data"/>
             <field name="name">/opt/gitlab/config</field>
         </record>
-        <record id="image_template_gitlab_data_volume_config" model="clouder.image.volume">
+        <record id="image_template_gitlab_data_volume_var" model="clouder.image.volume">
             <field name="template_id" ref="image_template_gitlab_data"/>
             <field name="name">/opt/gitlab/var</field>
         </record>

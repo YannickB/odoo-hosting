@@ -20,9 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, _, modules
-from openerp.exceptions import except_orm
-import time
+from openerp import models, api, modules
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -54,7 +52,7 @@ class ClouderContainer(models.Model):
                 ports_dict += '"targetPort": ' + port.hostport + ','
                 ports_dict += '"nodePort": 0}'
             ports_dict += ']'
-                
+
             volume_mounts_dict = []
             volumes_dict = []
             for volume in volumes:
@@ -86,7 +84,7 @@ class ClouderContainer(models.Model):
                             service_file])
             runner.execute(['sed', '-i', '"s/IMAGE_NAME/' +
                             self.image_version_id.fullpath_localhost.replace(
-                                '/', '\/') + '/g"',
+                                '/', r'\/') + '/g"',
                             service_file])
             runner.execute(['sed', '-i', '"s/PORTS/' +
                             ports_dict.replace('\"', '\\"') + '/g"',

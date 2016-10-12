@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, http, _
+from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 import logging
 
@@ -45,7 +45,7 @@ class ClouderApplication(models.Model):
         required=True
     )
 
-    @api.one
+    @api.multi
     @api.constrains('web_create_type', 'next_server_id',
                     'next_container_id', 'base')
     def _check_web_create_type_next(self):
@@ -127,8 +127,8 @@ class ClouderApplication(models.Model):
                 'application_id': data.application_id.id,
                 'poweruser_name': data.partner_id.email,
                 'poweruser_email': data.partner_id.email,
-                'lang': 'lang' in self.env.context
-                        and self.env.context['lang'] or 'en_US',
+                'lang': 'lang' in self.env.context and
+                        self.env.context['lang'] or 'en_US',
                 'ssl_only': True,
                 'autosave': True,
             })
@@ -142,29 +142,30 @@ class ClouderWebSession(models.Model):
     """
     _name = 'clouder.web.session'
 
-    @api.one
-    def _get_name(self):
+    @api.multi
+    def _compute_name(self):
         """
         Computes a name for a clouder web session
         """
-        name = "App{0}-{1}".format(
-            self.application_id.name,
-            self.application_id.web_create_type
-        )
-        if self.application_id.web_create_type == 'base':
-            name += "_{0}-{1}".format(
-                self.prefix,
-                self.domain_id.name
+        for rec in self:
+            name = "App{0}-{1}".format(
+                rec.application_id.name,
+                rec.application_id.web_create_type
             )
-        elif self.application_id.web_create_type == 'container':
-            name += "_{0}-{1}".format(
-                self.environment_id and self.environment_id.prefix
-                or self.environment_prefix,
-                self.prefix
-            )
-        self.name = name
+            if rec.application_id.web_create_type == 'base':
+                name += "_{0}-{1}".format(
+                    rec.prefix,
+                    rec.domain_id.name
+                )
+            elif rec.application_id.web_create_type == 'container':
+                name += "_{0}-{1}".format(
+                    rec.environment_id and rec.environment_id.prefix or
+                    rec.environment_prefix,
+                    rec.prefix
+                )
+            rec.name = name
 
-    name = fields.Char("Name", compute='_get_name', required=False)
+    name = fields.Char("Name", compute='_compute_name', required=False)
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)
     clouder_partner_id = fields.Many2one(
         'res.partner', 'Sales Partner', required=True)
@@ -178,7 +179,7 @@ class ClouderWebSession(models.Model):
         'clouder.environment', 'Environment', required=False)
     environment_prefix = fields.Char('Environment prefix', required=False)
 
-    @api.one
+    @api.multi
     @api.constrains('environment_id', 'suffix', 'application_id')
     def _check_env_and_prefix_not_used(self):
         """
@@ -216,7 +217,7 @@ class ClouderWebSession(models.Model):
                     )
                 )
 
-    @api.one
+    @api.multi
     @api.constrains('environment_prefix', 'environment_id')
     def _check_envprefix_not_used(self):
         """
@@ -249,12 +250,11 @@ class ClouderWebSession(models.Model):
             if session:
                 raise except_orm(
                     _('Session duplicate error!'),
-                    _('Environment prefix \'{0}\' is already reserved.').format(
-                        self.environment_prefix
-                    )
+                    _('Environment prefix \'{0}\' is already reserved.')
+                    .format(self.environment_prefix)
                 )
 
-    @api.one
+    @api.multi
     @api.constrains('application_id', 'domain_id', 'prefix')
     def _check_base_domain_prefix_not_used(self):
         """
@@ -296,7 +296,7 @@ class ClouderWebSession(models.Model):
                     )
                 )
 
-    @api.one
+    @api.multi
     @api.constrains('application_id', 'title', 'prefix', 'domain_id',
                     'suffix', 'environment_id', 'environment_prefix')
     def _check_complex_requirements(self):

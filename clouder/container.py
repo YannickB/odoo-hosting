@@ -62,9 +62,9 @@ class ClouderServer(models.Model):
                 _("You need to specify the sysadmin email in configuration"))
 
         self.execute_local(['mkdir', '/tmp/key_' + str(self.env.uid)])
-        self.execute_local(['ssh-keygen', '-t', 'rsa', '-C',
-                            self.email_sysadmin, '-f',
-                            '/tmp/key_' + str(self.env.uid) + '/key', '-N', ''])
+        self.execute_local([
+            'ssh-keygen', '-t', 'rsa', '-C', self.email_sysadmin, '-f',
+            '/tmp/key_' + str(self.env.uid) + '/key', '-N', ''])
         return True
 
     @api.multi
@@ -108,8 +108,8 @@ class ClouderServer(models.Model):
             self._create_key()
             destroy = False
 
-        key = self.execute_local(['cat',
-                                  '/tmp/key_' + str(self.env.uid) + '/key.pub'])
+        key = self.execute_local([
+            'cat', '/tmp/key_' + str(self.env.uid) + '/key.pub'])
 
         if destroy:
             self._destroy_key()
@@ -117,7 +117,7 @@ class ClouderServer(models.Model):
 
     @api.multi
     @api.depends('private_key')
-    def _get_private_key(self):
+    def _compute_private_key(self):
         for server in self:
             key_file = \
                 server.home_directory + '/.ssh/keys/' + \
@@ -126,14 +126,14 @@ class ClouderServer(models.Model):
 
     @api.multi
     @api.depends('public_key')
-    def _get_public_key(self):
+    def _compute_public_key(self):
         for server in self:
             key_file = server.home_directory + '/.ssh/keys/' \
                 + server.name + '.' + server.domain_id.name
             server.public_key = self.execute_local(['cat', key_file + '.pub'])
 
     @api.multi
-    def _write_private_key(self):
+    def _inverse_private_key(self):
         """
         """
         for server in self:
@@ -149,8 +149,9 @@ class ClouderServer(models.Model):
             self.execute_local(['chmod', '700', key_file])
             self.execute_write_file(self.home_directory +
                                     '/.ssh/config', 'Host ' + name)
-            self.execute_write_file(server.home_directory +
-                                    '/.ssh/config', '\n  HostName ' + server.ip)
+            self.execute_write_file(
+                server.home_directory +
+                '/.ssh/config', '\n  HostName ' + server.ip)
             self.execute_write_file(server.home_directory +
                                     '/.ssh/config', '\n  Port ' +
                                     str(server.ssh_port))
@@ -165,13 +166,14 @@ class ClouderServer(models.Model):
                 '\n#END ' + name + '\n')
 
     @api.multi
-    def _write_public_key(self):
+    def _inverse_public_key(self):
         """
         """
         for server in self:
             self.execute_local(
                 ['mkdir', '-p', server.home_directory + '/.ssh/keys'])
-            key_file = server.home_directory + '/.ssh/keys/' + server.fulldomain
+            key_file = \
+                server.home_directory + '/.ssh/keys/' + server.fulldomain
             self.execute_write_file(
                 key_file + '.pub', server.public_key, operator='w')
             self.execute_local(['chmod', '700', key_file + '.pub'])
@@ -186,10 +188,10 @@ class ClouderServer(models.Model):
 
     private_key = fields.Text(
         'SSH Private Key', default=_default_private_key,
-        compute='_get_private_key', inverse='_write_private_key')
+        compute='_compute_private_key', inverse='_inverse_private_key')
     public_key = fields.Text(
         'SSH Public Key', default=_default_public_key,
-        compute='_get_public_key', inverse='_write_public_key')
+        compute='_compute_public_key', inverse='_inverse_public_key')
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
     public_ip = fields.Boolean(
@@ -229,18 +231,18 @@ class ClouderServer(models.Model):
          'IP/SSH must be unique!'),
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('name', 'ip')
     def _check_name_ip(self):
         """
         Check that the server domain does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d-]*$", self.name):
+        if not re.match(r"^[\w\d-]*$", self.name):
             raise except_orm(
                 _('Data error!'),
                 _("Name can only contains letters, digits, -"))
-        if not re.match("^[\d:.]*$", self.ip):
+        if not re.match(r"^[\d:.]*$", self.ip):
             raise except_orm(
                 _('Data error!'),
                 _("IP can only contains digits, dots and :"))
@@ -328,13 +330,16 @@ class ClouderServer(models.Model):
         if self.domain_id.dns_id:
             self.domain_id.dns_id.execute([
                 'sed', '-i',
-                '"/' + self.name + '\sIN\sA/d"',
+                '"/' + self.name + r'\sIN\sA/d"',
                 self.domain_id.configfile])
             self.domain_id.refresh_serial()
 
     @api.multi
     def oneclick_deploy_element(
-            self, type, code, container=False, code_container='', ports=[]):
+            self, type, code, container=False, code_container='', ports=None):
+
+        if not ports:
+            ports = []
 
         application_obj = self.env['clouder.application']
         container_obj = self.env['clouder.container']
@@ -449,28 +454,30 @@ class ClouderContainer(models.Model):
     _name = 'clouder.container'
     _inherit = ['clouder.model']
 
-    @api.one
-    def _get_ports(self):
+    @api.multi
+    def _compute_ports(self):
         """
         Display the ports on the container lists.
         """
-        self.ports_string = ''
-        first = True
-        for port in self.port_ids:
-            if not first:
-                self.ports_string += ', '
-            if port.hostport:
-                self.ports_string += port.name + ' : ' + port.hostport
-            first = False
+        for rec in self:
+            rec.ports_string = ''
+            first = True
+            for port in rec.port_ids:
+                if not first:
+                    rec.ports_string += ', '
+                if port.hostport:
+                    rec.ports_string += port.name + ' : ' + port.hostport
+                first = False
 
-    @api.one
-    def _get_name(self):
+    @api.multi
+    def _compute_name(self):
         """
         Return the name of the container
         """
-        self.name = self.environment_id.prefix + '-' + self.suffix
+        for rec in self:
+            rec.name = rec.environment_id.prefix + '-' + rec.suffix
 
-    name = fields.Char('Name', compute='_get_name', required=False)
+    name = fields.Char('Name', compute='_compute_name', required=False)
     environment_id = fields.Many2one('clouder.environment', 'Environment',
                                      required=True)
     suffix = fields.Char('Suffix', required=True)
@@ -502,7 +509,7 @@ class ClouderContainer(models.Model):
                                 'container_id', 'Childs')
     from_id = fields.Many2one('clouder.container', 'From')
     subservice_name = fields.Char('Subservice Name')
-    ports_string = fields.Text('Ports', compute='_get_ports')
+    ports_string = fields.Text('Ports', compute='_compute_ports')
     reset_base_ids = fields.Many2many(
         'clouder.base', 'clouder_container_reser_base_rel',
         'container_id', 'base_id', 'Bases to duplicate')
@@ -681,7 +688,7 @@ class ClouderContainer(models.Model):
          'Name must be unique per server!'),
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('environment_id')
     def _check_environment(self):
         """
@@ -692,19 +699,19 @@ class ClouderContainer(models.Model):
                 _('Data error!'),
                 _("The environment need to have a prefix"))
 
-    @api.one
+    @api.multi
     @api.constrains('suffix')
     def _check_suffix(self):
         """
         Check that the container name does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d-]*$", self.suffix):
+        if not re.match(r"^[\w\d-]*$", self.suffix):
             raise except_orm(
                 _('Data error!'),
                 _("Suffix can only contains letters, digits and dash"))
 
-    @api.one
+    @api.multi
     @api.constrains('application_id')
     def _check_backup(self):
         """
@@ -716,7 +723,7 @@ class ClouderContainer(models.Model):
                 _('Data error!'),
                 _("You need to create at least one backup container."))
 
-    @api.one
+    @api.multi
     @api.constrains('image_id', 'image_version_id')
     def _check_config(self):
         """
@@ -799,8 +806,8 @@ class ClouderContainer(models.Model):
                                 options.append((0, 0, {
                                     'name': option['source'].id,
                                     'value':
-                                        option['value']
-                                        or option['source'].get_default
+                                        option['value'] or
+                                        option['source'].get_default
                                 }))
 
                             # Removing the source id from those to add later
@@ -991,12 +998,14 @@ class ClouderContainer(models.Model):
                         # This case means we do not have an odoo recordset
                         # and need to load the link manually
                         if isinstance(metadata['name'], int):
-                            metadata['name'] = self.env['clouder.application'].\
-                                browse(metadata['name'])
+                            metadata['name'] = \
+                                self.env['clouder.application']\
+                                .browse(metadata['name'])
                     else:
                         metadata = {
                             'name': getattr(metadata, 'name', False),
-                            'value_data': getattr(metadata, 'value_data', False)
+                            'value_data': getattr(
+                                metadata, 'value_data', False)
                         }
                     # Processing metadata and adding to list
                     if metadata['name'] \
@@ -1128,7 +1137,8 @@ class ClouderContainer(models.Model):
                             'localport': getattr(port, 'localport', False),
                             'expose': getattr(port, 'expose', False),
                             'udp': getattr(port, 'udp', False),
-                            'use_hostport': getattr(port, 'use_hostport', False)
+                            'use_hostport': getattr(
+                                port, 'use_hostport', False)
                         }
                     # Keeping the port if there is a match with the sources
                     if port['name'] in port_sources:
@@ -1387,7 +1397,7 @@ class ClouderContainer(models.Model):
         #             or 'volume_ids' in vals:
         #         flag = True
         #         if 'image_version_id' in vals:
-        #             new_version = version_obj.browse(vals['image_version_id'])
+        #             ew_version = version_obj.browse(vals['image_version_id'])
         #             self = self.with_context(
         #                 save_comment='Before upgrade from ' +
         #                              self.image_version_id.name +
@@ -1408,7 +1418,7 @@ class ClouderContainer(models.Model):
             self.deploy_links()
         return res
 
-    @api.one
+    @api.multi
     def unlink(self):
         """
         Override unlink method to remove all services
@@ -1498,12 +1508,12 @@ class ClouderContainer(models.Model):
                 'backup_id': backup_server.id,
                 # 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
-                    days=self.save_expiration
-                    or self.application_id.container_save_expiration
+                    days=self.save_expiration or
+                    self.application_id.container_save_expiration
                 )).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in self.env.context
-                           and self.env.context['save_comment']
-                           or self.save_comment or 'Manual',
+                'comment': 'save_comment' in self.env.context and
+                           self.env.context['save_comment'] or
+                           self.save_comment or 'Manual',
                 #            ''save_comment' in self.env.context
                 # and self.env.context['save_comment']
                 # or self.save_comment or 'Manual',
@@ -1512,8 +1522,8 @@ class ClouderContainer(models.Model):
             }
             save = self.env['clouder.save'].create(save_vals)
         date_next_save = (datetime.now() + timedelta(
-            minutes=self.time_between_save
-            or self.application_id.container_time_between_save
+            minutes=self.time_between_save or
+            self.application_id.container_time_between_save
         )).strftime("%Y-%m-%d %H:%M:%S")
         self.write({'save_comment': False, 'date_next_save': date_next_save})
         return save
@@ -1521,7 +1531,8 @@ class ClouderContainer(models.Model):
     @api.multi
     def hook_deploy_source(self):
         """
-        Hook which can be called by submodules to change the source of the image
+        Hook which can be called by submodules
+        to change the source of the image
         """
         return
 
@@ -1790,7 +1801,7 @@ class ClouderContainerOption(models.Model):
          'Option name must be unique per container!'),
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('container_id')
     def _check_required(self):
         """
@@ -1825,7 +1836,7 @@ class ClouderContainerLink(models.Model):
     make_link = fields.Boolean('Make docker link?')
     deployed = fields.Boolean('Deployed?', readonly=True)
 
-    @api.one
+    @api.multi
     @api.constrains('container_id')
     def _check_required(self):
         """
@@ -1921,11 +1932,12 @@ class ClouderContainerChild(models.Model):
         'clouder.server', 'Server')
     child_id = fields.Many2one(
         'clouder.container', 'Container')
-    save_id = fields.Many2one('clouder.save', 'Restore this save on deployment')
+    save_id = fields.Many2one(
+        'clouder.save', 'Restore this save on deployment')
 
     _order = 'sequence'
 
-    @api.one
+    @api.multi
     @api.constrains('child_id')
     def _check_child_id(self):
         if self.child_id and not self.child_id.parent_id == self:
@@ -2022,7 +2034,7 @@ class ClouderContainerMetadata(models.Model):
         # Defaults to char
         return str(val_to_convert)
 
-    @api.one
+    @api.multi
     @api.constrains('name')
     def _check_clouder_type(self):
         """
@@ -2035,7 +2047,7 @@ class ClouderContainerMetadata(models.Model):
                     self.name.clouder_type))
             )
 
-    @api.one
+    @api.multi
     @api.constrains('name', 'value_data')
     def _check_object(self):
         """
@@ -2046,7 +2058,7 @@ class ClouderContainerMetadata(models.Model):
         # call the value property to see if the metadata can be loaded properly
         try:
             self.value
-        except ValueError as e:
+        except ValueError:
             # User display
             raise except_orm(
                 _('Container Metadata error!'),

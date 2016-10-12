@@ -19,5 +19,6 @@
 # <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-import clouder_website_payment
-import controller
+
+from . import clouder_website_payment
+from . import controller

@@ -20,8 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, _, modules
-from openerp.exceptions import except_orm
+from openerp import models, api, modules
 import time
 from datetime import datetime
 
@@ -37,7 +36,10 @@ class ClouderImage(models.Model):
     _inherit = 'clouder.image'
 
     def build_image(
-            self, model, server, runner=False, expose_ports=[], salt=True):
+            self, model, server, runner=False, expose_ports=None, salt=True):
+
+        if not expose_ports:
+            expose_ports = []
 
         res = super(ClouderImage, self).build_image(
             model, server, runner=runner, expose_ports=expose_ports, salt=salt)
@@ -69,12 +71,12 @@ class ClouderImage(models.Model):
                         'clouder_template_' + self.type_id.name
                     )
                     sources_path = module_path and module_path + '/sources'
-                if sources_path and \
-                        self.env['clouder.model'].local_dir_exist(sources_path):
+                if sources_path and self.env['clouder.model']\
+                        .local_dir_exist(sources_path):
                     server.send_dir(sources_path, build_dir + '/sources')
 
             server.execute([
-                'echo "' + self.computed_dockerfile.replace('"', '\\"') +
+                'echo "' + self.computed_dockerfile.replace('"', r'\\"') +
                 '" >> ' + build_dir + '/Dockerfile'])
 
             if expose_ports:

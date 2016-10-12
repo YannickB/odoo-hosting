@@ -114,7 +114,10 @@ class ClouderContainerLink(models.Model):
         return {'PRIVATE-TOKEN':
                 self.target.base_ids[0].options['token']['value']}
 
-    def gitlab_ressource(self, type, name, project_id='', data={}):
+    def gitlab_ressource(self, type, name, project_id='', data=None):
+
+        if not data:
+            data = {}
 
         path = ''
         if type == 'group':
@@ -148,7 +151,8 @@ class ClouderContainerLink(models.Model):
                 res = self.request(
                     self.gitlab_url + '/projects/' + project_id +
                     '/variables/' + name,
-                    headers=self.gitlab_headers, method='put', data=data).json()
+                    headers=self.gitlab_headers, method='put',
+                    data=data).json()
 
         if type == 'file':
             with open(modules.get_module_path(
@@ -173,7 +177,8 @@ class ClouderContainerLink(models.Model):
         super(ClouderContainerLink, self).deploy_link()
 
         if self.name.type_id.name == 'gitlab' \
-                and self.container_id.application_id.type_id.name == 'gitlabci':
+                and self.container_id.application_id.type_id.name \
+                == 'gitlabci':
             if self.target.base_ids:
                 container = self.target.childs['data']
                 base = self.target.base_ids[0]
@@ -191,7 +196,8 @@ class ClouderContainerLink(models.Model):
                     '--executor', 'docker',
                     '--docker-image', 'docker:latest',
                     # '--docker-privileged'
-                    '--docker-volumes /var/run/docker.sock:/var/run/docker.sock'
+                    '--docker-volumes '
+                    '/var/run/docker.sock:/var/run/docker.sock'
                 ])
                 self.container_id.execute([
                     'sed', '-i',
@@ -258,7 +264,8 @@ class ClouderContainerLink(models.Model):
                             'file', '.gitignore',
                             project_id=str(project['id']))
                         self.gitlab_ressource(
-                            'file', 'Dockerfile', project_id=str(project['id']))
+                            'file', 'Dockerfile',
+                            project_id=str(project['id']))
                         self.gitlab_ressource(
                             'file', '.gitlab-ci.yml',
                             project_id=str(project['id']))
@@ -323,9 +330,9 @@ class ClouderContainerLink(models.Model):
         super(ClouderContainerLink, self).purge_link()
 
         if self.name.type_id.name == 'gitlab' \
-                and self.container_id.application_id.type_id.name == 'gitlabci':
+                and self.container_id.application_id.type_id.name \
+                == 'gitlabci':
             if self.target.base_ids and 'exec' in self.container_id.childs:
-                container = self.container_id.childs['exec']
                 base = self.target.base_ids[0]
                 self.container_id.execute([
                     'gitlab-runner', 'unregister',
@@ -350,8 +357,8 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'gitlab':
             self.container_id.childs['exec'].execute([
                 'sed', '-i',
-                '"s/https:\/\/[0-9a-z_-.]*\//https:\/\/' +
-                self.fulldomain + '\//g"',
+                r'"s/https:\/\/[0-9a-z_-.]*\//https:\/\/' +
+                self.fulldomain + r'\//g"',
                 '/home/git/gitlab-shell/config.yml'])
             self.container_id.childs['exec'].execute([
                 'sed', '-i',
@@ -370,8 +377,8 @@ class ClouderBase(models.Model):
                 '"update pg_database set datallowconn = \'false\' '
                 'where datname = \'' + self.fullname_ + '\'; '
                 'SELECT pg_terminate_backend(pid) '
-                'FROM pg_stat_activity WHERE datname = \''
-                + self.fullname_ + '\';"'
+                'FROM pg_stat_activity WHERE datname = \'' +
+                self.fullname_ + '\';"'
             ], username='postgres')
             self.container_id.execute([
                 'yes', 'yes', '|', 'bundle', 'exec', 'rake',
@@ -383,7 +390,7 @@ class ClouderBase(models.Model):
                 'bundle', 'exec', 'rake', 'assets:precompile',
                 'RAILS_ENV=production'], path='/opt/gitlab/files',
                 username='git')
-            container = self.container_id.childs['data']
+
             self.container_id.execute([
                 'psql', '-h', 'postgres', '-U',
                 self.container_id.db_user, '-c',
@@ -410,12 +417,13 @@ class ClouderBase(models.Model):
                 self.fulldomain + ';/g"',
                 '/etc/nginx/sites-available/' + self.fullname])
             self.container_id.execute([
-                'sed', '-i', '"s/\/home\/git\/gitlab/\/opt\/gitlab\/files/g"',
+                'sed', '-i', r'"s/\/home\/git\/gitlab/\/opt\/gitlab\/files/g"',
                 '/etc/nginx/sites-available/' + self.fullname])
             self.container_id.execute([
                 'ln', '-s', '/etc/nginx/sites-available/' + self.fullname,
                 '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.execute(['chown', '-R', 'git:git', '/opt/gitlab'])
+            self.container_id.execute([
+                'chown', '-R', 'git:git', '/opt/gitlab'])
             self.container_id.start()
         return res
 

@@ -151,7 +151,8 @@ class FormControllerExtend(FormController):
             lang = post['lang']
         request.env = self.env_with_context({'lang': lang})
 
-        html = request.env.ref('clouder_website_payment.payment_cancel').render(
+        html = request.env.ref('clouder_website_payment.payment_cancel')\
+            .render(
             {},
             engine='ir.qweb',
             context=request.context

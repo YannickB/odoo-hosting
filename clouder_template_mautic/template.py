@@ -21,9 +21,14 @@
 ##############################################################################
 
 from openerp import models, api, modules
-import requests
+
 import logging
-# from bs4 import BeautifulSoup
+_logger = logging.getLogger(__name__)
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    _logger.debug('Cannot `from bs4 import BeautifulSoup`.')
 
 
 class ClouderContainer(models.Model):
@@ -114,93 +119,98 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'mautic' \
                 and self.application_id.check_tags(['exec']):
             return
-            base_url = "http://" + self.name + "." + self.domain_id.name
-            installer_url = "/index.php/installer/step/"
-
-            # mysql_pswd need to be updated
-
-            mysql_pswd = "mysql"
-            port = str(80)
-
-            logging.info(self.link_ids)
-
-            logging.info(
-                "test connect to " + base_url + ":" + port + installer_url +
-                " using db password " + mysql_pswd)
-
-            headers = dict()
-            headers["User-Agent"] = \
-                "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:47.0) " \
-                "Gecko/20100101 Firefox/47.0"
-            headers["Accept"] = \
-                "text/html,application/xhtml+xml," \
-                "application/xml;q=0.9,*/*;q=0.8"
-            headers["Accept-Language"] = "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3"
-            headers["Connection"] = "keep-alive"
-            headers["Content-Type"] = "application/x-www-form-urlencoded"
-
-            # --- page 1 ---
-            # if mautic.status_code == 200:
-
-            mautic = requests.get(
-                baseUrl + ":" + port + installerUrl + "1", headers=headers)
-            """
-            pageParser = BeautifulSoup(mautic.text, 'html.parser')
-            form =  pageParser.find_all(id=re.compile("install_doctrine_step_"))
-
-            arr = get_form(form)
-
-            arr["install_doctrine_step[name]"] = "mautic"
-            arr["install_doctrine_step[table_prefix]"] = "mautic"
-            arr["install_doctrine_step[user]"] = "root"
-            arr["install_doctrine_step[password]"] = mysql_pswd
-            arr["install_doctrine_step[host]"] = "mysql"
-
-            for i in arr:
-                if arr[i] == "None":
-                    arr[i] = ""
-
-            mautic = requests.post(baseUrl + ":" + port +
-            installerUrl + "1", data=arr, headers=headers)
-
-            # mautic = requests.post(baseUrl +
-            installerUrl + "1:" + port, data=arr)
-
-            # --- page 2 ---
-
-            mautic = requests.get(baseUrl + ":" +
-            port + installerUrl + "2", headers=headers)
-            pageParser = BeautifulSoup(mautic.text, 'html.parser')
-            form =  pageParser.find_all(id=re.compile("install_user_step_"))
-
-            arr = get_form(form)
-            arr["install_user_step[firstname]"] = self.admin_name
-            arr["install_user_step[lastname]"] = self.admin_name
-            arr["install_user_step[email]"] = self.admin_email
-            arr["install_user_step[password]"] = self.container_id.db_password
-            arr["install_user_step[username]"] = "admin"
-
-            logging.info("usernames will be " + self.admin_name + "
-            and root pswd is " + self.container_id.db_password + "
-            and admin email is " + self.admin_email)
-
-
-            mautic = requests.post(baseUrl + installerUrl + "2",
-            data=arr, headers=headers)
-            # if mautic.headers.get("Location"):
-            # --- page 3 ---
-
-            mautic = requests.get(baseUrl + installerUrl + "3", headers=headers)
-            pageParser = BeautifulSoup(mautic.text, 'html.parser')
-            form = pageParser.find_all(id="install_email_step_")
-
-            arr = get_form(form)
-
-            mautic = requests.post(baseUrl + installerUrl + "3",
-            data=arr, headers=headers)
-
-            mautic = requests.get(baseUrl)
-            """
+            # base_url = "http://" + self.name + "." + self.domain_id.name
+            # installer_url = "/index.php/installer/step/"
+            #
+            # # mysql_pswd need to be updated
+            #
+            # mysql_pswd = "mysql"
+            # port = str(80)
+            #
+            # logging.info(self.link_ids)
+            #
+            # logging.info(
+            #     "test connect to " + base_url + ":" + port + installer_url +
+            #     " using db password " + mysql_pswd)
+            #
+            # headers = dict()
+            # headers["User-Agent"] = \
+            #     "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:47.0) " \
+            #     "Gecko/20100101 Firefox/47.0"
+            # headers["Accept"] = \
+            #     "text/html,application/xhtml+xml," \
+            #     "application/xml;q=0.9,*/*;q=0.8"
+            # headers["Accept-Language"] =
+            # "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3"
+            # headers["Connection"] = "keep-alive"
+            # headers["Content-Type"] = "application/x-www-form-urlencoded"
+            #
+            # # --- page 1 ---
+            # # if mautic.status_code == 200:
+            #
+            # mautic = requests.get(
+            #     baseUrl + ":" + port + installerUrl + "1", headers=headers)
+            # """
+            # pageParser = BeautifulSoup(mautic.text, 'html.parser')
+            # form =
+            # pageParser.find_all(id=re.compile("install_doctrine_step_"))
+            #
+            # arr = get_form(form)
+            #
+            # arr["install_doctrine_step[name]"] = "mautic"
+            # arr["install_doctrine_step[table_prefix]"] = "mautic"
+            # arr["install_doctrine_step[user]"] = "root"
+            # arr["install_doctrine_step[password]"] = mysql_pswd
+            # arr["install_doctrine_step[host]"] = "mysql"
+            #
+            # for i in arr:
+            #     if arr[i] == "None":
+            #         arr[i] = ""
+            #
+            # mautic = requests.post(baseUrl + ":" + port +
+            # installerUrl + "1", data=arr, headers=headers)
+            #
+            # # mautic = requests.post(baseUrl +
+            # installerUrl + "1:" + port, data=arr)
+            #
+            # # --- page 2 ---
+            #
+            # mautic = requests.get(baseUrl + ":" +
+            # port + installerUrl + "2", headers=headers)
+            # pageParser = BeautifulSoup(mautic.text, 'html.parser')
+            # form =  pageParser.find_all(id=re.compile("install_user_step_"))
+            #
+            # arr = get_form(form)
+            # arr["install_user_step[firstname]"] = self.admin_name
+            # arr["install_user_step[lastname]"] = self.admin_name
+            # arr["install_user_step[email]"] = self.admin_email
+            # arr["install_user_step[password]"] =
+            # self.container_id.db_password
+            # arr["install_user_step[username]"] = "admin"
+            #
+            # logging.info("usernames will be " + self.admin_name + "
+            # and root pswd is " + self.container_id.db_password + "
+            # and admin email is " + self.admin_email)
+            #
+            #
+            # mautic = requests.post(baseUrl + installerUrl + "2",
+            # data=arr, headers=headers)
+            # # if mautic.headers.get("Location"):
+            # # --- page 3 ---
+            #
+            # mautic =requests.get(baseUrl + installerUrl + "3",
+            # headers=headers)
+            # pageParser = BeautifulSoup(mautic.text, 'html.parser')
+            # form = pageParser.find_all(id="install_email_step_")
+            #
+            # arr = get_form(form)
+            #
+            # mautic = requests.post(baseUrl + installerUrl + "3",
+            # data=arr, headers=headers)
+            #
+            # mautic = requests.get(baseUrl)
+            # """
+        return res
 
     def get_form(form):
         arr = dict()
@@ -222,4 +232,3 @@ class ClouderBase(models.Model):
                 continue
             arr[data_name] = data_value
         return arr
-

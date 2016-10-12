@@ -22,21 +22,19 @@
 
 {
     'name': 'Clouder Template Magento',
-    'version': '1.0',
+    'version': '1.0.0.0.0',
     'category': 'Clouder',
     'depends': [
         'clouder_template_bind',
-        'clouder_template_shinken',
+        'clouder_template_mysql',
+        'clouder_template_piwik',
         'clouder_template_postfix',
         'clouder_template_proxy',
-        'clouder_template_mysql'
+        'clouder_template_shinken',
     ],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder Magento
-    """,
     'demo': [],
     'data': [
         'template.xml'

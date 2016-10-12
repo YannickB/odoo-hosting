@@ -20,8 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, modules
-from openerp.exceptions import ValidationError
+from openerp import models, api
 
 
 class ClouderContainer(models.Model):
@@ -93,7 +92,7 @@ class ClouderContainer(models.Model):
                         '-i',
                         '"s/CLOUDER_TEMPLATE_MAGENTO_TZ/{replace}/g"'.format(
                             replace=self.options['timezone']['value']
-                            .replace("/", "\\\/")
+                            .replace("/", r"\\\/")
                         ),
                         config_file
                     ])
@@ -159,32 +158,32 @@ class ClouderBase(models.Model):
                 dbname = self.container_id.name.replace('-', '_')
                 # Create database
                 self.container_id.database.execute([
-                    "mysql -u root -p'"
-                    + self.container_id.database.root_password
-                    + "' -se \"create database " + dbname + ";\""
+                    "mysql -u root -p'" +
+                    self.container_id.database.root_password +
+                    "' -se \"create database " + dbname + ";\""
                 ])
                 # Create user
                 self.container_id.database.execute([
-                    "mysql -u root -p'"
-                    + self.container_id.database.root_password
-                    + "' -se \"create user '" + self.container_id.db_user
-                    + "'@'%' IDENTIFIED BY '" +
+                    "mysql -u root -p'" +
+                    self.container_id.database.root_password +
+                    "' -se \"create user '" + self.container_id.db_user +
+                    "'@'%' IDENTIFIED BY '" +
                     self.container_id.childs['data']
-                        .options['db_password']['value']
-                    + "';\""
+                        .options['db_password']['value'] +
+                    "';\""
                 ])
                 # Grant user rights on database
                 self.container_id.database.execute([
-                    "mysql -u root -p'"
-                    + self.container_id.database.root_password
-                    + "' -se \"grant all on " + dbname
-                    + ".* to '" + self.container_id.db_user + "';\""
+                    "mysql -u root -p'" +
+                    self.container_id.database.root_password +
+                    "' -se \"grant all on " + dbname +
+                    ".* to '" + self.container_id.db_user + "';\""
                 ])
                 # Make sure rights are applied
                 self.container_id.database.execute([
-                    "mysql -u root -p'"
-                    + self.container_id.database.root_password
-                    + "' -se \"FLUSH PRIVILEGES;\""
+                    "mysql -u root -p'" +
+                    self.container_id.database.root_password +
+                    "' -se \"FLUSH PRIVILEGES;\""
                 ])
 
                 return True

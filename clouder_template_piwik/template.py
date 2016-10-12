@@ -81,7 +81,7 @@ class ClouderBase(models.Model):
             self.execute(ssh, ['sed', '-i',
                                '"s/PATH/' +
                                self.service_id.full_localpath_files
-                               .replace('/', '\/') + '/g"', config_file])
+                               .replace('/', r'\/') + '/g"', config_file])
             self.execute(ssh, ['ln', '-s',
                                '/etc/nginx/sites-available/' + self.fullname,
                                '/etc/nginx/sites-enabled/' + self.fullname])
@@ -175,7 +175,8 @@ class ClouderBaseLink(models.Model):
         super(ClouderBaseLink, self).purge_link()
         if self.name.type_id.name == 'piwik':
             ssh = self.connect(self.target.fullname)
-            piwik_id = self.execute(ssh, [
+            # piwik_id = \
+            self.execute(ssh, [
                 'mysql', self.target_base.fullname_,
                 '-h ' + self.target_base.service_id.database_server,
                 '-u ' + self.target_base.service_id.db_user,

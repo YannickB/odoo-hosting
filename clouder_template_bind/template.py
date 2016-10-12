@@ -81,7 +81,8 @@ class ClouderDomain(models.Model):
                 self.configfile])
             self.dns_id.execute([
                 "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
-            self.dns_id.execute(['echo "type master;" >> /etc/bind/named.conf'])
+            self.dns_id.execute([
+                'echo "type master;" >> /etc/bind/named.conf'])
 
             # Configure this only if the option is set
             if self.dns_id.options['slave_ip']['value']:
@@ -89,7 +90,7 @@ class ClouderDomain(models.Model):
                     'echo "allow-transfer { ' +
                     self.dns_id.options['slave_ip']['value'] + ';};" '
                     '>> /etc/bind/named.conf'])
-            
+
             self.dns_id.execute([
                 "echo 'file \"/etc/bind/db." +
                 self.name + "\";' >> /etc/bind/named.conf"])
@@ -107,7 +108,7 @@ class ClouderDomain(models.Model):
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
             self.dns_id.execute([
                 'sed', '-i',
-                "'/zone\s\"" + self.name + "\"/,/END\s" + self.name + "/d'",
+                r"'/zone\s\"" + self.name + r"\"/,/END\s" + self.name + "/d'",
                 '/etc/bind/named.conf'])
             self.dns_id.execute(['rm', self.configfile])
             self.dns_id.execute(['/etc/init.d/bind9 reload'])
@@ -126,8 +127,8 @@ class ClouderBaseLink(models.Model):
             'name.type_id.name', '=', 'proxy')])
         self.target.execute([
             'echo "' + name + ' IN A ' +
-            (proxy_link and proxy_link[0].target.server_id.ip
-             or self.base_id.container_id.server_id.ip) +
+            (proxy_link and proxy_link[0].target.server_id.ip or
+             self.base_id.container_id.server_id.ip) +
             '" >> ' + self.base_id.domain_id.configfile])
         self.base_id.domain_id.refresh_serial(self.base_id.fulldomain)
 
@@ -135,7 +136,7 @@ class ClouderBaseLink(models.Model):
     def purge_bind_config(self, name):
         self.target.execute([
             'sed', '-i',
-            '"/' + name + '\sIN\sA/d"',
+            '"/' + name + r'\sIN\sA/d"',
             self.base_id.domain_id.configfile])
         self.base_id.domain_id.refresh_serial()
 

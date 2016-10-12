@@ -34,7 +34,7 @@ class ClouderInvoicingPricegridLine(models.Model):
     """
     _name = 'clouder.invoicing.pricegrid.line'
 
-    def _get_application_id(self):
+    def _compute_application_id(self):
         object = self.link
         if self.link._name != 'clouder.application':
             object = self.link.application_id
@@ -42,7 +42,7 @@ class ClouderInvoicingPricegridLine(models.Model):
 
     application_id = fields.Many2one(
         'clouder.application', 'Application',
-        compute='_get_application_id', store=True)
+        compute='_compute_application_id', store=True)
     application_metadata = fields.Many2one(
         'clouder.application.metadata', 'Invoicing Unit', required=True)
     threshold = fields.Integer('Threshold', required=True)
@@ -59,7 +59,7 @@ class ClouderInvoicingPricegridLine(models.Model):
     link_container = fields.Many2one('clouder.container', 'Container')
     link_base = fields.Many2one('clouder.base', 'Base')
 
-    @api.one
+    @api.multi
     @api.constrains(
         'link_application', 'link_container',
         'link_base', 'application_metadata')
@@ -191,14 +191,12 @@ class ClouderInvoicingPricegridLine(models.Model):
                     # Preventing possible future type errors
                     raise except_orm(
                         _('Pricegrid invoice_amount error!'),
-                        _(
-                            "Unknown type '{0}' in pricegrid line for {1} '{2}'"
+                        _("Unknown type '{0}' in pricegrid line for {1} '{2}'"
                             ".".format(
                                 lines[index].type,
                                 lines[index].link_type,
                                 lines[index].link.name
-                            )
-                        )
+                            ))
                     )
         return amount
 
@@ -212,9 +210,10 @@ class ClouderApplication(models.Model):
     @api.model
     def _get_default_product(self):
         product = \
-            self.env.ref('clouder_invoicing.container_instance_product', False)\
-            and self.env.ref('clouder_invoicing.container_instance_product') \
-            or self.env['product.product']
+            self.env.ref(
+                'clouder_invoicing.container_instance_product', False) and \
+            self.env.ref('clouder_invoicing.container_instance_product') or \
+            self.env['product.product']
         return product
 
     pricegrid_ids = fields.One2many(
@@ -233,16 +232,17 @@ class ClouderApplication(models.Model):
         This price is manually set and unrelated to price grids computation."""
     )
 
-    @api.one
+    @api.multi
     @api.constrains('initial_invoice_amount')
     def _check_initial_invoice_amount_positive(self):
         if self.initial_invoice_amount < 0.0:
             raise except_orm(
                 _('Application invoice error!'),
-                _("You cannot set a negative amount as instance creation fees.")
+                _("You cannot set a negative amount "
+                  "as instance creation fees.")
             )
 
-    @api.one
+    @api.multi
     @api.constrains('pricegrid_ids', 'invoicing_product_id')
     def _check_pricegrid_product(self):
         """
@@ -385,7 +385,8 @@ class ClouderContainer(models.Model):
                 # Invoicing per container
                 curr_res = {
                     'id': container.id,
-                    'product_id': container.application_id.invoicing_product_id,
+                    'product_id':
+                        container.application_id.invoicing_product_id,
                     'partner_id': container.environment_id.partner_id.id,
 
                     'amount': container.pricegrid_ids.invoice_amount()
@@ -603,7 +604,8 @@ class AccountInvoice(models.Model):
     @api.model
     def create_clouder_supplier_invoice(self, amount):
         """
-        Creates a supplier invoice from the master clouder with the given amount
+        Creates a supplier invoice from the
+        master clouder with the given amount
         """
         # TODO: create a real invoice
         _logger.info('\nINVOICING FROM MASTER FOR {0}\n'.format(amount))

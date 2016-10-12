@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder Template GitLab',
-    'version': '1.0',
+    'version': '1.0.0.0.0',
     'category': 'Clouder',
     'depends': [
         'clouder_template_bind',
@@ -36,12 +36,8 @@
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-Clouder Template GitLab
-""",
     'demo': [],
     'data': ['template_gitlab.xml', 'template_gitlabci.xml'],
     'installable': True,
     'application': True,
 }
-

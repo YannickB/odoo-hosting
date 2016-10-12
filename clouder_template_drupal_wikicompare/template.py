@@ -88,5 +88,3 @@ class ClouderBase(models.Model):
                     path='/var/www/drupal/sites/' + self.fulldomain,
                     username='www-data')
         return res
-
-
