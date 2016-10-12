@@ -38,7 +38,8 @@ class ClouderServer(models.Model):
         for oneclick in self.oneclick_ids:
             if oneclick.code == 'drupal':
                 self.oneclick_deploy_element('container', 'drupal-all')
-                self.oneclick_deploy_element('base', 'drupal', code_container='drupal-all-drupal')
+                self.oneclick_deploy_element(
+                    'base', 'drupal', code_container='drupal-all-drupal')
 
     @api.multi
     def oneclick_purge_exec(self):

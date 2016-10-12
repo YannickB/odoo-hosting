@@ -42,11 +42,12 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
 
-
-        if self.application_id.type_id.name == 'drupal' and self.application_id.check_tags(['exec']):
+        if self.application_id.type_id.name == 'drupal' \
+                and self.application_id.check_tags(['exec']):
             self.send_drush_file()
-            self.execute(['drush', 'make',
-                          '/var/www/drush.make', '/var/www/drupal'], username='www-data')
+            self.execute([
+                'drush', 'make', '/var/www/drush.make',
+                '/var/www/drupal'], username='www-data')
             # self.execute(['mv', self.full_archivepath + '/sites',
             #                    self.full_archivepath + '/sites-template'])
             # self.execute(['ln', '-s', '../sites',
@@ -74,44 +75,52 @@ class ClouderBase(models.Model):
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'drupal':
             config_file = '/etc/nginx/sites-available/' + self.fullname
-            self.container_id.send(modules.get_module_path('clouder_template_drupal') +
-                      '/res/nginx.config', config_file)
-            self.container_id.execute(['sed', '-i', '"s/BASE/' + self.name + '/g"',
-                               config_file])
-            self.container_id.execute(['sed', '-i',
-                               '"s/DOMAIN/' + self.domain_id.name + '/g"',
-                               config_file])
-            self.container_id.execute(['ln', '-s',
-                               '/etc/nginx/sites-available/' + self.fullname,
-                               '/etc/nginx/sites-enabled/' + self.fullname])
+            self.container_id.send(
+                modules.get_module_path('clouder_template_drupal') +
+                '/res/nginx.config', config_file)
+            self.container_id.execute([
+                'sed', '-i', '"s/BASE/' + self.name + '/g"', config_file])
+            self.container_id.execute([
+                'sed', '-i', '"s/DOMAIN/' + self.domain_id.name + '/g"',
+                config_file])
+            self.container_id.execute([
+                'ln', '-s', '/etc/nginx/sites-available/' + self.fullname,
+                '/etc/nginx/sites-enabled/' + self.fullname])
             self.container_id.execute(['/etc/init.d/nginx', 'reload'])
             #
-            self.container_id.execute(['drush', '-y', 'si',
-                               '--db-url=' + self.container_id.db_type +
-                               '://' + self.container_id.db_user + ':' +
-                               self.container_id.db_password + '@' +
-                               self.container_id.db_server + '/' +
-                               self.fullname_,
-                               '--account-mail=' + self.admin_email,
-                               '--account-name=' + self.admin_name,
-                               '--account-pass=' + self.admin_password,
-                               '--sites-subdir=' + self.fulldomain,
-                               'minimal'],
-                         path='/var/www/drupal', username='www-data')
+            self.container_id.execute([
+                'drush', '-y', 'si',
+                '--db-url=' + self.container_id.db_type +
+                '://' + self.container_id.db_user + ':' +
+                self.container_id.db_password + '@' +
+                self.container_id.db_server + '/' +
+                self.fullname_,
+                '--account-mail=' + self.admin_email,
+                '--account-name=' + self.admin_name,
+                '--account-pass=' + self.admin_password,
+                '--sites-subdir=' + self.fulldomain,
+                'minimal'],
+                path='/var/www/drupal', username='www-data')
 
             if self.application_id.options['install_modules']['value']:
                 modules = self.application_id.options['install_modules'][
                     'value'].split(',')
                 for module in modules:
-                    self.container_id.execute(['drush', '-y', 'en', module],
-                                 path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
+                    self.container_id.execute([
+                        'drush', '-y', 'en', module],
+                        path='/var/www/drupal/sites/' + self.fulldomain,
+                        username='www-data')
             if self.application_id.options['theme']['value']:
                 theme = self.application_id.options['theme']['value']
-                self.container_id.execute(['drush', '-y', 'pm-enable', theme],
-                             path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
-                self.container_id.execute(['drush', 'vset', '--yes', '--exact',
-                                   'theme_default', theme],
-                             path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
+                self.container_id.execute([
+                    'drush', '-y', 'pm-enable', theme],
+                    path='/var/www/drupal/sites/' + self.fulldomain,
+                    username='www-data')
+                self.container_id.execute([
+                    'drush', 'vset', '--yes', '--exact',
+                    'theme_default', theme],
+                    path='/var/www/drupal/sites/' + self.fulldomain,
+                    username='www-data')
 
         return res
 
@@ -146,9 +155,10 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'drupal':
-            self.container_id.execute(['drush', 'vset', '--yes',
-                               '--exact', 'site_name', self.title],
-                         path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
+            self.container_id.execute([
+                'drush', 'vset', '--yes', '--exact', 'site_name', self.title],
+                path='/var/www/drupal/sites/' + self.fulldomain,
+                username='www-data')
         return res
 
     @api.multi
@@ -158,16 +168,19 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_create_poweruser()
         if self.application_id.type_id.name == 'drupal':
-            self.container_id.execute(['drush', 'user-create', self.poweruser_name,
-                               '--password=' + self.poweruser_password,
-                               '--mail=' + self.poweruser_email],
-                         path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
+            self.container_id.execute([
+                'drush', 'user-create', self.poweruser_name,
+                '--password=' + self.poweruser_password,
+                '--mail=' + self.poweruser_email],
+                path='/var/www/drupal/sites/' + self.fulldomain,
+                username='www-data')
             if self.application_id.options['poweruser_group']['value']:
-                self.container_id.execute(['drush', 'user-add-role',
-                                   self.application_id.options[
-                                       'poweruser_group']['value'],
-                                   self.poweruser_name],
-                             path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
+                self.container_id.execute([
+                    'drush', 'user-add-role',
+                    self.application_id.options['poweruser_group']['value'],
+                    self.poweruser_name],
+                    path='/var/www/drupal/sites/' + self.fulldomain,
+                    username='www-data')
         return res
 
     @api.multi
@@ -182,8 +195,10 @@ class ClouderBase(models.Model):
                     self.application_id.options['test_install_modules'][
                         'value'].split(',')
                 for module in modules:
-                    self.container_id.execute(['drush', '-y', 'en', module],
-                                 path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
+                    self.container_id.execute([
+                        'drush', '-y', 'en', module],
+                        path='/var/www/drupal/sites/' + self.fulldomain,
+                        username='www-data')
         return res
 
     @api.multi
@@ -200,7 +215,8 @@ class ClouderBase(models.Model):
         #                        self.parent_id.service_id.full_localpath +
         #                        '/sites/' + self.parent_id.fulldomain,
         #                        self.service_id.full_localpath_files +
-        #                        '/sites/' + self.fulldomain], username='www-data')
+        #                        '/sites/' + self.fulldomain],
+        #                        username='www-data')
         #     ssh.close()
 
         return res
@@ -213,7 +229,8 @@ class ClouderBase(models.Model):
         res = super(ClouderBase, self).update_base()
         if self.application_id.type_id.name == 'drupal':
             self.execute(['drush', 'updatedb'],
-                         path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
+                         path='/var/www/drupal/sites/' + self.fulldomain,
+                         username='www-data')
         return res
 
     @api.multi
@@ -223,13 +240,12 @@ class ClouderBase(models.Model):
         """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'drupal':
-            self.container_id.execute(['rm', '-rf',
-                               '/var/www/sites/' + self.fulldomain])
-            self.container_id.execute(['rm', '-rf',
-                               '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.execute(['rm', '-rf',
-                               '/etc/nginx/sites-available/' +
-                               self.fullname])
+            self.container_id.execute([
+                'rm', '-rf', '/var/www/sites/' + self.fulldomain])
+            self.container_id.execute([
+                'rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname])
+            self.container_id.execute([
+                'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname])
             self.container_id.execute(['/etc/init.d/nginx', 'reload'])
 
 
@@ -250,9 +266,9 @@ class ClouderSave(models.Model):
             # self.execute(ssh, ['drush', 'archive-dump', self.fullname_,
             #  '--destination=/base-backup/' + vals['saverepo_name'] +
             # 'tar.gz'])
-            self.container_id.execute(['cp', '-R',
-                               '/var/www/drupal/sites/' + self.base_id.fulldomain,
-                               '/base-backup/' + self.fullname + '/site'], username='www-data')
+            self.container_id.execute([
+                'cp', '-R', '/var/www/drupal/sites/' + self.base_id.fulldomain,
+                '/base-backup/' + self.fullname + '/site'], username='www-data')
         return res
 
     @api.multi
@@ -262,11 +278,14 @@ class ClouderSave(models.Model):
         """
         res = super(ClouderSave, self).restore_base(base)
         if self.base_id.application_id.type_id.name == 'drupal':
-            self.container_id.execute(['rm', '-rf',
-                               '/var/www/drupal/sites/' + self.base_id.fulldomain], username='www-data')
-            self.container_id.execute(['cp', '-R',
-                               '/base-backup/' + self.fullname + '/site',
-                               '/var/www/drupal/sites/' + self.base_id.fulldomain], username='www-data')
+            self.container_id.execute([
+                'rm', '-rf',
+                '/var/www/drupal/sites/' + self.base_id.fulldomain],
+                username='www-data')
+            self.container_id.execute([
+                'cp', '-R', '/base-backup/' + self.fullname + '/site',
+                '/var/www/drupal/sites/' + self.base_id.fulldomain],
+                username='www-data')
         return res
 
 

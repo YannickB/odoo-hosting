@@ -24,6 +24,7 @@
 from openerp import models, api
 import openerp.addons.clouder.model as model
 
+
 class ClouderApplicationTypeOption(models.Model):
     """
     """
@@ -33,9 +34,11 @@ class ClouderApplicationTypeOption(models.Model):
     @api.multi
     def generate_default(self):
         res = super(ClouderApplicationTypeOption, self).generate_default()
-        if self.name == 'root_password' and self.application_type_id.name == 'mysql':
+        if self.name == 'root_password' \
+                and self.application_type_id.name == 'mysql':
             res = model.generate_random_password(20)
         return res
+
 
 class ClouderContainer(models.Model):
     """
@@ -48,7 +51,10 @@ class ClouderContainer(models.Model):
     def get_container_res(self):
         res = super(ClouderContainer, self).get_container_res()
         if self.image_id.type_id.name == 'mysql':
-            res['environment'].update({'MYSQL_ROOT_PASSWORD': self.parent_id.container_id.options['root_password']['value']})
+            res['environment'].update({
+                'MYSQL_ROOT_PASSWORD':
+                    self.parent_id.container_id
+                        .options['root_password']['value']})
         return res
 
     @property
@@ -70,12 +76,15 @@ class ClouderContainer(models.Model):
         """
         super(ClouderContainer, self).deploy_post()
 
-        if self.application_id.type_id.name == 'mysql' and self.application_id.check_tags(['exec']):
+        if self.application_id.type_id.name == 'mysql' \
+                and self.application_id.check_tags(['exec']):
 
             self.start()
 
-            self.execute(['sed', '-i', '"/bind-address/d"', '/etc/mysql/my.cnf'])
-            password = self.parent_id.container_id.options['root_password']['value']
+            self.execute([
+                'sed', '-i', '"/bind-address/d"', '/etc/mysql/my.cnf'])
+            password = \
+                self.parent_id.container_id.options['root_password']['value']
             self.execute(['mysqladmin', '-u', 'root', 'password', password])
 
             # Granting network permissions
@@ -84,7 +93,8 @@ class ClouderContainer(models.Model):
                 '--user=root',
                 '--password=\''+password+'\'',
                 '-e',
-                '"GRANT ALL PRIVILEGES ON *.* TO \'root\'@\'%\' IDENTIFIED BY \''+password+'\'"'
+                '"GRANT ALL PRIVILEGES ON *.* TO \'root\'@\'%\' '
+                'IDENTIFIED BY \''+password+'\'"'
             ])
 
 
@@ -101,7 +111,8 @@ class ClouderContainerLink(models.Model):
         Deploy the configuration file to watch the container.
         """
         super(ClouderContainerLink, self).deploy_link()
-        if self.name.type_id.name == 'mysql' and self.container_id.application_id.check_tags(['data']):
+        if self.name.type_id.name == 'mysql' \
+                and self.container_id.application_id.check_tags(['data']):
             self.log('Creating database user')
 
             self.container_id.database.execute([
@@ -117,7 +128,8 @@ class ClouderContainerLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderContainerLink, self).purge_link()
-        if self.name.type_id.name == 'mysql' and self.container_id.application_id.check_tags(['data']):
+        if self.name.type_id.name == 'mysql' \
+                and self.container_id.application_id.check_tags(['data']):
             self.container_id.database.execute([
                 "mysql -u root -p'" + self.container_id.database.root_password +
                 "' -se \"drop user " + self. container_id.db_user + ";\""])

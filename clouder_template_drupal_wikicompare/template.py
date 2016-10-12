@@ -38,13 +38,13 @@ class ClouderContainer(models.Model):
             '/res/drush.make', '/var/www/drush.make',
             username='www-data')
 
-
     @api.multi
     def deploy_post(self):
         super(ClouderContainer, self).deploy_post()
 
         if self.application_id.type_id.name == 'drupal'\
-                and self.application_id.code == 'wkc' and self.application_id.check_tags(['exec']):
+                and self.application_id.code == 'wkc' \
+                and self.application_id.check_tags(['exec']):
             self.send(modules.get_module_path(
                 'clouder_template_drupal_wikicompare') +
                 '/res/wikicompare.script',
@@ -52,9 +52,13 @@ class ClouderContainer(models.Model):
             self.send(modules.get_module_path(
                 'clouder_template_drupal_wikicompare') +
                 '/res/patch/revisioning_postgres.patch',
-                '/var/www/drupal/revisioning_postgres.patch', username='www-data')
-            self.execute(['patch', '-p0', '-d', '/var/www/drupal/sites/all/modules/revisioning/', '<',
-                               '/var/www/drupal/revisioning_postgres.patch'], username='www-data')
+                '/var/www/drupal/revisioning_postgres.patch',
+                username='www-data')
+            self.execute([
+                'patch', '-p0', '-d',
+                '/var/www/drupal/sites/all/modules/revisioning/', '<',
+                '/var/www/drupal/revisioning_postgres.patch'],
+                username='www-data')
 
 
 class ClouderBase(models.Model):
@@ -72,15 +76,17 @@ class ClouderBase(models.Model):
         res = super(ClouderBase, self).deploy_test()
         if self.application_id.type_id.name == 'drupal' \
                 and self.application_id.code == 'wkc':
-            self.container_id.execute(['drush', 'vset', '--yes', '--exact',
-                               'wikicompare_test_platform', '1'],
-                         path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
+            self.container_id.execute([
+                'drush', 'vset', '--yes', '--exact',
+                'wikicompare_test_platform', '1'],
+                path='/var/www/drupal/sites/' + self.fulldomain,
+                username='www-data')
             if self.poweruser_name and self.poweruser_email:
-                self.container_id.execute(['drush',
-                                   '/var/www/drupal/wikicompare.script',
-                                   '--user=' + self.poweruser_name,
-                                   'deploy_demo'],
-                             path='/var/www/drupal/sites/' + self.fulldomain, username='www-data')
+                self.container_id.execute([
+                    'drush', '/var/www/drupal/wikicompare.script',
+                    '--user=' + self.poweruser_name, 'deploy_demo'],
+                    path='/var/www/drupal/sites/' + self.fulldomain,
+                    username='www-data')
         return res
 
 
