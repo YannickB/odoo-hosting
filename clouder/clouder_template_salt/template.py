@@ -74,7 +74,7 @@ class ClouderServer(models.Model):
             try:
                 master.execute([
                     'sed', '-i',
-                    '"/  \'' + self.fulldomain + '\'/,/END\s' +
+                    '"/  \'' + self.fulldomain + r'\'/,/END\s' +
                     self.fulldomain + '/d"',
                     '/srv/pillar/top.sls'])
                 master.execute([
@@ -225,7 +225,7 @@ class ClouderContainer(models.Model):
 
         if self.salt_master:
             self.salt_master.execute([
-                'sed', '-i', '"/containers\/' + self.name + '/d"',
+                'sed', '-i', r'"/containers\/' + self.name + '/d"',
                 '/srv/pillar/top.sls'])
             self.salt_master.execute([
                 'rm', '-rf', '/srv/salt/containers/build_' + self.name])
@@ -298,7 +298,7 @@ class ClouderBase(models.Model):
     def purge_salt(self):
 
         self.salt_master.execute([
-            'sed', '-i', '"/bases\/' + self.name + '/d"',
+            'sed', '-i', r'"/bases\/' + self.name + '/d"',
             '/srv/pillar/top.sls'])
         self.salt_master.execute([
             'rm', '-rf', '/srv/pillar/bases/' + self.name + '.sls'])

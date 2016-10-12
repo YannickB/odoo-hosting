@@ -92,7 +92,7 @@ class ClouderContainer(models.Model):
                         '-i',
                         '"s/CLOUDER_TEMPLATE_MAGENTO_TZ/{replace}/g"'.format(
                             replace=self.options['timezone']['value']
-                            .replace("/", "\\\/")
+                            .replace("/", r"\\\/")
                         ),
                         config_file
                     ])

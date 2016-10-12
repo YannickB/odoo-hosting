@@ -390,8 +390,8 @@ class FormController(http.Controller):
         # Checking data errors for container requests
         if post['inst_type'] == 'container':
             # Check that the required data has been passed
-            if ('environment_id' not in post
-                    and 'environment_prefix' not in post) or \
+            if ('environment_id' not in post and
+                    'environment_prefix' not in post) or \
                     'suffix' not in post:
                 result = {
                     'error': _('Prefix and either environment_id or '
@@ -399,8 +399,8 @@ class FormController(http.Controller):
                 return \
                     request.make_response(json.dumps(result), headers=HEADERS)
             # Check that the required data is not empty
-            if (not post['environment_id']
-                    and not post['environment_prefix']) or not post['suffix']:
+            if (not post['environment_id'] and
+                    not post['environment_prefix']) or not post['suffix']:
                 result = {
                     'error': _('Prefix and either environment_id or '
                                'environment_prefix should not be empty.')}

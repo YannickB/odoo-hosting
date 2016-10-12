@@ -73,7 +73,7 @@ class ClouderConfigSettings(models.Model):
         """
         return self.env['clouder.model'].now_hour_regular
 
-    @api.one
+    @api.multi
     @api.constrains('email_sysadmin')
     def _check_email_sysadmin(self):
         """
@@ -81,7 +81,7 @@ class ClouderConfigSettings(models.Model):
         characters.
         """
         if self.email_sysadmin \
-                and not re.match("^[\w\d_.@-]*$", self.email_sysadmin):
+                and not re.match(r"^[\w\d_.@-]*$", self.email_sysadmin):
             raise except_orm(_('Data error!'), _(
                 "Sysadmin email can only contains letters, "
                 "digits, underscore, - and @"))

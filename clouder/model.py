@@ -224,7 +224,7 @@ class ClouderModel(models.AbstractModel):
         now = datetime.now()
         return now.strftime("%Y-%m-%d-%H%M%S")
 
-    @api.one
+    @api.multi
     @api.constrains('name')
     def _check_config(self):
         """
@@ -280,7 +280,7 @@ class ClouderModel(models.AbstractModel):
             from openerp.exceptions import UserError
             raise UserError(message)
         else:
-            from openerp.exceptions import except_orm
+            # from openerp.exceptions import except_orm
             raise except_orm(_(''), _(message))
 
     @api.multi
@@ -411,7 +411,7 @@ class ClouderModel(models.AbstractModel):
 
         return res
 
-    @api.one
+    @api.multi
     def unlink(self):
         """
         Override the default unlink function to create log and call purge hook.

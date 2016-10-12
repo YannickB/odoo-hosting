@@ -20,4 +20,4 @@
 #
 ##############################################################################
 
-from __unfinished__.clouder_template_seafile import clouder_template_seafile
+from . import clouder_template_seafile

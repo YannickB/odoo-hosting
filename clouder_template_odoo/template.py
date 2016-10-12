@@ -70,7 +70,7 @@ class ClouderContainer(models.Model):
                             '/opt/odoo/files/extra/' + extra_dir + ','
                 self.execute([
                     'sed', '-i', '"s/ADDONS_PATH/' +
-                    addons_path.replace('/', '\/') + '/g"',
+                    addons_path.replace('/', r'\/') + '/g"',
                     config_file])
 
             if self.application_id.code == 'ssh':
@@ -532,7 +532,7 @@ class ClouderBaseLink(models.Model):
             self.target.execute(['postmap', '/etc/postfix/virtual_aliases'])
             self.target.execute([
                 'sed', '-i',
-                '"/d\s' + self.base_id.fullname_ + '/d"',
+                r'"/d\s' + self.base_id.fullname_ + '/d"',
                 '/etc/aliases'])
             self.target.execute(['newaliases'])
             self.target.execute(['/etc/init.d/postfix', 'reload'])

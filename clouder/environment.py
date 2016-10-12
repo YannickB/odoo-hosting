@@ -51,7 +51,7 @@ class ClouderEnvironment(models.Model):
          'Prefix must be unique!'),
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('prefix')
     def _check_prefix(self):
         """
@@ -60,7 +60,7 @@ class ClouderEnvironment(models.Model):
         Also checks that you cannot remove a prefix
         when containers are linked to the environment
         """
-        if self.prefix and not re.match("^[\w]*$", self.prefix):
+        if self.prefix and not re.match(r"^[\w]*$", self.prefix):
             raise except_orm(
                 _('Data error!'),
                 _("Prefix can only contains letters"))

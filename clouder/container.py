@@ -231,18 +231,18 @@ class ClouderServer(models.Model):
          'IP/SSH must be unique!'),
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('name', 'ip')
     def _check_name_ip(self):
         """
         Check that the server domain does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d-]*$", self.name):
+        if not re.match(r"^[\w\d-]*$", self.name):
             raise except_orm(
                 _('Data error!'),
                 _("Name can only contains letters, digits, -"))
-        if not re.match("^[\d:.]*$", self.ip):
+        if not re.match(r"^[\d:.]*$", self.ip):
             raise except_orm(
                 _('Data error!'),
                 _("IP can only contains digits, dots and :"))
@@ -451,26 +451,28 @@ class ClouderContainer(models.Model):
     _name = 'clouder.container'
     _inherit = ['clouder.model']
 
-    @api.one
+    @api.multi
     def _get_ports(self):
         """
         Display the ports on the container lists.
         """
-        self.ports_string = ''
-        first = True
-        for port in self.port_ids:
-            if not first:
-                self.ports_string += ', '
-            if port.hostport:
-                self.ports_string += port.name + ' : ' + port.hostport
-            first = False
+        for rec in self:
+            rec.ports_string = ''
+            first = True
+            for port in rec.port_ids:
+                if not first:
+                    rec.ports_string += ', '
+                if port.hostport:
+                    rec.ports_string += port.name + ' : ' + port.hostport
+                first = False
 
-    @api.one
+    @api.multi
     def _get_name(self):
         """
         Return the name of the container
         """
-        self.name = self.environment_id.prefix + '-' + self.suffix
+        for rec in self:
+            rec.name = rec.environment_id.prefix + '-' + rec.suffix
 
     name = fields.Char('Name', compute='_get_name', required=False)
     environment_id = fields.Many2one('clouder.environment', 'Environment',
@@ -683,7 +685,7 @@ class ClouderContainer(models.Model):
          'Name must be unique per server!'),
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('environment_id')
     def _check_environment(self):
         """
@@ -694,7 +696,7 @@ class ClouderContainer(models.Model):
                 _('Data error!'),
                 _("The environment need to have a prefix"))
 
-    @api.one
+    @api.multi
     @api.constrains('suffix')
     def _check_suffix(self):
         """
@@ -706,7 +708,7 @@ class ClouderContainer(models.Model):
                 _('Data error!'),
                 _("Suffix can only contains letters, digits and dash"))
 
-    @api.one
+    @api.multi
     @api.constrains('application_id')
     def _check_backup(self):
         """
@@ -718,7 +720,7 @@ class ClouderContainer(models.Model):
                 _('Data error!'),
                 _("You need to create at least one backup container."))
 
-    @api.one
+    @api.multi
     @api.constrains('image_id', 'image_version_id')
     def _check_config(self):
         """
@@ -1413,7 +1415,7 @@ class ClouderContainer(models.Model):
             self.deploy_links()
         return res
 
-    @api.one
+    @api.multi
     def unlink(self):
         """
         Override unlink method to remove all services
@@ -1796,7 +1798,7 @@ class ClouderContainerOption(models.Model):
          'Option name must be unique per container!'),
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('container_id')
     def _check_required(self):
         """
@@ -1831,7 +1833,7 @@ class ClouderContainerLink(models.Model):
     make_link = fields.Boolean('Make docker link?')
     deployed = fields.Boolean('Deployed?', readonly=True)
 
-    @api.one
+    @api.multi
     @api.constrains('container_id')
     def _check_required(self):
         """
@@ -1932,7 +1934,7 @@ class ClouderContainerChild(models.Model):
 
     _order = 'sequence'
 
-    @api.one
+    @api.multi
     @api.constrains('child_id')
     def _check_child_id(self):
         if self.child_id and not self.child_id.parent_id == self:
@@ -2029,7 +2031,7 @@ class ClouderContainerMetadata(models.Model):
         # Defaults to char
         return str(val_to_convert)
 
-    @api.one
+    @api.multi
     @api.constrains('name')
     def _check_clouder_type(self):
         """
@@ -2042,7 +2044,7 @@ class ClouderContainerMetadata(models.Model):
                     self.name.clouder_type))
             )
 
-    @api.one
+    @api.multi
     @api.constrains('name', 'value_data')
     def _check_object(self):
         """

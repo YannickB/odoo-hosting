@@ -21,9 +21,7 @@
 ##############################################################################
 
 from openerp import models, api, modules
-import requests
-import logging
-# from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 
 
 class ClouderContainer(models.Model):

@@ -173,9 +173,9 @@ class ClouderBase(models.Model):
         if self.container_id.db_type == 'mysql':
             for key, database in self.databases.iteritems():
                 self.container_id.database.execute([
-                    "mysql -u root -p'"
-                    + self.container_id.database.root_password
-                    + "' -se \"drop database " + database + ";\""
+                    "mysql -u root -p'" +
+                    self.container_id.database.root_password +
+                    "' -se \"drop database " + database + ";\""
                 ])
         return super(ClouderBase, self).purge_database()
 

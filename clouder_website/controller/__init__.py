@@ -19,4 +19,5 @@
 # <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-import form_controller
+
+from . import form_controller

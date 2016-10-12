@@ -73,7 +73,7 @@ class ClouderImage(models.Model):
                     server.send_dir(sources_path, build_dir + '/sources')
 
             server.execute([
-                'echo "' + self.computed_dockerfile.replace('"', '\\"') +
+                'echo "' + self.computed_dockerfile.replace('"', r'\\"') +
                 '" >> ' + build_dir + '/Dockerfile'])
 
             if expose_ports:

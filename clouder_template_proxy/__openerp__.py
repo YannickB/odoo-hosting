@@ -22,15 +22,12 @@
 
 {
     'name': 'Clouder Template Proxy',
-    'version': '1.0',
+    'version': '1.0.0.0.0',
     'category': 'Clouder',
     'depends': ['clouder'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
-    'description': """
-    Clouder Template Proxy
-    """,
     'demo': [],
     'data': ['template.xml'],
     'installable': True,

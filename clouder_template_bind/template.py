@@ -108,7 +108,7 @@ class ClouderDomain(models.Model):
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
             self.dns_id.execute([
                 'sed', '-i',
-                "'/zone\s\"" + self.name + "\"/,/END\s" + self.name + "/d'",
+                r"'/zone\s\"" + self.name + r"\"/,/END\s" + self.name + "/d'",
                 '/etc/bind/named.conf'])
             self.dns_id.execute(['rm', self.configfile])
             self.dns_id.execute(['/etc/init.d/bind9 reload'])
@@ -136,7 +136,7 @@ class ClouderBaseLink(models.Model):
     def purge_bind_config(self, name):
         self.target.execute([
             'sed', '-i',
-            '"/' + name + '\sIN\sA/d"',
+            '"/' + name + r'\sIN\sA/d"',
             self.base_id.domain_id.configfile])
         self.base_id.domain_id.refresh_serial()
 

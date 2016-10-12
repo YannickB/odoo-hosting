@@ -354,8 +354,8 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'gitlab':
             self.container_id.childs['exec'].execute([
                 'sed', '-i',
-                '"s/https:\/\/[0-9a-z_-.]*\//https:\/\/' +
-                self.fulldomain + '\//g"',
+                r'"s/https:\/\/[0-9a-z_-.]*\//https:\/\/' +
+                self.fulldomain + r'\//g"',
                 '/home/git/gitlab-shell/config.yml'])
             self.container_id.childs['exec'].execute([
                 'sed', '-i',
@@ -414,7 +414,7 @@ class ClouderBase(models.Model):
                 self.fulldomain + ';/g"',
                 '/etc/nginx/sites-available/' + self.fullname])
             self.container_id.execute([
-                'sed', '-i', '"s/\/home\/git\/gitlab/\/opt\/gitlab\/files/g"',
+                'sed', '-i', r'"s/\/home\/git\/gitlab/\/opt\/gitlab\/files/g"',
                 '/etc/nginx/sites-available/' + self.fullname])
             self.container_id.execute([
                 'ln', '-s', '/etc/nginx/sites-available/' + self.fullname,

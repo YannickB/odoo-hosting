@@ -81,7 +81,7 @@ class ClouderBase(models.Model):
             self.execute(ssh, ['sed', '-i',
                                '"s/PATH/' +
                                self.service_id.full_localpath_files
-                               .replace('/', '\/') + '/g"', config_file])
+                               .replace('/', r'\/') + '/g"', config_file])
             self.execute(ssh, ['ln', '-s',
                                '/etc/nginx/sites-available/' + self.fullname,
                                '/etc/nginx/sites-enabled/' + self.fullname])

@@ -19,5 +19,6 @@
 # <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-from __unfinished__.clouder_users import deploy
+
+from . import deploy
 

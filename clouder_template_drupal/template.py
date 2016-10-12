@@ -20,7 +20,6 @@
 #
 ##############################################################################
 
-from openerp import modules
 from openerp import models, api
 
 

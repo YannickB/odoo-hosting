@@ -26,7 +26,7 @@ from openerp.exceptions import except_orm
 from datetime import datetime
 import re
 
-import model
+from openerp.addons.clouder import model
 
 
 class ClouderApplicationTag(models.Model):
@@ -73,15 +73,15 @@ class ClouderApplicationType(models.Model):
 
     _order = 'name'
 
-    @api.one
+    @api.multi
     @api.constrains('name', 'system_user')
     def _check_forbidden_chars_name_sys_user(self):
         """
         Check that the application type name does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d-]*$", self.name) \
-                or not re.match("^[\w\d-]*$", self.system_user):
+        if not re.match(r"^[\w\d-]*$", self.name) \
+                or not re.match(r"^[\w\d-]*$", self.system_user):
             raise except_orm(_('Data error!'), _(
                 "Name and system_user can only contains letters, "
                 "digits and -")
@@ -292,7 +292,7 @@ class ClouderApplication(models.Model):
 
     _order = 'sequence, code'
 
-    @api.one
+    @api.multi
     @api.constrains('code', 'admin_name', 'admin_email')
     def _check_forbidden_chars_credentials_code(self):
         """
@@ -300,7 +300,7 @@ class ClouderApplication(models.Model):
         characters.
         """
 
-        if not re.match("^[\w\d-]*$", self.code) or len(self.code) > 20:
+        if not re.match(r"^[\w\d-]*$", self.code) or len(self.code) > 20:
             raise except_orm(_('Data error!'), _(
                 "Code can only contains letters, digits and "
                 "- and shall be less than 20 characters"))
@@ -308,12 +308,12 @@ class ClouderApplication(models.Model):
             raise except_orm(_('Data error!'), _(
                 "Admin name can only contains letters, digits and underscore"))
         if self.admin_email \
-                and not re.match("^[\w\d_@.-]*$", self.admin_email):
+                and not re.match(r"^[\w\d_@.-]*$", self.admin_email):
             raise except_orm(_('Data error!'), _(
                 "Admin email can only contains letters, "
                 "digits, underscore, - and @"))
 
-    @api.one
+    @api.multi
     @api.constrains('default_image_id', 'child_ids')
     def _check_image(self):
         """

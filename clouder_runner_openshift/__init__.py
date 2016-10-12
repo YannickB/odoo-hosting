@@ -21,4 +21,4 @@
 ##############################################################################
 
 # import runner
-import template
+from . import template

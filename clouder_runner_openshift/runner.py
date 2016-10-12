@@ -84,7 +84,7 @@ class ClouderContainer(models.Model):
                             service_file])
             runner.execute(['sed', '-i', '"s/IMAGE_NAME/' +
                             self.image_version_id.fullpath_localhost.replace(
-                                '/', '\/') + '/g"',
+                                '/', r'\/') + '/g"',
                             service_file])
             runner.execute(['sed', '-i', '"s/PORTS/' +
                             ports_dict.replace('\"', '\\"') + '/g"',

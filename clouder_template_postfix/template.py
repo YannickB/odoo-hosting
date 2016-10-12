@@ -138,7 +138,7 @@ class ClouderContainerLink(models.Model):
                 self.target.server_id.ip + " -p " +
                 self.target.ports['spamd']['hostport'] +
                 " -f -e /usr/sbin/sendmail "
-                "-oi -f \${sender} \${recipient}' "
+                r"-oi -f \${sender} \${recipient}' "
                 ">> /etc/postfix/master.cf"])
             self.container_id.execute([
                 "echo '#spamassassin-endflag'"

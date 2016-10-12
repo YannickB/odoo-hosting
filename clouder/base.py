@@ -25,7 +25,7 @@ from openerp.exceptions import except_orm
 import re
 
 from datetime import datetime, timedelta
-import model
+from openerp.addons.clouder import model
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -54,14 +54,14 @@ class ClouderDomain(models.Model):
         ('name_uniq', 'unique(name)', 'Name must be unique!'),
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('name')
     def _check_name(self):
         """
         Check that the domain name does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d.-]*$", self.name):
+        if not re.match(r"^[\w\d.-]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits - and dot"))
 
@@ -233,7 +233,7 @@ class ClouderBase(models.Model):
          'Name must be unique per domain !')
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('name', 'admin_name', 'admin_email', 'poweruser_email')
     def _check_forbidden_chars_credentials(self):
         """
@@ -243,21 +243,21 @@ class ClouderBase(models.Model):
         if not re.match("^[\w\d-]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits and -"))
-        if not re.match("^[\w\d_.@-]*$", self.admin_name):
+        if not re.match(r"^[\w\d_.@-]*$", self.admin_name):
             raise except_orm(_('Data error!'), _(
                 "Admin name can only contains letters, digits and underscore"))
         if self.admin_email\
-                and not re.match("^[\w\d_.@-]*$", self.admin_email):
+                and not re.match(r"^[\w\d_.@-]*$", self.admin_email):
             raise except_orm(_('Data error!'), _(
                 "Admin email can only contains letters, "
                 "digits, underscore, - and @"))
         if self.poweruser_email \
-                and not re.match("^[\w\d_.@-]*$", self.poweruser_email):
+                and not re.match(r"^[\w\d_.@-]*$", self.poweruser_email):
             raise except_orm(_('Data error!'), _(
                 "Poweruser email can only contains letters, "
                 "digits, underscore, - and @"))
 
-    @api.one
+    @api.multi
     @api.constrains('container_id', 'application_id')
     def _check_application(self):
         """
@@ -495,8 +495,9 @@ class ClouderBase(models.Model):
                         # This case means we do not have an odoo recordset
                         # and need to load the link manually
                         if isinstance(metadata['name'], int):
-                            metadata['name'] = self.env['clouder.application'].\
-                                browse(metadata['name'])
+                            metadata['name'] = \
+                                self.env['clouder.application']\
+                                .browse(metadata['name'])
                     else:
                         metadata = {
                             'name': getattr(metadata, 'name', False),
@@ -661,7 +662,7 @@ class ClouderBase(models.Model):
 
         return res
 
-    @api.one
+    @api.multi
     def unlink(self):
         """
         Override unlink method to make a save before we delete a base.
@@ -707,7 +708,7 @@ class ClouderBase(models.Model):
                 # 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration or
-                         self.application_id.base_save_expiration)
+                    self.application_id.base_save_expiration)
                 ).strftime("%Y-%m-%d"),
                 'comment': 'save_comment' in self.env.context and
                            self.env.context['save_comment'] or
@@ -719,7 +720,7 @@ class ClouderBase(models.Model):
             save = self.env['clouder.save'].create(save_vals)
         date_next_save = (datetime.now() + timedelta(
             minutes=self.time_between_save or
-                    self.application_id.base_time_between_save)
+            self.application_id.base_time_between_save)
         ).strftime("%Y-%m-%d %H:%M:%S")
         self.write({'save_comment': False, 'date_next_save': date_next_save})
         return save
@@ -964,7 +965,7 @@ class ClouderBaseOption(models.Model):
          'Option name must be unique per base!'),
     ]
 
-    @api.one
+    @api.multi
     @api.constrains('base_id')
     def _check_required(self):
         """
@@ -1006,7 +1007,7 @@ class ClouderBaseLink(models.Model):
         return self.target.base_ids and \
             self.target.base_ids[0]
 
-    @api.one
+    @api.multi
     @api.constrains('base_id')
     def _check_required(self):
         """
@@ -1016,9 +1017,9 @@ class ClouderBaseLink(models.Model):
         if self.required and not self.target:
             raise except_orm(
                 _('Data error!'),
-                _("You need to specify a link to "
-                  + self.name.name + " for the base "
-                  + self.base_id.name)
+                _("You need to specify a link to " +
+                  self.name.name + " for the base " +
+                  self.base_id.name)
             )
 
     @api.multi
@@ -1103,7 +1104,7 @@ class ClouderBaseChild(models.Model):
 
     _order = 'sequence'
 
-    @api.one
+    @api.multi
     @api.constrains('child_id')
     def _check_child_id(self):
         if self.child_id and not self.child_id.parent_id == self:
@@ -1203,7 +1204,7 @@ class ClouderBaseMetadata(models.Model):
         # Defaults to char
         return str(val_to_convert)
 
-    @api.one
+    @api.multi
     @api.constrains('name')
     def _check_clouder_type(self):
         """
@@ -1216,7 +1217,7 @@ class ClouderBaseMetadata(models.Model):
                   format(self.name.clouder_type))
             )
 
-    @api.one
+    @api.multi
     @api.constrains('name', 'value_data')
     def _check_object(self):
         """
