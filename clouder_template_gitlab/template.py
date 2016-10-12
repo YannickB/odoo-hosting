@@ -114,7 +114,10 @@ class ClouderContainerLink(models.Model):
         return {'PRIVATE-TOKEN':
                 self.target.base_ids[0].options['token']['value']}
 
-    def gitlab_ressource(self, type, name, project_id='', data={}):
+    def gitlab_ressource(self, type, name, project_id='', data=None):
+
+        if not data:
+            data = {}
 
         path = ''
         if type == 'group':

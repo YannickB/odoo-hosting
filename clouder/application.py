@@ -26,7 +26,7 @@ from openerp.exceptions import except_orm
 from datetime import datetime
 import re
 
-from openerp.addons.clouder import model
+from . import model
 
 
 class ClouderApplicationTag(models.Model):
@@ -304,7 +304,7 @@ class ClouderApplication(models.Model):
             raise except_orm(_('Data error!'), _(
                 "Code can only contains letters, digits and "
                 "- and shall be less than 20 characters"))
-        if self.admin_name and not re.match("^[\w\d_]*$", self.admin_name):
+        if self.admin_name and not re.match(r"^[\w\d_]*$", self.admin_name):
             raise except_orm(_('Data error!'), _(
                 "Admin name can only contains letters, digits and underscore"))
         if self.admin_email \

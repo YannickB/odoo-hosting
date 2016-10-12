@@ -92,9 +92,6 @@
         <record id="clouder.application_salt_minion" model="clouder.application">
             <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
         </record>
-        <record id="application_shinken_data" model="clouder.application">
-            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
-        </record>
         <record id="clouder_template_postfix.application_postfix_data" model="clouder.application">
             <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
         </record>

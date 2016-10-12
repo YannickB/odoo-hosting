@@ -36,7 +36,10 @@ class ClouderImage(models.Model):
     _inherit = 'clouder.image'
 
     def build_image(
-            self, model, server, runner=False, expose_ports=[], salt=True):
+            self, model, server, runner=False, expose_ports=None, salt=True):
+
+        if not expose_ports:
+            expose_ports = []
 
         res = super(ClouderImage, self).build_image(
             model, server, runner=runner, expose_ports=expose_ports, salt=salt)
@@ -300,3 +303,4 @@ class ClouderContainer(models.Model):
             time.sleep(3)
 
         return res
+

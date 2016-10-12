@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api
+from openerp import models, api, modules
 
 
 class ClouderContainer(models.Model):

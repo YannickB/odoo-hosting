@@ -158,7 +158,7 @@ class ClouderBase(models.Model):
             self.execute(ssh, [
                 'sed', '-i',
                 '"/' + self.service_id.full_localpath_files
-                .replace('/', '\/') + '\/seafile.sh/d"',
+                .replace('/', r'\/') + r'\/seafile.sh/d"',
                 '/opt/seafile/supervisor.conf'])
             self.execute(ssh, [
                 'sed', '-i',
@@ -167,6 +167,6 @@ class ClouderBase(models.Model):
             self.execute(ssh, [
                 'sed', '-i',
                 '"/' + self.service_id.full_localpath_files
-                .replace('/', '\/') + '\/seahub.sh/d"',
+                .replace('/', r'\/') + r'\/seahub.sh/d"',
                 '/opt/seafile/supervisor.conf'])
             ssh.close()

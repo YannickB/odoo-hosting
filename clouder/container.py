@@ -117,7 +117,7 @@ class ClouderServer(models.Model):
 
     @api.multi
     @api.depends('private_key')
-    def _get_private_key(self):
+    def _compute_private_key(self):
         for server in self:
             key_file = \
                 server.home_directory + '/.ssh/keys/' + \
@@ -126,14 +126,14 @@ class ClouderServer(models.Model):
 
     @api.multi
     @api.depends('public_key')
-    def _get_public_key(self):
+    def _compute_public_key(self):
         for server in self:
             key_file = server.home_directory + '/.ssh/keys/' \
                 + server.name + '.' + server.domain_id.name
             server.public_key = self.execute_local(['cat', key_file + '.pub'])
 
     @api.multi
-    def _write_private_key(self):
+    def _inverse_private_key(self):
         """
         """
         for server in self:
@@ -166,7 +166,7 @@ class ClouderServer(models.Model):
                 '\n#END ' + name + '\n')
 
     @api.multi
-    def _write_public_key(self):
+    def _inverse_public_key(self):
         """
         """
         for server in self:
@@ -188,10 +188,10 @@ class ClouderServer(models.Model):
 
     private_key = fields.Text(
         'SSH Private Key', default=_default_private_key,
-        compute='_get_private_key', inverse='_write_private_key')
+        compute='_compute_private_key', inverse='_inverse_private_key')
     public_key = fields.Text(
         'SSH Public Key', default=_default_public_key,
-        compute='_get_public_key', inverse='_write_public_key')
+        compute='_compute_public_key', inverse='_inverse_public_key')
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
     public_ip = fields.Boolean(
@@ -330,13 +330,16 @@ class ClouderServer(models.Model):
         if self.domain_id.dns_id:
             self.domain_id.dns_id.execute([
                 'sed', '-i',
-                '"/' + self.name + '\sIN\sA/d"',
+                '"/' + self.name + r'\sIN\sA/d"',
                 self.domain_id.configfile])
             self.domain_id.refresh_serial()
 
     @api.multi
     def oneclick_deploy_element(
-            self, type, code, container=False, code_container='', ports=[]):
+            self, type, code, container=False, code_container='', ports=None):
+
+        if not ports:
+            ports = []
 
         application_obj = self.env['clouder.application']
         container_obj = self.env['clouder.container']
@@ -452,7 +455,7 @@ class ClouderContainer(models.Model):
     _inherit = ['clouder.model']
 
     @api.multi
-    def _get_ports(self):
+    def _compute_ports(self):
         """
         Display the ports on the container lists.
         """
@@ -467,14 +470,14 @@ class ClouderContainer(models.Model):
                 first = False
 
     @api.multi
-    def _get_name(self):
+    def _compute_name(self):
         """
         Return the name of the container
         """
         for rec in self:
             rec.name = rec.environment_id.prefix + '-' + rec.suffix
 
-    name = fields.Char('Name', compute='_get_name', required=False)
+    name = fields.Char('Name', compute='_compute_name', required=False)
     environment_id = fields.Many2one('clouder.environment', 'Environment',
                                      required=True)
     suffix = fields.Char('Suffix', required=True)
@@ -506,7 +509,7 @@ class ClouderContainer(models.Model):
                                 'container_id', 'Childs')
     from_id = fields.Many2one('clouder.container', 'From')
     subservice_name = fields.Char('Subservice Name')
-    ports_string = fields.Text('Ports', compute='_get_ports')
+    ports_string = fields.Text('Ports', compute='_compute_ports')
     reset_base_ids = fields.Many2many(
         'clouder.base', 'clouder_container_reser_base_rel',
         'container_id', 'base_id', 'Bases to duplicate')
@@ -703,7 +706,7 @@ class ClouderContainer(models.Model):
         Check that the container name does not contain any forbidden
         characters.
         """
-        if not re.match("^[\w\d-]*$", self.suffix):
+        if not re.match(r"^[\w\d-]*$", self.suffix):
             raise except_orm(
                 _('Data error!'),
                 _("Suffix can only contains letters, digits and dash"))

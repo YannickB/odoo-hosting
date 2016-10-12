@@ -21,7 +21,16 @@
 ##############################################################################
 
 from openerp import models, api, modules
-from bs4 import BeautifulSoup
+
+import logging
+_logger = logging.getLogger(__name__)
+
+try:
+  from bs4 import BeautifulSoup
+except ImportError:
+  _logger.debug('Cannot `from bs4 import BeautifulSoup`.')
+
+
 
 
 class ClouderContainer(models.Model):

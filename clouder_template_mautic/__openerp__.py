@@ -39,6 +39,11 @@
     'data': [
         'template.xml'
     ],
+    'external_dependencies': {
+        'python': [
+            'bs4',
+        ],
+    },
     'installable': True,
     'application': True,
 }

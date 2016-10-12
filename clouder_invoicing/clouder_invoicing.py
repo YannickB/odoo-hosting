@@ -34,7 +34,7 @@ class ClouderInvoicingPricegridLine(models.Model):
     """
     _name = 'clouder.invoicing.pricegrid.line'
 
-    def _get_application_id(self):
+    def _compute_application_id(self):
         object = self.link
         if self.link._name != 'clouder.application':
             object = self.link.application_id
@@ -42,7 +42,7 @@ class ClouderInvoicingPricegridLine(models.Model):
 
     application_id = fields.Many2one(
         'clouder.application', 'Application',
-        compute='_get_application_id', store=True)
+        compute='_compute_application_id', store=True)
     application_metadata = fields.Many2one(
         'clouder.application.metadata', 'Invoicing Unit', required=True)
     threshold = fields.Integer('Threshold', required=True)
@@ -59,7 +59,7 @@ class ClouderInvoicingPricegridLine(models.Model):
     link_container = fields.Many2one('clouder.container', 'Container')
     link_base = fields.Many2one('clouder.base', 'Base')
 
-    @api.one
+    @api.multi
     @api.constrains(
         'link_application', 'link_container',
         'link_base', 'application_metadata')
@@ -232,7 +232,7 @@ class ClouderApplication(models.Model):
         This price is manually set and unrelated to price grids computation."""
     )
 
-    @api.one
+    @api.multi
     @api.constrains('initial_invoice_amount')
     def _check_initial_invoice_amount_positive(self):
         if self.initial_invoice_amount < 0.0:
@@ -242,7 +242,7 @@ class ClouderApplication(models.Model):
                   "as instance creation fees.")
             )
 
-    @api.one
+    @api.multi
     @api.constrains('pricegrid_ids', 'invoicing_product_id')
     def _check_pricegrid_product(self):
         """

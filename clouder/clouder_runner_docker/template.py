@@ -69,7 +69,7 @@ class ClouderContainer(models.Model):
                     if type_option.name == 'ports':
                         ports = option['value']
             if ports:
-                if not re.match("^[\d,-]*$", ports):
+                if not re.match(r"^[\d,-]*$", ports):
                     raise except_orm(
                         _('Data error!'),
                         _("Ports can only contains digits, - and ,"))

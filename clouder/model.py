@@ -29,7 +29,6 @@ from openerp.addons.connector.queue.job import\
 
 from datetime import datetime
 import subprocess
-import paramiko
 import os.path
 import string
 import copy_reg
@@ -44,6 +43,11 @@ from os.path import expanduser
 
 import logging
 _logger = logging.getLogger(__name__)
+
+try:
+  import paramiko
+except ImportError:
+  _logger.debug('Cannot `import paramiko`.')
 
 ssh_connections = {}
 
@@ -791,7 +795,17 @@ class ClouderModel(models.AbstractModel):
         f.close()
 
     def request(
-            self, url, method='get', headers={}, data={}, params={}, files={}):
+            self, url, method='get', headers=None, data=None, params=None, files=None):
+
+        if not headers:
+            headers = {}
+        if not data:
+            data = {}
+        if not params:
+            params = {}
+        if not files:
+            files = {}
+
         self.log('request ' + method + ' ' + url)
         if headers:
             self.log('headers ' + str(headers))
@@ -814,7 +828,11 @@ class ClouderTemplateOne2many(models.AbstractModel):
     _name = 'clouder.template.one2many'
 
     @api.multi
-    def reset_template(self, records=[]):
+    def reset_template(self, records=None):
+
+        if not records:
+            records = []
+
         if self.template_id:
             if not records:
                 records = self.env[self._template_parent_model].search(

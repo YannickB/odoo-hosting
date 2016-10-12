@@ -25,7 +25,7 @@ from openerp.exceptions import except_orm
 import re
 
 from datetime import datetime, timedelta
-from openerp.addons.clouder import model
+from . import model
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -240,7 +240,7 @@ class ClouderBase(models.Model):
         Check that the base name and some other fields does not contain any
         forbidden characters.
         """
-        if not re.match("^[\w\d-]*$", self.name):
+        if not re.match(r"^[\w\d-]*$", self.name):
             raise except_orm(_('Data error!'), _(
                 "Name can only contains letters, digits and -"))
         if not re.match(r"^[\w\d_.@-]*$", self.admin_name):
