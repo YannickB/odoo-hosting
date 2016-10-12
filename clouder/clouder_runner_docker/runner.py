@@ -303,4 +303,3 @@ class ClouderContainer(models.Model):
             time.sleep(3)
 
         return res
-

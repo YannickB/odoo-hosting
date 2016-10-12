@@ -45,9 +45,9 @@ import logging
 _logger = logging.getLogger(__name__)
 
 try:
-  import paramiko
+    import paramiko
 except ImportError:
-  _logger.debug('Cannot `import paramiko`.')
+    _logger.debug('Cannot `import paramiko`.')
 
 ssh_connections = {}
 
@@ -795,7 +795,8 @@ class ClouderModel(models.AbstractModel):
         f.close()
 
     def request(
-            self, url, method='get', headers=None, data=None, params=None, files=None):
+            self, url, method='get', headers=None,
+            data=None, params=None, files=None):
 
         if not headers:
             headers = {}

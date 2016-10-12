@@ -70,7 +70,6 @@ class ClouderBase(models.Model):
         Build the drupal by calling drush site-install, and installing the
         specified modules and themes.
         """
-        from openerp import modules
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'drupal':
             config_file = '/etc/nginx/sites-available/' + self.fullname

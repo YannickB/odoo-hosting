@@ -75,7 +75,7 @@ class ClouderContainer(models.Model):
                         _("Ports can only contains digits, - and ,"))
 
                 for scope in ports.split(','):
-                    if re.match("^[\d]*$", scope):
+                    if re.match(r"^[\d]*$", scope):
                         start_port = scope
                         end_port = scope
                     else:

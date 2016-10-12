@@ -26,10 +26,9 @@ import logging
 _logger = logging.getLogger(__name__)
 
 try:
-  import erppeek
+    import erppeek
 except ImportError:
-  _logger.debug('Cannot `import erppeek`.')
-
+    _logger.debug('Cannot `import erppeek`.')
 
 
 class ClouderContainer(models.Model):

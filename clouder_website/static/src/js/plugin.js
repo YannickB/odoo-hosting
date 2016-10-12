@@ -680,7 +680,7 @@ Clouder.loadPhp = function ($) {
             Clouder.run($);
         },
         error: function(jq, txt, err) {
-            $('#ClouderPlugin').html("ERROR: Could not load form"),
+            $('#ClouderPlugin').html("ERROR: Could not load form");
         }
     });
 };
