@@ -31,19 +31,20 @@ import string
 import subprocess
 import time
 
+from contextlib import contextmanager
 from datetime import datetime
 from os.path import expanduser
 
-from openerp import models, fields, api, _, release
+from openerp import models, fields, api, _, release, registry
 
-from openerp.addons.clouder.exceptions import ClouderError
+from .exceptions import ClouderError
 
 _logger = logging.getLogger(__name__)
 
 try:
     import paramiko
 except ImportError:
-    _logger.debug('Cannot `import paramiko`.')
+    _logger.warning('Cannot `import paramiko`.')
 
 ssh_connections = {}
 
@@ -55,6 +56,7 @@ class ClouderJob(models.Model):
     """
 
     _name = 'clouder.job'
+    _description = 'Clouder Job'
 
     log = fields.Text('Log')
     name = fields.Char('Description')
@@ -79,8 +81,14 @@ class ClouderModel(models.AbstractModel):
     """
 
     _name = 'clouder.model'
+    _description = 'Clouder Model'
 
     _autodeploy = True
+
+    BACKUP_BASE_DIR = '/base-backup/'
+    BACKUP_DATA_DIR = '/opt/backup/'
+    BACKUP_HOME_DIR = '/home/backup/'
+    BACKUP_DATE_FILE = 'backup-date'
 
     # We create the name field to avoid warning for the constraints
     name = fields.Char('Name', required=True)
@@ -178,6 +186,53 @@ class ClouderModel(models.AbstractModel):
         now = datetime.now()
         return now.strftime("%Y-%m-%d-%H%M%S")
 
+    @api.model
+    def get_directory_key(self, add_path=None):
+        """ It returns the current working directory for keys
+        :param add_path: (str|iter) String or Iterator of Strings indicating
+            path parts to add to the default remote working path
+        :returns: (str) Key directory on the local
+        """
+        name = 'key_%s' % self.env.uid
+        return self._get_directory_tmp(name, add_path)
+
+    @api.model
+    def get_directory_clouder(self, add_path=None):
+        """ It returns the current clouder directory on the remote
+        :param add_path: (str|iter) String or Iterator of Strings indicating
+            path parts to add to the default remote working path
+        :returns: (str) Clouder directory on the remote
+        """
+        return self._get_directory_tmp('clouder', add_path)
+
+    @api.model
+    def _get_directory_tmp(self, name, add_path=None):
+        """ It returns a directory in tmp for name
+        :param name: (str) Name of the directory in tmp
+        :param add_path: (str|iter) String or Iterator of Strings indicating
+            path parts to add to the default remote working path
+        :returns: (str) Clouder directory on the remote
+        """
+        if add_path is None:
+            add_path = []
+        elif not isinstance(add_path, (tuple, list, dict)):
+            add_path = [str(add_path)]
+        return os.path.join('/tmp', str(name), *add_path)
+
+    @api.model
+    @contextmanager
+    def _private_env(self):
+        """ It provides an isolated environment/commit
+
+        Yields:
+            ``openerp.api.Environment`` to be used with ``model.with_env``
+        """
+        with api.Environment.manage():
+            with registry(self.env.cr.dbname).cursor() as cr:
+                env = api.Environment(cr, self.env.uid, self.env.context)
+                yield env
+                env.cr.commit()  # pylint: disable=E8102
+
     @api.multi
     @api.constrains('name')
     def _check_config(self):
@@ -211,23 +266,30 @@ class ClouderModel(models.AbstractModel):
 
         :param message: The message which will be logged.
         """
-        job_obj = self.env['clouder.job']
-        now = datetime.now()
-        message = re.sub(r'$$$\w+$$$', '**********', message)
-        message = filter(lambda x: x in string.printable, message)
-        _logger.info(message)
 
-        if 'clouder_jobs' in self.env.context:
+        with self._private_env() as env:
+            self = self.with_env(env)
+
+            job_obj = self.env['clouder.job']
+            now = datetime.now()
+            message = re.sub(r'$$$\w+$$$', '**********', message)
+            message = filter(lambda x: x in string.printable, message)
+            _logger.info(message)
+
+            if 'clouder_jobs' not in self.env.context:
+                return
+
             for key, job_id in self.env.context['clouder_jobs'].iteritems():
                 if job_obj.search([('id', '=', job_id)]):
                     job = job_obj.browse(job_id)
                     if job.state == 'started':
-                        job.log = (job.log or '') +\
-                            now.strftime('%Y-%m-%d %H:%M:%S') + ' : ' +\
-                            message + '\n'
-        self.env.cr.commit()
+                        job.log = '%s%s : %s\n' % (
+                            (job.log or ''),
+                            now.strftime('%Y-%m-%d %H:%M:%S'),
+                            message,
+                        )
 
-    def raise_error(self, message, interpolations):
+    def raise_error(self, message, interpolations=None):
         """ Raises a ClouderError with a translated message
         :param message: (str) Message including placeholders for string
             interpolation. Interpolation takes place via the ``%`` operator.
@@ -236,6 +298,8 @@ class ClouderModel(models.AbstractModel):
             parameters or tuple for positional. Cannot use both.
         :raises: (clouder.exceptions.ClouderError)
         """
+        if interpolations is None:
+            interpolations = ()
         raise ClouderError(self, _(message) % interpolations)
 
     @api.multi
@@ -626,9 +690,9 @@ class ClouderModel(models.AbstractModel):
         final_destination = destination
         tmp_dir = False
         if self != server:
-            tmp_dir = '/tmp/clouder/' + str(time.time())
+            tmp_dir = self.get_directory_clouder(time.time())
             server.execute(['mkdir', '-p', tmp_dir])
-            destination = tmp_dir + '/file'
+            destination = os.path.join(tmp_dir, 'file')
 
         sftp = ssh.open_sftp()
         self.log('send : ' + source + ' to ' + destination)
@@ -736,9 +800,8 @@ class ClouderModel(models.AbstractModel):
         :param localfile: The path to the file we need to write.
         :param value: The value we need to write in the file.
         """
-        f = open(localfile, operator)
-        f.write(value)
-        f.close()
+        with open(localfile, operator) as f:
+            f.write(value)
 
     def request(
             self, url, method='get', headers=None,

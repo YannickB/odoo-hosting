@@ -20,10 +20,11 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api
+from datetime import datetime
+import os.path
 import re
 
-from datetime import datetime
+from openerp import models, fields, api
 
 
 class ClouderConfigBackupMethod(models.Model):
@@ -72,6 +73,11 @@ class ClouderConfigSettings(models.Model):
         """
         return self.env['clouder.model'].now_hour_regular
 
+    @property
+    def settings_id(self):
+        """ It provides the Clouder settings record """
+        return self.env.ref('clouder.clouder_settings')
+
     @api.multi
     @api.constrains('email_sysadmin')
     def _check_email_sysadmin(self):
@@ -96,40 +102,57 @@ class ClouderConfigSettings(models.Model):
         Execute some maintenance on backup containers, and force a save
         on all containers and bases.
         """
-        self = self.with_context(save_comment='Save before upload_save')
 
-        backups = self.env['clouder.container'].search(
-            [('application_id.type_id.name', '=', 'backup')])
-        for backup in backups:
-            backup.execute(['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
-                            '-r'], username="backup")
-            # http://stackoverflow.com/questions/1904860/
-            #     how-to-remove-unreferenced-blobs-from-my-git-repo
-            # https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
-            # https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
-            backup.execute(['git', 'gc', '--prune=now'],
-                           path='/opt/backup/bup', username="backup")
-            backup.execute(['export BUP_DIR=/opt/backup/bup;', 'bup', 'fsck',
-                            '-g'], username="backup")
+        with self._private_env() as env:
+            self = self.with_env(env).with_context(
+                save_comment='Save before upload_save'
+            )
 
-        containers = self.env['clouder.container'].search(
-            [('autosave', '=', True)])
-        for container in containers:
-            container.save_exec()
+            backup_dir = os.path.join(self.BACKUP_DIR, 'bup')
 
-        bases = self.env['clouder.base'].search([('autosave', '=', True)])
-        for base in bases:
-            base.save_exec()
+            backups = self.env['clouder.container'].search(
+                [('application_id.type_id.name', '=', 'backup')])
+            for backup in backups:
+                backup.execute([
+                    'export BUP_DIR="%s";' % backup_dir,
+                    'bup', 'fsck', '-r',
+                ],
+                    username="backup",
+                )
+                # http://stackoverflow.com/questions/1904860/
+                #     how-to-remove-unreferenced-blobs-from-my-git-repo
+                # https://github.com/zoranzaric/bup/tree/tmp/gc/Documentation
+                # https://groups.google.com/forum/#!topic/bup-list/uvPifF_tUVs
+                backup.execute(
+                    ['git', 'gc', '--prune=now'],
+                    backup_dir,
+                    username="backup",
+                )
+                backup.execute([
+                    'export BUP_DIR="%s";' % backup_dir, 'bup', 'fsck', '-g',
+                ],
+                    username="backup",
+                )
 
-        links = self.env['clouder.container.link'].search(
-            [('container_id.application_id.type_id.name', '=', 'backup'),
-             ('name.code', '=', 'backup-upload')])
-        for link in links:
-            link.deploy_exec()
+            domain = [('autosave', '=', True)]
 
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.env.ref('clouder.clouder_settings').end_save_all = now
-        self.env.cr.commit()
+            containers = self.env['clouder.container'].search(domain)
+            for container in containers:
+                container.save_exec()
+
+            bases = self.env['clouder.base'].search(domain)
+            for base in bases:
+                base.save_exec()
+
+            links = self.env['clouder.container.link'].search([
+                ('container_id.application_id.type_id.name', '=', 'backup'),
+                ('name.code', '=', 'backup-upload'),
+            ])
+            for link in links:
+                link.deploy_exec()
+
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.settings_id.end_save_all = now
 
     @api.multi
     def purge_expired_saves(self):
@@ -178,13 +201,17 @@ class ClouderConfigSettings(models.Model):
     def update_containers_exec(self):
         """
         """
-        containers = self.env['clouder.container'].search(
-            [('application_id.update_strategy', '=', 'auto')])
-        containers.update_exec()
 
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.env.ref('clouder.clouder_settings').end_update_containers = now
-        self.env.cr.commit()
+        with self._private_env() as env:
+            self = self.with_env(env)
+
+            containers = self.env['clouder.container'].search([
+                ('application_id.update_strategy', '=', 'auto'),
+            ])
+            containers.update_exec()
+
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.settings_id.end_update_containers = now
 
     @api.multi
     def reset_bases(self):
@@ -195,17 +222,22 @@ class ClouderConfigSettings(models.Model):
         """
         Reset all bases marked for reset.
         """
-        bases = self.env['clouder.base'].search(
-            [('reset_each_day', '=', True)])
-        for base in bases:
-            if base.parent_id:
-                base.reset_base()
-            else:
-                bases.reinstall()
 
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.env.ref('clouder.clouder_settings').end_reset_bases = now
-        self.env.cr.commit()
+        with self._private_env() as env:
+            self = self.with_env(env)
+
+            bases = self.env['clouder.base'].search([
+                ('reset_each_day', '=', True),
+            ])
+
+            for base in bases:
+                if base.parent_id:
+                    base.reset_base()
+                else:
+                    bases.reinstall()
+
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.settings_id.end_reset_bases = now
 
     @api.multi
     def certs_renewal(self):
@@ -216,15 +248,19 @@ class ClouderConfigSettings(models.Model):
         """
         Reset all bases marked for reset.
         """
-        bases = self.env['clouder.base'].search(
-            [('cert_renewal_date', '!=', False),
-             ('cert_renewal_date', '<=', self.now_date)])
-        for base in bases:
-            base.renew_cert()
 
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.env.ref('clouder.clouder_settings').end_certs_renewal = now
-        self.env.cr.commit()
+        with self._private_env() as env:
+            self = self.with_env(env)
+
+            bases = self.env['clouder.base'].search([
+                ('cert_renewal_date', '!=', False),
+                ('cert_renewal_date', '<=', self.now_date),
+            ])
+            for base in bases:
+                base.renew_cert()
+
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            self.settings_id.end_certs_renewal = now
 
     @api.multi
     def cron_daily(self):

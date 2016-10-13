@@ -25,12 +25,15 @@ from openerp import models, fields, api, _
 import re
 from datetime import datetime
 
+from .exceptions import ClouderError
+
 
 class ClouderImageTemplate(models.Model):
     """
     """
 
     _name = 'clouder.image.template'
+    _description = 'Clouder Image Template'
 
     name = fields.Char('Image name', required=True)
     volume_ids = fields.One2many(
@@ -45,6 +48,10 @@ class ClouderImage(models.Model):
     """
 
     _name = 'clouder.image'
+    _description = 'Clouder Image'
+    _sql_constraints = [
+        ('name_uniq', 'unique(name)', 'Image name must be unique!')
+    ]
 
     name = fields.Char('Image name', required=True)
     type_id = fields.Many2one('clouder.application.type', 'Application Type')
@@ -67,10 +74,6 @@ class ClouderImage(models.Model):
         'res.partner', 'Manager',
         default=lambda self: self.env['clouder.model'].user_partner)
 
-    _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Image name must be unique!')
-    ]
-
     @property
     def has_version(self):
         for version in self.version_ids:
@@ -90,21 +93,22 @@ class ClouderImage(models.Model):
                 "You need to specify the image to inherit!",
             )
 
-        dockerfile += \
-            '\nMAINTAINER ' + self.env['clouder.model'].email_sysadmin + '\n'
+        dockerfile += '\nMAINTAINER %s\n' % (
+            self.env['clouder.model'].email_sysadmin,
+        )
 
         dockerfile += self.dockerfile or ''
         volumes = ''
         for volume in self.volume_ids:
             volumes += volume.name + ' '
         if volumes:
-            dockerfile += '\nVOLUME ' + volumes
+            dockerfile += '\nVOLUME %s' % volumes
 
         ports = ''
         for port in self.port_ids:
-            ports += port.localport + ' '
+            ports += '%s ' % port.localport
         if ports:
-            dockerfile += '\nEXPOSE ' + ports
+            dockerfile += '\nEXPOSE %s' % ports
 
         return dockerfile
 
@@ -116,7 +120,8 @@ class ClouderImage(models.Model):
         characters.
         """
         if not re.match(r"^[\w\d_]*$", self.name):
-            self.raise_error(
+            ClouderError(
+                self,
                 "Name can only contains letters, digits and underscore",
             )
 
@@ -135,7 +140,8 @@ class ClouderImage(models.Model):
         """
 
         if not self.registry_id:
-            self.raise_error(
+            ClouderError(
+                self,
                 "You need to specify the registry "
                 "where the version must be stored.",
             )
@@ -186,8 +192,14 @@ class ClouderImageVolume(models.Model):
     """
 
     _name = 'clouder.image.volume'
+    _description = 'Clouder Image Volume'
 
     _inherit = ['clouder.template.one2many']
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(image_id,template_id,name)',
+         'Volume name must be unique per image!'),
+    ]
 
     _template_parent_model = 'clouder.image'
     _template_parent_many2one = 'image_id'
@@ -203,11 +215,6 @@ class ClouderImageVolume(models.Model):
     readonly = fields.Boolean('Readonly?')
     nosave = fields.Boolean('No save?')
 
-    _sql_constraints = [
-        ('name_uniq', 'unique(image_id,template_id,name)',
-         'Volume name must be unique per image!')
-    ]
-
 
 class ClouderImagePort(models.Model):
     """
@@ -217,8 +224,14 @@ class ClouderImagePort(models.Model):
     """
 
     _name = 'clouder.image.port'
+    _description = 'Clouder Image Port'
 
     _inherit = ['clouder.template.one2many']
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(image_id,template_id,name)',
+         'Port name must be unique per image!')
+    ]
 
     _template_parent_model = 'clouder.image'
     _template_parent_many2one = 'image_id'
@@ -236,11 +249,6 @@ class ClouderImagePort(models.Model):
     udp = fields.Boolean('UDP?')
     use_hostport = fields.Boolean('Use hostport?')
 
-    _sql_constraints = [
-        ('name_uniq', 'unique(image_id,template_id,name)',
-         'Port name must be unique per image!')
-    ]
-
 
 class ClouderImageVersion(models.Model):
     """
@@ -249,7 +257,15 @@ class ClouderImageVersion(models.Model):
     """
 
     _name = 'clouder.image.version'
+    _description = 'Clouder Image Version'
     _inherit = ['clouder.model']
+
+    _order = 'create_date desc'
+
+    _sql_constraints = [
+        ('name_uniq', 'unique(image_id,name)',
+         'Version name must be unique per image!'),
+    ]
 
     image_id = fields.Many2one(
         'clouder.image', 'Image', ondelete='cascade', required=True)
@@ -267,7 +283,7 @@ class ClouderImageVersion(models.Model):
         """
         Property returning the full name of the image version.
         """
-        return self.image_id.name + ':' + self.name
+        return '%s:%s' % (self.image_id.name, self.name)
 
     @property
     def registry_address(self):
@@ -275,17 +291,19 @@ class ClouderImageVersion(models.Model):
         Property returning the address of the registry where is hosted
         the image version.
         """
-        return self.registry_id \
-            and self.registry_id.base_ids[0].fulldomainserver_id.ip + \
-            ':' + self.registry_id.ports['http']['hostport']
+        return self.registry_id and '%s:%s' % (
+            self.registry_id.base_ids[0].fulldomainserver_id.ip,
+            self.registry_id.ports['http']['hostport'],
+        )
 
     @property
     def fullpath(self):
         """
         Property returning the full path to get the image version.
         """
-        return self.registry_id and self.registry_address + \
-            '/' + self.fullname
+        return self.registry_id and '%s/%s' % (
+            self.registry_address, self.fullname,
+        )
 
     @property
     def fullpath_localhost(self):
@@ -293,16 +311,9 @@ class ClouderImageVersion(models.Model):
         Property returning the full path to get the image version if the
         registry is on the same server.
         """
-        return self.registry_id and 'localhost:' + \
-            self.registry_id.ports['http']['hostport'] +\
-            '/' + self.fullname
-
-    _order = 'create_date desc'
-
-    _sql_constraints = [
-        ('name_uniq', 'unique(image_id,name)',
-         'Version name must be unique per image!')
-    ]
+        return self.registry_id and 'localhost:%s/%s' % (
+            self.registry_id.ports['http']['hostport'], self.fullname,
+        )
 
     @api.multi
     @api.constrains('name')
@@ -351,9 +362,7 @@ class ClouderImageVersion(models.Model):
         """
         Build a new image and store it to the registry.
         """
-
         self.hook_build()
-
         return
 
     # In case of problems with ssh authentification

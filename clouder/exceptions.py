@@ -19,7 +19,11 @@ class ClouderError(ValidationError):
         :param message: (str) Message to throw and log
         :raises: (ClouderError) Exception after generating appropriate log
         """
-        model_obj.log('Raising error: "%s"' % message)
-        model_obj.log('Version: "%s"' % model_obj.version)
+        try:
+            model_obj.log('Raising error: "%s"' % message)
+            model_obj.log('Version: "%s"' % model_obj.version)
+        except AttributeError:
+            # Model does not _inherit `clouder.model`
+            pass
         self.model_obj = model_obj
         super(ClouderError, self).__init__(message)

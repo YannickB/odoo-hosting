@@ -20,10 +20,11 @@
 #
 ##############################################################################
 
+from datetime import datetime
+import os.path
+import re
 
 from openerp import models, fields, api
-from datetime import datetime
-import re
 
 from . import model
 
@@ -154,6 +155,10 @@ class ClouderApplication(models.Model):
     """
 
     _name = 'clouder.application'
+    _sql_constraints = [
+        ('name_uniq', 'unique(name)', 'Name must be unique!'),
+    ]
+    _order = 'sequence, code'
 
     name = fields.Char('Name', required=True)
     code = fields.Char('Code', required=True)
@@ -227,8 +232,10 @@ class ClouderApplication(models.Model):
         Property returning the full path to the archive
         in the archive container
         """
-        return self.env['clouder.model'].archive_path + '/' \
-            + self.type_id.name + '-' + self.code
+        return os.path.join(
+            self.env['clouder.model'].archive_path,
+            self.type_id.name, self.code,
+        )
 
     @property
     def full_hostpath(self):
@@ -236,8 +243,10 @@ class ClouderApplication(models.Model):
         Property returning the full path to the archive
         in the hosting system.
         """
-        return self.env['clouder.model'].services_hostpath + '/' \
-            + self.type_id.name + '-' + self.code
+        return os.path.join(
+            self.env['clouder.model'].services_hostpath,
+            self.type_id.name, self.code,
+        )
 
     @property
     def full_localpath(self):
@@ -245,8 +254,10 @@ class ClouderApplication(models.Model):
         Property returning the full path to the instance
         in the destination container
         """
-        return self.type_id.localpath and self.type_id.localpath + '/' \
-            + self.type_id.name + '-' + self.code or ''
+        return os.path.join(
+            self.type_id.localpath and self.type_id.localpath,
+            self.type_id.name, self.code or '',
+        )
 
     @property
     def computed_version(self):
@@ -254,8 +265,10 @@ class ClouderApplication(models.Model):
         Property returning the name of the application version
         with the current date.
         """
-        return self.current_version + '.' \
-            + datetime.now().strftime('%Y%m%d.%H%M%S')
+        return '%s.%s' % (
+            self.current_version,
+            datetime.now().strftime('%Y%m%d.%H%M%S'),
+        )
 
     @property
     def options(self):
@@ -285,12 +298,6 @@ class ClouderApplication(models.Model):
         for link in self.link_ids:
             links[link.name.code] = link
         return links
-
-    _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Name must be unique!'),
-    ]
-
-    _order = 'sequence, code'
 
     @api.multi
     @api.constrains('code', 'admin_name', 'admin_email')

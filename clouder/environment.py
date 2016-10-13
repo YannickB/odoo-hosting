@@ -22,9 +22,11 @@
 
 from openerp import models, fields, api
 
+import logging
 import re
 
-import logging
+from .exceptions import ClouderError
+
 _logger = logging.getLogger(__name__)
 
 
@@ -35,20 +37,20 @@ class ClouderEnvironment(models.Model):
     """
 
     _name = 'clouder.environment'
+    _description = 'Clouder Environment'
+    _sql_constraints = [
+        ('prefix_uniq', 'unique(prefix)',
+         'Prefix must be unique!'),
+    ]
 
     name = fields.Char('Name', required=True)
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)
-    prefix = fields.Char('Prefix', required=False)
+    prefix = fields.Char('Prefix', required=True)
     user_ids = fields.Many2many(
         'res.users', 'clouder_environment_user_rel',
         'environment_id', 'user_id', 'Users')
     container_ids = fields.One2many(
         'clouder.container', 'environment_id', 'Containers')
-
-    _sql_constraints = [
-        ('prefix_uniq', 'unique(prefix)',
-         'Prefix must be unique!'),
-    ]
 
     @api.multi
     @api.constrains('prefix')
@@ -60,11 +62,13 @@ class ClouderEnvironment(models.Model):
         when containers are linked to the environment
         """
         if self.prefix and not re.match(r"^[\w]*$", self.prefix):
-            self.raise_error(
+            raise ClouderError(
+                self,
                 "Prefix can only contains letters",
             )
         if self.container_ids and not self.prefix:
-            self.raise_error(
+            raise ClouderError(
+                self,
                 "You cannot have an empty prefix when "
                 "containers are linked",
             )
@@ -75,7 +79,8 @@ class ClouderEnvironment(models.Model):
         Removes the possibility to change the prefix if containers are linked
         """
         if 'prefix' in vals and self.container_ids:
-            self.raise_error(
+            raise ClouderError(
+                self,
                 "You cannot have an empty prefix "
                 "when containers are linked",
             )

@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder',
-    'version': '10.0.10.0.0',
+    'version': '9.0.2.0.0',
     'category': 'Clouder',
     'depends': ['base'],
     'author': 'Yannick Buron (Clouder), LasLabs',
