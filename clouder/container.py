@@ -20,8 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, _
-from openerp.exceptions import except_orm
+from openerp import models, fields, api
 from openerp import modules
 
 import socket
@@ -57,9 +56,9 @@ class ClouderServer(models.Model):
         Generate a key on the filesystem.
         """
         if not self.env.ref('clouder.clouder_settings').email_sysadmin:
-            raise except_orm(
-                _('Data error!'),
-                _("You need to specify the sysadmin email in configuration"))
+            self.raise_error(
+                "You need to specify the sysadmin email in configuration",
+            )
 
         self.execute_local(['mkdir', '/tmp/key_' + str(self.env.uid)])
         self.execute_local([
@@ -218,13 +217,13 @@ class ClouderServer(models.Model):
         characters.
         """
         if not re.match(r"^[\w\d-]*$", self.name):
-            raise except_orm(
-                _('Data error!'),
-                _("Name can only contains letters, digits, -"))
+            self.raise_error(
+                "Name can only contains letters, digits, -",
+            )
         if not re.match(r"^[\d:.]*$", self.ip):
-            raise except_orm(
-                _('Data error!'),
-                _("IP can only contains digits, dots and :"))
+            self.raise_error(
+                "IP can only contains digits, dots and :",
+            )
 
     @api.multi
     def deploy_ssh_config(self):
@@ -706,9 +705,9 @@ class ClouderContainer(models.Model):
         Check that the environment linked to the container have a prefix.
         """
         if not self.environment_id.prefix:
-            raise except_orm(
-                _('Data error!'),
-                _("The environment need to have a prefix"))
+            self.raise_error(
+                "The environment need to have a prefix",
+            )
 
     @api.multi
     @api.constrains('suffix')
@@ -718,9 +717,9 @@ class ClouderContainer(models.Model):
         characters.
         """
         if not re.match(r"^[\w\d-]*$", self.suffix):
-            raise except_orm(
-                _('Data error!'),
-                _("Suffix can only contains letters, digits and dash"))
+            self.raise_error(
+                "Suffix can only contains letters, digits and dash",
+            )
 
     @api.multi
     @api.constrains('application_id')
@@ -730,9 +729,9 @@ class ClouderContainer(models.Model):
         """
         if not self.backup_ids and \
                 not self.application_id.check_tags(['no-backup']):
-            raise except_orm(
-                _('Data error!'),
-                _("You need to create at least one backup container."))
+            self.raise_error(
+                "You need to create at least one backup container.",
+            )
 
     @api.multi
     @api.constrains('image_id', 'image_version_id')
@@ -743,10 +742,10 @@ class ClouderContainer(models.Model):
         """
         if self.image_version_id \
                 and self.image_id.id != self.image_version_id.image_id.id:
-            raise except_orm(
-                _('Data error!'),
-                _("The image of image version must be "
-                  "the same than the image of container."))
+            self.raise_error(
+                "The image of image version must be "
+                "the same than the image of container.",
+            )
 
     # @api.one
     # @api.constrains('image_id', 'child_ids')
@@ -754,7 +753,7 @@ class ClouderContainer(models.Model):
     #     """
     #     """
     #     if not self.image_id and not self.child_ids:
-    #         raise self.raise_error('You need to specify the image!')
+    #         self.raise_error('You need to specify the image!')
 
     @api.multi
     def onchange_application_id_vals(self, vals):
@@ -772,10 +771,10 @@ class ClouderContainer(models.Model):
                 if servers:
                     vals['server_id'] = servers[0].id
                 else:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("You need to create a server before "
-                          "create any container."))
+                    self.raise_error(
+                        "You need to create a server before "
+                        "creating a container.",
+                    )
 
             options = []
             # Getting sources for new options
@@ -1198,14 +1197,15 @@ class ClouderContainer(models.Model):
                             port['hostport'] = nextport
                         nextport += 1
                 if not port['hostport']:
-                    raise except_orm(
-                        _('Data error!'),
-                        _("We were not able to assign an hostport to the "
-                          "localport " + port['localport'] + ".\n"
-                          "If you don't want to assign one manually, "
-                          "make sure you fill the port range in the server "
-                          "configuration, and that all ports in that range "
-                          "are not already used."))
+                    self.raise_error(
+                        "We were not able to assign an hostport to the "
+                        "localport %s .\n"
+                        "If you don't want to assign one manually, "
+                        "make sure you fill the port range in the server "
+                        "configuration, and that all ports in that range "
+                        "are not already used.",
+                        port['localport'],
+                    )
                 if port['expose'] != 'none':
                     localport = port['localport']
                     if port['use_hostport']:
@@ -1420,10 +1420,10 @@ class ClouderContainer(models.Model):
         # if flag:
         #     self.reinstall()
         if 'suffix' in vals:
-            raise except_orm(
-                _('Data error!'),
-                _("You cannot modify the suffix "
-                  "after the container was created."))
+            self.raise_error(
+                "You cannot modify the suffix "
+                "after the container was created."
+            )
 
         if 'autosave' in vals and self.autosave != vals['autosave']:
             self.deploy_links()
@@ -1822,11 +1822,11 @@ class ClouderContainerOption(models.Model):
         if this option is required.
         """
         if self.name.required and not self.value:
-            raise except_orm(
-                _('Data error!'),
-                _("You need to specify a value for the option " +
-                  self.name.name + " for the container " +
-                  self.container_id.name + "."))
+            self.raise_error(
+                'You need to specify a value for the option '
+                '"%s" for the container "%s".',
+                self.name.name, self.container_id.name,
+            )
 
 
 class ClouderContainerLink(models.Model):
@@ -1858,11 +1858,11 @@ class ClouderContainerLink(models.Model):
         """
         if self.required and not self.target \
                 and not self.container_id.child_ids:
-            raise except_orm(
-                _('Data error!'),
-                _("You need to specify a link to " +
-                  self.name.name + " for the container " +
-                  self.container_id.name))
+            self.raise_error(
+                'You need to specify a link to '
+                '"%s" for the container "%s".',
+                self.name.name, self.container_id.name,
+            )
 
     @api.multi
     def deploy_link(self):
@@ -1954,9 +1954,9 @@ class ClouderContainerChild(models.Model):
     @api.constrains('child_id')
     def _check_child_id(self):
         if self.child_id and not self.child_id.parent_id == self:
-            raise except_orm(
-                _('Data error!'),
-                _("The child container is not correctly linked to the parent"))
+            self.raise_error(
+                "The child container is not correctly linked to the parent",
+            )
 
     @api.multi
     def create_child(self):
@@ -2019,10 +2019,9 @@ class ClouderContainerMetadata(models.Model):
         """
         def _missing_function():
             # If the function is missing, raise an exception
-            raise except_orm(
-                _('Container Metadata error!'),
-                _("Invalid function name {0} for clouder.container".
-                  format(self.name.func_name))
+            self.raise_error(
+                'Invalid function name "%s" for clouder.container',
+                self.name.func_name,
             )
 
         # Computing the function if needed
@@ -2054,10 +2053,9 @@ class ClouderContainerMetadata(models.Model):
         Checks that the metadata is intended for containers
         """
         if self.name.clouder_type != 'container':
-            raise except_orm(
-                _('Container Metadata error!'),
-                _("This metadata is intended for {0} only.".format(
-                    self.name.clouder_type))
+            self.raise_error(
+                "This metadata is intended for %s only.",
+                self.name.clouder_type,
             )
 
     @api.multi
@@ -2073,8 +2071,7 @@ class ClouderContainerMetadata(models.Model):
             self.value
         except ValueError:
             # User display
-            raise except_orm(
-                _('Container Metadata error!'),
-                _("Invalid value for type {0}: \n\t'{1}'\n".format(
-                    self.name.value_type, self.value_data))
+            self.raise_error(
+                'Invalid value for type "%s": \n\t"%s"\n',
+                self.name.value_type, self.value_data,
             )
