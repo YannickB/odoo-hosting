@@ -138,32 +138,11 @@ class ClouderServer(models.Model):
         """
         for server in self:
             name = server.fulldomain
-            self.execute_local([modules.get_module_path('clouder') +
-                                '/res/sed.sh', name,
-                                self.home_directory + '/.ssh/config'])
-
             self.execute_local(
                 ['mkdir', '-p', server.home_directory + '/.ssh/keys'])
             key_file = server.home_directory + '/.ssh/keys/' + name
             self.execute_write_file(key_file, server.private_key, operator='w')
             self.execute_local(['chmod', '700', key_file])
-            self.execute_write_file(self.home_directory +
-                                    '/.ssh/config', 'Host ' + name)
-            self.execute_write_file(
-                server.home_directory +
-                '/.ssh/config', '\n  HostName ' + server.ip)
-            self.execute_write_file(server.home_directory +
-                                    '/.ssh/config', '\n  Port ' +
-                                    str(server.ssh_port))
-            self.execute_write_file(
-                server.home_directory + '/.ssh/config',
-                '\n  User ' + (server.login or 'root'))
-            self.execute_write_file(
-                server.home_directory + '/.ssh/config',
-                '\n  IdentityFile ~/.ssh/keys/' + name)
-            self.execute_write_file(
-                server.home_directory + '/.ssh/config',
-                '\n#END ' + name + '\n')
 
     @api.multi
     def _inverse_public_key(self):
@@ -184,7 +163,7 @@ class ClouderServer(models.Model):
     environment_id = fields.Many2one('clouder.environment', 'Environment',
                                      required=True)
     login = fields.Char('Login')
-    ssh_port = fields.Integer('SSH port')
+    ssh_port = fields.Integer('SSH port', default='22')
 
     private_key = fields.Text(
         'SSH Private Key', default=_default_private_key,
@@ -248,6 +227,37 @@ class ClouderServer(models.Model):
                 _("IP can only contains digits, dots and :"))
 
     @api.multi
+    def deploy_ssh_config(self):
+        for server in self:
+            name = server.fulldomain
+            self.execute_local([modules.get_module_path('clouder') +
+                                '/res/sed.sh', name,
+                                self.home_directory + '/.ssh/config'])
+            self.execute_write_file(self.home_directory +
+                                    '/.ssh/config', 'Host ' + name)
+            self.execute_write_file(
+                server.home_directory +
+                '/.ssh/config', '\n  HostName ' + server.ip)
+            self.execute_write_file(server.home_directory +
+                                    '/.ssh/config', '\n  Port ' +
+                                    str(server.ssh_port))
+            self.execute_write_file(
+                server.home_directory + '/.ssh/config',
+                '\n  User ' + (server.login or 'root'))
+            self.execute_write_file(
+                server.home_directory + '/.ssh/config',
+                '\n  IdentityFile ~/.ssh/keys/' + name)
+            self.execute_write_file(
+                server.home_directory + '/.ssh/config',
+                '\n#END ' + name + '\n')
+
+    @api.multi
+    def write(self, vals):
+        res = super(ClouderServer, self).write(vals)
+        self.deploy_ssh_config()
+        return res
+
+    @api.multi
     def do(self, name, action, where=False):
         if action == 'deploy_frame':
             self = self.with_context(no_enqueue=True)
@@ -295,6 +305,7 @@ class ClouderServer(models.Model):
     def deploy(self):
         """
         """
+        self.deploy_ssh_config()
         super(ClouderServer, self).deploy()
 
     @api.multi
@@ -1424,14 +1435,16 @@ class ClouderContainer(models.Model):
         Override unlink method to remove all services
         and make a save before deleting a container.
         """
-        self.base_ids and self.base_ids.unlink()
-        self.env['clouder.save'].search([('backup_id', '=', self.id)]).unlink()
-        self.env['clouder.image.version'].search(
-            [('registry_id', '=', self.id)]).unlink()
-        self = self.with_context(save_comment='Before unlink')
-        save = self.save_exec(no_enqueue=True)
-        if self.parent_id:
-            self.parent_id.save_id = save
+        for container in self:
+            container.base_ids and container.base_ids.unlink()
+            self.env['clouder.save'].search(
+                [('backup_id', '=', container.id)]).unlink()
+            self.env['clouder.image.version'].search(
+                [('registry_id', '=', container.id)]).unlink()
+            self = self.with_context(save_comment='Before unlink')
+            save = container.save_exec(no_enqueue=True)
+            if container.parent_id:
+                container.parent_id.save_id = save
         return super(ClouderContainer, self).unlink()
 
     @api.multi

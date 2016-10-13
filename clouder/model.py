@@ -420,14 +420,15 @@ class ClouderModel(models.AbstractModel):
         """
         Override the default unlink function to create log and call purge hook.
         """
-        if self._autodeploy:
-            try:
-                self.purge()
-            except:
-                pass
+        for rec in self:
+            if self._autodeploy:
+                try:
+                    rec.purge()
+                except:
+                    pass
         res = super(ClouderModel, self).unlink()
         self.env['clouder.job'].search([
-            ('res_id', '=', self.id),
+            ('res_id', 'in', self.ids),
             ('model_name', '=', self._name)]).unlink()
         return res
 
