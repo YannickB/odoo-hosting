@@ -1437,7 +1437,8 @@ class ClouderContainer(models.Model):
         """
         for container in self:
             container.base_ids and container.base_ids.unlink()
-            self.env['clouder.save'].search([('backup_id', '=', container.id)]).unlink()
+            self.env['clouder.save'].search(
+                [('backup_id', '=', container.id)]).unlink()
             self.env['clouder.image.version'].search(
                 [('registry_id', '=', container.id)]).unlink()
             self = self.with_context(save_comment='Before unlink')

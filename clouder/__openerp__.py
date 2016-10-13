@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder',
-    'version': '1.0.0.0.0',
+    'version': '9.0.0.0.0',
     'category': 'Clouder',
     'depends': ['base', 'connector'],
     'author': 'Yannick Buron (Clouder)',
