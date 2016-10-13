@@ -86,7 +86,7 @@ class ClouderInvoicingPricegridLine(models.Model):
             )
 
         # Update application_id since the links may have changed
-        self.application_id = self._get_application_id()[0]
+        self.application_id = self._compute_application_id()[0]
 
         if self.application_id.id != \
                 self.application_metadata.application_id.id:
