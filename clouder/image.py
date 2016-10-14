@@ -22,7 +22,6 @@
 
 
 from openerp import models, fields, api, _
-from openerp.exceptions import except_orm
 import re
 from datetime import datetime
 
@@ -87,8 +86,9 @@ class ClouderImage(models.Model):
         elif self.parent_from:
             dockerfile += self.parent_from
         else:
-            raise except_orm(_('Data error!'),
-                             _("You need to specify the image to inherit!"))
+            self.raise_error(
+                "You need to specify the image to inherit!",
+            )
 
         dockerfile += \
             '\nMAINTAINER ' + self.env['clouder.model'].email_sysadmin + '\n'
@@ -116,8 +116,9 @@ class ClouderImage(models.Model):
         characters.
         """
         if not re.match(r"^[\w\d_]*$", self.name):
-            raise except_orm(_('Data error!'), _(
-                "Name can only contains letters, digits and underscore"))
+            self.raise_error(
+                "Name can only contains letters, digits and underscore",
+            )
 
     @api.multi
     def build_image(
@@ -134,10 +135,10 @@ class ClouderImage(models.Model):
         """
 
         if not self.registry_id:
-            raise except_orm(
-                _('Date error!'),
-                _("You need to specify the registry "
-                  "where the version must be stored."))
+            self.raise_error(
+                "You need to specify the registry "
+                "where the version must be stored.",
+            )
         now = datetime.now()
         version = self.current_version + '.' + now.strftime('%Y%m%d.%H%M%S')
         self.env['clouder.image.version'].create({
@@ -311,9 +312,10 @@ class ClouderImageVersion(models.Model):
         characters.
         """
         if not re.match(r"^[\w\d_.]*$", self.name):
-            raise except_orm(_('Data error!'), _(
+            self.raise_error(
                 "Image version can only contains letters, "
-                "digits and underscore and dot"))
+                "digits and underscore and dot.",
+            )
 
     @api.multi
     def unlink(self):
@@ -322,15 +324,14 @@ class ClouderImageVersion(models.Model):
         some containers are linked to it.
         """
         if self.container_ids:
-            raise except_orm(
-                _('Inherit error!'),
+            self.raise_error(
                 _("A container is linked to this image version, "
                   "you can't delete it!"))
         if self.child_ids:
-            raise except_orm(
-                _('Inherit error!'),
-                _("A child is linked to this image version, "
-                  "you can't delete it!"))
+            self.raise_error(
+                "A child is linked to this image version, "
+                "you can't delete it!",
+            )
         return super(ClouderImageVersion, self).unlink()
 
     @api.multi

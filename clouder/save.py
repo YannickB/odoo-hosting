@@ -21,8 +21,7 @@
 ##############################################################################
 
 
-from openerp import models, fields, api, _
-from openerp.exceptions import except_orm
+from openerp import models, fields, api
 
 from datetime import datetime
 import ast
@@ -441,41 +440,41 @@ class ClouderSave(models.Model):
         environments = environment_obj.search([
             ('prefix', '=', self.computed_restore_to_environment)])
         if not environments:
-                raise except_orm(
-                    _('Error!'),
-                    _("Couldn't find environment " +
-                      self.computed_restore_to_environment +
-                      ", aborting restoration."))
+                self.raise_error(
+                    'Could not find environment "%s". Aborting restoration.',
+                    self.computed_restore_to_environment,
+                )
         apps = application_obj.search([('code', '=', self.container_app)])
         if not apps:
-            raise except_orm(
-                _('Error!'),
-                _("Couldn't find application " + self.container_app +
-                  ", aborting restoration."))
+            self.raise_error(
+                'Could not find application "%s". Aborting restoration.',
+                self.container_app,
+            )
 
         if self.container_restore_to_suffix or not self.container_id:
 
             imgs = image_obj.search([('name', '=', self.container_img)])
             if not imgs:
-                raise except_orm(
-                    _('Error!'),
-                    _("Couldn't find image " + self.container_img +
-                      ", aborting restoration."))
+                self.raise_error(
+                    'Could not find the image "%s". Aborting restoration.',
+                    self.container_img,
+                )
 
             img_versions = image_version_obj.search(
                 [('name', '=', self.container_img_version)])
             # upgrade = True
             if not img_versions:
                 self.log(
-                    "Warning, couldn't find the image version, using latest")
+                    "Warning, could not find the image version, using latest")
                 # We do not want to force the upgrade if we had to use latest
                 # upgrade = False
                 versions = imgs[0].version_ids
                 if not versions:
-                    raise except_orm(
-                        _('Error!'),
-                        _("Couldn't find versions for image " +
-                          self.container_img + ", aborting restoration."))
+                    self.raise_error(
+                        'Could not find versions for image "%s". '
+                        'Aborting restoration.',
+                        self.container_img,
+                    )
                 img_versions = [versions[0]]
 
             containers = container_obj.search([
@@ -492,11 +491,10 @@ class ClouderSave(models.Model):
                 servers = server_obj.search([
                     ('name', '=', self.computed_container_restore_to_server)])
                 if not servers:
-                    raise except_orm(
-                        _('Error!'),
-                        _("Couldn't find server " +
-                          self.computed_container_restore_to_server +
-                          ", aborting restoration."))
+                    self.raise_error(
+                        'Could not find server "%s". Aborting restoration.',
+                        self.computed_container_restore_to_server,
+                    )
 
                 ports = []
                 for port, port_vals \
@@ -585,11 +583,11 @@ class ClouderSave(models.Model):
                     domains = domain_obj.search(
                         [('name', '=', self.computed_base_restore_to_domain)])
                     if not domains:
-                        raise except_orm(
-                            _('Error!'),
-                            _("Couldn't find domain " +
-                              self.computed_base_restore_to_domain +
-                              ", aborting restoration."))
+                        self.raise_error(
+                            'Could not find domain "%s". '
+                            'Aborting restoration.',
+                            self.computed_base_restore_to_domain,
+                        )
                     options = []
                     for option, option_vals in ast.literal_eval(
                             self.base_options).iteritems():
