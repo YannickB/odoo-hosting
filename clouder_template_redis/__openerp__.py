@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder Template Redis',
-    'version': '1.0.0.0.0',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
     'depends': [
         'clouder_template_bind',
@@ -31,7 +31,7 @@
         'clouder_template_proxy'
     ],
     'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
+    'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': ['template.xml'],

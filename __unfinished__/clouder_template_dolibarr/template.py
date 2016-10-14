@@ -132,7 +132,8 @@ class ClouderBase(models.Model):
 #             headers["Accept"] = \
 #                 "text/html,application/xhtml+xml," \
 #                 "application/xml;q=0.9,*/*;q=0.8"
-#             headers["Accept-Language"] = "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3"
+#             headers["Accept-Language"] = "
+# fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3"
 #             headers["Connection"] = "keep-alive"
 #             headers["Content-Type"] = "application/x-www-form-urlencoded"
 #
@@ -148,7 +149,8 @@ class ClouderBase(models.Model):
 #
 #             """
 #             pageParser = BeautifulSoup(mautic.text, 'html.parser')
-#             form = pageParser.find_all(id=re.compile("install_doctrine_step_"))
+#             form =
+# pageParser.find_all(id=re.compile("install_doctrine_step_"))
 #
 #             arr = get_form(form)
 #
@@ -162,7 +164,8 @@ class ClouderBase(models.Model):
 #                 if arr[i] == "None":
 #                     arr[i] = ""
 #
-#             #mautic = requests.post(baseUrl + ":" + port + installerUrl + "1",
+#             #mautic = requests.post(baseUrl
+# + ":" + port + installerUrl + "1",
 #             data=arr, headers=headers)
 #
 #             # mautic = requests.post(baseUrl +
@@ -180,7 +183,8 @@ class ClouderBase(models.Model):
 #             arr["install_user_step[firstname]"] = self.admin_name
 #             arr["install_user_step[lastname]"] = self.admin_name
 #             arr["install_user_step[email]"] = self.admin_email
-#             arr["install_user_step[password]"] = self.container_id.db_password
+#             arr["install_user_step[password]"] =
+# self.container_id.db_password
 #             arr["install_user_step[username]"] = "admin"
 #
 #             #logging.info("usernames will be " + self.admin_name + " and root

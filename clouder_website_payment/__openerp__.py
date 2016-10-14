@@ -22,11 +22,11 @@
 
 {
     'name': 'Clouder Website Payment',
-    'version': '1.0.0.0.0',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
     'depends': ['clouder_website', 'payment', 'clouder_invoicing'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',
-    'license': 'Other OSI approved licence',
+    'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': [
