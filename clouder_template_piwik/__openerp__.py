@@ -29,7 +29,7 @@
                 'clouder_template_proxy',
                 'clouder_template_shinken'],
     'author': 'Yannick Buron (Clouder)',
-    'license': 'Other OSI approved licence',
+    'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': ['template.xml'],

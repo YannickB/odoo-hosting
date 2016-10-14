@@ -24,9 +24,9 @@
     'name': 'Clouder',
     'version': '9.0.0.0.0',
     'category': 'Clouder',
-    'depends': ['base', 'connector'],
+    'depends': ['base'],
     'author': 'Yannick Buron (Clouder), LasLabs',
-    'license': 'Other OSI approved licence',
+    'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': [

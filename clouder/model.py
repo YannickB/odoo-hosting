@@ -20,7 +20,6 @@
 #
 ##############################################################################
 
-import copy_reg
 import errno
 import logging
 import os.path
@@ -36,9 +35,6 @@ from datetime import datetime
 from os.path import expanduser
 
 from openerp import models, fields, api, _, tools, release
-from openerp.addons.connector.session import ConnectorSession
-from openerp.addons.connector.queue.job import\
-    job, whitelist_unpickle_global
 
 from openerp.addons.clouder.exceptions import ClouderError
 
@@ -50,44 +46,6 @@ except ImportError:
     _logger.debug('Cannot `import paramiko`.')
 
 ssh_connections = {}
-
-
-@job
-def connector_enqueue(
-        session, model_name, record_id, func_name,
-        action, job_id, context, *args, **kargs):
-
-    context = context.copy()
-    context.update(session.env.context.copy())
-    with session.change_context(context):
-        record = session.env[model_name].browse(record_id)
-
-    job = record.env['queue.job'].search([
-        ('uuid', '=', record.env.context['job_uuid'])])
-    clouder_jobs = record.env['clouder.job'].search([('job_id', '=', job.id)])
-    clouder_jobs.write({'log': False})
-    job.env.cr.commit()
-
-    priority = record.control_priority()
-    if priority:
-        job.write({'priority': priority + 1})
-        job.env.cr.commit()
-        session.env[model_name].raise_error(
-            "Waiting for another job to finish",
-        )
-
-    res = getattr(record, func_name)(action, job_id, *args, **kargs)
-    # if 'clouder_unlink' in record.env.context:
-    #     res = super(ClouderModel, record).unlink()
-    record.log('===== END JOB ' + session.env.context['job_uuid'] + ' =====')
-    job.search([('state', '=', 'failed')]).write({'state': 'pending'})
-    return res
-
-# Add function in connector whitelist
-whitelist_unpickle_global(copy_reg._reconstructor)
-whitelist_unpickle_global(tools.misc.frozendict)
-whitelist_unpickle_global(dict)
-whitelist_unpickle_global(connector_enqueue)
 
 
 class ClouderJob(models.Model):
@@ -107,14 +65,6 @@ class ClouderJob(models.Model):
     create_uid = fields.Many2one('res.users', 'By')
     start_date = fields.Datetime('Started at')
     end_date = fields.Datetime('Ended at')
-    job_id = fields.Many2one('queue.job', 'Connector Job')
-    job_state = fields.Selection([
-        ('pending', 'Pending'),
-        ('enqueud', 'Enqueued'),
-        ('started', 'Started'),
-        ('done', 'Done'),
-        ('failed', 'Failed')], 'Job State',
-        related='job_id.state', readonly=True)
     state = fields.Selection([
         ('started', 'Started'), ('done', 'Done'), ('failed', 'Failed')],
         'State', readonly=True, required=True, select=True)
@@ -311,15 +261,7 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def enqueue(self, name, action, clouder_job_id):
-        session = ConnectorSession(self.env.cr, self.env.uid,
-                                   context=self.env.context)
-        job_uuid = connector_enqueue.delay(
-            session, self._name, self.id, 'do_exec', action, clouder_job_id,
-            self.env.context, description=name,
-            max_retries=0)
-        job_id = self.env['queue.job'].search([('uuid', '=', job_uuid)])[0]
-        clouder_job = self.env['clouder.job'].browse(clouder_job_id)
-        clouder_job.write({'job_id': job_id.id})
+        return
 
     @api.multi
     def do_exec(self, action, job_id):
