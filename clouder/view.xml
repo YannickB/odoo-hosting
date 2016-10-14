@@ -196,6 +196,7 @@
                         <field name="volumes_from_ids" widget="many2many_tags"/>
                         <field name="public"/>
                         <field name="from_id" attrs="{'invisible': [('from_id','=', False)]}"/>
+                        <field name="dummy"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -695,6 +696,7 @@
                         <field name="required"/>
                         <field name="update_strategy"/>
                         <field name="update_bases"/>
+                        <field name="dummy"/>
                     </group>
                     <notebook>
                         <page string="General">

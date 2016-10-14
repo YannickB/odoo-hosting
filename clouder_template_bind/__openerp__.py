@@ -29,7 +29,10 @@
     'license': 'Other OSI approved licence',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
-    'data': ['template.xml'],
+    'data': [
+        'bind.xml',
+        'route53.xml'
+    ],
     'installable': True,
     'application': True,
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+
+        <record id="application_type_route53" model="clouder.application.type">
+            <field name="name">route53</field>
+            <field name="system_user">route53</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_dns')])]"/>
+        </record>
+        <record id="application_type_route53_option_credentials" model="clouder.application.type.option">
+            <field name="application_type_id" ref="application_type_route53"/>
+            <field name="name">credentials</field>
+            <field name="type">container</field>
+            <field name="auto" eval="True"/>
+        </record>
+
+        <record id="application_route53" model="clouder.application">
+            <field name="name">Route53</field>
+            <field name="code">route53</field>
+            <field name="type_id" ref="application_type_route53"/>
+            <field name="dummy" eval="True"/>
+        </record>
+
+    </data>
+</openerp>

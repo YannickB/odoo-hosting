@@ -530,6 +530,7 @@ class ClouderContainer(models.Model):
         'clouder.container', 'clouder_container_volumes_from_rel',
         'container_id', 'from_id', 'Volumes from')
     public = fields.Boolean('Public?')
+    dummy = fields.Boolean('Dummy?')
 
     @property
     def fullname(self):
@@ -1064,6 +1065,7 @@ class ClouderContainer(models.Model):
                         vals['backup_ids'] = [(6, 0, [backups[0].id])]
 
             vals['autosave'] = application.autosave
+            vals['dummy'] = application.dummy
 
             vals['time_between_save'] = \
                 application.container_time_between_save
@@ -1617,7 +1619,7 @@ class ClouderContainer(models.Model):
             for child in self.child_ids:
                 child.create_child_exec()
 
-        else:
+        elif not self.dummy:
             self.hook_deploy()
 
             time.sleep(3)
