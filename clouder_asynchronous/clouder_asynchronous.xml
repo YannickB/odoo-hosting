@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="view_clouder_job_form_asynchronous" model="ir.ui.view">
+            <field name="name">clouder.job.form.asynchronous</field>
+            <field name="model">clouder.job</field>
+            <field name="inherit_id" ref="clouder.view_clouder_job_form"/>
+            <field name="arch" type="xml">
+                <field name="start_date" position="after">
+                    <field name='job_id'/>
+                </field>
+                <field name="end_date" position="after">
+                    <field name='job_state'/>
+                </field>
+            </field>
+        </record>
+        <record id="view_clouder_job_tree" model="ir.ui.view">
+            <field name="name">clouder.job.tree</field>
+            <field name="model">clouder.job</field>
+            <field name="inherit_id" ref="clouder.view_clouder_job_tree"/>
+            <field name="arch" type="xml">
+                <field name="end_date">
+                    <field name="job_id"/>
+                    <field name="job_state"/>
+                </field>
+            </field>
+        </record>
+
+    </data>
+</openerp>

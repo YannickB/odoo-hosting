@@ -103,7 +103,8 @@ class ClouderContainer(models.Model):
                     domain_dc += ','
                 domain_dc += 'dc=' + dc
 
-            self.execute(ssh, ['sed', '-i', r'"s/\$DOMAIN/' + domain_dc + '/g"',
+            self.execute(ssh, ['sed', '-i',
+                               r'"s/\$DOMAIN/' + domain_dc + '/g"',
                                config_file])
             self.execute(ssh, ['sed', '-i',
                                r'"s/\$PASSWORD/' +
