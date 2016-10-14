@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder Website Payment',
-    'version': '1.0.0.0.0',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
     'depends': ['clouder_website', 'payment', 'clouder_invoicing'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',

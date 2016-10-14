@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder Runner OpenShift',
-    'version': '1.0.0.0.0',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
     'depends': ['clouder'],
     'author': 'Yannick Buron (Clouder)',

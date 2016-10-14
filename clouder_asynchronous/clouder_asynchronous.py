@@ -20,15 +20,15 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, release, _, tools
+from openerp import models, fields, api, tools
 import logging
 import copy_reg
-
-_logger = logging.getLogger(__name__)
 
 from openerp.addons.connector.session import ConnectorSession
 from openerp.addons.connector.queue.job import\
     job, whitelist_unpickle_global
+
+_logger = logging.getLogger(__name__)
 
 
 @job

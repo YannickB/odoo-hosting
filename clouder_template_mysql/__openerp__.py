@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder Template MySQL',
-    'version': '1.0.0.0.0',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
     'depends': ['clouder',
                 'clouder_template_shinken'],

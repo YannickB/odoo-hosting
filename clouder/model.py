@@ -34,7 +34,7 @@ import time
 from datetime import datetime
 from os.path import expanduser
 
-from openerp import models, fields, api, _, tools, release
+from openerp import models, fields, api, _, release
 
 from openerp.addons.clouder.exceptions import ClouderError
 
