@@ -36,7 +36,7 @@ class ClouderDomain(models.Model):
 
         """
         if self.dns_id and \
-                        self.dns_id.application_id.type_id.name == 'route53':
+                self.dns_id.application_id.type_id.name == 'route53':
 
             return
             # TODO configure root domain
@@ -49,7 +49,7 @@ class ClouderDomain(models.Model):
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
             return
             # TODO purge root domain
-        
+
 
 class ClouderBaseLink(models.Model):
     """
