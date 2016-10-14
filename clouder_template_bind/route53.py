@@ -22,10 +22,6 @@
 
 
 from openerp import models, api
-from openerp import modules
-from datetime import datetime
-
-import socket
 
 
 class ClouderDomain(models.Model):
@@ -39,7 +35,10 @@ class ClouderDomain(models.Model):
         """
 
         """
-        #if self.dns_id and self.dns_id.application_id.type_id.name == 'route53':
+        if self.dns_id and \
+                        self.dns_id.application_id.type_id.name == 'route53':
+
+            return
             # TODO configure root domain
 
     @api.multi
@@ -47,12 +46,13 @@ class ClouderDomain(models.Model):
         """
 
         """
-        #if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
+        if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
+            return
             # TODO purge root domain
+        
 
 class ClouderBaseLink(models.Model):
     """
-    Add method to manage links between bases and the bind container.
     """
 
     _inherit = 'clouder.base.link'
@@ -63,7 +63,7 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
         # if self.name.type_id.name == 'route53':
-            # TODO deploy domain
+        # TODO deploy domain
 
     @api.multi
     def purge_link(self):
@@ -71,4 +71,4 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).purge_link()
         # if self.name.type_id.name == 'route53':
-            # TODO purge root domain
+        # TODO purge root domain
