@@ -214,6 +214,7 @@ class ClouderApplication(models.Model):
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
         default=lambda self: self.env['clouder.model'].user_partner)
+    dummy = fields.Boolean('Dummy?')
 
     @property
     def fullcode(self):
@@ -320,7 +321,7 @@ class ClouderApplication(models.Model):
     def _check_image(self):
         """
         """
-        if not self.default_image_id and not self.child_ids:
+        if not self.default_image_id and not self.child_ids and not self.dummy:
             self.raise_error('You need to specify the image!')
 
     @api.multi
