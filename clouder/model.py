@@ -20,28 +20,28 @@
 #
 ##############################################################################
 
-import copy_reg
-import errno
-import logging
-import os.path
-import random
-import re
-import requests
-import select
-import string
-import subprocess
-import time
-
-from datetime import datetime
-from os.path import expanduser
 
 from openerp import models, fields, api, _, tools, release
+from openerp.exceptions import except_orm
 from openerp.addons.connector.session import ConnectorSession
 from openerp.addons.connector.queue.job import\
     job, whitelist_unpickle_global
 
-from openerp.addons.clouder.exceptions import ClouderError
+from datetime import datetime
+import subprocess
+import os.path
+import string
+import copy_reg
+import errno
+import random
+import re
+import requests
+import time
+import select
 
+from os.path import expanduser
+
+import logging
 _logger = logging.getLogger(__name__)
 
 try:
@@ -72,9 +72,9 @@ def connector_enqueue(
     if priority:
         job.write({'priority': priority + 1})
         job.env.cr.commit()
-        session.env[model_name].raise_error(
-            "Waiting for another job to finish",
-        )
+        raise except_orm(
+            _('Priority error!'),
+            _("Waiting for another job to finish"))
 
     res = getattr(record, func_name)(action, job_id, *args, **kargs)
     # if 'clouder_unlink' in record.env.context:
@@ -237,9 +237,9 @@ class ClouderModel(models.AbstractModel):
         """
         if self._name != 'clouder.config.settings' and not \
                 self.env.ref('clouder.clouder_settings').email_sysadmin:
-            self.raise_error(
-                "You need to specify the sysadmin email in configuration.",
-            )
+            raise except_orm(
+                _('Data error!'),
+                _("You need to specify the sysadmin email in configuration"))
 
     @api.multi
     def check_priority(self):
@@ -277,16 +277,15 @@ class ClouderModel(models.AbstractModel):
                             message + '\n'
         self.env.cr.commit()
 
-    def raise_error(self, message, interpolations):
-        """ Raises a ClouderError with a translated message
-        :param message: (str) Message including placeholders for string
-            interpolation. Interpolation takes place via the ``%`` operator.
-        :param interpolations: (dict|tuple) Mixed objects to be used for
-            string interpolation after message translation. Dict for named
-            parameters or tuple for positional. Cannot use both.
-        :raises: (clouder.exceptions.ClouderError)
-        """
-        raise ClouderError(self, _(message) % interpolations)
+    def raise_error(self, message):
+        self.log('Raising error :' + message)
+        self.log('Version :' + str(self.version))
+        if self.version >= 9:
+            from openerp.exceptions import UserError
+            raise UserError(message)
+        else:
+            # from openerp.exceptions import except_orm
+            raise except_orm(_(''), _(message))
 
     @api.multi
     def do(self, name, action, where=False):
@@ -479,16 +478,15 @@ class ClouderModel(models.AbstractModel):
 
             if identityfile is None:
                 self.raise_error(
-                    'Clouder does not have a record in the ssh config to '
-                    'connect to your server.\n'
-                    'Make sure there is a "%s" record in the "~/.ssh/config" '
-                    'of the Clouder system user.\n'
-                    'To easily add this record, you can click on the '
-                    '"Reinstall" button of the server record, or the '
-                    '"Reset Key" button of the container record you are '
-                    'trying to access',
-                    self.name
-                )
+                    "It seems Clouder have no record in the ssh config to "
+                    "connect to your server.\nMake sure there is a '" +
+                    self.name + ""
+                    "' record in the ~/.ssh/config of the Clouder "
+                    "system user.\n"
+                    "To easily add this record, depending if Clouder try to "
+                    "connect to a server or a container, you can click on the"
+                    " 'reinstall' button of the server record or 'reset key' "
+                    "button of the container record you try to access.")
 
             # Security with latest version of Paramiko
             # https://github.com/clouder-community/clouder/issues/11
@@ -497,13 +495,13 @@ class ClouderModel(models.AbstractModel):
 
             # Probably not useful anymore, to remove later
             if not isinstance(identityfile, basestring):
-                self.raise_error(
-                    'For an unknown reason, the variable identityfile '
-                    'in the connect ssh function is invalid. Please report '
-                    'this message.\n'
-                    'IdentityFile: "%s", Type: "%s"',
-                    identityfile, type(identityfile),
-                )
+                raise except_orm(
+                    _('Data error!'),
+                    _("For unknown reason, it seems the variable identityfile "
+                      "in the connect ssh function is invalid. Please report "
+                      "this message.\n"
+                      "Identityfile : " + str(identityfile) +
+                      ", type : " + type(identityfile)))
 
             self.log('connect: ssh ' + (username and username + '@' or '') +
                      host + (port and ' -p ' + str(port) or ''))
@@ -513,17 +511,16 @@ class ClouderModel(models.AbstractModel):
                     host, port=int(port), username=username,
                     key_filename=os.path.expanduser(identityfile))
             except Exception as inst:
-                self.raise_error(
-                    'We were not able to connect to your server. Please '
-                    'make sure you add the public key in the '
-                    'authorized_keys file of your root user on your server.\n'
-                    'If you were trying to connect to a container, '
-                    'a click on the "Reset Key" button on the container '
-                    'record may resolve the problem.\n'
-                    'Target: "%s" \n'
-                    'Error: "%s"',
-                    host, inst,
-                )
+                raise except_orm(
+                    _('Connect error!'),
+                    _("We were not able to connect to your server. Please "
+                      "make sure you add the public key in the "
+                      "authorized_keys file of your root user on your server."
+                      "\nIf you were trying to connect to a container, "
+                      "a click on the 'reset key' button on the container "
+                      "record may resolve the problem.\n"
+                      "Target : " + host + "\n"
+                      "Error : " + str(inst)))
             ssh_connections[host_fullname] = ssh
         else:
             ssh = ssh_connections[host_fullname]

@@ -20,7 +20,8 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 import re
 
 from datetime import datetime
@@ -81,10 +82,9 @@ class ClouderConfigSettings(models.Model):
         """
         if self.email_sysadmin \
                 and not re.match(r"^[\w\d_.@-]*$", self.email_sysadmin):
-            self.raise_error(
+            raise except_orm(_('Data error!'), _(
                 "Sysadmin email can only contains letters, "
-                "digits, underscore, - and @",
-            )
+                "digits, underscore, - and @"))
 
     @api.multi
     def save_all(self):

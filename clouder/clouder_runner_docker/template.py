@@ -20,7 +20,8 @@
 #
 ##############################################################################
 
-from openerp import models, api
+from openerp import models, api, _
+from openerp.exceptions import except_orm
 import re
 
 
@@ -69,9 +70,9 @@ class ClouderContainer(models.Model):
                         ports = option['value']
             if ports:
                 if not re.match(r"^[\d,-]*$", ports):
-                    self.raise_error(
-                        "Ports can only contains digits, - and ,",
-                    )
+                    raise except_orm(
+                        _('Data error!'),
+                        _("Ports can only contains digits, - and ,"))
 
                 for scope in ports.split(','):
                     if re.match(r"^[\d]*$", scope):
