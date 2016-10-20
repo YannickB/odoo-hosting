@@ -21,7 +21,8 @@
 ##############################################################################
 
 
-from openerp import models, fields, api
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 from datetime import datetime
 import re
 
@@ -79,11 +80,11 @@ class ClouderApplicationType(models.Model):
         Check that the application type name does not contain any forbidden
         characters.
         """
-        if not all([re.match(r"^[\w\d-]*$", self.name),
-                    re.match(r"^[\w\d-]*$", self.system_user)]):
-            self.raise_error(
-                "Name and system_user can only contain letters, "
-                "digits and -"
+        if not re.match(r"^[\w\d-]*$", self.name) \
+                or not re.match(r"^[\w\d-]*$", self.system_user):
+            raise except_orm(_('Data error!'), _(
+                "Name and system_user can only contains letters, "
+                "digits and -")
             )
 
 
@@ -300,20 +301,17 @@ class ClouderApplication(models.Model):
         """
 
         if not re.match(r"^[\w\d-]*$", self.code) or len(self.code) > 20:
-            self.raise_error(
+            raise except_orm(_('Data error!'), _(
                 "Code can only contains letters, digits and "
-                "- and shall be less than 20 characters"
-            )
+                "- and shall be less than 20 characters"))
         if self.admin_name and not re.match(r"^[\w\d_]*$", self.admin_name):
-            self.raise_error(
-                "Admin name can only contains letters, digits and underscore"
-            )
+            raise except_orm(_('Data error!'), _(
+                "Admin name can only contains letters, digits and underscore"))
         if self.admin_email \
                 and not re.match(r"^[\w\d_@.-]*$", self.admin_email):
-            self.raise_error(
+            raise except_orm(_('Data error!'), _(
                 "Admin email can only contains letters, "
-                "digits, underscore, - and @"
-            )
+                "digits, underscore, - and @"))
 
     @api.multi
     @api.constrains('default_image_id', 'child_ids')
@@ -321,7 +319,7 @@ class ClouderApplication(models.Model):
         """
         """
         if not self.default_image_id and not self.child_ids:
-            self.raise_error('You need to specify the image!')
+            raise self.raise_error('You need to specify the image!')
 
     @api.multi
     @api.onchange('type_id')
@@ -376,9 +374,8 @@ class ClouderApplication(models.Model):
         :param vals: The values to update
         """
         if 'code' in vals and vals['code'] != self.code:
-            self.raise_error(
-                "It's too dangerous to modify the application code!"
-            )
+            raise except_orm(_('Data error!'), _(
+                "It's too dangerous to modify the application code!"))
         res = super(ClouderApplication, self).write(vals)
         if 'template_id' in vals:
             self = self.browse(self.id)
@@ -487,14 +484,16 @@ class ClouderApplicationMetadata(models.Model):
         for metadata in self:
             if metadata.is_function:
                 if not metadata.func_name:
-                    self.raise_error(
-                        "You must enter the function name "
-                        "to set is_function to true."
+                    raise except_orm(
+                        _('Data error!'),
+                        _("You must enter the function name "
+                          "to set is_function to true.")
                     )
                 else:
                     obj_env = self.env['clouder.'+self.clouder_type]
                     if not getattr(obj_env, self.func_name, False):
-                        self.raise_error(
-                            "Invalid function name %s for clouder.base",
-                            self.name.func_name,
+                        raise except_orm(
+                            _('Base Metadata error!'),
+                            _("Invalid function name {0} for clouder.base".
+                              format(self.name.func_name))
                         )

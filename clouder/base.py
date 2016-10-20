@@ -20,7 +20,8 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api
+from openerp import models, fields, api, _
+from openerp.exceptions import except_orm
 import re
 
 from datetime import datetime, timedelta
@@ -61,9 +62,8 @@ class ClouderDomain(models.Model):
         characters.
         """
         if not re.match(r"^[\w\d.-]*$", self.name):
-            self.raise_error(
-                "Name can only contains letters, digits - and dot"
-            )
+            raise except_orm(_('Data error!'), _(
+                "Name can only contains letters, digits - and dot"))
 
     @api.multi
     def write(self, vals):
@@ -241,25 +241,21 @@ class ClouderBase(models.Model):
         forbidden characters.
         """
         if not re.match(r"^[\w\d-]*$", self.name):
-            self.raise_error(
-                "Name can only contains letters, digits and -",
-            )
+            raise except_orm(_('Data error!'), _(
+                "Name can only contains letters, digits and -"))
         if not re.match(r"^[\w\d_.@-]*$", self.admin_name):
-            self.raise_error(
-                "Admin name can only contains letters, digits and underscore",
-            )
+            raise except_orm(_('Data error!'), _(
+                "Admin name can only contains letters, digits and underscore"))
         if self.admin_email\
                 and not re.match(r"^[\w\d_.@-]*$", self.admin_email):
-            self.raise_error(
+            raise except_orm(_('Data error!'), _(
                 "Admin email can only contains letters, "
-                "digits, underscore, - and @"
-            )
+                "digits, underscore, - and @"))
         if self.poweruser_email \
                 and not re.match(r"^[\w\d_.@-]*$", self.poweruser_email):
-            self.raise_error(
+            raise except_orm(_('Data error!'), _(
                 "Poweruser email can only contains letters, "
-                "digits, underscore, - and @"
-            )
+                "digits, underscore, - and @"))
 
     @api.multi
     @api.constrains('container_id', 'application_id')
@@ -270,10 +266,9 @@ class ClouderBase(models.Model):
         """
         if self.application_id.id != \
                 self.container_id.application_id.id:
-            self.raise_error(
-                "The application of base must be the same "
-                "than the application of the container."
-            )
+            raise except_orm(_('Data error!'),
+                             _("The application of base must be the same "
+                               "than the application of the container."))
 
     @api.multi
     def onchange_application_id_vals(self, vals):
@@ -604,28 +599,23 @@ class ClouderBase(models.Model):
             domain_obj = self.env['clouder.domain']
             container_obj = self.env['clouder.container']
             if 'application_id' not in vals or not vals['application_id']:
-                self.raise_error(
-                    "You need to specify the application of the base."
-                )
+                raise except_orm(_('Error!'), _(
+                    "You need to specify the application of the base."))
             application = application_obj.browse(vals['application_id'])
             if not application.next_server_id:
-                self.raise_error(
+                raise except_orm(_('Error!'), _(
                     "You need to specify the next server in "
-                    "application for the container autocreate."
-                )
+                    "application for the container autocreate."))
             if not application.default_image_id.version_ids:
-                self.raise_error(
+                raise except_orm(_('Error!'), _(
                     "No version for the image linked to the application, "
-                    "abandoning container autocreate..."
-                )
+                    "abandoning container autocreate..."))
             if 'domain_id' not in vals or not vals['domain_id']:
-                self.raise_error(
-                    "You need to specify the domain of the base."
-                )
+                raise except_orm(_('Error!'), _(
+                    "You need to specify the domain of the base."))
             if 'environment_id' not in vals or not vals['environment_id']:
-                self.raise_error(
-                    "You need to specify the environment of the base."
-                )
+                raise except_orm(_('Error!'), _(
+                    "You need to specify the environment of the base."))
             domain = domain_obj.browse(vals['domain_id'])
             container_vals = {
                 'name': vals['name'] + '-' +
@@ -983,10 +973,11 @@ class ClouderBaseOption(models.Model):
         if this option is required.
         """
         if self.name.required and not self.value:
-            self.raise_error(
-                'You need to specify a value for the option "%s" '
-                'for the base "%s".',
-                self.name.name, self.base_id.name,
+            raise except_orm(
+                _('Data error!'),
+                _("You need to specify a value for the option " +
+                  self.name.name + " for the base " +
+                  self.base_id.name + ".")
             )
 
 
@@ -1024,9 +1015,11 @@ class ClouderBaseLink(models.Model):
         if this link is required.
         """
         if self.required and not self.target:
-            self.raise_error(
-                'You need to specify a link to "%s" for the base "%s"',
-                self.name.name, self.base_id.name,
+            raise except_orm(
+                _('Data error!'),
+                _("You need to specify a link to " +
+                  self.name.name + " for the base " +
+                  self.base_id.name)
             )
 
     @api.multi
@@ -1115,9 +1108,9 @@ class ClouderBaseChild(models.Model):
     @api.constrains('child_id')
     def _check_child_id(self):
         if self.child_id and not self.child_id.parent_id == self:
-            self.raise_error(
-                "The child container is not correctly linked to the parent",
-            )
+            raise except_orm(
+                _('Data error!'),
+                _("The child container is not correctly linked to the parent"))
 
     @api.multi
     def create_child(self):
@@ -1183,9 +1176,10 @@ class ClouderBaseMetadata(models.Model):
         """
         def _missing_function():
             # If the function is missing, raise an exception
-            self.raise_error(
-                'Invalid function name "%s" for "clouder.base".',
-                self.name.func_name,
+            raise except_orm(
+                _('Base Metadata error!'),
+                _("Invalid function name {0} for clouder.base".
+                  format(self.name.func_name))
             )
 
         # Computing the function if needed
@@ -1217,9 +1211,10 @@ class ClouderBaseMetadata(models.Model):
         Checks that the metadata is intended for containers
         """
         if self.name.clouder_type != 'base':
-            self.raise_error(
-                "This metadata is intended for %s only.",
-                self.name.clouder_type,
+            raise except_orm(
+                _('Base Metadata error!'),
+                _("This metadata is intended for {0} only.".
+                  format(self.name.clouder_type))
             )
 
     @api.multi
@@ -1235,7 +1230,8 @@ class ClouderBaseMetadata(models.Model):
             self.value
         except ValueError:
             # User display
-            self.raise_error(
-                'Invalid value for type "%s": \n\t"%s"\n',
-                self.name.value_type, self.value_data,
+            raise except_orm(
+                _('Base Metadata error!'),
+                _("Invalid value for type {0}: \n\t'{1}'\n".
+                  format(self.name.value_type, self.value_data))
             )
