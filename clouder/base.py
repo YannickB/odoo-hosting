@@ -20,13 +20,16 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api
-import re
 
 from datetime import datetime, timedelta
-from . import model
-
 import logging
+import re
+
+from openerp import models, fields, api
+
+from .model import generate_random_password
+
+
 _logger = logging.getLogger(__name__)
 
 
@@ -101,13 +104,16 @@ class ClouderBase(models.Model):
         'clouder.container', 'Container', required=True)
     admin_name = fields.Char('Admin name', required=True)
     admin_password = fields.Char(
-        'Admin password', required=True,
-        default=model.generate_random_password(20))
+        'Admin password',
+        required=True,
+        default=lambda s: generate_random_password(20),
+    )
     admin_email = fields.Char('Admin email', required=True)
     poweruser_name = fields.Char('PowerUser name')
     poweruser_password = fields.Char(
         'PowerUser password',
-        default=model.generate_random_password(12))
+        default=lambda s: generate_random_password(12),
+    )
     poweruser_email = fields.Char('PowerUser email')
     build = fields.Selection(
         [('none', 'No action'), ('build', 'Build'), ('restore', 'Restore')],
