@@ -26,7 +26,7 @@ import re
 
 from openerp import models, fields, api
 
-from . import model
+from .model import generate_random_password
 
 
 class ClouderApplicationTag(models.Model):
@@ -120,9 +120,9 @@ class ClouderApplicationTypeOption(models.Model):
     def generate_default(self):
         res = ''
         if self.name == 'db_password':
-            res = model.generate_random_password(20)
+            res = generate_random_password(20)
         if self.name == 'secret':
-            res = model.generate_random_password(50)
+            res = generate_random_password(50)
         if self.name == 'ssh_privatekey':
             res = self.env['clouder.server']._default_private_key()
         if self.name == 'ssh_publickey':

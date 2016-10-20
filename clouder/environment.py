@@ -45,7 +45,7 @@ class ClouderEnvironment(models.Model):
 
     name = fields.Char('Name', required=True)
     partner_id = fields.Many2one('res.partner', 'Partner', required=True)
-    prefix = fields.Char('Prefix', required=True)
+    prefix = fields.Char('Prefix', required=False)
     user_ids = fields.Many2many(
         'res.users', 'clouder_environment_user_rel',
         'environment_id', 'user_id', 'Users')

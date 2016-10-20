@@ -83,34 +83,33 @@ class ClouderImage(models.Model):
 
     @property
     def computed_dockerfile(self):
-        dockerfile = 'FROM '
+
+        dockerfile = ['FROM ']
+
         if self.parent_id and self.parent_version_id:
-            dockerfile += self.parent_version_id.fullpath
+            dockerfile.append(self.parent_version_id.fullpath)
         elif self.parent_from:
-            dockerfile += self.parent_from
+            dockerfile.append(self.parent_from)
         else:
             self.raise_error(
                 "You need to specify the image to inherit!",
             )
 
-        dockerfile += '\nMAINTAINER %s\n' % (
-            self.env['clouder.model'].email_sysadmin,
+        dockerfile.append(
+            '\nMAINTAINER %s\n' % (self.env['clouder.model'].email_sysadmin),
         )
 
-        dockerfile += self.dockerfile or ''
-        volumes = ''
-        for volume in self.volume_ids:
-            volumes += volume.name + ' '
+        dockerfile.append(self.dockerfile or '')
+
+        volumes = [v.name for v in self.volume_ids]
         if volumes:
-            dockerfile += '\nVOLUME %s' % volumes
+            dockerfile.append('\nVOLUME %s' % ' '.join(volumes))
 
-        ports = ''
-        for port in self.port_ids:
-            ports += '%s ' % port.localport
+        ports = [p.localport for p in self.port_ids]
         if ports:
-            dockerfile += '\nEXPOSE %s' % ports
+            dockerfile.append('\nEXPOSE %s' % ' '.join(ports))
 
-        return dockerfile
+        return ''.join(dockerfile)
 
     @api.multi
     @api.constrains('name')

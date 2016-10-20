@@ -269,8 +269,8 @@ class ClouderSave(models.Model):
 
         self.ensure_one()
 
-        self.log('Saving ' + self.name)
-        self.log('Comment: ' + self.comment)
+        self.log('Saving "%s"' % self.name)
+        self.log('Comment: "%s"' % self.comment)
 
         container = 'exec' in self.container_id.childs \
                     and self.container_id.childs['exec'] or self.container_id

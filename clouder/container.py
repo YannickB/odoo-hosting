@@ -51,10 +51,10 @@ class ClouderServer(models.Model):
     _name = 'clouder.server'
     _inherit = ['clouder.model']
     _sql_constraints = [
-        ('name_uniq', 'unique(name, domain_id)',
-         'Name must be unique!'),
-        ('ip_uniq', 'unique(ip, ssh_port)',
-         'IP/SSH must be unique!'),
+        ('domain_id_name_uniq', 'unique(domain_id, name)',
+         'This name already exists on this domain.'),
+        ('ip_ssh_port_uniq', 'unique(ip, ssh_port)',
+         'Another server is already setup for this SSH Address and Port.'),
     ]
 
     @api.model
@@ -204,7 +204,7 @@ class ClouderServer(models.Model):
             self.execute_write_file(
                 key_file, server.private_key, operator='w',
             )
-            self.execute_local(['chmod', '700', key_file])
+            self.execute_local(['chmod', '600', key_file])
 
     @api.multi
     def _inverse_public_key(self):
@@ -218,7 +218,7 @@ class ClouderServer(models.Model):
             self.execute_write_file(
                 key_file_pub, server.public_key, operator='w',
             )
-            self.execute_local(['chmod', '700', key_file_pub])
+            self.execute_local(['chmod', '600', key_file_pub])
 
     @property
     def fulldomain(self):

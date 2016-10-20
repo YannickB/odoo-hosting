@@ -20,7 +20,6 @@
 #
 ##############################################################################
 
-from datetime import datetime
 import os.path
 import re
 
@@ -103,15 +102,20 @@ class ClouderConfigSettings(models.Model):
         on all containers and bases.
         """
 
-        with self._private_env() as env:
-            self = self.with_env(env).with_context(
-                save_comment='Save before upload_save'
-            )
+        context = {
+            'save_comment': 'Save before upload_save',
+        }
+
+        with self.with_context(**context).private_env() as self:
 
             backup_dir = os.path.join(self.BACKUP_DIR, 'bup')
+            ClouderContainer = self.env['clouder.container']
+            ContainerLink = self.env['clouder.container.link']
+            ClouderBase = self.env['clouder.base'].with_context(**context)
 
-            backups = self.env['clouder.container'].search(
-                [('application_id.type_id.name', '=', 'backup')])
+            backups = ClouderContainer.search([
+                ('application_id.type_id.name', '=', 'backup'),
+            ])
             for backup in backups:
                 backup.execute([
                     'export BUP_DIR="%s";' % backup_dir,
@@ -136,23 +140,25 @@ class ClouderConfigSettings(models.Model):
 
             domain = [('autosave', '=', True)]
 
-            containers = self.env['clouder.container'].search(domain)
+            containers = ClouderContainer.search(domain)
             for container in containers:
                 container.save_exec()
 
-            bases = self.env['clouder.base'].search(domain)
+            bases = ClouderBase.search(domain)
             for base in bases:
                 base.save_exec()
 
-            links = self.env['clouder.container.link'].search([
+            links = ContainerLink.search([
                 ('container_id.application_id.type_id.name', '=', 'backup'),
                 ('name.code', '=', 'backup-upload'),
             ])
             for link in links:
                 link.deploy_exec()
 
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.settings_id.end_save_all = now
+            now = fields.Datetime.now()
+
+            for rec_id in self:
+                rec_id.settings_id.end_save_all = now
 
     @api.multi
     def purge_expired_saves(self):
@@ -202,16 +208,17 @@ class ClouderConfigSettings(models.Model):
         """
         """
 
-        with self._private_env() as env:
-            self = self.with_env(env)
+        with self._private_env() as self:
 
             containers = self.env['clouder.container'].search([
                 ('application_id.update_strategy', '=', 'auto'),
             ])
             containers.update_exec()
 
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.settings_id.end_update_containers = now
+            now = fields.Datetime.now()
+
+            for rec_id in self:
+                rec_id.settings_id.end_update_containers = now
 
     @api.multi
     def reset_bases(self):
@@ -223,8 +230,7 @@ class ClouderConfigSettings(models.Model):
         Reset all bases marked for reset.
         """
 
-        with self._private_env() as env:
-            self = self.with_env(env)
+        with self._private_env() as self:
 
             bases = self.env['clouder.base'].search([
                 ('reset_each_day', '=', True),
@@ -236,8 +242,10 @@ class ClouderConfigSettings(models.Model):
                 else:
                     bases.reinstall()
 
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.settings_id.end_reset_bases = now
+            now = fields.Datetime.now()
+
+            for rec_id in self:
+                rec_id.settings_id.end_reset_bases = now
 
     @api.multi
     def certs_renewal(self):
@@ -249,8 +257,7 @@ class ClouderConfigSettings(models.Model):
         Reset all bases marked for reset.
         """
 
-        with self._private_env() as env:
-            self = self.with_env(env)
+        with self._private_env() as self:
 
             bases = self.env['clouder.base'].search([
                 ('cert_renewal_date', '!=', False),
@@ -259,8 +266,10 @@ class ClouderConfigSettings(models.Model):
             for base in bases:
                 base.renew_cert()
 
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            self.settings_id.end_certs_renewal = now
+            now = fields.Datetime.now()
+
+            for rec_id in self:
+                rec_id.settings_id.end_certs_renewal = now
 
     @api.multi
     def cron_daily(self):
