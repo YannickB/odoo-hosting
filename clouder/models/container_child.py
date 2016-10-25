@@ -1,0 +1,76 @@
+# -*- coding: utf-8 -*-
+# Copyright 2015 Clouder SASU
+# License LGPL-3.0 or later (http://gnu.org/licenses/lgpl.html).
+
+from openerp import models, fields, api
+
+
+import logging
+_logger = logging.getLogger(__name__)
+
+
+class ClouderContainerChild(models.Model):
+    """
+    Define the container.link object, used to specify the applications linked
+    to a container.
+    """
+
+    _name = 'clouder.container.child'
+    _inherit = ['clouder.model']
+    _autodeploy = False
+
+    container_id = fields.Many2one(
+        'clouder.container', 'Container', ondelete="cascade", required=True)
+    name = fields.Many2one(
+        'clouder.application', 'Application', required=True)
+    sequence = fields.Integer('Sequence')
+    server_id = fields.Many2one(
+        'clouder.server', 'Server')
+    child_id = fields.Many2one(
+        'clouder.container', 'Container')
+    save_id = fields.Many2one(
+        'clouder.save', 'Restore this save on deployment')
+
+    _order = 'sequence'
+
+    @api.multi
+    @api.constrains('child_id')
+    def _check_child_id(self):
+        if self.child_id and not self.child_id.parent_id == self:
+            self.raise_error(
+                "The child container is not correctly linked to the parent",
+            )
+
+    @api.multi
+    def create_child(self):
+        self = self.with_context(no_enqueue=True)
+        self.do(
+            'create_child ' + self.name.name,
+            'create_child_exec', where=self.container_id)
+
+    @api.multi
+    def create_child_exec(self):
+        container = self.container_id
+        self = self.with_context(autocreate=True)
+        self.delete_child_exec()
+        self.env['clouder.container'].create({
+            'environment_id': container.environment_id.id,
+            'suffix': container.suffix + '-' + self.name.code,
+            'parent_id': self.id,
+            'application_id': self.name.id,
+            'server_id': self.server_id.id or container.server_id.id
+        })
+        if self.save_id:
+            self.save_id.container_id = self.child_id
+            self.save_id.restore()
+
+    @api.multi
+    def delete_child(self):
+        self = self.with_context(no_enqueue=True)
+        self.do(
+            'delete_child ' + self.name.name,
+            'delete_child_exec', where=self.container_id)
+
+    @api.multi
+    def delete_child_exec(self):
+        self.child_id and self.child_id.unlink()
