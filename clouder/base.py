@@ -20,13 +20,16 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api
-import re
 
 from datetime import datetime, timedelta
-from . import model
-
 import logging
+import re
+
+from openerp import models, fields, api
+
+from .model import generate_random_password
+
+
 _logger = logging.getLogger(__name__)
 
 
@@ -85,6 +88,10 @@ class ClouderBase(models.Model):
 
     _name = 'clouder.base'
     _inherit = ['clouder.model']
+    _sql_constraints = [
+        ('name_uniq', 'unique (name,domain_id)',
+         'Name must be unique per domain !')
+    ]
 
     name = fields.Char('Name', required=True)
     domain_id = fields.Many2one('clouder.domain', 'Domain name', required=True)
@@ -97,13 +104,16 @@ class ClouderBase(models.Model):
         'clouder.container', 'Container', required=True)
     admin_name = fields.Char('Admin name', required=True)
     admin_password = fields.Char(
-        'Admin password', required=True,
-        default=model.generate_random_password(20))
+        'Admin password',
+        required=True,
+        default=lambda s: generate_random_password(20),
+    )
     admin_email = fields.Char('Admin email', required=True)
     poweruser_name = fields.Char('PowerUser name')
     poweruser_password = fields.Char(
         'PowerUser password',
-        default=model.generate_random_password(12))
+        default=lambda s: generate_random_password(12),
+    )
     poweruser_email = fields.Char('PowerUser email')
     build = fields.Selection(
         [('none', 'No action'), ('build', 'Build'), ('restore', 'Restore')],
@@ -153,8 +163,10 @@ class ClouderBase(models.Model):
         """
         Property returning the full name of the base.
         """
-        return self.application_id.fullcode + '-' + \
-            self.fulldomain.replace('.', '-')
+        return '%s-%s' % (
+            self.application_id.fullcode,
+            self.fulldomain.replace('.', '-'),
+        )
 
     @property
     def fullname_(self):
@@ -171,7 +183,7 @@ class ClouderBase(models.Model):
         """
         if self.is_root:
             return self.domain_id.name
-        return self.name + '.' + self.domain_id.name
+        return '%s.%s' % (self.name, self.domain_id.name)
 
     @property
     def databases(self):
@@ -180,10 +192,10 @@ class ClouderBase(models.Model):
         """
         databases = {'single': self.fullname_}
         if self.application_id.type_id.multiple_databases:
-            databases = {}
-            for database in \
-                    self.application_id.type_id.multiple_databases.split(','):
-                databases[database] = self.fullname_ + '_' + database
+            dbs = self.application_id.type_id.multiple_databases.split(',')
+            databases = {
+                db: '%s_%s' % (self.fullname_, db) for db in dbs
+            }
         return databases
 
     @property
@@ -227,11 +239,6 @@ class ClouderBase(models.Model):
         for link in self.link_ids:
             links[link.name.name.code] = link
         return links
-
-    _sql_constraints = [
-        ('name_uniq', 'unique (name,domain_id)',
-         'Name must be unique per domain !')
-    ]
 
     @api.multi
     @api.constrains('name', 'admin_name', 'admin_email', 'poweruser_email')

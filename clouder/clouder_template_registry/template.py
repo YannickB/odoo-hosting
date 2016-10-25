@@ -21,7 +21,7 @@
 ##############################################################################
 
 from openerp import models, api
-from .. import model
+from ..model import generate_random_password
 
 
 class ClouderApplicationTypeOption(models.Model):
@@ -34,7 +34,7 @@ class ClouderApplicationTypeOption(models.Model):
     def generate_default(self):
         res = super(ClouderApplicationTypeOption, self).generate_default()
         if self.name == 'registry_password':
-            res = model.generate_random_password(20)
+            res = generate_random_password(20)
         return res
 
 
@@ -57,6 +57,7 @@ class ClouderContainer(models.Model):
                 'REGISTRY_AUTH_HTPASSWD_PATH': '/auth/htpasswd'})
         return res
 
+    @api.multi
     def deploy_post(self):
         """
         Regenerate the ssl certs after the registry deploy.
@@ -66,6 +67,7 @@ class ClouderContainer(models.Model):
 
             certfile = '/certs/domain.crt'
             keyfile = '/certs/domain.key'
+            partner_id = self.environment_id.partner_id
 
             self.execute(['rm', certfile])
             self.execute(['rm', keyfile])
@@ -73,8 +75,14 @@ class ClouderContainer(models.Model):
             self.execute([
                 'openssl', 'req', '-x509', '-nodes', '-days', '365',
                 '-newkey', 'rsa:2048', '-out', certfile, ' -keyout',
-                keyfile, '-subj', '"/C=FR/L=Paris/O=Clouder/CN=' +
-                self.server_id.name + '"'])
+                keyfile, '-subj',
+                '"/C=%s/L=%s/O=%s/CN=%s"' % (
+                    partner_id.country_id.code,
+                    partner_id.city,
+                    partner_id.commercial_partner_id.name,
+                    self.server_id.name,
+                ),
+            ])
 
         return super(ClouderContainer, self).deploy_post()
 
@@ -94,10 +102,13 @@ class ClouderContainerLink(models.Model):
 
         if self.name.type_id.name == 'registry':
             if 'exec' in self.target.childs:
-                self.target.execute(
-                    ['htpasswd', '-Bbn',  self.container_id.name,
-                     self.container_id.options['registry_password']['value'],
-                     '>', 'auth/htpasswd'], executor='sh')
+                self.target.execute([
+                    'htpasswd', '-Bbn',  self.container_id.name,
+                    self.container_id.options['registry_password']['value'],
+                    '>', 'auth/htpasswd',
+                ],
+                    executor='sh',
+                )
                 self.target.start()
 
     @api.multi
@@ -109,8 +120,11 @@ class ClouderContainerLink(models.Model):
         if self.name.type_id.name == 'registry':
             if 'exec' in self.target.childs:
                 self.target.execute([
-                    'sed', '-i', '"/' + self.container_id.name + '/d"',
-                    'auth/htpasswd'], executor='sh')
+                    'sed', '-i', '"/%s/d"' % self.container_id.name,
+                    'auth/htpasswd',
+                ],
+                    executor='sh',
+                )
                 self.target.start()
 
 
@@ -132,10 +146,13 @@ class ClouderBaseLink(models.Model):
             registry = self.base_id.container_id.childs['exec']
             if self.base_id.cert_cert and self.base_id.cert_key:
                 registry.execute([
-                    'echo', '"' + self.base_id.cert_cert + '"',
-                    '>', '/certs/domain.crt'
+                    'echo', '"%s"' % self.base_id.cert_cert,
+                    '>', '/certs/domain.crt',
                 ], executor='sh')
                 registry.execute([
-                    'echo', '"' + self.base_id.cert_key + '"',
-                    '>', '/certs/domain.key'], executor='sh')
+                    'echo', '"%s"' % self.base_id.cert_key,
+                    '>', '/certs/domain.key',
+                ],
+                    executor='sh',
+                )
                 registry.start()

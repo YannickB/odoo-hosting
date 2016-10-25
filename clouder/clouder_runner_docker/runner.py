@@ -20,11 +20,13 @@
 #
 ##############################################################################
 
-from openerp import models, api, modules
-import time
 from datetime import datetime
-
 import logging
+import os.path
+import time
+
+from openerp import models, api, modules
+
 _logger = logging.getLogger(__name__)
 
 
@@ -46,47 +48,65 @@ class ClouderImage(models.Model):
 
         if not runner or runner.application_id.type_id.name == 'docker':
 
-            path = model.name + '-' + datetime.now().strftime('%Y%m%d.%H%M%S')
+            path = '%s-%s' % (
+                model.name, datetime.now().strftime('%Y%m%d.%H%M%S'),
+            )
             if model._name == 'clouder.container':
                 name = path
             else:
                 name = model.fullpath
 
             if salt:
-                build_dir = '/srv/salt/containers/build_' + model.name
+                build_dir = os.path.join(
+                    '/srv', 'salt', 'containers', 'build_%s' % model.name,
+                )
                 server = model.salt_master
             else:
-                build_dir = '/tmp/' + name
+                build_dir = self.env['clouder.model']._get_directory_tmp(name)
 
             server.execute(['rm', '-rf', build_dir])
             server.execute(['mkdir', '-p', build_dir])
 
             if self.type_id:
-                if self.type_id.name in \
-                        ['backup', 'salt-master', 'salt-minion']:
-                    sources_path = \
-                        modules.get_module_path('clouder') + '/sources'
+                if self.type_id.name in [
+                    'backup', 'salt-master', 'salt-minion'
+                ]:
+                    sources_path = os.path.join(
+                        modules.get_module_path('clouder'), 'sources',
+                    )
                 else:
                     module_path = modules.get_module_path(
-                        'clouder_template_' + self.type_id.name
+                        'clouder_template_%s' % self.type_id.name
                     )
-                    sources_path = module_path and module_path + '/sources'
-                if sources_path and self.env['clouder.model']\
-                        .local_dir_exist(sources_path):
-                    server.send_dir(sources_path, build_dir + '/sources')
+                    sources_path = module_path and os.path.join(
+                        module_path, 'sources'
+                    )
+                if sources_path and self.env['clouder.model'].local_dir_exist(
+                    sources_path
+                ):
+                    server.send_dir(
+                        sources_path, os.path.join(build_dir, 'sources'),
+                    )
 
+            docker_file = os.path.join(build_dir, 'Dockerfile')
             server.execute([
-                'echo "' + self.computed_dockerfile.replace('"', r'\\"') +
-                '" >> ' + build_dir + '/Dockerfile'])
+                'echo "%s" >> "%s"' % (
+                    self.computed_dockerfile.replace('"', r'\\"'),
+                    docker_file,
+                ),
+            ])
 
             if expose_ports:
                 server.execute([
-                    'echo "' + 'EXPOSE ' + ' '.join(expose_ports) +
-                    '" >> ' + build_dir + '/Dockerfile'])
+                    'echo "EXPOSE %s" >> "%s"' % (
+                        ' '.join(expose_ports), docker_file,
+                    ),
+                ])
 
             if not salt:
-                server.execute(
-                    ['docker', 'build', '--pull', '-t', name, build_dir])
+                server.execute([
+                    'docker', 'build', '--pull', '-t', name, build_dir,
+                ])
                 server.execute(['rm', '-rf', build_dir])
 
             return name
