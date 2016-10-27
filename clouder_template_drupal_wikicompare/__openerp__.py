@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder Template Drupal Wikicompare',
-    'version': '10.0.10.0.0',
+    'version': '9.0.10.0.0',
     'category': 'Clouder',
     'depends': ['clouder_template_drupal'],
     'author': 'Yannick Buron (Clouder)',
