@@ -22,7 +22,7 @@
 
 from openerp import models, api, modules
 from datetime import datetime
-from openerp.addons.clouder import model
+from openerp.addons.clouder.tools import generate_random_password
 
 
 class ClouderApplicationTypeOption(models.Model):
@@ -35,7 +35,7 @@ class ClouderApplicationTypeOption(models.Model):
     def generate_default(self):
         res = super(ClouderApplicationTypeOption, self).generate_default()
         if self.name == 'token' and self.application_type_id.name == 'gitlab':
-            res = model.generate_random_password(20)
+            res = generate_random_password(20)
         return res
 
 
