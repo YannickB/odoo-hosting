@@ -22,7 +22,7 @@
 
 
 from openerp import models, api
-import openerp.addons.clouder.model as model
+from openerp.addons.clouder.tools import generate_random_password
 
 
 class ClouderApplicationTypeOption(models.Model):
@@ -36,7 +36,7 @@ class ClouderApplicationTypeOption(models.Model):
         res = super(ClouderApplicationTypeOption, self).generate_default()
         if self.name == 'root_password' \
                 and self.application_type_id.name == 'mysql':
-            res = model.generate_random_password(20)
+            res = generate_random_password(20)
         return res
 
 
