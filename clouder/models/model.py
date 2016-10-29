@@ -10,7 +10,9 @@ import requests
 import select
 import string
 import subprocess
+import sys
 import time
+import traceback
 
 from contextlib import contextmanager
 from datetime import datetime
@@ -252,6 +254,21 @@ class ClouderModel(models.AbstractModel):
                         )
 
     @api.multi
+    def log_error(self, trace=True, reverting=False):
+        """ It logs a unified fail message with posibility of tracebacks
+        :param trace: (bool) Include a traceback in the log
+        :param reverting: (bool) Include a message about reverting in the log
+        """
+        self.log('===================')
+        self.log('FAIL!%s' % (' Reverting...' if reverting else ''))
+        if trace:
+            ex_type, ex, tb = sys.exc_info()
+            if ex_type is not None:
+                tb = '\n'.join(traceback.format_tb(tb))
+                self.log(tb)
+        self.log('===================')
+
+    @api.multi
     def raise_error(self, message, interpolations=None):
         """ Raises a ClouderError with a translated message
         :param message: (str) Message including placeholders for string
@@ -302,9 +319,7 @@ class ClouderModel(models.AbstractModel):
             if job_id:
                 job.write({'end_date': self.now, 'state': 'done'})
         except:
-            self.log('===================')
-            self.log('FAIL!')
-            self.log('===================')
+            self.log_error()
             if job_id:
                 job.write({'end_date': self.now, 'state': 'failed'})
             raise
@@ -315,9 +330,7 @@ class ClouderModel(models.AbstractModel):
             self.deploy()
             self.deploy_links()
         except:
-            self.log('===================')
-            self.log('FAIL! Reverting...')
-            self.log('===================')
+            self.log_error(reverting=True)
             self.purge()
             raise
 
