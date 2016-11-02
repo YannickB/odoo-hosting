@@ -1,24 +1,6 @@
 # -*- coding: utf-8 -*-
-##############################################################################
-#
-# Author: Yannick Buron
-# Copyright 2015, TODAY Clouder SASU
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License with Attribution
-# clause as published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License with
-# Attribution clause along with this program. If not, see
-# <http://www.gnu.org/licenses/>.
-#
-##############################################################################
+# Copyright 2015 Clouder SASU
+# License LGPL-3.0 or later (http://gnu.org/licenses/lgpl.html).
 
 import errno
 import logging
@@ -33,11 +15,11 @@ import time
 from contextlib import contextmanager
 from datetime import datetime
 from os.path import expanduser
-from random import SystemRandom
 
 from openerp import models, fields, api, _, release
 
-from .exceptions import ClouderError
+from ..exceptions import ClouderError
+
 
 _logger = logging.getLogger(__name__)
 
@@ -48,46 +30,6 @@ except ImportError:
 
 
 ssh_connections = {}
-
-
-def generate_random_password(size, punctuation=True):
-    """ Method which can be used to generate a random password.
-
-    :param size: (int) The size of the random string to generate
-    :param punctuation: (bool) Allow punctuation in the password
-    :return: (str) Psuedo-random string
-    """
-    choice = SystemRandom().choice
-    chars = '%s%s%s' % (
-        string.letters, string.digits,
-        punctuation and string.punctuation or '',
-    )
-    return ''.join(choice(chars) for _ in xrange(size))
-
-
-class ClouderJob(models.Model):
-    """
-    Define the clouder.job,
-    used to store the log and it needed link to the connector job.
-    """
-
-    _name = 'clouder.job'
-    _description = 'Clouder Job'
-
-    log = fields.Text('Log')
-    name = fields.Char('Description')
-    action = fields.Char('Action')
-    res_id = fields.Integer('Res ID')
-    model_name = fields.Char('Model')
-    create_date = fields.Datetime('Created at')
-    create_uid = fields.Many2one('res.users', 'By')
-    start_date = fields.Datetime('Started at')
-    end_date = fields.Datetime('Ended at')
-    state = fields.Selection([
-        ('started', 'Started'), ('done', 'Done'), ('failed', 'Failed')],
-        'State', readonly=True, required=True, select=True)
-
-    _order = 'create_date desc'
 
 
 class ClouderModel(models.AbstractModel):
@@ -859,51 +801,3 @@ class ClouderModel(models.AbstractModel):
         self.log('result %s' % result.json())
 
         return result
-
-
-class ClouderTemplateOne2many(models.AbstractModel):
-
-    _name = 'clouder.template.one2many'
-
-    @api.multi
-    def reset_template(self, records=None):
-
-        if not records:
-            records = []
-
-        if self.template_id:
-            if not records:
-                records = self.env[self._template_parent_model].search(
-                    [('template_ids', 'in', self.template_id.id)])
-            for record in records:
-                name = hasattr(self.name, 'id') and self.name.id or self.name
-                childs = self.search([
-                    (self._template_parent_many2one, '=', record.id),
-                    ('name', '=', name)])
-                vals = {}
-                for field in self._template_fields:
-                    vals[field] = getattr(self, field)
-                if childs:
-                    for child in childs:
-                        child.write(vals)
-                else:
-                    vals.update({
-                        self._template_parent_many2one: record.id,
-                        'name': name})
-                    self.create(vals)
-
-    @api.model
-    def create(self, vals):
-        """
-        """
-        res = super(ClouderTemplateOne2many, self).create(vals)
-        self.reset_template()
-        return res
-
-    @api.multi
-    def write(self, vals):
-        """
-        """
-        res = super(ClouderTemplateOne2many, self).write(vals)
-        self.reset_template()
-        return res

@@ -22,7 +22,7 @@
 
 {
     'name': 'Clouder Website',
-    'version': '10.0.10.0.0',
+    'version': '9.0.10.0.0',
     'category': 'Clouder',
     'depends': ['base', 'auth_signup', 'clouder'],
     'author': 'Yannick Buron (Clouder), Nicolas Petit',
