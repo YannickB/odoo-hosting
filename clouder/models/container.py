@@ -70,6 +70,7 @@ class ClouderContainer(models.Model):
         'container_id', 'from_id', 'Volumes from')
     public = fields.Boolean('Public?')
     dummy = fields.Boolean('Dummy?')
+    provider_id = fields.Many2one('clouder.provider', 'Provider')
 
     @api.multi
     def _compute_ports(self):

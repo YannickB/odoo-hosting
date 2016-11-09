@@ -197,6 +197,7 @@
                         <field name="public"/>
                         <field name="from_id" attrs="{'invisible': [('from_id','=', False)]}"/>
                         <field name="dummy"/>
+                        <field name="provider_id" attrs="{'invisible': [('dummy','=', False)], 'required': [('dummy', '=', True)]}"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -338,6 +339,7 @@
                         <field name="environment_id"/>
                         <field name="login" attrs="{'invisible':[('runner_id','!=',False)]}"/>
                         <field name="ssh_port" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
+                        <field name="provider_id"/>
                         <newline/>
                         <field name="private_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <field name="public_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
@@ -948,6 +950,38 @@
             </field>
         </record>
 
+        <record id="view_clouder_provider_form" model="ir.ui.view">
+            <field name="name">clouder.provider.form</field>
+            <field name="model">clouder.provider</field>
+            <field name="arch" type="xml">
+                <form string="Provider" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="type"/>
+                        <field name="access_id"/>
+                        <field name="secret_key"/>
+                    </group>
+                    <field name="template_ids" colspan="4">
+                        <tree string="Templates" editable="bottom">
+                            <field name="image"/>
+                            <field name="size"/>
+                            <button name="create_node" string="Create Node"/>
+                        </tree>
+                    </field>
+                </form>
+            </field>
+        </record>
+        <record id="view_clouder_provider_tree" model="ir.ui.view">
+            <field name="name">clouder.provider.tree</field>
+            <field name="model">clouder.provider</field>
+            <field name="arch" type="xml">
+                <tree string="Providers">
+                    <field name="name"/>
+                    <field name="type"/>
+                </tree>
+            </field>
+        </record>
+
 
         <record id="view_clouder_configuration" model="ir.ui.view">
             <field name="name">clouder settings</field>
@@ -957,6 +991,9 @@
                     <group col="4">
                         <field name="email_sysadmin" required="1"/>
                         <field name="salt_master_id"/>
+                        <field name="deployer"/>
+                        <field name="executor"/>
+                        <field name="runner_id" attrs="{'invisible': [('deployer','!=','runner')], 'required=': [('deployer','!=','runner')]}"/>
                         <newline/>
                         <field name="end_save_all"/>
                         <field name="end_update_containers"/>
@@ -971,7 +1008,11 @@
                     <button name="certs_renewal" string="Certs Renewal" type="object"/>
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
                     <button name="reset_all_jobs" string="Reset Jobs" type="object"/>
+                    <group col="4">
+                        <field name="provider_ids" colspan="4"/>
+                    </group>
                     <field name="job_ids" colspan="4"/>
+
                 </form>
             </field>
         </record>
