@@ -18,6 +18,11 @@ class ClouderProviderTemplate(models.Model):
     _name = 'clouder.provider.template'
     _description = 'Provider Template'
 
+
+    name = fields.Many2one('clouder.provider', 'Provider', required=True)
+    image = fields.Selection(lambda s: s._get_images(), string='Image')
+    size = fields.Selection(lambda s: s._get_sizes(), string='Size')
+
     @api.multi
     def _get_images(self):
         return [('dummy', 'Dummy')]
@@ -25,7 +30,3 @@ class ClouderProviderTemplate(models.Model):
     @api.multi
     def _get_sizes(self):
         return [('dummy', 'Dummy')]
-
-    name = fields.Many2one('clouder.provider', 'Provider', required=True)
-    image = fields.Selection(_get_images, string='Image')
-    size = fields.Selection(_get_sizes, string='Size')

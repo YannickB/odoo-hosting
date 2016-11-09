@@ -28,7 +28,6 @@
     'author': 'Yannick Buron (Clouder)',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
-    'demo': [],
     'data': ['template.xml'],
     'installable': True,
     'application': True,

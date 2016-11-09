@@ -23,11 +23,10 @@ class ClouderConfigSettings(models.Model):
     salt_master_id = fields.Many2one(
         'clouder.container', 'Salt Master', readonly=True)
     deployer = fields.Selection(
-        [('engine', 'Docker Engine'), ('compose', 'Docker Compose'),
-         ('swarm', 'Docker Swarm'), ('runner', 'Custom Runner')],
+        lambda s: s._get_deployers(),
         string='Deployer', required=True, default='engine')
     executor = fields.Selection(
-        [('ssh', 'SSH'), ('salt', 'Salt')],
+        lambda s: s._get_executors(),
         string='Deployer', required=True, default='salt')
     runner_id = fields.Many2one('clouder.container', 'Runner')
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
@@ -37,6 +36,16 @@ class ClouderConfigSettings(models.Model):
     end_certs_renewal = fields.Datetime('Last Certs Renewal ended at')
     provider_ids = fields.One2many(
         'clouder.provider', 'config_id', 'Providers')
+
+    @api.multi
+    def _get_deployers(self):
+        return [
+            ('engine', 'Docker Engine'), ('compose', 'Docker Compose'),
+            ('swarm', 'Docker Swarm'), ('runner', 'Custom Runner')]
+
+    @api.multi
+    def _get_executors(self):
+        return [('ssh', 'SSH'), ('salt', 'Salt')]
 
     @property
     def now_date(self):
