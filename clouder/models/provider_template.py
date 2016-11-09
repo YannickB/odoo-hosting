@@ -18,7 +18,6 @@ class ClouderProviderTemplate(models.Model):
     _name = 'clouder.provider.template'
     _description = 'Provider Template'
 
-
     name = fields.Many2one('clouder.provider', 'Provider', required=True)
     image = fields.Selection(lambda s: s._get_images(), string='Image')
     size = fields.Selection(lambda s: s._get_sizes(), string='Size')
