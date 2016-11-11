@@ -60,7 +60,7 @@ class ClouderContainer(models.Model):
     subservice_name = fields.Char('Subservice Name')
     ports_string = fields.Text('Ports', compute='_compute_ports')
     reset_base_ids = fields.Many2many(
-        'clouder.base', 'clouder_container_reser_base_rel',
+        'clouder.base', 'clouder_container_reset_base_rel',
         'container_id', 'base_id', 'Bases to duplicate')
     backup_ids = fields.Many2many(
         'clouder.container', 'clouder_container_backup_rel',
@@ -69,6 +69,7 @@ class ClouderContainer(models.Model):
         'clouder.container', 'clouder_container_volumes_from_rel',
         'container_id', 'from_id', 'Volumes from')
     public = fields.Boolean('Public?')
+    scale = fields.Integer('Scale', default=1)
     dummy = fields.Boolean('Dummy?')
     provider_id = fields.Many2one('clouder.provider', 'Provider')
 
@@ -749,8 +750,7 @@ class ClouderContainer(models.Model):
                     while not port['hostport'] \
                             and nextport != server.end_port:
                         port_ids = self.env['clouder.container.port'].search(
-                            [('hostport', '=', nextport),
-                             ('container_id.server_id', '=', server.id)])
+                            [('hostport', '=', nextport)])
                         if not port_ids and not server.execute([
                                 'netstat', '-an', '|', 'grep',
                                 (server.public_ip and server.ip + ':' or '') +
@@ -790,6 +790,7 @@ class ClouderContainer(models.Model):
                     if isinstance(volume, (list, tuple)):
                         volume = {
                             'name': volume[2].get('name', False),
+                            'localpath': volume[2].get('localpath', False),
                             'hostpath': volume[2].get('hostpath', False),
                             'user': volume[2].get('user', False),
                             'readonly': volume[2].get('readonly', False),
@@ -798,6 +799,7 @@ class ClouderContainer(models.Model):
                     else:
                         volume = {
                             'name': getattr(volume, 'name', False),
+                            'localpath': getattr(volume, 'localpath', False),
                             'hostpath': getattr(volume, 'hostpath', False),
                             'user': getattr(volume, 'user', False),
                             'readonly': getattr(volume, 'readonly', False),
@@ -816,6 +818,8 @@ class ClouderContainer(models.Model):
                 volume = {
                     'name': getattr(
                         volume_sources[def_key_volume], 'name', False),
+                    'localpath': getattr(
+                        volume_sources[def_key_volume], 'localpath', False),
                     'hostpath': getattr(
                         volume_sources[def_key_volume], 'hostpath', False),
                     'user': getattr(
@@ -831,6 +835,7 @@ class ClouderContainer(models.Model):
             for volume in volumes_to_process:
                 volumes.append(((0, 0, {
                     'name': volume['name'],
+                    'localpath': volume['localpath'],
                     'hostpath': volume['hostpath'],
                     'user': volume['user'],
                     'readonly': volume['readonly'],
@@ -1130,35 +1135,61 @@ class ClouderContainer(models.Model):
         ports = []
         expose_ports = []
         for port in self.port_ids:
-            ip = ''
-            if self.server_id.public_ip \
-                    and self.application_id.type_id.name != 'registry':
-                ip = self.server_id.ip + ':'
-            ports.append(ip + str(port.hostport) + ':' +
-                         port.localport + (port.udp and '/udp' or ''))
+            if self.runner != 'swarm':
+                ip = ''
+                if self.server_id.public_ip \
+                        and self.application_id.type_id.name != 'registry':
+                    ip = self.server_id.ip + ':'
+                ports.append(ip + str(port.hostport) + ':' +
+                             port.localport + (port.udp and '/udp' or ''))
+            else:
+                # Expose port on the swarm only if expose to internet
+                if port.expose == 'internet':
+                    ports.append(str(port.hostport) + ':' + port.localport)
             if port.use_hostport:
                 expose_ports.append(port.hostport)
         volumes = []
         for volume in self.volume_ids:
-            if volume.hostpath:
-                arg = volume.hostpath + ':' + volume.name
-                if volume.readonly:
-                    arg += ':ro'
-                volumes.append(arg)
+            if self.runner != 'swarm':
+                if volume.hostpath:
+                    arg = volume.hostpath + ':' + volume.localpath
+                    if volume.readonly:
+                        arg += ':ro'
+                    volumes.append(arg)
+            else:
+                volumes.append(
+                    'type=volume,source=' + self.name + '-' + volume.name +
+                    ',destination=' + volume.localpath)
         volumes_from = []
         for volume_from in self.volumes_from_ids:
-            volumes_from.append(volume_from.name)
+            if self.runner != 'swarm':
+                # If not swarm, only return the name of the container
+                volumes_from.append(volume_from.name)
+            else:
+                # If swarm, return all volumes of container
+                for volume in volume_from.volume_ids:
+                    volumes_from.append(
+                        'type=volume,source=' + volume_from.name + '-' +
+                        volume.name + ',destination=' + volume.localpath)
         links = []
         for link in self.link_ids:
-            if link.make_link \
-                    and link.target.server_id == self.server_id:
+            if link.make_link:
                 target = link.target
                 if 'exec' in target.childs:
                     target = target.childs['exec']
-                links.append({'name': target.name, 'code': link.name.code})
+                if self.runner != 'swarm':
+                    links.append({'name': target.name, 'code': link.name.code})
+                else:
+                    # If swarm, return network of linked container
+                    if target.environment_id != self.environment_id:
+                        network = self.environment_id.prefix + '-network'
+                        if network not in links:
+                            links.append(network)
 
         # Get name without compose prefix
-        compose_name = self.name.replace(self.env.context['prefix'], '')
+        compose_name = self.name
+        if 'prefix' in self.env.context:
+            compose_name = self.name.replace(self.env.context['prefix'], '')
 
         return {
             'self': self, 'compose_name': compose_name,
@@ -1173,7 +1204,7 @@ class ClouderContainer(models.Model):
         res = []
 
         # If root, the project name is container name
-        if not 'prefix' in self.env.context:
+        if 'prefix' not in self.env.context:
             self = self.with_context(prefix=self.name + '-')
 
         # Only add service if service without children

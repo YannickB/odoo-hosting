@@ -21,7 +21,8 @@ class ClouderContainerVolume(models.Model):
 
     container_id = fields.Many2one(
         'clouder.container', 'Container', ondelete="cascade", required=True)
-    name = fields.Char('Path', required=True)
+    name = fields.Char('Name', required=True)
+    localpath = fields.Char('Local Path', required=True)
     hostpath = fields.Char('Host path')
     user = fields.Char('System User')
     readonly = fields.Boolean('Readonly?')

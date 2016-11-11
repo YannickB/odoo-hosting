@@ -195,6 +195,7 @@
                         <newline/>
                         <field name="volumes_from_ids" widget="many2many_tags"/>
                         <field name="public"/>
+                        <field name="scale"/>
                         <field name="from_id" attrs="{'invisible': [('from_id','=', False)]}"/>
                         <field name="dummy"/>
                         <field name="provider_id" attrs="{'invisible': [('dummy','=', False)], 'required': [('dummy', '=', True)]}"/>
@@ -220,6 +221,7 @@
                             <field name="volume_ids" colspan="4" attrs="{'invisible': [('child_ids','!=', [])]}">
                                 <tree string="Volumes" editable="bottom">
                                     <field name="name"/>
+                                    <field name="localpath"/>
                                     <field name="hostpath"/>
                                     <field name="user"/>
                                     <field name="readonly"/>
@@ -823,6 +825,7 @@
                     <field name="volume_ids" colspan="4">
                         <tree string="Volumes" editable="bottom">
                             <field name="name"/>
+                            <field name="localpath"/>
                             <field name="hostpath"/>
                             <field name="user"/>
                             <field name="readonly"/>
@@ -878,6 +881,7 @@
                     <field name="volume_ids" colspan="4">
                         <tree string="Volumes" editable="bottom">
                             <field name="name"/>
+                            <field name="localpath"/>
                             <field name="hostpath"/>
                             <field name="user"/>
                             <field name="readonly"/>
@@ -995,7 +999,7 @@
                         <field name="master_id"/>
                         <field name="salt_master_id"/>
                         <field name="runner"/>
-                        <field name="runner_id" attrs="{'invisible': [('deployer','!=','custom')], 'required=': [('deployer','!=','custom')]}"/>
+                        <field name="runner_id" attrs="{'invisible': [('runner','!=','custom')], 'required=': [('runner','!=','custom')]}"/>
                         <newline/>
                         <field name="compose"/>
                         <field name="executor"/>

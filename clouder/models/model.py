@@ -573,6 +573,14 @@ class ClouderModel(models.AbstractModel):
             cmd.insert(0, 'cd ' + path + ';')
 
         if self._name == 'clouder.container':
+
+            container = self.name
+            if self.runner == 'swarm':
+                # Replace container name by name if the
+                # first pod running this service
+                container = "$(docker ps --format={{.Names}} | grep " + \
+                            container + ". | awk {'print $1'})"
+
             cmd_temp = []
             first = True
             for cmd_arg in cmd:
@@ -583,11 +591,12 @@ class ClouderModel(models.AbstractModel):
                 cmd_temp.append(cmd_arg)
             cmd = cmd_temp
             cmd.append('"')
-            cmd.insert(0, self.name + ' ' + executor + ' -c ')
+            cmd.insert(0, container + ' ' + executor + ' -c ')
             if username:
                 cmd.insert(0, '-u ' + username)
             cmd.insert(0, 'docker exec')
 
+        self.log('')
         self.log('host : ' + host)
         self.log('command : ' + ' '.join(cmd))
         cmd = [c.replace('$$$', '') for c in cmd]

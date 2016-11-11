@@ -256,6 +256,7 @@ class ClouderServer(models.Model):
         res = super(ClouderServer, self).create(vals)
         # In swarm mode, set master node with current node if not already exist
         if self.runner == 'swarm' and not self.master_id:
+            self.write({'manager': True})
             self.env.ref('clouder.clouder_settings').master_id = res.id
         return res
 
@@ -314,9 +315,6 @@ class ClouderServer(models.Model):
         """
         """
         self.deploy_ssh_config()
-        if self.deployer == 'swarm' and self.master_id == self:
-            self.execute(
-                ['docker', 'swarm', 'init', '--advertise-addr', self.ip])
         super(ClouderServer, self).deploy()
 
     @api.multi
