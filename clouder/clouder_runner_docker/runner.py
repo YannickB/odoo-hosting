@@ -237,7 +237,7 @@ class ClouderContainer(models.Model):
                 == 'docker':
 
             if False:  # not self.application_id.check_tags(['no-salt']):
-                print 'TODO'
+                self.log('TODO')
             else:
                 # Create build directory and deploy
                 build_dir = self.refresh_compose_file()
@@ -377,7 +377,7 @@ class ClouderContainer(models.Model):
                 == 'docker':
 
             if False:  # not self.application_id.check_tags(['no-salt']):
-                print 'TODO'
+                self.log('TODO')
             else:
                 # Ensure build directory is up-to-date and purge
                 build_dir = self.refresh_compose_file()

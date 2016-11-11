@@ -91,7 +91,6 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def deploy_salt(self):
-        return
 
         self.purge_salt()
 
@@ -258,7 +257,6 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_salt(self):
-        return
 
         self.purge_salt()
 

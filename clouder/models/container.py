@@ -1376,7 +1376,7 @@ class ClouderContainer(models.Model):
             # If not compose, purge current container
             if not self.compose:
                 self.stop()
-                self.purge_salt()
+                # self.purge_salt()
                 self.hook_purge_one()
         super(ClouderContainer, self).purge()
 
