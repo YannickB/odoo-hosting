@@ -1111,7 +1111,15 @@ class ClouderContainer(models.Model):
         return
 
     @api.multi
-    def hook_deploy(self):
+    def hook_deploy_compose(self):
+        """
+        Hook which can be called by submodules to execute commands to
+        deploy a set of containers.
+        """
+        return
+
+    @api.multi
+    def hook_deploy_one(self):
         """
         Hook which can be called by submodules to execute commands to
         deploy a container.
@@ -1147,11 +1155,60 @@ class ClouderContainer(models.Model):
                 target = link.target
                 if 'exec' in target.childs:
                     target = target.childs['exec']
-                links.append(target.name + ':' + link.name.code)
+                links.append({'name': target.name, 'code': link.name.code})
+
+        # Get name without compose prefix
+        compose_name = self.name.replace(self.env.context['prefix'], '')
+
         return {
+            'self': self, 'compose_name': compose_name,
             'ports': ports, 'expose_ports': expose_ports,
             'volumes': volumes, 'volumes_from': volumes_from,
             'links': links, 'environment': {}}
+
+    def get_container_compose_res(self):
+        """
+        Recursively build data needed for compose file
+        """
+        res = []
+
+        # If root, the project name is container name
+        if not 'prefix' in self.env.context:
+            self = self.with_context(prefix=self.name + '-')
+
+        # Only add service if service without children
+        if not self.child_ids:
+            res.append(self.get_container_res())
+
+        # Recursively add services from children
+        for child in self.child_ids:
+            if child.child_id:
+                res.extend(child.child_id.get_container_compose_res())
+
+        services = {}
+        for service in res:
+            services[service['self'].name] = service
+
+        # Replace service name by name without project name
+        res_final = []
+        for service in res:
+            links = []
+            for link in service['links']:
+                if link['name'] in services:
+                    link['name'] = services[link['name']]['compose_name']
+                links.append(link['name'] + ':' + link['code'])
+            service['links'] = links
+
+            volumes_from = []
+            for volume_from in service['volumes_from']:
+                if volume_from in services:
+                    volume_from = services[volume_from]['compose_name']
+                volumes_from.append(volume_from)
+            service['volumes_from'] = volumes_from
+
+            res_final.append(service)
+
+        return res_final
 
     @api.multi
     def deploy_post(self):
@@ -1162,10 +1219,61 @@ class ClouderContainer(models.Model):
         return
 
     @api.multi
+    def recursive_deploy_one(self):
+        """
+        Recursively deploy containers one by one
+        """
+        if self.child_ids:
+            for child in self.child_ids:
+                if child.child_id:
+                    child.child_id.recursive_deploy_one()
+        else:
+            # We only call the hook if service without children
+            self.hook_deploy_one()
+        return
+
+    @api.multi
+    def recursive_deploy_post(self):
+        """
+        Recursively execute deploy_post function
+        """
+        if self.child_ids:
+            for child in self.child_ids:
+                if child.child_id:
+                    child.child_id.recursive_deploy_post()
+        else:
+            # We only call the hook if service without children
+            self.deploy_post()
+        return
+
+    @api.multi
+    def recursive_save(self):
+        """
+        Recursively execute save
+        """
+        if self.child_ids:
+            for child in self.child_ids:
+                if child.child_id:
+                    child.child_id.recursive_save()
+        else:
+            # Avoid backup alert on monitoring
+            self = self.with_context(save_comment='First save')
+            self.save_exec(no_enqueue=True)
+        return
+
+    @api.multi
     def deploy(self):
         """
         Deploy the container in the server.
         """
+
+        # Skip deploy if not a real service
+        if self.dummy:
+            return
+
+        # Skip deploy if compose context and not root
+        if 'no_deploy' in self.env.context:
+            return
 
         if self.parent_id:
             self.parent_id.child_id = self
@@ -1175,26 +1283,42 @@ class ClouderContainer(models.Model):
 
         if self.child_ids or 'container_childs' in self.env.context \
                 and self.env.context['container_childs']:
+            # Childs does not execute deploy when initiated by parent
+            self = self.with_context(no_deploy=True)
             for child in self.child_ids:
                 child.create_child_exec()
 
-        elif not self.dummy:
-            self.hook_deploy()
+        # If compose mode, we only execute deploy for root
+        if self.compose:
+            if not self.parent_id:
+                self.hook_deploy_compose()
+        # If not compose mode, execute deploy for all children
+        else:
+            self.recursive_deploy_one()
 
-            time.sleep(3)
+        time.sleep(3)
 
-            self.deploy_post()
+        # Execute deploy post on all children
+        self.recursive_deploy_post()
 
-            self.start()
+        # Restart all children
+        self.start()
 
-            # For shinken
-            self = self.with_context(save_comment='First save')
-            self.save_exec(no_enqueue=True)
+        # Save all children, to avoid monitoring alert before daily cron
+        self.recursive_save()
 
         return
 
     @api.multi
-    def hook_purge(self):
+    def hook_purge_compose(self):
+        """
+        Hook which can be called by submodules to execute commands to
+        purge a container compose.
+        """
+        return
+
+    @api.multi
+    def hook_purge_one(self):
         """
         Hook which can be called by submodules to execute commands to
         purge a container.
@@ -1209,13 +1333,20 @@ class ClouderContainer(models.Model):
 
         childs = self.env['clouder.container.child'].search(
             [('container_id', '=', self.id)], order='sequence DESC')
+
         if childs:
+            # If compose mode, purge if root
+            if self.compose and not self.parent_id:
+                self.hook_purge_compose()
+            # Recursively delete childs in Odoo
             for child in childs:
                 child.delete_child_exec()
         else:
-            self.stop()
-            self.purge_salt()
-            self.hook_purge()
+            # If not compose, purge current container
+            if not self.compose:
+                self.stop()
+                self.purge_salt()
+                self.hook_purge_one()
         super(ClouderContainer, self).purge()
 
         return

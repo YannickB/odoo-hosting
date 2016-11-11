@@ -6,6 +6,7 @@ from datetime import datetime
 import logging
 import os.path
 import time
+import yaml
 
 from openerp import models, api, modules
 
@@ -136,6 +137,22 @@ class ClouderImageVersion(models.Model):
         return res
 
 
+class ClouderServer(models.Model):
+    """
+    Add methods to manage the docker server specificities.
+    """
+
+    _inherit = 'clouder.server'
+
+    @api.multi
+    def deploy(self):
+        super(ClouderServer, self).deploy()
+        # Activate swarm mode if master
+        if self.deployer == 'swarm' and self.master_id == self:
+            self.execute(
+                ['docker', 'swarm', 'init', '--advertise-addr', self.ip])
+
+
 class ClouderContainer(models.Model):
     """
     Add methods to manage the docker container specificities.
@@ -174,12 +191,69 @@ class ClouderContainer(models.Model):
         return ''
 
     @api.multi
-    def hook_deploy(self):
+    def refresh_compose_file(self):
+        """
+        Refresh compose directory
+        """
+        res = self.get_container_compose_res()
+
+        # Build compose dictionary
+        compose = {'version': '2', 'services': {}}
+        for service_dict in res:
+            service = service_dict['self']
+            image = service.image_id.build_image(
+                service, service.server_id,
+                expose_ports=service_dict['expose_ports'], salt=False)
+            compose['services'][service_dict['compose_name']] = {
+                'image': image,
+                'ports': service_dict['ports'],
+                'volumes': service_dict['volumes'],
+                'volumes_from': service_dict['volumes_from'],
+                'links': service_dict['links']
+            }
+        # Convert to yaml format
+        compose = yaml.safe_dump(compose, default_flow_style=False)
+
+        # Create directory and write compose file
+        build_dir = self.env['clouder.model']._get_directory_tmp(
+            'clouder-compose/' + self.name)
+        self.server_id.execute(['rm', '-rf', build_dir])
+        self.server_id.execute(['mkdir', '-p', build_dir])
+        self.server_id.execute(
+            ['echo "' + compose + '" > ' +
+             build_dir + '/' + 'docker-compose.yml'])
+        return build_dir
+
+    @api.multi
+    def hook_deploy_compose(self):
         """
         Deploy the container in the server.
         """
 
-        res = super(ClouderContainer, self).hook_deploy()
+        super(ClouderContainer, self).hook_deploy_compose()
+
+        if not self.server_id.runner_id or \
+                self.server_id.runner_id.application_id.type_id.name \
+                == 'docker':
+
+            if False:  # not self.application_id.check_tags(['no-salt']):
+                print 'TODO'
+            else:
+                # Create build directory and deploy
+                build_dir = self.refresh_compose_file()
+                self.server_id.execute(
+                    ['docker-compose', '-p', self.name, 'up', '-d'],
+                    path=build_dir)
+        return
+
+
+    @api.multi
+    def hook_deploy_one(self):
+        """
+        Deploy the container in the server.
+        """
+
+        super(ClouderContainer, self).hook_deploy_one()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name \
@@ -211,7 +285,7 @@ class ClouderContainer(models.Model):
                 for volume in res['volumes_from']:
                     cmd.extend(['--volumes-from', volume])
                 for link in res['links']:
-                    cmd.extend(['--link', link])
+                    cmd.extend(['--link', link['name'] + ':' + link['code']])
                 for key, environment in res['environment'].iteritems():
                     cmd.extend(['-e', '"' + key + '"="' + environment + '"'])
                 cmd = self.hook_deploy_special_args(cmd)
@@ -230,14 +304,36 @@ class ClouderContainer(models.Model):
                 # Run container
                 self.server_id.execute(cmd)
 
+        return
+
+    @api.multi
+    def hook_purge_compose(self):
+        """
+        Remove container compose.
+        """
+        res = super(ClouderContainer, self).hook_purge_one()
+
+        if not self.server_id.runner_id or \
+                self.server_id.runner_id.application_id.type_id.name\
+                == 'docker':
+
+            if False: # not self.application_id.check_tags(['no-salt']):
+                print 'TODO'
+            else:
+                # Ensure build directory is up-to-date and purge
+                build_dir = self.refresh_compose_file()
+                self.server_id.execute(
+                    ['docker-compose', 'down', '-v'], path=build_dir)
+                self.server_id.execute(['rm', '-rf', build_dir])
+
         return res
 
     @api.multi
-    def hook_purge(self):
+    def hook_purge_one(self):
         """
         Remove the container.
         """
-        res = super(ClouderContainer, self).hook_purge()
+        res = super(ClouderContainer, self).hook_purge_one()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\

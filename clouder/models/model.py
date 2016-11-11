@@ -69,6 +69,34 @@ class ClouderModel(models.AbstractModel):
         return self.env.ref('clouder.clouder_settings').email_sysadmin
 
     @property
+    def master_id(self):
+        """
+        Property returning the deployer of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').master_id
+
+    @property
+    def runner(self):
+        """
+        Property returning the runner of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').runner
+
+    @property
+    def executor(self):
+        """
+        Property returning the executor of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').executor
+
+    @property
+    def compose(self):
+        """
+        Property returning the compose of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').compose
+
+    @property
     def salt_master(self):
         """
         Property returning the salt master of the clouder.
@@ -391,6 +419,12 @@ class ClouderModel(models.AbstractModel):
         """
 
         res = super(ClouderModel, self).create(vals)
+
+        # Make sure one2one relation with
+        # parent link is immediately established
+        if self._name == 'clouder.container' and 'parent_id' in vals:
+            self.env['clouder.container.child'].browse(
+                vals['parent_id']).write({'child_id': res.id})
 
         if self._autodeploy:
             res.hook_create()

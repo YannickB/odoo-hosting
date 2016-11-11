@@ -80,6 +80,7 @@ class ClouderServer(models.Model):
                                      required=True)
     login = fields.Char('Login')
     ssh_port = fields.Integer('SSH port', default='22')
+    manager = fields.Boolean('Manager')
     provider_id = fields.Many2one('clouder.provider', 'Provider')
 
     private_key = fields.Text(
@@ -250,6 +251,14 @@ class ClouderServer(models.Model):
                 ssh_config, '\n#END %s\n' % name,
             )
 
+    @api.model
+    def create(self, vals):
+        res = super(ClouderServer, self).create(vals)
+        # In swarm mode, set master node with current node if not already exist
+        if self.runner == 'swarm' and not self.master_id:
+            self.env.ref('clouder.clouder_settings').master_id = res.id
+        return res
+
     @api.multi
     def write(self, vals):
         res = super(ClouderServer, self).write(vals)
@@ -305,6 +314,9 @@ class ClouderServer(models.Model):
         """
         """
         self.deploy_ssh_config()
+        if self.deployer == 'swarm' and self.master_id == self:
+            self.execute(
+                ['docker', 'swarm', 'init', '--advertise-addr', self.ip])
         super(ClouderServer, self).deploy()
 
     @api.multi

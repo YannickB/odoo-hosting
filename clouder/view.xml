@@ -339,6 +339,7 @@
                         <field name="environment_id"/>
                         <field name="login" attrs="{'invisible':[('runner_id','!=',False)]}"/>
                         <field name="ssh_port" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
+                        <field name="manager"/>
                         <field name="provider_id"/>
                         <newline/>
                         <field name="private_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
@@ -990,10 +991,14 @@
                 <form string="Application" version="7.0">
                     <group col="4">
                         <field name="email_sysadmin" required="1"/>
+                        <newline/>
+                        <field name="master_id"/>
                         <field name="salt_master_id"/>
-                        <field name="deployer"/>
+                        <field name="runner"/>
+                        <field name="runner_id" attrs="{'invisible': [('deployer','!=','custom')], 'required=': [('deployer','!=','custom')]}"/>
+                        <newline/>
+                        <field name="compose"/>
                         <field name="executor"/>
-                        <field name="runner_id" attrs="{'invisible': [('deployer','!=','runner')], 'required=': [('deployer','!=','runner')]}"/>
                         <newline/>
                         <field name="end_save_all"/>
                         <field name="end_update_containers"/>

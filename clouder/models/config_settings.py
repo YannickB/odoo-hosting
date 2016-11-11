@@ -20,15 +20,18 @@ class ClouderConfigSettings(models.Model):
 
     name = fields.Char('Name')
     email_sysadmin = fields.Char('Email SysAdmin')
+    master_id = fields.Many2one(
+        'clouder.server', 'Master', readonly=True)
     salt_master_id = fields.Many2one(
         'clouder.container', 'Salt Master', readonly=True)
-    deployer = fields.Selection(
-        lambda s: s._get_deployers(),
-        string='Deployer', required=True, default='engine')
+    runner = fields.Selection(
+        lambda s: s._get_runners(),
+        string='Runner', required=True, default='swarm')
+    runner_id = fields.Many2one('clouder.container', 'Runner')
     executor = fields.Selection(
         lambda s: s._get_executors(),
-        string='Deployer', required=True, default='salt')
-    runner_id = fields.Many2one('clouder.container', 'Runner')
+        string='Executor', required=True, default='ssh')
+    compose = fields.Boolean('Compose? (Experimental)', default=False)
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')
     end_update_containers = fields.Datetime('Last Update Containers ended at')
@@ -38,14 +41,14 @@ class ClouderConfigSettings(models.Model):
         'clouder.provider', 'config_id', 'Providers')
 
     @api.multi
-    def _get_deployers(self):
+    def _get_runners(self):
         return [
-            ('engine', 'Docker Engine'), ('compose', 'Docker Compose'),
-            ('swarm', 'Docker Swarm'), ('runner', 'Custom Runner')]
+            ('engine', 'Docker Engine'), ('swarm', 'Docker Swarm'),
+            ('custom', 'Custom Runner')]
 
     @api.multi
     def _get_executors(self):
-        return [('ssh', 'SSH'), ('salt', 'Salt')]
+        return [('ssh', 'SSH'), ('salt', 'Salt (Experimental)')]
 
     @property
     def now_date(self):

@@ -91,6 +91,7 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def deploy_salt(self):
+        return
 
         self.purge_salt()
 
@@ -118,6 +119,11 @@ class ClouderContainer(models.Model):
                     bases[base.fullname_] = base.fullname_
         data['bases'] = [base for key, base in bases.iteritems()]
         data.update(self.get_container_res())
+
+        links = []
+        for link in data['links']:
+            links.append(link['name'] + ':' + link['code'])
+        data['links'] = links
 
         data = {self.name: data}
 
@@ -252,6 +258,7 @@ class ClouderBase(models.Model):
 
     @api.multi
     def deploy_salt(self):
+        return
 
         self.purge_salt()
 
