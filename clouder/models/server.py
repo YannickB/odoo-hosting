@@ -80,6 +80,7 @@ class ClouderServer(models.Model):
                                      required=True)
     login = fields.Char('Login')
     ssh_port = fields.Integer('SSH port', default='22')
+    provider_id = fields.Many2one('clouder.provider', 'Provider')
 
     private_key = fields.Text(
         'SSH Private Key',

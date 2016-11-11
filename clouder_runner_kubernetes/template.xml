@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+        <record id="application_type_kubernetes" model="clouder.application.type">
+            <field name="name">kubernetes</field>
+            <field name="system_user">root</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_no_backup'),ref('clouder.tag_no_salt')])]"/>
+        </record>
+
+        <record id="image_template_kubernetes" model="clouder.image.template">
+            <field name="name">image_template_kubernetes</field>
+        </record>
+       <record id="image_template_kubernetes_volume_docker" model="clouder.image.volume">
+            <field name="template_id" ref="image_template_kubernetes"/>
+            <field name="name">/var/run/docker.sock</field>
+            <field name="hostpath">/var/run/docker.sock</field>
+            <field name="readonly" eval="True"/>
+            <field name="nosave" eval="True"/>
+        </record>
+        <record id="image_template_kubernetes_port_kubernetes" model="clouder.image.port">
+            <field name="template_id" ref="image_template_kubernetes"/>
+            <field name="name">kubernetes</field>
+            <field name="localport">8080</field>
+            <field name="expose">internet</field>
+        </record>
+        <record id="image_kubernetes" model="clouder.image">
+            <field name="name">image_kubernetes</field>
+            <field name="template_ids" eval="[(4, [ref('image_template_kubernetes')])]"/>
+            <field name="parent_from">gcr.io/google_containers/hyperkube:v1.4.5</field>
+            <field name="dockerfile"><![CDATA[
+
+]]></field>
+        </record>
+
+
+        <record id="application_kubernetes" model="clouder.application">
+            <field name="name">Kubernetes</field>
+            <field name="code">kubernetes</field>
+            <field name="type_id" ref="application_type_kubernetes"/>
+            <field name="default_image_id" ref="image_kubernetes"/>
+        </record>
+
+</odoo>
