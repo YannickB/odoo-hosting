@@ -32,27 +32,33 @@
         </record>
         <record id="image_template_gitlab_data_volume_home" model="clouder.image.volume">
             <field name="template_id" ref="image_template_gitlab_data"/>
-            <field name="name">/home/git</field>
+            <field name="name">/home</field>
+            <field name="localpath">/home/git</field>
         </record>
         <record id="image_template_gitlab_data_volume_nginx" model="clouder.image.volume">
             <field name="template_id" ref="image_template_gitlab_data"/>
-            <field name="name">/etc/nginx</field>
+            <field name="name">nginx</field>
+            <field name="localpath">/etc/nginx</field>
         </record>
         <record id="image_template_gitlab_data_volume_logrotate" model="clouder.image.volume">
             <field name="template_id" ref="image_template_gitlab_data"/>
-            <field name="name">/etc/logrotate</field>
+            <field name="name">logrotate</field>
+            <field name="localpath">/etc/logrotate</field>
         </record>
         <record id="image_template_gitlab_data_volume_data" model="clouder.image.volume">
             <field name="template_id" ref="image_template_gitlab_data"/>
-            <field name="name">/opt/gitlab/data</field>
+            <field name="name">data</field>
+            <field name="localpath">/opt/gitlab/data</field>
         </record>
         <record id="image_template_gitlab_data_volume_config" model="clouder.image.volume">
             <field name="template_id" ref="image_template_gitlab_data"/>
-            <field name="name">/opt/gitlab/config</field>
+            <field name="name">config</field>
+            <field name="localpath">/opt/gitlab/config</field>
         </record>
         <record id="image_template_gitlab_data_volume_var" model="clouder.image.volume">
             <field name="template_id" ref="image_template_gitlab_data"/>
-            <field name="name">/opt/gitlab/var</field>
+            <field name="name">var</field>
+            <field name="localpath">/opt/gitlab/var</field>
         </record>
 
         <record id="image_template_gitlab_files" model="clouder.image.template">
@@ -60,12 +66,14 @@
         </record>
         <record id="image_template_gitlab_files_volume_files" model="clouder.image.volume">
             <field name="template_id" ref="image_template_gitlab_files"/>
-            <field name="name">/opt/gitlab/files</field>
+            <field name="name">files</field>
+            <field name="localpath">/opt/gitlab/files</field>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_template_gitlab_files_volume_workhorse" model="clouder.image.volume">
             <field name="template_id" ref="image_template_gitlab_files"/>
-            <field name="name">/opt/gitlab/gitlab-workhorse</field>
+            <field name="name">workhorse</field>
+            <field name="localpath">/opt/gitlab/gitlab-workhorse</field>
             <field name="nosave" eval="True"/>
         </record>
 

@@ -12,7 +12,8 @@
         </record>
         <record id ="image_template_redis_data_volume_data" model="clouder.image.volume">
             <field name="template_id" ref="image_template_redis_data"/>
-            <field name="name">/data</field>
+            <field name="name">data</field>
+            <field name="localpath">/data</field>
             <field name="user">redis</field>
         </record>
         <record id="image_redis_data" model="clouder.image">

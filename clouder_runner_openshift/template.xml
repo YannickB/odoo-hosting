@@ -16,33 +16,38 @@
         </record>
         <record id="image_openshift_volume_rootfs" model="clouder.image.volume">
             <field name="image_id" ref="image_openshift"/>
-            <field name="name">/rootfs</field>
+            <field name="name">rootfs</field>
+            <field name="localpath">/rootfs</field>
             <field name="hostpath">/</field>
             <field name="readonly" eval="True"/>
             <field name="nosave" eval="True"/>
         </record>
-        <record id="image_openshift_volume_ver_run" model="clouder.image.volume">
+        <record id="image_openshift_volume_var_run" model="clouder.image.volume">
             <field name="image_id" ref="image_openshift"/>
-            <field name="name">/var/run</field>
+            <field name="name">var_run</field>
+            <field name="localpath">/var/run</field>
             <field name="hostpath">/var/run</field>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_openshift_volume_sys" model="clouder.image.volume">
             <field name="image_id" ref="image_openshift"/>
-            <field name="name">/sys</field>
+            <field name="name">sys</field>
+            <field name="localpath">/sys</field>
             <field name="hostpath">/sys</field>
             <field name="readonly" eval="True"/>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_openshift_volume_docker" model="clouder.image.volume">
             <field name="image_id" ref="image_openshift"/>
-            <field name="name">/var/lib/docker</field>
+            <field name="name">docker</field>
+            <field name="localpath">/var/lib/docker</field>
             <field name="hostpath">/var/lib/docker</field>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_openshift_volume_openshift_volumes" model="clouder.image.volume">
             <field name="image_id" ref="image_openshift"/>
-            <field name="name">/var/lib/openshift/openshift.local.volumes</field>
+            <field name="name">openshift_volumes</field>
+            <field name="localpath">/var/lib/openshift/openshift.local.volumes</field>
             <field name="hostpath">/var/lib/openshift/openshift.local.volumes</field>
             <field name="nosave" eval="True"/>
         </record>

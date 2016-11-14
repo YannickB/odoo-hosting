@@ -47,11 +47,13 @@
         </record>
         <record id="image_drupal_volume_www" model="clouder.image.volume">
             <field name="image_id" ref="image_drupal"/>
-            <field name="name">/var/www</field>
+            <field name="name">www</field>
+            <field name="localpath">/var/www</field>
         </record>
         <record id="image_drupal_volume_etc" model="clouder.image.volume">
             <field name="image_id" ref="image_drupal"/>
-            <field name="name">/etc/nginx</field>
+            <field name="name">etc</field>
+            <field name="localpath">/etc/nginx</field>
         </record>
         <record id="image_drupal_port_http" model="clouder.image.port">
             <field name="image_id" ref="image_drupal"/>

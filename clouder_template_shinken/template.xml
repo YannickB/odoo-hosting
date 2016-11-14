@@ -13,7 +13,8 @@
         </record>
         <record id="image_template_shinken_data_volume_shinken" model="clouder.image.volume">
             <field name="template_id" ref="image_template_shinken_data"/>
-            <field name="name">/usr/local/shinken/etc</field>
+            <field name="name">shinken</field>
+            <field name="localpath">/usr/local/shinken/etc</field>
             <field name="user">shinken</field>
         </record>
         <record id="image_shinken_data" model="clouder.image">
@@ -89,6 +90,7 @@
             <field name="base" eval="True"/>
         </record>
 
+        <!--
         <record id="clouder.application_salt_minion" model="clouder.application">
             <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
         </record>
@@ -101,6 +103,7 @@
         <record id="clouder_template_proxy.application_proxy_data" model="clouder.application">
             <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
         </record>
+        -->
 
     </data>
 </openerp>
