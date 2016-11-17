@@ -74,7 +74,7 @@ class ClouderImage(models.Model):
             docker_file = os.path.join(build_dir, 'Dockerfile')
             server.execute([
                 'echo "%s" >> "%s"' % (
-                    self.computed_dockerfile.replace('"', r'\\"'),
+                    self.computed_dockerfile.replace('"', r'\"'),
                     docker_file,
                 ),
             ])
@@ -145,12 +145,23 @@ class ClouderServer(models.Model):
     _inherit = 'clouder.server'
 
     @api.multi
-    def deploy(self):
-        super(ClouderServer, self).deploy()
+    def configure_exec(self):
+        super(ClouderServer, self).configure_exec()
         # Activate swarm mode if master
-        if self.runner == 'swarm' and self.master_id == self:
-            self.execute(
-                ['docker', 'swarm', 'init', '--advertise-addr', self.ip])
+        if self.runner == 'swarm':
+            # If master, create swarm
+            if self.master_id == self:
+                self.execute(
+                    ['docker', 'swarm', 'init',
+                     '--advertise-addr', self.private_ip])
+            # If not master, join swarm
+            else:
+                token = self.master_id.execute([
+                    'docker', 'swarm', 'join-token', '-q', 'worker'])
+                token = token.replace('\n', '')
+                self.execute([
+                    'docker', 'swarm', 'join',
+                    '--token', token, self.master_id.private_ip + ':2377'])
 
 
 class ClouderContainer(models.Model):
@@ -273,6 +284,10 @@ class ClouderContainer(models.Model):
                     "', 'image': '" + self.name + '-' +
                     datetime.now().strftime('%Y%m%d.%H%M%S') +
                     "', 'build': True}\""])
+
+            elif self.server_id.provider_id and \
+                    self.server_id.provider_id.type == 'container':
+                self.log('TODO')
 
             else:
 
@@ -404,6 +419,11 @@ class ClouderContainer(models.Model):
                     'salt', self.server_id.fulldomain,
                     'state.apply', 'container_purge',
                     "pillar=\"{'container_name': '" + self.name + "'}\""])
+
+            elif self.server_id.provider_id and \
+                    self.server_id.provider_id.type == 'container':
+                self.log('TODO')
+
             else:
 
                 if self.runner == 'engine':
@@ -443,11 +463,17 @@ class ClouderContainer(models.Model):
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
-            if not self.application_id.check_tags(['no-salt']):
+            if self.executor == 'salt' and \
+                    self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
                     'salt', self.server_id.fulldomain, 'state.apply',
                     'container_stop',
                     "pillar=\"{'container_name': '" + self.name + "'}\""])
+
+            elif self.server_id.provider_id and \
+                    self.server_id.provider_id.type == 'container':
+                self.log('TODO')
+
             else:
                 if self.runner == 'engine':
                     self.server_id.execute(['docker', 'stop', self.name])
@@ -474,11 +500,17 @@ class ClouderContainer(models.Model):
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
-            if not self.application_id.check_tags(['no-salt']):
+            if self.executor == 'salt' and \
+                    self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
                     'salt', self.server_id.fulldomain,
                     'state.apply', 'container_start',
                     "pillar=\"{'container_name': '" + self.name + "'}\""])
+
+            elif self.server_id.provider_id and \
+                    self.server_id.provider_id.type == 'container':
+                self.log('TODO')
+
             else:
                 if self.runner == 'engine':
                     self.server_id.execute(['docker', 'start', self.name])

@@ -406,7 +406,7 @@ class ClouderModel(models.AbstractModel):
         self.do('reinstall', 'deploy_frame')
 
     @api.multi
-    def hook_create(self):
+    def hook_create(self, vals):
         return
 
     @api.model
@@ -420,14 +420,8 @@ class ClouderModel(models.AbstractModel):
 
         res = super(ClouderModel, self).create(vals)
 
-        # Make sure one2one relation with
-        # parent link is immediately established
-        if self._name == 'clouder.container' and 'parent_id' in vals:
-            self.env['clouder.container.child'].browse(
-                vals['parent_id']).write({'child_id': res.id})
-
         if self._autodeploy:
-            res.hook_create()
+            res.hook_create(vals)
             res.do('create', 'deploy_frame')
 
         return res
@@ -549,7 +543,7 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def execute(self, cmd, stdin_arg=False,
                 path=False, ssh=False, server_name='',
-                username=False, executor='bash'):
+                username=False, executor='sh'):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -574,12 +568,7 @@ class ClouderModel(models.AbstractModel):
 
         if self._name == 'clouder.container':
 
-            container = self.name
-            if self.runner == 'swarm':
-                # Replace container name by name if the
-                # first pod running this service
-                container = "$(docker ps --format={{.Names}} | grep " + \
-                            container + ". | awk {'print $1'})"
+            container = self.pod
 
             cmd_temp = []
             first = True
@@ -722,7 +711,7 @@ class ClouderModel(models.AbstractModel):
             server.execute([
                 'cat', destination, '|', 'docker', 'exec', '-i',
                 username and ('-u %s' % username) or '',
-                self.name, 'sh', '-c', "'cat > %s'" % final_destination,
+                self.pod, 'sh', '-c', "'cat > %s'" % final_destination,
             ])
 #            if username:
 #                server.execute([

@@ -14,65 +14,71 @@ class ClouderServer(models.Model):
     _inherit = 'clouder.server'
 
     @api.multi
-    def deploy(self):
+    def configure_exec(self):
         """
         """
 
-        super(ClouderServer, self).deploy()
+        super(ClouderServer, self).configure_exec()
 
-        if not self.env.ref('clouder.clouder_settings').salt_master_id:
-            application = self.env.ref('clouder.application_salt_master')
-            master = self.env['clouder.container'].create({
+        if self.executor == 'salt':
+
+            if not self.env.ref('clouder.clouder_settings').salt_master_id:
+                application = self.env.ref('clouder.application_salt_master')
+                master = self.env['clouder.container'].create({
+                    'environment_id': self.environment_id.id,
+                    'suffix': 'salt-master',
+                    'application_id': application.id,
+                    'server_id': self.id,
+                })
+            else:
+                master = self.salt_master
+
+            application = self.env.ref('clouder.application_salt_minion')
+            self.env['clouder.container'].create({
                 'environment_id': self.environment_id.id,
-                'suffix': 'salt-master',
+                'suffix': 'salt-minion',
                 'application_id': application.id,
                 'server_id': self.id,
             })
-        else:
-            master = self.salt_master
 
-        application = self.env.ref('clouder.application_salt_minion')
-        self.env['clouder.container'].create({
-            'environment_id': self.environment_id.id,
-            'suffix': 'salt-minion',
-            'application_id': application.id,
-            'server_id': self.id,
-        })
+            time.sleep(3)
 
-        time.sleep(3)
+            master.execute(['salt-key', '-y', '--accept=' + self.fulldomain])
 
-        master.execute(['salt-key', '-y', '--accept=' + self.fulldomain])
-
-        master.execute([
-            'echo "  \'' + self.fulldomain + '\':\n#END ' +
-            self.fulldomain + '" >> /srv/pillar/top.sls'])
+            master.execute([
+                'echo "  \'' + self.fulldomain + '\':\n#END ' +
+                self.fulldomain + '" >> /srv/pillar/top.sls'])
 
     @api.multi
     def purge(self):
         """
         """
-        master = self.salt_master
-        if master:
+
+        if self.executor == 'salt':
+
+            master = self.salt_master
+            if master:
+                try:
+                    master.execute([
+                        'sed', '-i',
+                        '"/  \'' + self.fulldomain + r'\'/,/END\s' +
+                        self.fulldomain + '/d"',
+                        '/srv/pillar/top.sls'])
+                    master.execute([
+                        'rm', '/etc/salt/pki/master/minions/' + self.fulldomain])
+                    master.execute([
+                        'rm', '/etc/salt/pki/master/minions_denied/' +
+                        self.fulldomain])
+                except:
+                    pass
             try:
-                master.execute([
-                    'sed', '-i',
-                    '"/  \'' + self.fulldomain + r'\'/,/END\s' +
-                    self.fulldomain + '/d"',
-                    '/srv/pillar/top.sls'])
-                master.execute([
-                    'rm', '/etc/salt/pki/master/minions/' + self.fulldomain])
-                master.execute([
-                    'rm', '/etc/salt/pki/master/minions_denied/' +
-                    self.fulldomain])
+                minion = self.env['clouder.container'].search(
+                    [('environment_id', '=', self.environment_id.id),
+                     ('server_id', '=', self.id), ('suffix', '=', 'salt-minion')])
+                minion.unlink()
             except:
                 pass
-        try:
-            minion = self.env['clouder.container'].search(
-                [('environment_id', '=', self.environment_id.id),
-                 ('server_id', '=', self.id), ('suffix', '=', 'salt-minion')])
-            minion.unlink()
-        except:
-            pass
+
         super(ClouderServer, self).purge()
 
 

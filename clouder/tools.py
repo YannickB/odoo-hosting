@@ -6,7 +6,7 @@ import string
 from random import SystemRandom
 
 
-def generate_random_password(size, punctuation=True):
+def generate_random_password(size, punctuation=False):
     """ Method which can be used to generate a random password.
 
     :param size: (int) The size of the random string to generate

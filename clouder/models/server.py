@@ -75,7 +75,8 @@ class ClouderServer(models.Model):
     )
     name = fields.Char('Prefix', required=True)
     domain_id = fields.Many2one('clouder.domain', 'Domain', required=True)
-    ip = fields.Char('IP')
+    public_ip = fields.Char('Public IP')
+    private_ip = fields.Char('Private IP')
     environment_id = fields.Many2one('clouder.environment', 'Environment',
                                      required=True)
     login = fields.Char('Login')
@@ -97,7 +98,7 @@ class ClouderServer(models.Model):
     )
     start_port = fields.Integer('Start Port', required=True)
     end_port = fields.Integer('End Port', required=True)
-    public_ip = fields.Boolean(
+    assign_ip = fields.Boolean(
         'Assign ports with public ip?',
         help="This is especially useful if you want to have several "
              "infrastructures on the same server, by using same ports but "
@@ -210,7 +211,7 @@ class ClouderServer(models.Model):
         return fulldomain
 
     @api.multi
-    @api.constrains('name', 'ip')
+    @api.constrains('name', 'public_ip', 'private_ip')
     def _check_name_ip(self):
         """
         Check that the server domain does not contain any forbidden
@@ -220,7 +221,11 @@ class ClouderServer(models.Model):
             self.raise_error(
                 "Name can only contains letters, digits, -",
             )
-        if not re.match(r"^[\d:.]*$", self.ip):
+        if not re.match(r"^[\d:.]*$", self.public_ip):
+            self.raise_error(
+                "IP can only contains digits, dots and :",
+            )
+        if not re.match(r"^[\d:.]*$", self.private_ip):
             self.raise_error(
                 "IP can only contains digits, dots and :",
             )
@@ -236,7 +241,7 @@ class ClouderServer(models.Model):
             self.execute_local([sed, name, ssh_config])
             self.execute_write_file(ssh_config, 'Host %s' % name)
             self.execute_write_file(
-                ssh_config, '\n  HostName %s' % server.ip,
+                ssh_config, '\n  HostName %s' % server.public_ip,
             )
             self.execute_write_file(
                 ssh_config, '\n  Port %s' % server.ssh_port,
@@ -303,6 +308,28 @@ class ClouderServer(models.Model):
             container.stop()
 
     @api.multi
+    def configure(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('configure', 'configure_exec')
+
+    @api.multi
+    def configure_exec(self):
+        """
+        Configure server
+        """
+
+        # Recover ips from node if libcloud
+        if self.provider_id:
+            for node in self.libcloud_get_nodes():
+                self.write({'public_ip': node.public_ips[0]})
+                self.write({'private_ip': node.private_ips[0]})
+
+        # Install Docker
+        self.execute(['sudo curl -sSL https://get.docker.com/ | sudo sh'])
+        # Add user to Docker group
+        self.execute(['sudo usermod -aG docker', self.login])
+
+    @api.multi
     def test_connection(self):
         """
         Test connection to the server.
@@ -335,7 +362,7 @@ class ClouderServer(models.Model):
         if self.domain_id.dns_id:
             self.domain_id.dns_id.execute([
                 'echo "%s IN A %s" >> "%s"' % (
-                    self.name, self.ip, self.domain_id.configfile,
+                    self.name, self.public_ip, self.domain_id.configfile,
                 )
             ])
             self.domain_id.refresh_serial(self.fulldomain)
