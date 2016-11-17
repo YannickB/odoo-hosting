@@ -173,7 +173,8 @@ class ClouderContainer(models.Model):
         """
         pod = self.name
         if self.runner == 'swarm':
-            pod = "$(docker ps --format={{.Names}} | grep " + self.name + ". | head -n1 | awk '{print $1;}' | xargs echo -n)"
+            pod = "$(docker ps --format={{.Names}} | grep " + self.name + \
+                  ". | head -n1 | awk '{print $1;}' | xargs echo -n)"
         return pod
 
     @property
@@ -1156,6 +1157,7 @@ class ClouderContainer(models.Model):
         """
         return
 
+    @api.multi
     def get_container_res(self):
         ports = []
         expose_ports = []
@@ -1165,8 +1167,9 @@ class ClouderContainer(models.Model):
                 if self.server_id.assign_ip \
                         and self.application_id.type_id.name != 'registry':
                     ip = self.server_id.public_ip + ':'
-                ports.append(ip + str(port.hostport) + ':' +
-                             port.localport + (port.udp and '/udp' or ''))
+                ports.append('%s:%s'
+                             % (ip + str(port.hostport),
+                                port.localport + (port.udp and '/udp' or '')))
             else:
                 # Expose port on the swarm only if expose to internet
                 if port.expose == 'internet':
@@ -1183,8 +1186,8 @@ class ClouderContainer(models.Model):
                     volumes.append(arg)
             else:
                 volumes.append(
-                    'type=volume,source=' + self.name + '-' + volume.name +
-                    ',destination=' + volume.localpath)
+                    'type=volume,source=%s-%s,destination=%s'
+                    % (self.name, volume.name, volume.localpath))
         volumes_from = []
         for volume_from in self.volumes_from_ids:
             if self.runner != 'swarm':
@@ -1194,8 +1197,8 @@ class ClouderContainer(models.Model):
                 # If swarm, return all volumes of container
                 for volume in volume_from.volume_ids:
                     volumes_from.append(
-                        'type=volume,source=' + volume_from.name + '-' +
-                        volume.name + ',destination=' + volume.localpath)
+                        'type=volume,source=%s-%s,destination=%s'
+                        % (volume_from.name, volume.name, volume.localpath))
         links = []
         for link in self.link_ids:
             if link.make_link:
@@ -1222,6 +1225,7 @@ class ClouderContainer(models.Model):
             'volumes': volumes, 'volumes_from': volumes_from,
             'links': links, 'environment': {}}
 
+    @api.multi
     def get_container_compose_res(self):
         """
         Recursively build data needed for compose file
@@ -1280,9 +1284,7 @@ class ClouderContainer(models.Model):
         Recursively deploy containers one by one
         """
         if self.child_ids:
-            for child in self.child_ids:
-                if child.child_id:
-                    child.child_id.recursive_deploy_one()
+            self.child_ids.mapped('child_id').recursive_deploy_one()
         else:
             # We only call the hook if service without children
             self.hook_deploy_one()
@@ -1294,9 +1296,7 @@ class ClouderContainer(models.Model):
         Recursively execute deploy_post function
         """
         if self.child_ids:
-            for child in self.child_ids:
-                if child.child_id:
-                    child.child_id.recursive_deploy_post()
+            self.child_ids.mapped('child_id').recursive_deploy_post()
         else:
             # We only call the hook if service without children
             self.deploy_post()
@@ -1308,9 +1308,7 @@ class ClouderContainer(models.Model):
         Recursively execute save
         """
         if self.child_ids:
-            for child in self.child_ids:
-                if child.child_id:
-                    child.child_id.recursive_save()
+            self.child_ids.mapped('child_id').recursive_save()
         else:
             # Avoid backup alert on monitoring
             self = self.with_context(save_comment='First save')
@@ -1395,8 +1393,7 @@ class ClouderContainer(models.Model):
             if self.compose and not self.parent_id:
                 self.hook_purge_compose()
             # Recursively delete childs in Odoo
-            for child in childs:
-                child.delete_child_exec()
+            childs.delete_child_exec()
         else:
             # If not compose, purge current container
             if not self.compose:

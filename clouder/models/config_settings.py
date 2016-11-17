@@ -26,11 +26,11 @@ class ClouderConfigSettings(models.Model):
         'clouder.container', 'Salt Master', readonly=True)
     runner = fields.Selection(
         lambda s: s._get_runners(),
-        string='Runner', required=True, default='swarm')
+        required=True, default='swarm')
     runner_id = fields.Many2one('clouder.container', 'Runner')
     executor = fields.Selection(
         lambda s: s._get_executors(),
-        string='Executor', required=True, default='ssh')
+        required=True, default='ssh')
     compose = fields.Boolean('Compose? (Experimental)', default=False)
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')

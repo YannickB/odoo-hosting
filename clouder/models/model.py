@@ -354,6 +354,7 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def deploy_frame(self):
+        self.ensure_one()
         try:
             self.deploy()
             self.deploy_links()
@@ -368,6 +369,7 @@ class ClouderModel(models.AbstractModel):
         Hook which can be used by inheriting objects to execute actions when
         we create a new record.
         """
+        self.ensure_one()
         self.purge()
         return
 
@@ -377,6 +379,7 @@ class ClouderModel(models.AbstractModel):
         Hook which can be used by inheriting objects to execute actions when
         we delete a record.
         """
+        self.ensure_one()
         self.purge_links()
         return
 
@@ -385,6 +388,7 @@ class ClouderModel(models.AbstractModel):
         """
         Force deployment of all links linked to a record.
         """
+        self.ensure_one()
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
                 link.deploy_()
@@ -394,6 +398,7 @@ class ClouderModel(models.AbstractModel):
         """
         Force purge of all links linked to a record.
         """
+        self.ensure_one()
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
                 link.purge_()
@@ -403,10 +408,12 @@ class ClouderModel(models.AbstractModel):
         """"
         Action which purge then redeploy a record.
         """
+        self.ensure_one()
         self.do('reinstall', 'deploy_frame')
 
     @api.multi
     def hook_create(self, vals):
+        self.ensure_one()
         return
 
     @api.model
@@ -452,6 +459,8 @@ class ClouderModel(models.AbstractModel):
         :param port: The port we need to connect.
         :param username: The username we need to connect.
         """
+
+        self.ensure_one()
 
         server = self
         if self._name == 'clouder.container':
@@ -552,6 +561,8 @@ class ClouderModel(models.AbstractModel):
         :param stdin_arg: The command we need to execute in stdin.
         :param path: The path where the command need to be executed.
         """
+
+        self.ensure_one()
 
         if self._name == 'clouder.container' \
                 and self.childs and 'exec' in self.childs:
@@ -659,6 +670,8 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
+        self.ensure_one()
+
         if self._name == 'clouder.container' and self.childs \
                 and 'exec' in self.childs:
             return self.childs['exec'].get(source, destination, ssh=ssh)
@@ -686,6 +699,8 @@ class ClouderModel(models.AbstractModel):
         :param source: The path we need to get the file.
         :param destination: The path we need to send the file.
         """
+
+        self.ensure_one()
 
         if self._name == 'clouder.container' and self.childs \
                 and 'exec' in self.childs:

@@ -296,39 +296,36 @@ class ClouderContainer(models.Model):
                     # Build run command
                     cmd = ['docker', 'run', '-d', '-t', '--restart=always']
 
-                    for port in res['ports']:
-                        cmd.extend(['-p', port])
-                    for volume in res['volumes']:
-                        cmd.extend(['-v', volume])
-                    for volume in res['volumes_from']:
-                        cmd.extend(['--volumes-from', volume])
-                    for link in res['links']:
-                        cmd.extend(
-                            ['--link', link['name'] + ':' + link['code']])
-                    for key, environment in res['environment'].iteritems():
-                        cmd.extend(
-                            ['-e', '"' + key + '"="' + environment + '"'])
+                    cmd += (['-p', port] for port in res['ports'])
+                    cmd += (['-v', volume] for volume in res['volumes'])
+                    cmd += (['--volumes-from', volume]
+                            for volume in res['volumes_from'])
+                    cmd += (['--link', '%s:%s' % (link['name'], link['code'])]
+                            for link in res['links'])
+                    cmd += (['-e', '"%s=%s"' % (key, environment)]
+                            for key, environment
+                            in res['environment'].iteritems())
                     # Get special arguments depending of the application
                     cmd = self.hook_deploy_special_args(cmd)
-                    cmd.extend(['--name', self.name])
+                    cmd += ['--name', self.name]
 
                     if not self.image_version_id:
                         # Build image and get his name
-                        cmd.extend([
+                        cmd.append(
                             self.image_id.build_image(
                                 self, self.server_id,
-                                expose_ports=res['expose_ports'], salt=False)])
+                                expose_ports=res['expose_ports'], salt=False))
                     else:
                         # Get image name from private repository
-                        cmd.extend([self.hook_deploy_source()])
+                        cmd.append(self.hook_deploy_source())
 
                     # Get special command depending of the application
-                    cmd.extend([self.hook_deploy_special_cmd()])
+                    cmd.append(self.hook_deploy_special_cmd())
 
                     # Run container
                     self.server_id.execute(cmd)
 
-                if self.runner == 'swarm':
+                elif self.runner == 'swarm':
 
                     # Check if network exist, create otherwise
                     network = self.environment_id.prefix + '-network'
@@ -343,38 +340,35 @@ class ClouderContainer(models.Model):
                     # Build service create command
                     cmd = ['docker', 'service', 'create']
 
-                    for port in res['ports']:
-                        cmd.extend(['-p', port])
-                    for volume in res['volumes']:
-                        cmd.extend(['--mount', volume])
+                    cmd += (['-p', port] for port in res['ports'])
+                    cmd += (['--mount', volume] for volume in res['volumes'])
                     # Get volumes from data container
-                    for volume in res['volumes_from']:
-                        cmd.extend(['--mount', volume])
-                    for key, environment in res['environment'].iteritems():
-                        cmd.extend(
-                            ['-e', '"' + key + '"="' + environment + '"'])
-                    cmd.extend(['--network', network])
+                    cmd += (['--mount', volume]
+                            for volume in res['volumes_from'])
+                    cmd += (['-e', '"%s=%s"' % (key, environment)]
+                            for key, environment
+                            in res['environment'].iteritems())
+                    cmd += ['--network', network]
                     # Get network from application link to this container
-                    for link in res['links']:
-                        cmd.extend(['--network', link])
+                    cmd += (['--network', link] for link in res['links'])
                     # Get special arguments depending of the application
                     cmd = self.hook_deploy_special_args(cmd)
-                    cmd.extend(['--name', self.name])
+                    cmd += ['--name', self.name]
                     # Set number of replicas
-                    cmd.extend(['--replicas', str(self.scale)])
+                    cmd += ['--replicas', str(self.scale)]
 
                     if not self.image_version_id:
                         # Build image and get his name
-                        cmd.extend([
+                        cmd.append(
                             self.image_id.build_image(
                                 self, self.master_id,
-                                expose_ports=res['expose_ports'], salt=False)])
+                                expose_ports=res['expose_ports'], salt=False))
                     else:
                         # Get image name from private repository
-                        cmd.extend([self.hook_deploy_source()])
+                        cmd.append(self.hook_deploy_source())
 
                     # Get special command depending of the application
-                    cmd.extend([self.hook_deploy_special_cmd()])
+                    cmd.append(self.hook_deploy_special_cmd())
 
                     # Run service
                     self.master_id.execute(cmd)
@@ -429,7 +423,7 @@ class ClouderContainer(models.Model):
                 if self.runner == 'engine':
                     self.server_id.execute(['docker', 'rm', '-v', self.name])
 
-                if self.runner == 'swarm':
+                elif self.runner == 'swarm':
                     # Remove service
                     self.master_id.execute(
                         ['docker', 'service', 'rm', self.name])
@@ -477,7 +471,7 @@ class ClouderContainer(models.Model):
             else:
                 if self.runner == 'engine':
                     self.server_id.execute(['docker', 'stop', self.name])
-                if self.runner == 'swarm':
+                elif self.runner == 'swarm':
                     self.master_id.execute(
                         ['docker', 'service', 'scale',
                          self.name + '=0'])
@@ -514,7 +508,7 @@ class ClouderContainer(models.Model):
             else:
                 if self.runner == 'engine':
                     self.server_id.execute(['docker', 'start', self.name])
-                if self.runner == 'swarm':
+                elif self.runner == 'swarm':
                     self.master_id.execute(
                         ['docker', 'service', 'scale',
                          self.name + '=' + str(self.scale)])

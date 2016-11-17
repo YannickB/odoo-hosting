@@ -65,7 +65,8 @@ class ClouderServer(models.Model):
                         self.fulldomain + '/d"',
                         '/srv/pillar/top.sls'])
                     master.execute([
-                        'rm', '/etc/salt/pki/master/minions/' + self.fulldomain])
+                        'rm',
+                        '/etc/salt/pki/master/minions/' + self.fulldomain])
                     master.execute([
                         'rm', '/etc/salt/pki/master/minions_denied/' +
                         self.fulldomain])
@@ -74,7 +75,8 @@ class ClouderServer(models.Model):
             try:
                 minion = self.env['clouder.container'].search(
                     [('environment_id', '=', self.environment_id.id),
-                     ('server_id', '=', self.id), ('suffix', '=', 'salt-minion')])
+                     ('server_id', '=', self.id),
+                     ('suffix', '=', 'salt-minion')])
                 minion.unlink()
             except:
                 pass

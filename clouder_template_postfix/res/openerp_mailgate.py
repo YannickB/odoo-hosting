@@ -51,6 +51,7 @@ class DefaultConfig(object):
     MAIL_SERVER_PORT = 25
     MAIL_ADMINS = ('info@example.com',)
 
+
 config = DefaultConfig()
 
 
@@ -212,6 +213,7 @@ def main():
         sys.stderr.write(
             "Failed to deliver email to Odoo Server, "
             "sending error notification to %s\n" % config.MAIL_ADMINS)
+
 
 if __name__ == '__main__':
     main()
