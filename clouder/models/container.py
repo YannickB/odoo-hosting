@@ -929,16 +929,14 @@ class ClouderContainer(models.Model):
                 vals['parent_id']).write({'child_id': self.id})
 
         # Deploy links and childs stored in context
-        if 'container_childs' in self.env.context:
-            for child in self.env.context['container_childs']:
-                child_vals = child[2]
-                child_vals.update({'container_id': self.id})
-                self.env['clouder.container.child'].create(child_vals)
-        if 'container_links' in self.env.context:
-            for link in self.env.context['container_links']:
-                link_vals = link[2]
-                link_vals.update({'container_id': self.id})
-                self.env['clouder.container.link'].create(link_vals)
+        for child in self.env.context.get('container_childs', []):
+            child_vals = child[2]
+            child_vals.update({'container_id': self.id})
+            self.env['clouder.container.child'].create(child_vals)
+        for link in self.env.context.get('container_links', [])
+            link_vals = link[2]
+            link_vals.update({'container_id': self.id})
+            self.env['clouder.container.link'].create(link_vals)
         self = self.with_context(container_childs=[], container_links=[])
 
         # Refresh self with added one2many
