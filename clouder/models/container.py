@@ -933,7 +933,7 @@ class ClouderContainer(models.Model):
             child_vals = child[2]
             child_vals.update({'container_id': self.id})
             self.env['clouder.container.child'].create(child_vals)
-        for link in self.env.context.get('container_links', [])
+        for link in self.env.context.get('container_links', []):
             link_vals = link[2]
             link_vals.update({'container_id': self.id})
             self.env['clouder.container.link'].create(link_vals)
