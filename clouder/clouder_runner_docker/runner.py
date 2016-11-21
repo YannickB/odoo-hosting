@@ -231,8 +231,7 @@ class ClouderContainer(models.Model):
         self.server_id.execute(['rm', '-rf', build_dir])
         self.server_id.execute(['mkdir', '-p', build_dir])
         self.server_id.execute(
-            ['echo "' + compose + '" > ' +
-             build_dir + '/' + 'docker-compose.yml'])
+            ['echo "%s" > %s/docker-compose.yml' % (compose, build_dir)])
         return build_dir
 
     @api.multi

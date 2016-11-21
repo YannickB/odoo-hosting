@@ -46,8 +46,8 @@ class ClouderServer(models.Model):
             master.execute(['salt-key', '-y', '--accept=' + self.fulldomain])
 
             master.execute([
-                'echo "  \'' + self.fulldomain + '\':\n#END ' +
-                self.fulldomain + '" >> /srv/pillar/top.sls'])
+                'echo "  \'%s\':\n#END %s" >> /srv/pillar/top.sls' %
+                (self.fulldomain, self.fulldomain)])
 
     @api.multi
     def purge(self):
@@ -66,10 +66,10 @@ class ClouderServer(models.Model):
                         '/srv/pillar/top.sls'])
                     master.execute([
                         'rm',
-                        '/etc/salt/pki/master/minions/' + self.fulldomain])
+                        '/etc/salt/pki/master/minions/%s' % (self.fulldomain)])
                     master.execute([
-                        'rm', '/etc/salt/pki/master/minions_denied/' +
-                        self.fulldomain])
+                        'rm', '/etc/salt/pki/master/minions_denied/%s' %
+                        (self.fulldomain)])
                 except:
                     pass
             try:

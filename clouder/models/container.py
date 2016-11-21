@@ -1254,7 +1254,7 @@ class ClouderContainer(models.Model):
             for link in service['links']:
                 if link['name'] in services:
                     link['name'] = services[link['name']]['compose_name']
-                links.append(link['name'] + ':' + link['code'])
+                links.append('%s:%s' % (link['name'], link['code']))
             service['links'] = links
 
             volumes_from = []

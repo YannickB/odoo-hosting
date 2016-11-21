@@ -591,7 +591,7 @@ class ClouderModel(models.AbstractModel):
                 cmd_temp.append(cmd_arg)
             cmd = cmd_temp
             cmd.append('"')
-            cmd.insert(0, container + ' ' + executor + ' -c ')
+            cmd.insert(0, '%s %s -c ' % (container, executor))
             if username:
                 cmd.insert(0, '-u ' + username)
             cmd.insert(0, 'docker exec')
