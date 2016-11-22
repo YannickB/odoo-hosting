@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_queue_job_user,queue_job user,connector.model_queue_job,clouder.group_clouder_user,1,1,1,1

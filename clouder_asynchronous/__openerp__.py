@@ -30,6 +30,7 @@
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': [
+        'security/ir.model.access.csv',
     ],
     'installable': True,
     'application': True,
