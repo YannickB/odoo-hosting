@@ -21,7 +21,7 @@ class ClouderConfigSettings(models.Model):
     name = fields.Char('Name')
     email_sysadmin = fields.Char('Email SysAdmin')
     master_id = fields.Many2one(
-        'clouder.server', 'Master', readonly=True)
+        'clouder.server', 'Master')
     salt_master_id = fields.Many2one(
         'clouder.container', 'Salt Master', readonly=True)
     runner = fields.Selection(

@@ -24,6 +24,7 @@
     ],
     'external_dependencies': {
         'python': [
+            'libcloud',
             'paramiko',
         ],
     },

@@ -343,37 +343,58 @@
                         <field name="ssh_port" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <field name="environment_id"/>
                         <field name="manager"/>
-                        <field name="provider_id"/>
-                        <newline/>
-                        <field name="private_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
-                        <field name="public_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
-                        <field name="start_port"/>
-                        <field name="end_port"/>
-                        <field name="public_ip"/>
-                        <field name="public"/>
-                        <field name="supervision_id"/>
-                        <field name="runner_id" widget="selection"/>
-                        <newline/>
-                        <field name="salt_minion_id"/>
-                        <field name="control_dns"/>
+                        <field name="provider_id" domain="[('type','in',['node','container'])]"/>
                     </group>
-                    <button name="reinstall" string="Reinstall" type="object"/>
-                    <button name="purge" string="Purge" type="object"/>
-                    <button name="test_connection" string="Test connection" type="object"/>
-                    <button name="start_containers" string="Restart Containers" type="object"/>
-                    <button name="stop_containers" string="Stop Containers" type="object"/>
-                    <button name="deploy_dns" string="Reinstall DNS" type="object"/>
-                    <button name="purge_dns" string="Purge DNS" type="object"/>
-                    <button name="clean" string="Clean disk space" type="object"/>
-                    <newline/>
-                    <group col="4">
-                        <field name="oneclick_ids" widget="many2many_tags"/>
-                        <field name="oneclick_ports" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
-                        <newline/>
-                        <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
-                        <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
-                    </group>
-                    <field name="job_ids" colspan="4"/>
+                    <notebook>
+                        <page string="General">
+                            <group col="4">
+                                <field name="private_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
+                                <field name="public_key" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
+                                <field name="start_port"/>
+                                <field name="end_port"/>
+                                <field name="assign_ip"/>
+                                <field name="public"/>
+                                <field name="supervision_id"/>
+                                <field name="runner_id" widget="selection"/>
+                                <newline/>
+                                <field name="salt_minion_id"/>
+                                <field name="control_dns"/>
+                            </group>
+                            <button name="reinstall" string="Reinstall" type="object"/>
+                            <button name="purge" string="Purge" type="object"/>
+                            <button name="configure" string="Configure" type="object"/>
+                            <button name="test_connection" string="Test connection" type="object"/>
+                            <button name="start_containers" string="Restart Containers" type="object"/>
+                            <button name="stop_containers" string="Stop Containers" type="object"/>
+                            <button name="deploy_dns" string="Reinstall DNS" type="object"/>
+                            <button name="purge_dns" string="Purge DNS" type="object"/>
+                            <button name="clean" string="Clean disk space" type="object"/>
+                            <newline/>
+                            <group col="4">
+                                <field name="oneclick_ids" widget="many2many_tags"/>
+                                <field name="oneclick_ports" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
+                                <newline/>
+                                <button name="oneclick_deploy" string="Deploy" type="object" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
+                                <button name="oneclick_purge" string="Purge" type="object" attrs="{'invisible': [('oneclick_ids','=',[])]}"/>
+                            </group>
+                            <field name="job_ids" colspan="4"/>
+                        </page>
+                        <page string="LibCloud" attrs="{'invisible': [('provider_id','=',False)]}">
+                            <group>
+                                <field name="libcloud_image"/>
+                                <field name="libcloud_size"/>
+                                <field name="libcloud_location"/>
+                                <newline/>
+                                <field name="libcloud_name"/>
+                                <field name="libcloud_state"/>
+                                <newline/>
+                                <button name="libcloud_create" string="Create" type="object"/>
+                                <button name="libcloud_destroy" string="Destroy" type="object"/>
+                                <button name="libcloud_reboot" string="Reboot" type="object"/>
+                                <button name="libcloud_stop" string="Stop" type="object"/>
+                            </group>
+                        </page>
+                    </notebook>
                 </form>
             </field>
         </record>
@@ -968,13 +989,6 @@
                         <field name="login"/>
                         <field name="secret_key"/>
                     </group>
-                    <field name="template_ids" colspan="4">
-                        <tree string="Templates" editable="bottom">
-                            <field name="image"/>
-                            <field name="size"/>
-                            <button name="create_node" string="Create Node"/>
-                        </tree>
-                    </field>
                 </form>
             </field>
         </record>

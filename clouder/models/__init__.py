@@ -10,7 +10,6 @@ from . import environment
 from . import job
 from . import one_click
 from . import provider
-from . import provider_template
 from . import save
 from . import server
 from . import template_one_2_many

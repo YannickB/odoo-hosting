@@ -2,6 +2,8 @@
 # Copyright 2015 Clouder SASU
 # License LGPL-3.0 or later (http://gnu.org/licenses/lgpl.html).
 
+import logging
+
 from openerp import models, fields, api
 from openerp import modules
 
@@ -9,9 +11,14 @@ import os.path
 import socket
 import re
 
-
-import logging
 _logger = logging.getLogger(__name__)
+
+try:
+    from libcloud.compute.base import NodeAuthSSHKey
+    from libcloud.compute.providers import get_driver
+    from libcloud.compute.types import Provider
+except ImportError:
+    _logger.warning('Cannot `import libcloud`.')
 
 
 class ClouderServer(models.Model):
@@ -114,6 +121,16 @@ class ClouderServer(models.Model):
         'clouder.oneclick', 'clouder_server_oneclick_rel',
         'container_id', 'oneclick_id', 'Oneclick Deployment')
     oneclick_ports = fields.Boolean('Assign critical ports?')
+    libcloud_name = fields.Char('Name')
+    libcloud_state = fields.Char(
+        'State', compute='_compute_libcloud_state')
+    libcloud_image = fields.Char('Image')
+    # image = fields.Selection(
+    # lambda s: s._get_libcloud_images(), string='Image')
+    libcloud_size = fields.Selection(
+        lambda s: s._get_libcloud_sizes(), string='Size')
+    libcloud_location = fields.Selection(
+        lambda s: s._get_libcloud_locations(), string='Location')
 
     @api.multi
     @api.depends('name', 'domain_id.name')
@@ -194,6 +211,62 @@ class ClouderServer(models.Model):
                 key_file_pub, server.public_key, operator='w',
             )
             self.execute_local(['chmod', '600', key_file_pub])
+
+    # @api.multi
+    # def _get_libcloud_images(self):
+    #     images = []
+    #     if 'provider_id' in self.env.context and \
+    #             self.env.context['provider_id']:
+    #         provider = self.env['clouder.provider'].browse(
+    #             self.env.context['provider_id'])
+    #         cls = get_driver(getattr(Provider, provider.name))
+    #         driver = cls(provider.login, provider.secret_key)
+    #
+    #         images = [(i.id,i.id) for i in driver.list_images()]
+    #     return images
+
+    @api.multi
+    def _compute_libcloud_state(self):
+        for record in self:
+            if record.provider_id:
+                nodes = record.libcloud_get_nodes()
+                state = 'UNKNOWN'
+                for node in nodes:
+                    state = node.state
+                record.state = state
+                _logger.info('%s', state)
+
+    @api.multi
+    def _get_libcloud_sizes(self):
+
+        sizes = [('t2.micro', 't2.micro')]
+        try:
+            provider = self.env['clouder.provider'].browse(
+                self.env.context['provider_id'])
+            cls = get_driver(getattr(Provider, provider.name))
+            driver = cls(provider.login, provider.secret_key)
+
+            sizes = [(s.id, s.id) for s in driver.list_sizes()
+                     if s.id == 't2.micro']
+        except KeyError:
+            _logger.debug('provider_id not in context')
+        return sizes
+
+    @api.multi
+    def _get_libcloud_locations(self):
+
+        locations = [('0', '0')]
+        try:
+            provider = self.env['clouder.provider'].browse(
+                self.env.context['provider_id'])
+            cls = get_driver(getattr(Provider, provider.name))
+            driver = cls(provider.login, provider.secret_key)
+
+            locations = [(l.id, l.id) for l in driver.list_locations()]
+            _logger.info('%s', locations)
+        except KeyError:
+            _logger.debug('provider_id not in context')
+        return locations
 
     @property
     def fulldomain(self):
@@ -492,3 +565,92 @@ class ClouderServer(models.Model):
             'run -v /var/run/docker.sock:/var/run/docker.sock '
             '-v /var/lib/docker:/var/lib/docker '
             '--rm martin/docker-cleanup-volumes'])
+
+    @api.multi
+    def libcloud_get_nodes(self):
+        """
+        Return libcloud nodes linked to this record.
+        We return a list because in some case we may have several nodes,
+        but we should only have one.
+        :return:
+        """
+        Driver = get_driver(getattr(Provider, self.provider_id.name))
+        driver = Driver(self.provider_id.login, self.provider_id.secret_key)
+
+        res = []
+        for node in driver.list_nodes():
+            if node.name == self.libcloud_name and node.state != 'terminated':
+                res.append(node)
+        return res
+
+    @api.multi
+    def libcloud_create(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('libcloud_create', 'libcloud_create_exec')
+
+    @api.multi
+    def libcloud_create_exec(self):
+
+        self.libcloud_destroy_exec()
+
+        Driver = get_driver(getattr(Provider, self.provider_id.name))
+        driver = Driver(self.provider_id.login, self.provider_id.secret_key)
+
+        image = [i for i in driver.list_images()
+                 if i.id == self.libcloud_image][0]
+        size = [s for s in driver.list_sizes()
+                if s.id == self.libcloud_size][0]
+        location = False
+        if self.libcloud_location:
+            location = [l for l in driver.list_locations()
+                        if l.id == self.libcloud_location][0]
+
+        # Create node
+        node = driver.create_node(
+            name=self.name, image=image,
+            size=size, location=location, ssh_username=self.login or 'root',
+            auth=NodeAuthSSHKey(self.public_key))
+
+        # Store name in specific field, in case different from name field
+        self.write({'libcloud_name': node.name})
+
+        # Wait until running
+        driver.wait_until_running([node])
+
+        # Configure node, install Docker, add to Swarm etc...
+        self.configure_exec()
+
+    @api.multi
+    def libcloud_destroy(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('libcloud_destroy', 'libcloud_destroy_exec')
+
+    @api.multi
+    def libcloud_destroy_exec(self):
+        self.libcloud_get_nodes().destroy()
+
+    @api.multi
+    def libcloud_reboot(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('libcloud_reboot', 'libcloud_reboot_exec')
+
+    @api.multi
+    def libcloud_reboot_exec(self):
+        Driver = get_driver(getattr(Provider, self.provider_id.name))
+        driver = Driver(self.provider_id.login, self.provider_id.secret_key)
+        for node in self.libcloud_get_nodes():
+            if node.state == 'stopped':
+                driver.ex_start_node(node)
+            else:
+                node.reboot()
+
+    @api.multi
+    def libcloud_stop(self):
+        self = self.with_context(no_enqueue=True)
+        self.do('libcloud_stop', 'libcloud_stop_exec')
+
+    @api.multi
+    def libcloud_stop_exec(self):
+        Driver = get_driver(getattr(Provider, self.provider_id.name))
+        driver = Driver(self.provider_id.login, self.provider_id.secret_key)
+        driver.ex_stop_node(n for n in self.libcloud_get_nodes())
