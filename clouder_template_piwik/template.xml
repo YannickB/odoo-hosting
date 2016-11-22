@@ -25,19 +25,22 @@
         </record>
         <record id="image_piwik_volume_versions" model="clouder.image.volume">
             <field name="image_id" ref="image_piwik"/>
-            <field name="name">/opt/versions</field>
+            <field name="name">versions</field>
+            <field name="localpath">/opt/versions</field>
             <field name="hostpath">/opt/services</field>
             <field name="readonly" eval="True"/>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_piwik_volume_www" model="clouder.image.volume">
             <field name="image_id" ref="image_piwik"/>
-            <field name="name">/var/www</field>
+            <field name="name">www</field>
+            <field name="localpath">/var/www</field>
             <field name="user">www-data</field>
         </record>
         <record id="image_piwik_volume_etc" model="clouder.image.volume">
             <field name="image_id" ref="image_piwik"/>
-            <field name="name">/etc/nginx</field>
+            <field name="name">etc</field>
+            <field name="localpath">/etc/nginx</field>
         </record>
         <record id="image_piwik_port_ssh" model="clouder.image.port">
             <field name="image_id" ref="image_piwik"/>

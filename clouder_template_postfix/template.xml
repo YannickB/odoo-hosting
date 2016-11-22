@@ -12,7 +12,8 @@
         </record>
         <record id="image_template_spamassassin_volume_spamassassin" model="clouder.image.volume">
             <field name="template_id" ref="image_template_spamassassin"/>
-            <field name="name">/etc/spamassassin</field>
+            <field name="name">spamassassin</field>
+            <field name="localpath">/etc/spamassassin</field>
         </record>
         <record id="image_template_spamassassin_port_spamd" model="clouder.image.port">
             <field name="template_id" ref="image_template_spamassassin"/>
@@ -71,11 +72,13 @@
         </record>
         <record id="image_template_postfix_data_volume_postfix" model="clouder.image.volume">
             <field name="template_id" ref="image_template_postfix_data"/>
-            <field name="name">/etc/postfix</field>
+            <field name="name">postfix</field>
+            <field name="localpath">/etc/postfix</field>
         </record>
         <record id="image_template_postfix_data_volume_aliases" model="clouder.image.volume">
             <field name="template_id" ref="image_template_postfix_data"/>
-            <field name="name">/etc/aliases-dir</field>
+            <field name="name">aliases-dir</field>
+            <field name="localpath">/etc/aliases-dir</field>
         </record>
         <record id="image_postfix_data" model="clouder.image">
             <field name="name">image_postfix_data</field>

@@ -26,7 +26,8 @@ class ClouderApplicationLink(models.Model):
     template_id = fields.Many2one(
         'clouder.application.template', 'Template',
         ondelete="cascade", required=False)
-    name = fields.Many2one('clouder.application', 'Application', required=True)
+    name = fields.Many2one('clouder.application', 'Application',
+                           ondelete="cascade", required=True)
     required = fields.Boolean('Required?')
     auto = fields.Boolean('Auto?')
     make_link = fields.Boolean('Make docker link?')

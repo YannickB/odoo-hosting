@@ -62,6 +62,7 @@ def connector_enqueue(
     job.search([('state', '=', 'failed')]).write({'state': 'pending'})
     return res
 
+
 # Add function in connector whitelist
 whitelist_unpickle_global(copy_reg._reconstructor)
 whitelist_unpickle_global(tools.misc.frozendict)

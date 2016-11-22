@@ -727,7 +727,7 @@ class ClouderBase(models.Model):
             base_reset_fullname_=base_reset_id.fullname_)
         base = base.with_context(
             container_reset_name=base_reset_id.container_id.name)
-        base.deploy_salt()
+        # base.deploy_salt()
         base.update_exec()
         base.post_reset()
         base.deploy_post()
@@ -796,7 +796,7 @@ class ClouderBase(models.Model):
                 child.create_child_exec()
             return
 
-        self.deploy_salt()
+        # self.deploy_salt()
 
         self.deploy_database()
         self.log('Database created')
@@ -821,11 +821,11 @@ class ClouderBase(models.Model):
         self = self.with_context(save_comment='First save')
         self.save_exec(no_enqueue=True)
 
-        if self.application_id.update_bases:
-            self.container_id.deploy_salt()
-        for key, child in self.container_id.childs.iteritems():
-            if child.application_id.update_bases:
-                child.deploy_salt()
+        # if self.application_id.update_bases:
+        #     self.container_id.deploy_salt()
+        # for key, child in self.container_id.childs.iteritems():
+        #     if child.application_id.update_bases:
+        #         child.deploy_salt()
 
     @api.multi
     def purge_post(self):
@@ -849,13 +849,13 @@ class ClouderBase(models.Model):
         """
         self.purge_database()
         self.purge_post()
-        self.purge_salt()
+        # self.purge_salt()
 
-        if self.application_id.update_bases:
-            self.container_id.deploy_salt()
-        for key, child in self.container_id.childs.iteritems():
-            if child.application_id.update_bases:
-                child.deploy_salt()
+        # if self.application_id.update_bases:
+        #     self.container_id.deploy_salt()
+        # for key, child in self.container_id.childs.iteritems():
+        #     if child.application_id.update_bases:
+        #         child.deploy_salt()
 
         super(ClouderBase, self).purge()
 

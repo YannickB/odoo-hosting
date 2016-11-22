@@ -25,6 +25,7 @@
     'version': '9.0.10.0.0',
     'category': 'Clouder',
     'depends': [
+        'clouder',
         'clouder_template_bind',
         'clouder_template_shinken',
         'clouder_template_postfix',

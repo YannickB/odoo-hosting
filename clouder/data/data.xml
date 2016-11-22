@@ -40,15 +40,18 @@
         </record>
         <record id="image_template_nginx_data_volume_nginx" model="clouder.image.volume">
             <field name="template_id" ref="image_template_nginx_data"/>
-            <field name="name">/etc/nginx</field>
+            <field name="name">nginx</field>
+            <field name="localpath">/etc/nginx</field>
         </record>
         <record id="image_template_nginx_data_volume_www" model="clouder.image.volume">
             <field name="template_id" ref="image_template_nginx_data"/>
-            <field name="name">/var/www</field>
+            <field name="name">www</field>
+            <field name="localpath">/var/www</field>
         </record>
         <record id="image_template_nginx_data_volume_ssl" model="clouder.image.volume">
             <field name="template_id" ref="image_template_nginx_data"/>
-            <field name="name">/etc/ssl</field>
+            <field name="name">ssl</field>
+            <field name="localpath">/etc/ssl</field>
         </record>
         <record id="image_nginx_data" model="clouder.image">
             <field name="name">image_nginx_data</field>

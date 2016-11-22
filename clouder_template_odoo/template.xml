@@ -78,23 +78,28 @@
         </record>
         <record id="image_template_odoo_data_volume_home" model="clouder.image.volume">
             <field name="template_id" ref="image_template_odoo_data"/>
-            <field name="name">/home/odoo</field>
+            <field name="name">home</field>
+            <field name="localpath">/home/odoo</field>
         </record>
         <record id="image_template_odoo_data_volume_data" model="clouder.image.volume">
             <field name="template_id" ref="image_template_odoo_data"/>
-            <field name="name">/opt/odoo/data</field>
+            <field name="name">data</field>
+            <field name="localpath">/opt/odoo/data</field>
         </record>
         <record id="image_template_odoo_data_volume_etc" model="clouder.image.volume">
             <field name="template_id" ref="image_template_odoo_data"/>
-            <field name="name">/opt/odoo/etc</field>
+            <field name="name">etc</field>
+            <field name="localpath">/opt/odoo/etc</field>
         </record>
         <record id="image_template_odoo_data_volume_extra_addons" model="clouder.image.volume">
             <field name="template_id" ref="image_template_odoo_data"/>
-            <field name="name">/opt/odoo/extra-addons</field>
+            <field name="name">extra-addons</field>
+            <field name="localpath">/opt/odoo/extra-addons</field>
         </record>
         <record id="image_template_odoo_data_volume_var" model="clouder.image.volume">
             <field name="template_id" ref="image_template_odoo_data"/>
-            <field name="name">/opt/odoo/var</field>
+            <field name="name">var</field>
+            <field name="localpath">/opt/odoo/var</field>
         </record>
 
         <record id="image_template_odoo_files" model="clouder.image.template">
@@ -102,7 +107,8 @@
         </record>
         <record id="image_template_odoo_data_volume_files" model="clouder.image.volume">
             <field name="template_id" ref="image_template_odoo_files"/>
-            <field name="name">/opt/odoo/files</field>
+            <field name="name">files</field>
+            <field name="localpath">/opt/odoo/files</field>
             <field name="nosave" eval="True"/>
         </record>
 

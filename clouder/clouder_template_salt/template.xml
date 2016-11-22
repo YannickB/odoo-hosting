@@ -17,11 +17,13 @@
         </record>
         <record id="image_template_salt_master_data_volume_salt" model="clouder.image.volume">
             <field name="template_id" ref="image_template_salt_master_data"/>
-            <field name="name">/srv/salt</field>
+            <field name="name">salt</field>
+            <field name="localpath">/srv/salt</field>
         </record>
         <record id="image_template_salt_master_data_volume_pillar" model="clouder.image.volume">
             <field name="template_id" ref="image_template_salt_master_data"/>
-            <field name="name">/srv/pillar</field>
+            <field name="name">pillar</field>
+            <field name="localpath">/srv/pillar</field>
         </record>
 
 
@@ -61,7 +63,10 @@
             <field name="template_ids" eval="[(4, [ref('image_template_salt_master_data')])]"/>
             <field name="parent_from">clouder/clouder-salt-master-data</field>
             <field name="parent_id"/>
-            <field name="dockerfile"/>
+            <field name="dockerfile"><![CDATA[
+CMD tail -f /dev/null
+]]></field>
+
         </record>
 
         <record id="image_salt_master_exec" model="clouder.image">
@@ -113,12 +118,14 @@
         </record>
         <record id="image_template_salt_minion_volume_etc" model="clouder.image.volume">
             <field name="template_id" ref="image_template_salt_minion"/>
-            <field name="name">/etc/nagios</field>
+            <field name="name">nagios</field>
+            <field name="localpath">/etc/nagios</field>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_template_salt_minion_volume_docker" model="clouder.image.volume">
             <field name="template_id" ref="image_template_salt_minion"/>
-            <field name="name">/var/run/docker.sock</field>
+            <field name="name">docker</field>
+            <field name="localpath">/var/run/docker.sock</field>
             <field name="hostpath">/var/run/docker.sock</field>
             <field name="readonly" eval="True"/>
             <field name="nosave" eval="True"/>

@@ -6,6 +6,7 @@ from datetime import datetime
 import logging
 import os.path
 import time
+import yaml
 
 from openerp import models, api, modules
 
@@ -73,7 +74,7 @@ class ClouderImage(models.Model):
             docker_file = os.path.join(build_dir, 'Dockerfile')
             server.execute([
                 'echo "%s" >> "%s"' % (
-                    self.computed_dockerfile.replace('"', r'\\"'),
+                    self.computed_dockerfile.replace('"', r'\"'),
                     docker_file,
                 ),
             ])
@@ -136,6 +137,33 @@ class ClouderImageVersion(models.Model):
         return res
 
 
+class ClouderServer(models.Model):
+    """
+    Add methods to manage the docker server specificities.
+    """
+
+    _inherit = 'clouder.server'
+
+    @api.multi
+    def configure_exec(self):
+        super(ClouderServer, self).configure_exec()
+        # Activate swarm mode if master
+        if self.runner == 'swarm':
+            # If master, create swarm
+            if self.master_id == self:
+                self.execute(
+                    ['docker', 'swarm', 'init',
+                     '--advertise-addr', self.private_ip])
+            # If not master, join swarm
+            else:
+                token = self.master_id.execute([
+                    'docker', 'swarm', 'join-token', '-q', 'worker'])
+                token = token.replace('\n', '')
+                self.execute([
+                    'docker', 'swarm', 'join',
+                    '--token', token, self.master_id.private_ip + ':2377'])
+
+
 class ClouderContainer(models.Model):
     """
     Add methods to manage the docker container specificities.
@@ -174,12 +202,67 @@ class ClouderContainer(models.Model):
         return ''
 
     @api.multi
-    def hook_deploy(self):
+    def refresh_compose_file(self):
+        """
+        Refresh compose directory
+        """
+        res = self.get_container_compose_res()
+
+        # Build compose dictionary
+        compose = {'version': '2', 'services': {}}
+        for service_dict in res:
+            service = service_dict['self']
+            image = service.image_id.build_image(
+                service, service.server_id,
+                expose_ports=service_dict['expose_ports'], salt=False)
+            compose['services'][service_dict['compose_name']] = {
+                'image': image,
+                'ports': service_dict['ports'],
+                'volumes': service_dict['volumes'],
+                'volumes_from': service_dict['volumes_from'],
+                'links': service_dict['links']
+            }
+        # Convert to yaml format
+        compose = yaml.safe_dump(compose, default_flow_style=False)
+
+        # Create directory and write compose file
+        build_dir = self.env['clouder.model']._get_directory_tmp(
+            'clouder-compose/' + self.name)
+        self.server_id.execute(['rm', '-rf', build_dir])
+        self.server_id.execute(['mkdir', '-p', build_dir])
+        self.server_id.execute(
+            ['echo "%s" > %s/docker-compose.yml' % (compose, build_dir)])
+        return build_dir
+
+    @api.multi
+    def hook_deploy_compose(self):
         """
         Deploy the container in the server.
         """
 
-        res = super(ClouderContainer, self).hook_deploy()
+        super(ClouderContainer, self).hook_deploy_compose()
+
+        if not self.server_id.runner_id or \
+                self.server_id.runner_id.application_id.type_id.name \
+                == 'docker':
+
+            if False:  # not self.application_id.check_tags(['no-salt']):
+                self.log('TODO')
+            else:
+                # Create build directory and deploy
+                build_dir = self.refresh_compose_file()
+                self.server_id.execute(
+                    ['docker-compose', '-p', self.name, 'up', '-d'],
+                    path=build_dir)
+        return
+
+    @api.multi
+    def hook_deploy_one(self):
+        """
+        Deploy the container in the server.
+        """
+
+        super(ClouderContainer, self).hook_deploy_one()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name \
@@ -187,7 +270,8 @@ class ClouderContainer(models.Model):
 
             res = self.get_container_res()
 
-            if not self.application_id.check_tags(['no-salt']):
+            if self.executor == 'salt' and \
+                    self.application_id.check_tags(['no-salt']):
 
                 self.deploy_salt()
                 self.salt_master.execute([
@@ -200,56 +284,160 @@ class ClouderContainer(models.Model):
                     datetime.now().strftime('%Y%m%d.%H%M%S') +
                     "', 'build': True}\""])
 
+            elif self.server_id.provider_id and \
+                    self.server_id.provider_id.type == 'container':
+                self.log('TODO')
+
             else:
 
-                cmd = ['docker', 'run', '-d', '-t', '--restart=always']
+                if self.runner == 'engine':
 
-                for port in res['ports']:
-                    cmd.extend(['-p', port])
-                for volume in res['volumes']:
-                    cmd.extend(['-v', volume])
-                for volume in res['volumes_from']:
-                    cmd.extend(['--volumes-from', volume])
-                for link in res['links']:
-                    cmd.extend(['--link', link])
-                for key, environment in res['environment'].iteritems():
-                    cmd.extend(['-e', '"' + key + '"="' + environment + '"'])
-                cmd = self.hook_deploy_special_args(cmd)
-                cmd.extend(['--name', self.name])
+                    # Build run command
+                    cmd = ['docker', 'run', '-d', '-t', '--restart=always']
 
-                if not self.image_version_id:
-                    cmd.extend([
-                        self.image_id.build_image(
-                            self, self.server_id,
-                            expose_ports=res['expose_ports'], salt=False)])
-                else:
-                    cmd.extend([self.hook_deploy_source()])
+                    cmd += (['-p', port] for port in res['ports'])
+                    cmd += (['-v', volume] for volume in res['volumes'])
+                    cmd += (['--volumes-from', volume]
+                            for volume in res['volumes_from'])
+                    cmd += (['--link', '%s:%s' % (link['name'], link['code'])]
+                            for link in res['links'])
+                    cmd += (['-e', '"%s=%s"' % (key, environment)]
+                            for key, environment
+                            in res['environment'].iteritems())
+                    # Get special arguments depending of the application
+                    cmd = self.hook_deploy_special_args(cmd)
+                    cmd += ['--name', self.name]
 
-                cmd.extend([self.hook_deploy_special_cmd()])
+                    if not self.image_version_id:
+                        # Build image and get his name
+                        cmd.append(
+                            self.image_id.build_image(
+                                self, self.server_id,
+                                expose_ports=res['expose_ports'], salt=False))
+                    else:
+                        # Get image name from private repository
+                        cmd.append(self.hook_deploy_source())
 
-                # Run container
-                self.server_id.execute(cmd)
+                    # Get special command depending of the application
+                    cmd.append(self.hook_deploy_special_cmd())
 
-        return res
+                    # Run container
+                    self.server_id.execute(cmd)
+
+                elif self.runner == 'swarm':
+
+                    # Check if network exist, create otherwise
+                    network = self.environment_id.prefix + '-network'
+                    exist = self.master_id.execute([
+                        'docker', 'network', 'ls',
+                        '|', 'grep', network])
+                    if not exist:
+                        self.master_id.execute([
+                            'docker', 'network', 'create', '--driver',
+                            'overlay', network])
+
+                    # Build service create command
+                    cmd = ['docker', 'service', 'create']
+
+                    cmd += (['-p', port] for port in res['ports'])
+                    cmd += (['--mount', volume] for volume in res['volumes'])
+                    # Get volumes from data container
+                    cmd += (['--mount', volume]
+                            for volume in res['volumes_from'])
+                    cmd += (['-e', '"%s=%s"' % (key, environment)]
+                            for key, environment
+                            in res['environment'].iteritems())
+                    cmd += ['--network', network]
+                    # Get network from application link to this container
+                    cmd += (['--network', link] for link in res['links'])
+                    # Get special arguments depending of the application
+                    cmd = self.hook_deploy_special_args(cmd)
+                    cmd += ['--name', self.name]
+                    # Set number of replicas
+                    cmd += ['--replicas', str(self.scale)]
+
+                    if not self.image_version_id:
+                        # Build image and get his name
+                        cmd.append(
+                            self.image_id.build_image(
+                                self, self.master_id,
+                                expose_ports=res['expose_ports'], salt=False))
+                    else:
+                        # Get image name from private repository
+                        cmd.append(self.hook_deploy_source())
+
+                    # Get special command depending of the application
+                    cmd.append(self.hook_deploy_special_cmd())
+
+                    # Run service
+                    self.master_id.execute(cmd)
+        return
 
     @api.multi
-    def hook_purge(self):
+    def hook_purge_compose(self):
         """
-        Remove the container.
+        Remove container compose.
         """
-        res = super(ClouderContainer, self).hook_purge()
+        res = super(ClouderContainer, self).hook_purge_one()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
-            if not self.application_id.check_tags(['no-salt']):
+            if False:  # not self.application_id.check_tags(['no-salt']):
+                self.log('TODO')
+            else:
+                # Ensure build directory is up-to-date and purge
+                build_dir = self.refresh_compose_file()
+                self.server_id.execute(
+                    ['docker-compose', 'down', '-v'], path=build_dir)
+                self.server_id.execute(['rm', '-rf', build_dir])
+
+        return res
+
+    @api.multi
+    def hook_purge_one(self):
+        """
+        Remove the container.
+        """
+        res = super(ClouderContainer, self).hook_purge_one()
+
+        if not self.server_id.runner_id or \
+                self.server_id.runner_id.application_id.type_id.name\
+                == 'docker':
+
+            if self.executor == 'salt' and \
+                    self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
                     'salt', self.server_id.fulldomain,
                     'state.apply', 'container_purge',
                     "pillar=\"{'container_name': '" + self.name + "'}\""])
+
+            elif self.server_id.provider_id and \
+                    self.server_id.provider_id.type == 'container':
+                self.log('TODO')
+
             else:
-                self.server_id.execute(['docker', 'rm', '-v', self.name])
+
+                if self.runner == 'engine':
+                    self.server_id.execute(['docker', 'rm', '-v', self.name])
+
+                elif self.runner == 'swarm':
+                    # Remove service
+                    self.master_id.execute(
+                        ['docker', 'service', 'rm', self.name])
+                    # Remove volume linked to this service
+                    for volume in self.volume_ids:
+                        self.master_id.execute(
+                            ['docker', 'volume', 'rm',
+                             self.name + '-' + volume.name])
+                    # If last container using this network, delete it
+                    if not self.search([
+                            ('environment_id', '=', self.environment_id.id),
+                            ('id', '!=', self.id)]):
+                        self.server_id.execute(
+                            ['docker', 'network', 'rm',
+                             self.environment_id.prefix + '-network'])
 
         return res
 
@@ -268,13 +456,24 @@ class ClouderContainer(models.Model):
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
-            if not self.application_id.check_tags(['no-salt']):
+            if self.executor == 'salt' and \
+                    self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
                     'salt', self.server_id.fulldomain, 'state.apply',
                     'container_stop',
                     "pillar=\"{'container_name': '" + self.name + "'}\""])
+
+            elif self.server_id.provider_id and \
+                    self.server_id.provider_id.type == 'container':
+                self.log('TODO')
+
             else:
-                self.server_id.execute(['docker', 'stop', self.name])
+                if self.runner == 'engine':
+                    self.server_id.execute(['docker', 'stop', self.name])
+                elif self.runner == 'swarm':
+                    self.master_id.execute(
+                        ['docker', 'service', 'scale',
+                         self.name + '=0'])
 
         return res
 
@@ -294,13 +493,24 @@ class ClouderContainer(models.Model):
                 self.server_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
-            if not self.application_id.check_tags(['no-salt']):
+            if self.executor == 'salt' and \
+                    self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
                     'salt', self.server_id.fulldomain,
                     'state.apply', 'container_start',
                     "pillar=\"{'container_name': '" + self.name + "'}\""])
+
+            elif self.server_id.provider_id and \
+                    self.server_id.provider_id.type == 'container':
+                self.log('TODO')
+
             else:
-                self.server_id.execute(['docker', 'start', self.name])
+                if self.runner == 'engine':
+                    self.server_id.execute(['docker', 'start', self.name])
+                elif self.runner == 'swarm':
+                    self.master_id.execute(
+                        ['docker', 'service', 'scale',
+                         self.name + '=' + str(self.scale)])
 
             time.sleep(3)
 

@@ -69,6 +69,34 @@ class ClouderModel(models.AbstractModel):
         return self.env.ref('clouder.clouder_settings').email_sysadmin
 
     @property
+    def master_id(self):
+        """
+        Property returning the deployer of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').master_id
+
+    @property
+    def runner(self):
+        """
+        Property returning the runner of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').runner
+
+    @property
+    def executor(self):
+        """
+        Property returning the executor of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').executor
+
+    @property
+    def compose(self):
+        """
+        Property returning the compose of the clouder.
+        """
+        return self.env.ref('clouder.clouder_settings').compose
+
+    @property
     def salt_master(self):
         """
         Property returning the salt master of the clouder.
@@ -326,6 +354,7 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def deploy_frame(self):
+        self.ensure_one()
         try:
             self.deploy()
             self.deploy_links()
@@ -340,6 +369,7 @@ class ClouderModel(models.AbstractModel):
         Hook which can be used by inheriting objects to execute actions when
         we create a new record.
         """
+        self.ensure_one()
         self.purge()
         return
 
@@ -349,6 +379,7 @@ class ClouderModel(models.AbstractModel):
         Hook which can be used by inheriting objects to execute actions when
         we delete a record.
         """
+        self.ensure_one()
         self.purge_links()
         return
 
@@ -357,6 +388,7 @@ class ClouderModel(models.AbstractModel):
         """
         Force deployment of all links linked to a record.
         """
+        self.ensure_one()
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
                 link.deploy_()
@@ -366,6 +398,7 @@ class ClouderModel(models.AbstractModel):
         """
         Force purge of all links linked to a record.
         """
+        self.ensure_one()
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
                 link.purge_()
@@ -375,10 +408,12 @@ class ClouderModel(models.AbstractModel):
         """"
         Action which purge then redeploy a record.
         """
+        self.ensure_one()
         self.do('reinstall', 'deploy_frame')
 
     @api.multi
-    def hook_create(self):
+    def hook_create(self, vals):
+        self.ensure_one()
         return
 
     @api.model
@@ -393,7 +428,7 @@ class ClouderModel(models.AbstractModel):
         res = super(ClouderModel, self).create(vals)
 
         if self._autodeploy:
-            res.hook_create()
+            res.hook_create(vals)
             res.do('create', 'deploy_frame')
 
         return res
@@ -424,6 +459,8 @@ class ClouderModel(models.AbstractModel):
         :param port: The port we need to connect.
         :param username: The username we need to connect.
         """
+
+        self.ensure_one()
 
         server = self
         if self._name == 'clouder.container':
@@ -515,7 +552,7 @@ class ClouderModel(models.AbstractModel):
     @api.multi
     def execute(self, cmd, stdin_arg=False,
                 path=False, ssh=False, server_name='',
-                username=False, executor='bash'):
+                username=False, executor='sh'):
         """
         Method which can be used with an ssh connection to execute command.
 
@@ -524,6 +561,8 @@ class ClouderModel(models.AbstractModel):
         :param stdin_arg: The command we need to execute in stdin.
         :param path: The path where the command need to be executed.
         """
+
+        self.ensure_one()
 
         if self._name == 'clouder.container' \
                 and self.childs and 'exec' in self.childs:
@@ -539,6 +578,9 @@ class ClouderModel(models.AbstractModel):
             cmd.insert(0, 'cd ' + path + ';')
 
         if self._name == 'clouder.container':
+
+            container = self.pod
+
             cmd_temp = []
             first = True
             for cmd_arg in cmd:
@@ -549,11 +591,12 @@ class ClouderModel(models.AbstractModel):
                 cmd_temp.append(cmd_arg)
             cmd = cmd_temp
             cmd.append('"')
-            cmd.insert(0, self.name + ' ' + executor + ' -c ')
+            cmd.insert(0, '%s %s -c ' % (container, executor))
             if username:
                 cmd.insert(0, '-u ' + username)
             cmd.insert(0, 'docker exec')
 
+        self.log('')
         self.log('host : ' + host)
         self.log('command : ' + ' '.join(cmd))
         cmd = [c.replace('$$$', '') for c in cmd]
@@ -627,6 +670,8 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
+        self.ensure_one()
+
         if self._name == 'clouder.container' and self.childs \
                 and 'exec' in self.childs:
             return self.childs['exec'].get(source, destination, ssh=ssh)
@@ -655,6 +700,8 @@ class ClouderModel(models.AbstractModel):
         :param destination: The path we need to send the file.
         """
 
+        self.ensure_one()
+
         if self._name == 'clouder.container' and self.childs \
                 and 'exec' in self.childs:
             return self.childs['exec'].send(
@@ -679,7 +726,7 @@ class ClouderModel(models.AbstractModel):
             server.execute([
                 'cat', destination, '|', 'docker', 'exec', '-i',
                 username and ('-u %s' % username) or '',
-                self.name, 'sh', '-c', "'cat > %s'" % final_destination,
+                self.pod, 'sh', '-c', "'cat > %s'" % final_destination,
             ])
 #            if username:
 #                server.execute([

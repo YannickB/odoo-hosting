@@ -26,13 +26,14 @@ class ClouderImageVolume(models.Model):
 
     _template_parent_model = 'clouder.image'
     _template_parent_many2one = 'image_id'
-    _template_fields = ['hostpath', 'user', 'readonly', 'nosave']
+    _template_fields = ['localpath', 'hostpath', 'user', 'readonly', 'nosave']
 
     image_id = fields.Many2one(
         'clouder.image', 'Image', ondelete="cascade", required=False)
     template_id = fields.Many2one(
         'clouder.image.template', 'Template', ondelete="cascade")
-    name = fields.Char('Path', required=True)
+    name = fields.Char('Name', required=True)
+    localpath = fields.Char('Local Path', required=True)
     hostpath = fields.Char('Host path')
     user = fields.Char('System User')
     readonly = fields.Boolean('Readonly?')

@@ -60,7 +60,7 @@ class ClouderContainer(models.Model):
     subservice_name = fields.Char('Subservice Name')
     ports_string = fields.Text('Ports', compute='_compute_ports')
     reset_base_ids = fields.Many2many(
-        'clouder.base', 'clouder_container_reser_base_rel',
+        'clouder.base', 'clouder_container_reset_base_rel',
         'container_id', 'base_id', 'Bases to duplicate')
     backup_ids = fields.Many2many(
         'clouder.container', 'clouder_container_backup_rel',
@@ -69,6 +69,7 @@ class ClouderContainer(models.Model):
         'clouder.container', 'clouder_container_volumes_from_rel',
         'container_id', 'from_id', 'Volumes from')
     public = fields.Boolean('Public?')
+    scale = fields.Integer('Scale', default=1)
     dummy = fields.Boolean('Dummy?')
     provider_id = fields.Many2one('clouder.provider', 'Provider')
 
@@ -148,10 +149,33 @@ class ClouderContainer(models.Model):
         """
         Property returning the database server connected to the service.
         """
-        if self.database.server_id == self.server_id:
-            return self.database.application_id.code
+        return self.database.host
+
+    @property
+    def host(self):
+
+        if self.runner == 'swarm':
+            res = self.name
+            if self.childs and 'exec' in self.childs:
+                res = self.childs['exec'].name
+        elif self.runner == 'engine':
+            res = self.application_id.code
         else:
-            return self.database.server_id.fulldomain
+            res = self.server_id.private_ip
+        return res
+
+    @property
+    def pod(self):
+        """
+        For swarm, replace container name in system command by
+        command which return the first pod of the service.
+        :return:
+        """
+        pod = self.name
+        if self.runner == 'swarm':
+            pod = "$(docker ps --format={{.Names}} | grep " + self.name + \
+                  ". | head -n1 | awk '{print $1;}' | xargs echo -n)"
+        return pod
 
     @property
     def db_user(self):
@@ -645,10 +669,6 @@ class ClouderContainer(models.Model):
             'parent_id': self.parent_id and self.parent_id.id or False
             }
         vals = self.onchange_application_id_vals(vals)
-        if 'container_childs' in self.env.context \
-                and self.env.context['container_childs']:
-            vals['link_ids'] = []
-            vals['child_ids'] = []
         self.env['clouder.container.option'].search(
             [('container_id', '=', self.id)]).unlink()
         self.env['clouder.container.link'].search(
@@ -749,11 +769,11 @@ class ClouderContainer(models.Model):
                     while not port['hostport'] \
                             and nextport != server.end_port:
                         port_ids = self.env['clouder.container.port'].search(
-                            [('hostport', '=', nextport),
-                             ('container_id.server_id', '=', server.id)])
+                            [('hostport', '=', nextport)])
                         if not port_ids and not server.execute([
                                 'netstat', '-an', '|', 'grep',
-                                (server.public_ip and server.ip + ':' or '') +
+                                (server.assign_ip and
+                                 server.private_ip + ':' or '') +
                                 str(nextport)]):
                             port['hostport'] = nextport
                         nextport += 1
@@ -790,6 +810,7 @@ class ClouderContainer(models.Model):
                     if isinstance(volume, (list, tuple)):
                         volume = {
                             'name': volume[2].get('name', False),
+                            'localpath': volume[2].get('localpath', False),
                             'hostpath': volume[2].get('hostpath', False),
                             'user': volume[2].get('user', False),
                             'readonly': volume[2].get('readonly', False),
@@ -798,6 +819,7 @@ class ClouderContainer(models.Model):
                     else:
                         volume = {
                             'name': getattr(volume, 'name', False),
+                            'localpath': getattr(volume, 'localpath', False),
                             'hostpath': getattr(volume, 'hostpath', False),
                             'user': getattr(volume, 'user', False),
                             'readonly': getattr(volume, 'readonly', False),
@@ -816,6 +838,8 @@ class ClouderContainer(models.Model):
                 volume = {
                     'name': getattr(
                         volume_sources[def_key_volume], 'name', False),
+                    'localpath': getattr(
+                        volume_sources[def_key_volume], 'localpath', False),
                     'hostpath': getattr(
                         volume_sources[def_key_volume], 'hostpath', False),
                     'user': getattr(
@@ -831,6 +855,7 @@ class ClouderContainer(models.Model):
             for volume in volumes_to_process:
                 volumes.append(((0, 0, {
                     'name': volume['name'],
+                    'localpath': volume['localpath'],
                     'hostpath': volume['hostpath'],
                     'user': volume['user'],
                     'readonly': volume['readonly'],
@@ -895,48 +920,52 @@ class ClouderContainer(models.Model):
         return priority
 
     @api.multi
-    def hook_create(self):
-        """
-        Add volume/port/link/etc... if not generated through the interface
-        """
+    def hook_create(self, vals):
+
+        # Make sure one2one relation with
+        # parent link is immediately established
+        if self._name == 'clouder.container' and 'parent_id' in vals:
+            self.env['clouder.container.child'].browse(
+                vals['parent_id']).write({'child_id': self.id})
+
+        # Deploy links and childs stored in context
+        for child in self.env.context.get('container_childs', []):
+            child_vals = child[2]
+            child_vals.update({'container_id': self.id})
+            self.env['clouder.container.child'].create(child_vals)
+        for link in self.env.context.get('container_links', []):
+            link_vals = link[2]
+            link_vals.update({'container_id': self.id})
+            self.env['clouder.container.link'].create(link_vals)
+        self = self.with_context(container_childs=[], container_links=[])
+
+        # Refresh self with added one2many
+        self = self.browse(self.id)
+
+        # Add volume/port/link/etc... if not generated through the interface
         if 'autocreate' in self.env.context:
             self.onchange_application_id()
             self.onchange_image_id()
-        return super(ClouderContainer, self).hook_create()
+        return super(ClouderContainer, self).hook_create(vals)
 
     @api.multi
     def create(self, vals):
         vals = self.onchange_application_id_vals(vals)
         vals = self.onchange_image_id_vals(vals)
 
-        childs = []
-        links = []
+        # Remove childs and add them in context so they are added between
+        # create and deploy.
+        # We have to do this because they are newid otherwise.
         if vals['child_ids']:
-            self = self.with_context(container_childs=True)
-            childs = vals['child_ids']
-            links = vals['link_ids']
+            self = self.with_context(container_childs=vals['child_ids'])
             vals['child_ids'] = []
+        if vals['link_ids']:
+            self = self.with_context(container_links=vals['link_ids'])
             vals['link_ids'] = []
-        else:
-            self = self.with_context(container_childs=False)
 
         res = super(ClouderContainer, self).create(vals)
 
-        for child in childs:
-            child_vals = child[2]
-            child_vals.update({'container_id': res.id})
-            self.env['clouder.container.child'].create(child_vals)
-        # Ensure correct order
-        res = self.browse(res.id)
-        for child in res.child_ids:
-            child.create_child_exec()
-
-        for link in links:
-            link_vals = link[2]
-            link_vals.update({'container_id': res.id})
-            link = self.env['clouder.container.link'].create(link_vals)
-            link.deploy_exec()
-
+        # Deploy all links waiting for this type of container
         links = self.env['clouder.container.link'].search([
             ('name', '=', res.application_id.id), ('auto', '=', True),
             ('target', '=', False)])
@@ -1111,47 +1140,133 @@ class ClouderContainer(models.Model):
         return
 
     @api.multi
-    def hook_deploy(self):
+    def hook_deploy_compose(self):
+        """
+        Hook which can be called by submodules to execute commands to
+        deploy a set of containers.
+        """
+        return
+
+    @api.multi
+    def hook_deploy_one(self):
         """
         Hook which can be called by submodules to execute commands to
         deploy a container.
         """
         return
 
+    @api.multi
     def get_container_res(self):
         ports = []
         expose_ports = []
         for port in self.port_ids:
-            ip = ''
-            if self.server_id.public_ip \
-                    and self.application_id.type_id.name != 'registry':
-                ip = self.server_id.ip + ':'
-            ports.append(ip + str(port.hostport) + ':' +
-                         port.localport + (port.udp and '/udp' or ''))
+            if self.runner != 'swarm':
+                ip = ''
+                if self.server_id.assign_ip \
+                        and self.application_id.type_id.name != 'registry':
+                    ip = self.server_id.public_ip + ':'
+                ports.append('%s:%s'
+                             % (ip + str(port.hostport),
+                                port.localport + (port.udp and '/udp' or '')))
+            else:
+                # Expose port on the swarm only if expose to internet
+                if port.expose == 'internet':
+                    ports.append(str(port.hostport) + ':' + port.localport)
             if port.use_hostport:
                 expose_ports.append(port.hostport)
         volumes = []
         for volume in self.volume_ids:
-            if volume.hostpath:
-                arg = volume.hostpath + ':' + volume.name
-                if volume.readonly:
-                    arg += ':ro'
-                volumes.append(arg)
+            if self.runner != 'swarm':
+                if volume.hostpath:
+                    arg = volume.hostpath + ':' + volume.localpath
+                    if volume.readonly:
+                        arg += ':ro'
+                    volumes.append(arg)
+            else:
+                volumes.append(
+                    'type=volume,source=%s-%s,destination=%s'
+                    % (self.name, volume.name, volume.localpath))
         volumes_from = []
         for volume_from in self.volumes_from_ids:
-            volumes_from.append(volume_from.name)
+            if self.runner != 'swarm':
+                # If not swarm, only return the name of the container
+                volumes_from.append(volume_from.name)
+            else:
+                # If swarm, return all volumes of container
+                for volume in volume_from.volume_ids:
+                    volumes_from.append(
+                        'type=volume,source=%s-%s,destination=%s'
+                        % (volume_from.name, volume.name, volume.localpath))
         links = []
         for link in self.link_ids:
-            if link.make_link \
-                    and link.target.server_id == self.server_id:
+            if link.make_link:
                 target = link.target
                 if 'exec' in target.childs:
                     target = target.childs['exec']
-                links.append(target.name + ':' + link.name.code)
+                if self.runner != 'swarm':
+                    links.append({'name': target.name, 'code': link.name.code})
+                else:
+                    # If swarm, return network of linked container
+                    if target.environment_id != self.environment_id:
+                        network = self.environment_id.prefix + '-network'
+                        if network not in links:
+                            links.append(network)
+
+        # Get name without compose prefix
+        compose_name = self.name
+        if 'prefix' in self.env.context:
+            compose_name = self.name.replace(self.env.context['prefix'], '')
+
         return {
+            'self': self, 'compose_name': compose_name,
             'ports': ports, 'expose_ports': expose_ports,
             'volumes': volumes, 'volumes_from': volumes_from,
             'links': links, 'environment': {}}
+
+    @api.multi
+    def get_container_compose_res(self):
+        """
+        Recursively build data needed for compose file
+        """
+        res = []
+
+        # If root, the project name is container name
+        if 'prefix' not in self.env.context:
+            self = self.with_context(prefix=self.name + '-')
+
+        # Only add service if service without children
+        if not self.child_ids:
+            res.append(self.get_container_res())
+
+        # Recursively add services from children
+        for child in self.child_ids:
+            if child.child_id:
+                res.extend(child.child_id.get_container_compose_res())
+
+        services = {}
+        for service in res:
+            services[service['self'].name] = service
+
+        # Replace service name by name without project name
+        res_final = []
+        for service in res:
+            links = []
+            for link in service['links']:
+                if link['name'] in services:
+                    link['name'] = services[link['name']]['compose_name']
+                links.append('%s:%s' % (link['name'], link['code']))
+            service['links'] = links
+
+            volumes_from = []
+            for volume_from in service['volumes_from']:
+                if volume_from in services:
+                    volume_from = services[volume_from]['compose_name']
+                volumes_from.append(volume_from)
+            service['volumes_from'] = volumes_from
+
+            res_final.append(service)
+
+        return res_final
 
     @api.multi
     def deploy_post(self):
@@ -1162,39 +1277,100 @@ class ClouderContainer(models.Model):
         return
 
     @api.multi
+    def recursive_deploy_one(self):
+        """
+        Recursively deploy containers one by one
+        """
+        if self.child_ids:
+            self.child_ids.mapped('child_id').recursive_deploy_one()
+        else:
+            # We only call the hook if service without children
+            self.hook_deploy_one()
+        return
+
+    @api.multi
+    def recursive_deploy_post(self):
+        """
+        Recursively execute deploy_post function
+        """
+        if self.child_ids:
+            self.child_ids.mapped('child_id').recursive_deploy_post()
+        else:
+            # We only call the hook if service without children
+            self.deploy_post()
+        return
+
+    @api.multi
+    def recursive_save(self):
+        """
+        Recursively execute save
+        """
+        if self.child_ids:
+            self.child_ids.mapped('child_id').recursive_save()
+        else:
+            # Avoid backup alert on monitoring
+            self = self.with_context(save_comment='First save')
+            self.save_exec(no_enqueue=True)
+        return
+
+    @api.multi
     def deploy(self):
         """
         Deploy the container in the server.
         """
 
-        if self.parent_id:
-            self.parent_id.child_id = self
-
         self = self.with_context(no_enqueue=True)
         super(ClouderContainer, self).deploy()
 
-        if self.child_ids or 'container_childs' in self.env.context \
-                and self.env.context['container_childs']:
+        # Create childs
+        if self.child_ids:
             for child in self.child_ids:
+                # Childs does not execute deploy when initiated by parent
+                child = child.with_context(no_deploy=True)
                 child.create_child_exec()
 
-        elif not self.dummy:
-            self.hook_deploy()
+        # Skip deploy if not a real service
+        if self.dummy:
+            return
 
-            time.sleep(3)
+        # Skip deploy if compose context and not root
+        if 'no_deploy' in self.env.context:
+            return
 
-            self.deploy_post()
+        if self.parent_id:
+            self.parent_id.child_id = self
 
-            self.start()
+        # If compose mode, we only execute deploy for root
+        if self.compose:
+            if not self.parent_id:
+                self.hook_deploy_compose()
+        # If not compose mode, execute deploy for all children
+        else:
+            self.recursive_deploy_one()
 
-            # For shinken
-            self = self.with_context(save_comment='First save')
-            self.save_exec(no_enqueue=True)
+        time.sleep(3)
+
+        # Execute deploy post on all children
+        self.recursive_deploy_post()
+
+        # Restart all children
+        self.start()
+
+        # Save all children, to avoid monitoring alert before daily cron
+        self.recursive_save()
 
         return
 
     @api.multi
-    def hook_purge(self):
+    def hook_purge_compose(self):
+        """
+        Hook which can be called by submodules to execute commands to
+        purge a container compose.
+        """
+        return
+
+    @api.multi
+    def hook_purge_one(self):
         """
         Hook which can be called by submodules to execute commands to
         purge a container.
@@ -1209,13 +1385,19 @@ class ClouderContainer(models.Model):
 
         childs = self.env['clouder.container.child'].search(
             [('container_id', '=', self.id)], order='sequence DESC')
+
         if childs:
-            for child in childs:
-                child.delete_child_exec()
+            # If compose mode, purge if root
+            if self.compose and not self.parent_id:
+                self.hook_purge_compose()
+            # Recursively delete childs in Odoo
+            childs.delete_child_exec()
         else:
-            self.stop()
-            self.purge_salt()
-            self.hook_purge()
+            # If not compose, purge current container
+            if not self.compose:
+                self.stop()
+                # self.purge_salt()
+                self.hook_purge_one()
         super(ClouderContainer, self).purge()
 
         return

@@ -38,7 +38,8 @@
         </record>
         <record id="image_template_backup_upload_volume_upload" model="clouder.image.volume">
             <field name="template_id" ref="image_template_backup_upload"/>
-            <field name="name">/opt/upload</field>
+            <field name="name">upload</field>
+            <field name="localpath">/opt/upload</field>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_backup_upload" model="clouder.image">
@@ -74,7 +75,8 @@
         </record>
         <record id="image_template_backup_simple_volume_backup" model="clouder.image.volume">
             <field name="template_id" ref="image_template_backup_simple"/>
-            <field name="name">/opt/backup</field>
+            <field name="name">backup</field>
+            <field name="localpath">/opt/backup</field>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_backup_simple" model="clouder.image">
@@ -115,7 +117,8 @@
         </record>
         <record id="image_template_backup_bup_volume_backup" model="clouder.image.volume">
             <field name="template_id" ref="image_template_backup_bup"/>
-            <field name="name">/opt/backup</field>
+            <field name="name">backup</field>
+            <field name="localpath">/opt/backup</field>
             <field name="nosave" eval="True"/>
         </record>
         <record id="image_template_backup_bup_port_web" model="clouder.image.port">

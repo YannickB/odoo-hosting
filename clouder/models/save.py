@@ -283,7 +283,7 @@ class ClouderSave(models.Model):
         if self.base_fullname:
             container.server_id.execute([
                 'docker', 'cp',
-                '%s:%s' % (container.name, backup_dir),
+                '%s:%s' % (container.pod, backup_dir),
                 self.get_directory_clouder(),
             ])
         else:
@@ -292,7 +292,7 @@ class ClouderSave(models.Model):
                     'mkdir', '-p', os.path.join(directory, volume),
                 ])
                 container.server_id.execute([
-                    'docker', 'cp', '%s:%s' % (container.name, volume),
+                    'docker', 'cp', '%s:%s' % (container.pod, volume),
                     os.path.join(directory, os.path.split(volume)[0]),
                 ])
 
