@@ -12,7 +12,8 @@
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': [
-        'view.xml',
+        'views/view.xml',
+        'views/ir_actions.xml',
         'data/data.xml',
         'security/security.xml',
         'security/ir.model.access.csv',
