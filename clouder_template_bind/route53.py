@@ -35,6 +35,9 @@ class ClouderDomain(models.Model):
         """
 
         """
+
+        super(ClouderDomain, self).deploy()
+
         if self.dns_id and \
                 self.dns_id.application_id.type_id.name == 'route53':
 

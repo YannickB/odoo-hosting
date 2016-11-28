@@ -120,6 +120,7 @@ class ClouderImageVersion(models.Model):
         Build a new image and store it to the registry.
         """
         self.hook_build()
+        super(ClouderImageVersion, self).deploy()
         return
 
     # In case of problems with ssh authentification

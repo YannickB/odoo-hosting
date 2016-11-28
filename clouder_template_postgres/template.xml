@@ -24,18 +24,6 @@
         <record id="image_template_postgres_data" model="clouder.image.template">
             <field name="name">image_template_postgres_data</field>
         </record>
-        <record id="image_template_postgres_data_volume_etc" model="clouder.image.volume">
-            <field name="template_id" ref="image_template_postgres_data"/>
-            <field name="name">etc</field>
-            <field name="localpath">/etc/postgresql</field>
-            <field name="user">postgres</field>
-        </record>
-        <record id="image_template_postgres_data_volume_log" model="clouder.image.volume">
-            <field name="template_id" ref="image_template_postgres_data"/>
-            <field name="name">log</field>
-            <field name="localpath">/var/log/postgresql</field>
-            <field name="user">postgres</field>
-        </record>
         <record id="image_template_postgres_data_volume_lib" model="clouder.image.volume">
             <field name="template_id" ref="image_template_postgres_data"/>
             <field name="name">lib</field>
@@ -45,13 +33,14 @@
         <record id="image_postgres_data" model="clouder.image">
             <field name="name">image_postgres_data</field>
             <field name="template_ids" eval="[(4, [ref('image_template_postgres_data')])]"/>
-            <field name="parent_from">clouder/clouder-postgres-data</field>
+            <field name="parent_from">yannickburon/clouder:postgres-data</field>
+            <field name="dockerfile"/>
         </record>
         
         <record id="image_template_postgres_exec" model="clouder.image.template">
             <field name="name">image_template_postgres_exec</field>
         </record>
-        <record id="image_template_postgres_exec_port_portgres" model="clouder.image.port">
+        <record id="image_template_postgres_exec_port_postgres" model="clouder.image.port">
             <field name="template_id" ref="image_template_postgres_data"/>
             <field name="name">postgres</field>
             <field name="localport">5432</field>
@@ -59,7 +48,8 @@
         <record id="image_postgres_exec" model="clouder.image">
             <field name="name">image_postgres_exec</field>
             <field name="template_ids" eval="[(4, [ref('image_template_postgres_exec')])]"/>
-            <field name="parent_from">postgres</field>
+            <field name="parent_from">yannickburon/clouder:postgres-exec</field>
+            <field name="dockerfile"/>
             <field name="volumes_from">data</field>
         </record>
 

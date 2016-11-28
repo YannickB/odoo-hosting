@@ -63,10 +63,7 @@
             <field name="template_ids" eval="[(4, [ref('image_template_salt_master_data')])]"/>
             <field name="parent_from">clouder/clouder-salt-master-data</field>
             <field name="parent_id"/>
-            <field name="dockerfile"><![CDATA[
-CMD tail -f /dev/null
-]]></field>
-
+            <field name="dockerfile"/>
         </record>
 
         <record id="image_salt_master_exec" model="clouder.image">

@@ -243,8 +243,8 @@ class ClouderServer(models.Model):
         try:
             provider = self.env['clouder.provider'].browse(
                 self.env.context['provider_id'])
-            cls = get_driver(getattr(Provider, provider.name))
-            driver = cls(provider.login, provider.secret_key)
+            Driver = get_driver(getattr(Provider, provider.name))
+            driver = Driver(provider.login, provider.secret_key)
 
             sizes = [(s.id, s.id) for s in driver.list_sizes()
                      if s.id == 't2.micro']
@@ -259,8 +259,8 @@ class ClouderServer(models.Model):
         try:
             provider = self.env['clouder.provider'].browse(
                 self.env.context['provider_id'])
-            cls = get_driver(getattr(Provider, provider.name))
-            driver = cls(provider.login, provider.secret_key)
+            Driver = get_driver(getattr(Provider, provider.name))
+            driver = Driver(provider.login, provider.secret_key)
 
             locations = [(l.id, l.id) for l in driver.list_locations()]
             _logger.info('%s', locations)
@@ -638,6 +638,7 @@ class ClouderServer(models.Model):
     def libcloud_reboot_exec(self):
         Driver = get_driver(getattr(Provider, self.provider_id.name))
         driver = Driver(self.provider_id.login, self.provider_id.secret_key)
+
         for node in self.libcloud_get_nodes():
             if node.state == 'stopped':
                 driver.ex_start_node(node)

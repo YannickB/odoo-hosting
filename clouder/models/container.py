@@ -175,6 +175,7 @@ class ClouderContainer(models.Model):
         if self.runner == 'swarm':
             pod = "$(docker ps --format={{.Names}} | grep " + self.name + \
                   ". | head -n1 | awk '{print $1;}' | xargs echo -n)"
+
         return pod
 
     @property
@@ -937,6 +938,7 @@ class ClouderContainer(models.Model):
             link_vals = link[2]
             link_vals.update({'container_id': self.id})
             self.env['clouder.container.link'].create(link_vals)
+
         self = self.with_context(container_childs=[], container_links=[])
 
         # Refresh self with added one2many
@@ -946,6 +948,7 @@ class ClouderContainer(models.Model):
         if 'autocreate' in self.env.context:
             self.onchange_application_id()
             self.onchange_image_id()
+
         return super(ClouderContainer, self).hook_create(vals)
 
     @api.multi
@@ -1165,9 +1168,11 @@ class ClouderContainer(models.Model):
                 if self.server_id.assign_ip \
                         and self.application_id.type_id.name != 'registry':
                     ip = self.server_id.public_ip + ':'
+
                 ports.append('%s:%s'
                              % (ip + str(port.hostport),
                                 port.localport + (port.udp and '/udp' or '')))
+
             else:
                 # Expose port on the swarm only if expose to internet
                 if port.expose == 'internet':
@@ -1281,6 +1286,7 @@ class ClouderContainer(models.Model):
         """
         Recursively deploy containers one by one
         """
+
         if self.child_ids:
             self.child_ids.mapped('child_id').recursive_deploy_one()
         else:

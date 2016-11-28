@@ -142,7 +142,7 @@
             <field name="name">img_odoo_data</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_data')])]"/>
-            <field name="parent_from">clouder/clouder-odoo-data</field>
+            <field name="parent_from">yannickburon/clouder:odoo-data</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
@@ -152,7 +152,7 @@
             <field name="name">img_odoo_files8</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
-            <field name="parent_from">clouder/clouder-odoo8-files</field>
+            <field name="parent_from">clouder/clouder-odoo-files8</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
@@ -161,7 +161,7 @@
             <field name="name">img_odoo_files9</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
-            <field name="parent_from">clouder/clouder-odoo9-files</field>
+            <field name="parent_from">yannickburon/clouder:odoo9-files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
@@ -179,7 +179,7 @@
             <field name="name">img_odoo9_clouder_files</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_files')])]"/>
-            <field name="parent_from">clouder/clouder-odoo9-clouder-files</field>
+            <field name="parent_from">yannickburon/clouder:odoo9_clouder_files</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
@@ -188,7 +188,7 @@
             <field name="name">img_odoo_exec</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_exec')])]"/>
-            <field name="parent_from">clouder/clouder-odoo-exec</field>
+            <field name="parent_from">yannickburon/clouder:odoo-exec</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
             <field name="volumes_from">data,files</field>
@@ -198,7 +198,7 @@
             <field name="name">img_odoo_clouder_exec</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_exec')])]"/>
-            <field name="parent_from">clouder/clouder-odoo-clouder-exec</field>
+            <field name="parent_from">yannickburon/clouder:odoo-clouder-exec</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
             <field name="volumes_from">data,files</field>
@@ -208,7 +208,7 @@
             <field name="name">img_odoo_ssh</field>
             <field name="type_id" ref="application_type_odoo"/>
             <field name="template_ids" eval="[(4, [ref('image_template_odoo_ssh')])]"/>
-            <field name="parent_from">clouder/clouder-odoo-ssh</field>
+            <field name="parent_from">yannickburon/clouder:odoo-ssh</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
             <field name="volumes_from">data,files</field>

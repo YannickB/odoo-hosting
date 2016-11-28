@@ -46,17 +46,17 @@ class ClouderServer(models.Model):
 
         self.oneclick_deploy_element('container', 'proxy', ports=[80, 443])
 
-        container = self.oneclick_deploy_element('container', 'shinken')
-        self.oneclick_deploy_element('base', 'shinken', container=container)
-
-        container = self.oneclick_deploy_element('container', 'registry')
-        self.oneclick_deploy_element('base', 'registry', container=container)
-
-        self.oneclick_deploy_element('container', 'gitlab-all')
-        self.oneclick_deploy_element(
-            'base', 'gitlab', code_container='gitlab-all-gitlab')
-
-        self.oneclick_deploy_element('container', 'gitlabci')
+        # container = self.oneclick_deploy_element('container', 'shinken')
+        # self.oneclick_deploy_element('base', 'shinken', container=container)
+        #
+        # container = self.oneclick_deploy_element('container', 'registry')
+        # self.oneclick_deploy_element('base', 'registry', container=container)
+        #
+        # self.oneclick_deploy_element('container', 'gitlab-all')
+        # self.oneclick_deploy_element(
+        #     'base', 'gitlab', code_container='gitlab-all-gitlab')
+        #
+        # self.oneclick_deploy_element('container', 'gitlabci')
 
     @api.multi
     def oneclick_purge_exec(self):

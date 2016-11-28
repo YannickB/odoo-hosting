@@ -444,6 +444,7 @@ class ClouderModel(models.AbstractModel):
                     rec.purge()
                 except:
                     pass
+
         res = super(ClouderModel, self).unlink()
         self.env['clouder.job'].search([
             ('res_id', 'in', self.ids),

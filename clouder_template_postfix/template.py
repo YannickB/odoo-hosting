@@ -52,7 +52,7 @@ class ClouderContainer(models.Model):
                 self.execute(['echo "FromLineOverride=YES" >> '
                              '/etc/ssmtp/ssmtp.conf'], username='root')
         if self.application_id.type_id.name == 'postfix' \
-                and self.application_id.check_tags(['data']):
+                and self.application_id.check_tags(['exec']):
 
             # Adding boolean flag to see if all SMTP options are set
             smtp_options = False
@@ -135,7 +135,7 @@ class ClouderContainerLink(models.Model):
                 "echo 'spamassassin unix -     "
                 "n       n       -       -       "
                 "pipe user=nobody argv=/usr/bin/spamc -d " +
-                self.target.server_id.ip + " -p " +
+                self.target.server_id.private_ip + " -p " +
                 self.target.ports['spamd']['hostport'] +
                 " -f -e /usr/sbin/sendmail "
                 r"-oi -f \${sender} \${recipient}' "
@@ -189,19 +189,19 @@ class ClouderBaseLink(models.Model):
         dns.execute([
             'echo \'' + name + ' IN TXT "v=spf1 a mx ptr mx:' +
             base.fulldomain + ' ip4:10.0.0.0/8 ip4:127.0.0.0/8 ip4:' +
-            self.target.server_id.ip + smtp_relayhost + ' ~all"\' >> ' +
+            self.target.server_id.public_ip + smtp_relayhost + ' ~all"\' >> ' +
             base.domain_id.configfile])
         dns.execute([
             'echo \'' + name + ' IN SPF "v=spf1 a mx ptr mx:' +
             base.fulldomain + ' ip4:10.0.0.0/8 ip4:127.0.0.0/8 ip4:' +
-            self.target.server_id.ip + smtp_relayhost + ' ~all"\' >> ' +
+            self.target.server_id.public_ip + smtp_relayhost + ' ~all"\' >> ' +
             base.domain_id.configfile])
-        dns.execute([
-            'echo \'' +
-            key.replace('(', '').replace(')', '').replace('"\n', '')
-            .replace('"p', 'p').replace('\n', '')
-            .replace('_domainkey', '_domainkey.' + name) +
-            '\' >> ' + base.domain_id.configfile])
+        # dns.execute([
+        #     'echo \'' +
+        #     key.replace('(', '').replace(')', '').replace('"\n', '')
+        #     .replace('"p', 'p').replace('\n', '')
+        #     .replace('_domainkey', '_domainkey.' + name) +
+        #     '\' >> ' + base.domain_id.configfile])
         base.domain_id.refresh_serial()
 
     @api.multi
@@ -235,37 +235,39 @@ class ClouderBaseLink(models.Model):
                 ('base_id', '=', self.base_id.id),
                 ('name.type_id.name', '=', 'bind')])
             if dns_link and dns_link.target:
-                base = self.base_id
-                self.target.execute([
-                    'mkdir -p /opt/opendkim/keys/' + base.fullname])
-                self.target.execute([
-                    'opendkim-genkey -D /opt/opendkim/keys/' +
-                    base.fullname + ' -r -d ' + base.fulldomain + ' -s mail'])
-                self.target.execute([
-                    'chown opendkim:opendkim /opt/opendkim/keys/' +
-                    base.fullname + '/mail.private'])
-                self.target.execute([
-                    'echo "' + 'mail._domainkey.' + base.fulldomain + ' ' +
-                    base.fulldomain + ':mail:' + '/opt/opendkim/keys/' +
-                    base.fullname + '/mail.private #' + base.fullname +
-                    '" >> /opt/opendkim/KeyTable'])
+                # base = self.base_id
+                # self.target.execute([
+                #     'mkdir -p /opt/opendkim/keys/' + base.fullname])
+                # self.target.execute([
+                #     'opendkim-genkey -D /opt/opendkim/keys/' +
+                #     base.fullname + ' -r -d ' + base.fulldomain +
+                # ' -s mail'])
+                # self.target.execute([
+                #     'chown opendkim:opendkim /opt/opendkim/keys/' +
+                #     base.fullname + '/mail.private'])
+                # self.target.execute([
+                #     'echo "' + 'mail._domainkey.' + base.fulldomain + ' ' +
+                #     base.fulldomain + ':mail:' + '/opt/opendkim/keys/' +
+                #     base.fullname + '/mail.private #' + base.fullname +
+                #     '" >> /opt/opendkim/KeyTable'])
 
-                self.target.execute([
-                    'echo "' + base.fulldomain +
-                    ' mail._domainkey.' + base.fulldomain + ' #' +
-                    base.fullname + '" >> /opt/opendkim/SigningTable'])
-                self.target.execute([
-                    'echo "' + base.fulldomain + ' #' + base.fullname +
-                    '" >> /opt/opendkim/TrustedHosts'])
-
-                self.target.execute(
-                    ["pkill -9 -e 'opendkim'"])
-                self.target.execute(
-                    ['/etc/init.d/opendkim', 'start'])
-
-                key = self.target.execute([
-                    'cat', '/opt/opendkim/keys/' +
-                    base.fullname + '/mail.txt'])
+                # self.target.execute([
+                #     'echo "' + base.fulldomain +
+                #     ' mail._domainkey.' + base.fulldomain + ' #' +
+                #     base.fullname + '" >> /opt/opendkim/SigningTable'])
+                # self.target.execute([
+                #     'echo "' + base.fulldomain + ' #' + base.fullname +
+                #     '" >> /opt/opendkim/TrustedHosts'])
+                #
+                # self.target.execute(
+                #     ["pkill -9 -e 'opendkim'"])
+                # self.target.execute(
+                #     ['/etc/init.d/opendkim', 'start'])
+                #
+                # key = self.target.execute([
+                #     'cat', '/opt/opendkim/keys/' +
+                #     base.fullname + '/mail.txt'])
+                key = ''
 
                 if self.base_id.is_root:
                     self.deploy_bind_postfix_config(dns_link, key, '@')
@@ -283,22 +285,24 @@ class ClouderBaseLink(models.Model):
                 ('base_id', '=', self.base_id.id),
                 ('name.type_id.name', '=', 'bind')])
             if dns_link and dns_link.target:
-                base = self.base_id
-                self.target.execute([
-                    'rm', '-rf', '/opt/opendkim/keys/' + base.fullname])
-                self.target.execute([
-                    'sed', '-i',
-                    '"/#' + base.fullname + '/d" /opt/opendkim/KeyTable'])
-                self.target.execute([
-                    'sed', '-i',
-                    '"/#' + base.fullname + '/d" /opt/opendkim/SigningTable'])
-                self.target.execute([
-                    'sed', '-i',
-                    '"/#' + base.fullname + '/d" /opt/opendkim/TrustedHosts'])
-                self.target.execute(
-                    ["pkill -9 -e 'opendkim'"])
-                self.target.execute(
-                    ['/etc/init.d/opendkim', 'start'])
+                # base = self.base_id
+                # self.target.execute([
+                #     'rm', '-rf', '/opt/opendkim/keys/' + base.fullname])
+                # self.target.execute([
+                #     'sed', '-i',
+                #     '"/#' + base.fullname + '/d" /opt/opendkim/KeyTable'])
+                # self.target.execute([
+                #     'sed', '-i',
+                #     '"/#' + base.fullname + '/d"
+                # /opt/opendkim/SigningTable'])
+                # self.target.execute([
+                #     'sed', '-i',
+                #     '"/#' + base.fullname + '/d"
+                # /opt/opendkim/TrustedHosts'])
+                # self.target.execute(
+                #     ["pkill -9 -e 'opendkim'"])
+                # self.target.execute(
+                #     ['/etc/init.d/opendkim', 'start'])
 
                 if self.base_id.is_root:
                     self.purge_bind_postfix_config(dns_link, '@')

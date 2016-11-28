@@ -41,8 +41,8 @@ class ClouderServer(models.Model):
                 self.oneclick_deploy_element(
                     'base', 'clouder9', code_container='clouder9-all-clouder9')
 
-                self.oneclick_deploy_element(
-                    'subservice', 'clouder9-all-clouder9')
+                # self.oneclick_deploy_element(
+                #     'subservice', 'clouder9-all-clouder9')
 
     @api.multi
     def oneclick_purge_exec(self):

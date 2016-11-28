@@ -249,6 +249,8 @@ class ClouderSave(models.Model):
         Build the save and move it into the backup container.
         """
 
+        super(ClouderSave, self).deploy()
+
         self.ensure_one()
 
         self.log('Saving "%s"' % self.name)

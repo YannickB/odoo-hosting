@@ -54,7 +54,7 @@ class ClouderDomain(models.Model):
                 '"s/[0-9]* ;serial/' +
                 datetime.now().strftime('%m%d%H%M%S') + ' ;serial/g"',
                 self.configfile])
-            self.dns_id.execute(['/etc/init.d/bind9 reload'])
+            self.dns_id.start()
 
             if domain:
                 try:
@@ -68,6 +68,9 @@ class ClouderDomain(models.Model):
         """
         Configure the domain in the bind container, if configured.
         """
+
+        super(ClouderDomain, self).deploy()
+
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
             self.dns_id.send(
                 modules.get_module_path('clouder_template_bind') +
@@ -77,7 +80,7 @@ class ClouderDomain(models.Model):
                 self.configfile])
             self.dns_id.execute([
                 'sed', '-i',
-                '"s/IP/' + self.dns_id.server_id.ip + '/g"',
+                '"s/IP/' + self.dns_id.server_id.public_ip + '/g"',
                 self.configfile])
             self.dns_id.execute([
                 "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
@@ -127,8 +130,8 @@ class ClouderBaseLink(models.Model):
             'name.type_id.name', '=', 'proxy')])
         self.target.execute([
             'echo "' + name + ' IN A ' +
-            (proxy_link and proxy_link[0].target.server_id.ip or
-             self.base_id.container_id.server_id.ip) +
+            (proxy_link and proxy_link[0].target.server_id.public_ip or
+             self.base_id.container_id.server_id.public_ip) +
             '" >> ' + self.base_id.domain_id.configfile])
         self.base_id.domain_id.refresh_serial(self.base_id.fulldomain)
 

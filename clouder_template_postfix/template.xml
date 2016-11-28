@@ -82,8 +82,9 @@
         </record>
         <record id="image_postfix_data" model="clouder.image">
             <field name="name">image_postfix_data</field>
+            <field name="type_id" ref="application_type_postfix"/>
             <field name="template_ids" eval="[(4, [ref('image_template_postfix_data')])]"/>
-            <field name="parent_from">clouder/clouder-postfix</field>
+            <field name="parent_from">yannickburon/clouder:postfix-data</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>
@@ -99,8 +100,9 @@
         </record>
         <record id="image_postfix_exec" model="clouder.image">
             <field name="name">image_postfix_exec</field>
+            <field name="type_id" ref="application_type_postfix"/>
             <field name="template_ids" eval="[(4, [ref('image_template_postfix_exec')])]"/>
-            <field name="parent_from">clouder/clouder-postfix</field>
+            <field name="parent_from">yannickburon/clouder:postfix-exec</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
             <field name="volumes_from">data</field>

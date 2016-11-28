@@ -74,12 +74,12 @@ class ClouderBase(models.Model):
             proxy.execute([
                 'sed', '-i', '"s/REPO/' + self.fullname +
                 '/g"', self.nginx_configfile])
-            proxy.execute(['/etc/init.d/nginx', 'reload'])
+            proxy.execute(['nginx', '-s', 'reload'])
             domain = self.fulldomain
             if self.is_root:
                 domain = domain + ' -d ' + self.name + '.' + self.fulldomain
             proxy.execute([
-                '/opt/letsencrypt/letsencrypt-auto certonly --webroot -w ' +
+                'certbot certonly --webroot -w ' +
                 webroot + ' -d ' + domain + ' -m ' + proxy.email_sysadmin +
                 ' --agree-tos'])
             key = proxy.execute([
@@ -98,7 +98,7 @@ class ClouderBase(models.Model):
                 'rm',
                 '/etc/nginx/sites-enabled/' + self.fullname])
             proxy.execute(['rm', self.nginx_configfile])
-            proxy.execute(['/etc/init.d/nginx', 'reload'])
+            proxy.execute(['nginx', '-s', 'reload'])
             proxy.execute(['rm -rf ' + webroot])
             proxy_link.deploy_link()
         return res
@@ -190,16 +190,23 @@ class ClouderBaseLink(models.Model):
             target.execute([
                 'sed', '-i', '"s/DOMAIN/' + self.base_id.fulldomain +
                 '/g"', self.base_id.nginx_configfile])
-            target.execute([
-                'sed', '-i', '"s/SERVER/' +
-                self.base_id.container_id.server_id.ip + '/g"',
-                self.base_id.nginx_configfile])
+
+            server = self.base_id.container_id.server_id.private_ip
+            type = 'hostport'
+            if self.runner == 'swarm':
+                server = self.base_id.container_id.host
+                type = 'localport'
             if 'http' in self.base_id.container_id.ports:
                 protocol = 'http'
-                port = self.base_id.container_id.ports['http']['hostport']
+                port = self.base_id.container_id.ports['http'][type]
             if 'https' in self.base_id.container_id.ports:
                 protocol = 'https'
-                port = self.base_id.container_id.ports['https']['hostport']
+                port = self.base_id.container_id.ports['https'][type]
+
+            target.execute([
+                'sed', '-i', '"s/SERVER/' +
+                server + '/g"',
+                self.base_id.nginx_configfile])
             target.execute([
                 'sed', '-i', '"s/PORT/' +
                 port +
@@ -239,7 +246,7 @@ class ClouderBaseLink(models.Model):
             target.execute([
                 'ln', '-s', self.base_id.nginx_configfile,
                 '/etc/nginx/sites-enabled/' + self.base_id.fullname])
-            target.execute(['/etc/init.d/nginx', 'reload'])
+            target.execute(['nginx', '-s', 'reload'])
 
     @api.multi
     def purge_link(self):
@@ -257,4 +264,4 @@ class ClouderBaseLink(models.Model):
                 'rm', '/etc/ssl/certs/' + self.base_id.fulldomain + '.*'])
             target.execute([
                 'rm', '/etc/ssl/private/' + self.base_id.fulldomain + '.*'])
-            target.execute(['/etc/init.d/nginx', 'reload'])
+            target.execute(['nginx', '-s', 'reload'])
