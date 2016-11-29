@@ -407,8 +407,10 @@ class ClouderServer(models.Model):
         """
         Test connection to the server.
         """
-        self.connect()
-        self.raise_error('Connection successful!')
+        self.ensure_one()
+        ssh = self.connect()
+        with ssh.get_channel():
+            self.raise_error('Connection successful!')
 
     @api.multi
     def deploy(self):

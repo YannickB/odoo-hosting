@@ -98,7 +98,7 @@ class ClouderConfigSettings(models.Model):
             'save_comment': 'Save before upload_save',
         }
 
-        with self.with_context(**context).private_env() as self:
+        with self.with_context(**context)._private_env() as self:
 
             backup_dir = os.path.join(self.BACKUP_DIR, 'bup')
             ClouderContainer = self.env['clouder.container']
