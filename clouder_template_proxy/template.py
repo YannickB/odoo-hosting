@@ -20,17 +20,24 @@
 #
 ##############################################################################
 
-from openerp import modules
-from openerp import models, api
+import os.path
+
+from openerp import api, fields, models, modules
 from datetime import datetime, timedelta
 
 
 class ClouderBase(models.Model):
-    """
-    Add methods to manage the proxy specificities.
+    """ Add methods to manage the proxy specificities.
+
+    Attributes:
+        DELTA_CERT_RENEW: (datetime.timedelta) Timedelta for use when
+            determining the renewal time after generating a cert.
     """
 
     _inherit = 'clouder.base'
+    DELTA_CERT_RENEW = timedelta(days=45)
+
+    dh_param = fields.Text('Diffie-Helman Params')
 
     @property
     def nginx_configfile(self):
@@ -45,10 +52,7 @@ class ClouderBase(models.Model):
         Generate a new certificate
         """
         res = super(ClouderBase, self).generate_cert_exec()
-        link_obj = self.env['clouder.base.link']
-        proxy_links = link_obj.search([
-            ('base_id', '=', self.id), ('name.type_id.name', '=', 'proxy'),
-            ('target', '!=', False)])
+        proxy_links = self._get_proxy_links()
         if proxy_links:
             proxy_link = proxy_links[0]
             proxy = proxy_link.target
@@ -90,10 +94,13 @@ class ClouderBase(models.Model):
                 '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'])
             if key:
                 self.write({
-                    'cert_key': key, 'cert_cert': cert,
-                    'cert_renewal_date':
-                        (datetime.now() +
-                         timedelta(days=45)).strftime("%Y-%m-%d")})
+                    'cert_key': key,
+                    'cert_cert': cert,
+                    'cert_renewal_date': fields.Datetime.to_string(
+                        datetime.now() + self.DELTA_CERT_RENEW
+                    ),
+                    'dh_param': self._create_dh_param(proxy),
+                })
             proxy.execute([
                 'rm',
                 '/etc/nginx/sites-enabled/' + self.fullname])
@@ -106,10 +113,7 @@ class ClouderBase(models.Model):
     @api.multi
     def renew_cert_exec(self):
         res = super(ClouderBase, self).renew_cert_exec()
-        link_obj = self.env['clouder.base.link']
-        proxy_links = link_obj.search([
-            ('base_id', '=', self.id), ('name.type_id.name', '=', 'proxy'),
-            ('target', '!=', False)])
+        proxy_links = self._get_proxy_links()
         if proxy_links:
             proxy_link = proxy_links[0]
             proxy = proxy_link.target
@@ -129,11 +133,44 @@ class ClouderBase(models.Model):
                 'cat',
                 '/etc/letsencrypt/live/' + self.fulldomain + '/fullchain.pem'])
             self.write({
-                'cert_key': key, 'cert_cert': cert,
-                'cert_renewal_date':
-                    (datetime.now() +
-                     timedelta(days=45)).strftime("%Y-%m-%d")})
+                'cert_key': key,
+                'cert_cert': cert,
+                'cert_renewal_date': fields.Datetime.to_string(
+                    datetime.now() + self.DELTA_CERT_RENEW
+                ),
+                'dh_param': self._create_dh_param(proxy),
+            })
         return res
+
+    @api.multi
+    def _create_dh_param(self, proxy, length=4096):
+        """ It creates & returns new Diffie-Helman parameters
+
+        Args:
+            proxy: (clouder.container) Proxy target to execute on
+            length: (int) Bit length
+        Returns:
+            (str) Diffie-helman parameters
+        """
+        self.ensure_one()
+        dh_dir = '/etc/ssl/dh_param'
+        dh_path = os.path.join(dh_dir, '%s.pem' % self.fulldomain)
+        proxy.execute(['mkdir', '-p', dh_dir])
+        proxy.execute([
+            'openssl', 'dhparam', '-out', dh_path, str(length),
+        ])
+        return proxy.execute(['cat', dh_path])
+
+    @api.multi
+    def _get_proxy_links(self):
+        """ It returns the ``clouder.base.links`` for the current base """
+        self.ensure_one()
+        BaseLink = self.env['clouder.base.link']
+        return BaseLink.search([
+            ('base_id', '=', self.id),
+            ('name.type_id.name', '=', 'proxy'),
+            ('target', '!=', False),
+        ])
 
 
 class ClouderBaseLink(models.Model):
@@ -161,7 +198,20 @@ class ClouderBaseLink(models.Model):
             target = self.target
             module_path = modules.get_module_path(
                 'clouder_template_' + self.base_id.application_id.type_id.name)
+            proxy_module_path = modules.get_module_path(
+                'clouder_template_proxy'
+            )
             flag = True
+
+            # Always transfer proxy and ssl settings
+            for config in ['nginx-ssl', 'nginx-proxy']:
+                target.send(
+                    os.path.join(
+                        proxy_module_path, 'res', '%s.config' % config,
+                    ),
+                    os.path.join('/etc/nginx/conf.d', config),
+                )
+
             if module_path:
                 configtemplate = module_path + '/res/' + configfile
                 if self.local_file_exist(configtemplate):
@@ -176,10 +226,11 @@ class ClouderBaseLink(models.Model):
 
             if self.base_id.is_root:
                 target.send(
-                    modules.get_module_path(
-                        'clouder_template_proxy'
-                    ) + '/res/proxy-root.config',
-                    self.base_id.nginx_configfile + '-root')
+                    os.path.join(
+                        proxy_module_path, 'res', 'proxy-root.config',
+                    ),
+                    '%s-root' % self.base_id.nginx_configfile,
+                )
                 target.execute([
                     'cat', self.base_id.nginx_configfile + '-root',
                     '>>',  self.base_id.nginx_configfile])

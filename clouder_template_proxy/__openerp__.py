@@ -25,7 +25,7 @@
     'version': '9.0.10.0.0',
     'category': 'Clouder',
     'depends': ['clouder'],
-    'author': 'Yannick Buron (Clouder)',
+    'author': 'Yannick Buron (Clouder), LasLabs',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
