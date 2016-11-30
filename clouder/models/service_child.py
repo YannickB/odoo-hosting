@@ -24,8 +24,8 @@ class ClouderServiceChild(models.Model):
     name = fields.Many2one(
         'clouder.application', 'Application', required=True)
     sequence = fields.Integer('Sequence')
-    server_id = fields.Many2one(
-        'clouder.server', 'Server')
+    node_id = fields.Many2one(
+        'clouder.node', 'Node')
     child_id = fields.Many2one(
         'clouder.service', 'Service')
     save_id = fields.Many2one(
@@ -58,7 +58,7 @@ class ClouderServiceChild(models.Model):
             'suffix': service.suffix + '-' + self.name.code,
             'parent_id': self.id,
             'application_id': self.name.id,
-            'server_id': self.server_id.id or service.server_id.id
+            'node_id': self.node_id.id or service.node_id.id
         })
         if self.save_id:
             self.save_id.service_id = self.child_id

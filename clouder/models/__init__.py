@@ -11,7 +11,7 @@ from . import job
 from . import one_click
 from . import provider
 from . import save
-from . import server
+from . import node
 from . import template_one_2_many
 
 # Application

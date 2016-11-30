@@ -65,7 +65,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def deploy_post(self):
         """
-        Configure the ldap server.
+        Configure the ldap node.
         """
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'openldap':

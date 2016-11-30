@@ -45,9 +45,9 @@ class ClouderContainer(models.Model):
                 self.execute(['echo "mailhub=postfix:25" '
                              '>> /etc/ssmtp/ssmtp.conf'], username='root')
                 self.execute([
-                    'echo "rewriteDomain=' + self.server_id.fulldomain +
+                    'echo "rewriteDomain=' + self.node_id.fulldomain +
                     '" >> /etc/ssmtp/ssmtp.conf'], username='root')
-                self.execute(['echo "hostname=' + self.server_id.fulldomain +
+                self.execute(['echo "hostname=' + self.node_id.fulldomain +
                              '" >> /etc/ssmtp/ssmtp.conf'], username='root')
                 self.execute(['echo "FromLineOverride=YES" >> '
                              '/etc/ssmtp/ssmtp.conf'], username='root')
@@ -74,7 +74,7 @@ class ClouderContainer(models.Model):
                 'sed', '-i',
                 '"/myorigin =/d" ' + '/etc/postfix/main.cf']),
             self.execute([
-                'echo "myorigin = ' + self.server_id.fulldomain +
+                'echo "myorigin = ' + self.node_id.fulldomain +
                 '" >> /etc/postfix/main.cf'])
 
             self.execute([
@@ -135,7 +135,7 @@ class ClouderContainerLink(models.Model):
                 "echo 'spamassassin unix -     "
                 "n       n       -       -       "
                 "pipe user=nobody argv=/usr/bin/spamc -d " +
-                self.target.server_id.private_ip + " -p " +
+                self.target.node_id.private_ip + " -p " +
                 self.target.ports['spamd']['hostport'] +
                 " -f -e /usr/sbin/sendmail "
                 r"-oi -f \${sender} \${recipient}' "
@@ -189,12 +189,12 @@ class ClouderBaseLink(models.Model):
         dns.execute([
             'echo \'' + name + ' IN TXT "v=spf1 a mx ptr mx:' +
             base.fulldomain + ' ip4:10.0.0.0/8 ip4:127.0.0.0/8 ip4:' +
-            self.target.server_id.public_ip + smtp_relayhost + ' ~all"\' >> ' +
+            self.target.node_id.public_ip + smtp_relayhost + ' ~all"\' >> ' +
             base.domain_id.configfile])
         dns.execute([
             'echo \'' + name + ' IN SPF "v=spf1 a mx ptr mx:' +
             base.fulldomain + ' ip4:10.0.0.0/8 ip4:127.0.0.0/8 ip4:' +
-            self.target.server_id.public_ip + smtp_relayhost + ' ~all"\' >> ' +
+            self.target.node_id.public_ip + smtp_relayhost + ' ~all"\' >> ' +
             base.domain_id.configfile])
         # dns.execute([
         #     'echo \'' +

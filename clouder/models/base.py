@@ -550,9 +550,9 @@ class ClouderBase(models.Model):
                     "You need to specify the application of the base."
                 )
             application = application_obj.browse(vals['application_id'])
-            if not application.next_server_id:
+            if not application.next_node_id:
                 self.raise_error(
-                    "You need to specify the next server in "
+                    "You need to specify the next node in "
                     "application for the service autocreate."
                 )
             if not application.default_image_id.version_ids:
@@ -572,7 +572,7 @@ class ClouderBase(models.Model):
             service_vals = {
                 'name': vals['name'] + '-' +
                 domain.name.replace('.', '-'),
-                'server_id': application.next_server_id.id,
+                'node_id': application.next_node_id.id,
                 'application_id': application.id,
                 'image_id': application.default_image_id.id,
                 'image_version_id':
@@ -653,10 +653,10 @@ class ClouderBase(models.Model):
         if no_enqueue:
             self = self.with_context(no_enqueue=True)
 
-        for backup_server in self.backup_ids:
+        for backup_node in self.backup_ids:
             save_vals = {
                 'name': self.now_bup + '_' + self.fullname,
-                'backup_id': backup_server.id,
+                'backup_id': backup_node.id,
                 # 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration or

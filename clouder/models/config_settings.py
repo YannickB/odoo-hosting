@@ -21,7 +21,7 @@ class ClouderConfigSettings(models.Model):
     name = fields.Char('Name')
     email_sysadmin = fields.Char('Email SysAdmin')
     master_id = fields.Many2one(
-        'clouder.server', 'Master')
+        'clouder.node', 'Master')
     salt_master_id = fields.Many2one(
         'clouder.service', 'Salt Master', readonly=True)
     runner = fields.Selection(
@@ -98,7 +98,7 @@ class ClouderConfigSettings(models.Model):
             'save_comment': 'Save before upload_save',
         }
 
-        with self.with_context(**context)._private_env() as self:
+        with self.with_context(**context).private_env() as self:
 
             backup_dir = os.path.join(self.BACKUP_DIR, 'bup')
             ClouderService = self.env['clouder.service']

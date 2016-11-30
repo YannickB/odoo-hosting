@@ -97,7 +97,7 @@ class ClouderImage(models.Model):
 
     @api.multi
     def build_image(
-            self, model, server, runner=False, expose_ports=None, salt=True):
+            self, model, node, runner=False, expose_ports=None, salt=True):
         """
         """
 

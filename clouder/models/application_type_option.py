@@ -44,9 +44,9 @@ class ClouderApplicationTypeOption(models.Model):
         if self.name == 'secret':
             res = generate_random_password(50)
         if self.name == 'ssh_privatekey':
-            res = self.env['clouder.server']._default_private_key()
+            res = self.env['clouder.node']._default_private_key()
         if self.name == 'ssh_publickey':
-            res = self.env['clouder.server']._default_public_key()
+            res = self.env['clouder.node']._default_public_key()
         return res
 
     @property

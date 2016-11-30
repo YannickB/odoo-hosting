@@ -34,7 +34,7 @@ class SSHEnvironment(object):
             reconnection attempts before failure.
         client: (paramiko.Client|None) Raw Paramiko SSH connection. None if
             not connected.
-        host: (str) Server Hostname/IP that is used for connection.
+        host: (str) Node Hostname/IP that is used for connection.
         port: (int) Port number used for connection.
         username: (str) Username used for authentication.
         identify_file: (str) Path to the SSH identity file

@@ -14,7 +14,7 @@ class ClouderServiceVolume(models.Model):
     """
     Define the service.volume object, used to define the volume which
     will be saved in the service or will be linked to a directory
-    in the host server.
+    in the host node.
     """
 
     _name = 'clouder.service.volume'

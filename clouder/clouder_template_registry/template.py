@@ -62,7 +62,7 @@ class ClouderService(models.Model):
                     partner_id.country_id.code,
                     partner_id.city,
                     partner_id.commercial_partner_id.name,
-                    self.server_id.name,
+                    self.node_id.name,
                 ),
             ])
 

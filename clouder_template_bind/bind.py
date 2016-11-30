@@ -80,7 +80,7 @@ class ClouderDomain(models.Model):
                 self.configfile])
             self.dns_id.execute([
                 'sed', '-i',
-                '"s/IP/' + self.dns_id.server_id.public_ip + '/g"',
+                '"s/IP/' + self.dns_id.node_id.public_ip + '/g"',
                 self.configfile])
             self.dns_id.execute([
                 "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
@@ -130,8 +130,8 @@ class ClouderBaseLink(models.Model):
             'name.type_id.name', '=', 'proxy')])
         self.target.execute([
             'echo "' + name + ' IN A ' +
-            (proxy_link and proxy_link[0].target.server_id.public_ip or
-             self.base_id.service_id.server_id.public_ip) +
+            (proxy_link and proxy_link[0].target.node_id.public_ip or
+             self.base_id.service_id.node_id.public_ip) +
             '" >> ' + self.base_id.domain_id.configfile])
         self.base_id.domain_id.refresh_serial(self.base_id.fulldomain)
 

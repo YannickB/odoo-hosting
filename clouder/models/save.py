@@ -24,7 +24,7 @@ class ClouderSave(models.Model):
 
     name = fields.Char('Name', required=True)
     backup_id = fields.Many2one(
-        'clouder.service', 'Backup Server', required=True)
+        'clouder.service', 'Backup Node', required=True)
     date_expiration = fields.Date('Expiration Date')
     comment = fields.Text('Comment')
     now_bup = fields.Char('Now bup')
@@ -44,7 +44,7 @@ class ClouderSave(models.Model):
     base_fullname = fields.Char('Base Fullname')
     base_title = fields.Char('Title')
     base_service_suffix = fields.Char('Service Name')
-    base_service_server = fields.Char('Server')
+    base_service_node = fields.Char('Node')
     base_admin_name = fields.Char('Admin name')
     base_admin_password = fields.Char('Admin passwd')
     base_admin_email = fields.Char('Admin email')
@@ -59,14 +59,14 @@ class ClouderSave(models.Model):
     base_links = fields.Text('Base Links')
     service_suffix = fields.Char(
         'Service Suffix', readonly=True)
-    service_server = fields.Char(
-        'Service Server',
+    service_node = fields.Char(
+        'Service Node',
         type='char', readonly=True)
     restore_to_environment_id = fields.Many2one(
         'clouder.environment', 'Restore to (Environment)')
     service_restore_to_suffix = fields.Char('Restore to (Suffix)')
-    service_restore_to_server_id = fields.Many2one(
-        'clouder.server', 'Restore to (Server)')
+    service_restore_to_node_id = fields.Many2one(
+        'clouder.node', 'Restore to (Node)')
     base_name = fields.Char(
         'Base Name',
         type='char', readonly=True)
@@ -110,12 +110,12 @@ class ClouderSave(models.Model):
             or self.repo_id.service_suffix
 
     @property
-    def computed_service_restore_to_server(self):
+    def computed_service_restore_to_node(self):
         """
-        Property returning the service server which will be restored.
+        Property returning the service node which will be restored.
         """
-        return self.service_restore_to_server_id.fulldomain \
-            or self.base_service_server or self.repo_id.service_server
+        return self.service_restore_to_node_id.fulldomain \
+            or self.base_service_node or self.repo_id.service_node
 
     @property
     def computed_base_restore_to_name(self):
@@ -178,7 +178,7 @@ class ClouderSave(models.Model):
                 'environment': service.environment_id.prefix,
                 'service_fullname': service.fullname,
                 'service_suffix': service.suffix,
-                'service_server': service.server_id.fulldomain,
+                'service_node': service.node_id.fulldomain,
                 'service_volumes_comma': service.volumes_save,
                 'service_app': service.application_id.code,
                 'service_img': service.image_id.name,
@@ -209,8 +209,8 @@ class ClouderSave(models.Model):
                 'base_service_environment':
                     base.service_id.environment_id.prefix,
                 'base_service_suffix': base.service_id.suffix,
-                'base_service_server':
-                base.service_id.server_id.fulldomain,
+                'base_service_node':
+                base.service_id.node_id.fulldomain,
                 'base_admin_name': base.admin_name,
                 'base_admin_password': base.admin_password,
                 'base_admin_email': base.admin_email,
@@ -277,33 +277,33 @@ class ClouderSave(models.Model):
             self.deploy_base()
 
         directory = self.get_directory_clouder(self.name)
-        service.server_id.execute([
+        service.node_id.execute([
             'rm', '-rf', os.path.join(directory, '*'),
         ])
-        service.server_id.execute(['mkdir', directory])
+        service.node_id.execute(['mkdir', directory])
 
         if self.base_fullname:
-            service.server_id.execute([
+            service.node_id.execute([
                 'docker', 'cp',
                 '%s:%s' % (service.pod, backup_dir),
                 self.get_directory_clouder(),
             ])
         else:
             for volume in self.service_volumes_comma.split(','):
-                service.server_id.execute([
+                service.node_id.execute([
                     'mkdir', '-p', os.path.join(directory, volume),
                 ])
-                service.server_id.execute([
+                service.node_id.execute([
                     'docker', 'cp', '%s:%s' % (service.pod, volume),
                     os.path.join(directory, os.path.split(volume)[0]),
                 ])
 
-        service.server_id.execute([
+        service.node_id.execute([
             'echo "%s" > "%s"' % (
                 self.now_date, os.path.join(directory, self.BACKUP_DATE_FILE),
             ),
         ])
-        service.server_id.execute([
+        service.node_id.execute([
             'chmod', '-R', '777', os.path.join(directory, '*'),
         ])
 
@@ -344,16 +344,16 @@ class ClouderSave(models.Model):
         )
         backup.send(
             os.path.join(self.home_directory, '.ssh', 'keys',
-                         '%s.pub' % self.service_id.server_id.fulldomain),
+                         '%s.pub' % self.service_id.node_id.fulldomain),
             os.path.join(self.BACKUP_HOME_DIR, '.ssh', 'keys',
-                         '%s.pub' % self.service_id.server_id.fulldomain),
+                         '%s.pub' % self.service_id.node_id.fulldomain),
             username='backup',
         )
         backup.send(
             os.path.join(self.home_directory, '.ssh', 'keys',
-                         self.service_id.server_id.fulldomain),
+                         self.service_id.node_id.fulldomain),
             os.path.join(self.BACKUP_HOME_DIR, '.ssh', 'keys',
-                         self.service_id.server_id.fulldomain),
+                         self.service_id.node_id.fulldomain),
             username='backup',
         )
         backup.execute([
@@ -367,7 +367,7 @@ class ClouderSave(models.Model):
 
         backup.execute([
             'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-            '%s:%s/' % (self.service_id.server_id.fulldomain, directory),
+            '%s:%s/' % (self.service_id.node_id.fulldomain, directory),
             directory,
         ],
             username='backup',
@@ -489,7 +489,7 @@ class ClouderSave(models.Model):
         service_obj = self.env['clouder.service']
         base_obj = self.env['clouder.base']
         environment_obj = self.env['clouder.environment']
-        server_obj = self.env['clouder.server']
+        node_obj = self.env['clouder.node']
         domain_obj = self.env['clouder.domain']
         application_obj = self.env['clouder.application']
         application_link_obj = self.env['clouder.application.link']
@@ -540,19 +540,19 @@ class ClouderSave(models.Model):
                 ('environment_id.prefix', '=',
                  self.computed_restore_to_environment),
                 ('suffix', '=', self.computed_service_restore_to_suffix),
-                ('server_id.name', '=',
-                 self.computed_service_restore_to_server)
+                ('node_id.name', '=',
+                 self.computed_service_restore_to_node)
             ])
 
             if not services:
                 self.log("Can't find any corresponding service, "
                          "creating a new one")
-                servers = server_obj.search([
-                    ('name', '=', self.computed_service_restore_to_server)])
-                if not servers:
+                nodes = node_obj.search([
+                    ('name', '=', self.computed_service_restore_to_node)])
+                if not nodes:
                     self.raise_error(
-                        'Could not find server "%s". Aborting restoration.',
-                        self.computed_service_restore_to_server,
+                        'Could not find node "%s". Aborting restoration.',
+                        self.computed_service_restore_to_node,
                     )
 
                 ports = []
@@ -584,7 +584,7 @@ class ClouderSave(models.Model):
                 service_vals = {
                     'environment_id': environments[0].id,
                     'suffix': self.computed_service_restore_to_suffix,
-                    'server_id': servers[0].id,
+                    'node_id': nodes[0].id,
                     'application_id': apps[0].id,
                     'image_id': imgs[0].id,
                     'image_version_id': img_versions[0].id,
@@ -718,7 +718,7 @@ class ClouderSave(models.Model):
             res = base
         self.write({'restore_to_environment_id': False,
                     'service_restore_to_suffix': False,
-                    'service_restore_to_server_id': False,
+                    'service_restore_to_node_id': False,
                     'base_restore_to_name': False,
                     'base_restore_to_domain_id': False})
 
@@ -747,16 +747,16 @@ class ClouderSave(models.Model):
         )
         backup.send(
             os.path.join(self.home_directory, '.ssh', 'keys',
-                         '%s.pub' % service.server_id.fulldomain),
+                         '%s.pub' % service.node_id.fulldomain),
             os.path.join(self.BACKUP_HOME_DIR, '.ssh', 'keys',
-                         '%s.pub' % service.server_id.fulldomain),
+                         '%s.pub' % service.node_id.fulldomain),
             username='backup',
         )
         backup.send(
             os.path.join(self.home_directory, '.ssh', 'keys',
-                         service.server_id.fulldomain),
+                         service.node_id.fulldomain),
             os.path.join(self.BACKUP_HOME_DIR, '.ssh', 'keys',
-                         service.server_id.fulldomain),
+                         service.node_id.fulldomain),
             username='backup',
         )
         backup.execute([
@@ -801,7 +801,7 @@ class ClouderSave(models.Model):
 
         backup.execute([
             'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-            directory, '%s:%s' % (service.server_id.fulldomain, directory),
+            directory, '%s:%s' % (service.node_id.fulldomain, directory),
         ],
             username='backup',
         )
@@ -826,18 +826,18 @@ class ClouderSave(models.Model):
                 username='root',
             )
 
-        service.server_id.execute(['ls', directory])
-        service.server_id.execute([
+        service.node_id.execute(['ls', directory])
+        service.node_id.execute([
             'cat', os.path.join(directory, self.BACKUP_DATE_FILE),
         ])
-        service.server_id.execute([
+        service.node_id.execute([
             'rm', '-rf', os.path.join(directory, self.BACKUP_DATE_FILE),
         ])
         if not self.base_fullname:
             for item in \
-                    service.server_id.execute(['ls', directory]).split('\n'):
+                    service.node_id.execute(['ls', directory]).split('\n'):
                 if item:
-                    service.server_id.execute([
+                    service.node_id.execute([
                         'docker', 'cp',
                         os.path.join(directory, item),
                         '%s:/' % service.name,
@@ -847,7 +847,7 @@ class ClouderSave(models.Model):
                 ['mkdir', self.BACKUP_BASE_DIR],
                 username='root',
             )
-            service.server_id.execute([
+            service.node_id.execute([
                 'docker', 'cp', directory,
                 '%s:/base-backup' % service.name,
             ])
@@ -857,6 +857,6 @@ class ClouderSave(models.Model):
             ],
                 username='root',
             )
-        service.server_id.execute(
+        service.node_id.execute(
             ['rm', '-rf', os.path.join(directory, '*')],
         )

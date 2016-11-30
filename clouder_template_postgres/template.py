@@ -87,7 +87,7 @@ class ClouderContainerLink(models.Model):
                 '"/:*:' + service.db_user + ':/d" ' + '~/.pgpass'],
                 username=username)
             service.execute([
-                'echo "' + service.db_server + ':5432:*:' +
+                'echo "' + service.db_node + ':5432:*:' +
                 service.db_user + ':$$$' + service.db_password +
                 '$$$" >> ' + '~/.pgpass'], username=username)
             service.execute(['chmod', '700', '~/.pgpass'],
@@ -131,7 +131,7 @@ class ClouderBase(models.Model):
         if self.service_id.db_type == 'pgsql':
             for key, database in self.databases.iteritems():
                 self.service_id.base_backup_service.execute([
-                    'createdb', '-h', self.service_id.db_server, '-U',
+                    'createdb', '-h', self.service_id.db_node, '-U',
                     self.service_id.db_user, database])
 
         return super(ClouderBase, self).deploy_database()
@@ -174,7 +174,7 @@ class ClouderSave(models.Model):
             for key, database in self.base_id.databases.iteritems():
                 service.execute([
                     'pg_dump', '-O', ''
-                    '-h', self.service_id.db_server,
+                    '-h', self.service_id.db_node,
                     '-U', self.service_id.db_user, database,
                     '>', '/base-backup/' + self.name + '/' +
                     self.base_dumpfile],
@@ -188,7 +188,7 @@ class ClouderSave(models.Model):
             service = base.service_id.base_backup_service
             for key, database in base.databases.iteritems():
                 service.execute(['createdb', '-h',
-                                 base.service_id.db_server, '-U',
+                                 base.service_id.db_node, '-U',
                                  base.service_id.db_user,
                                  database])
                 service.execute([
@@ -196,6 +196,6 @@ class ClouderSave(models.Model):
                     '/base-backup/restore-' + self.name +
                     '/' + self.base_dumpfile,
                     '|', 'psql', '-q', '-h',
-                    base.service_id.db_server, '-U',
+                    base.service_id.db_node, '-U',
                     base.service_id.db_user,
                     database])

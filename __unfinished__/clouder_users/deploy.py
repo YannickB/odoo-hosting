@@ -25,7 +25,7 @@ from openerp import models, api
 
 class ClouderContainer(models.Model):
     """
-    Manage link between ldap.server object and ldap service.
+    Manage link between ldap.node object and ldap service.
     """
 
     _inherit = 'clouder.service'
@@ -33,7 +33,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def deploy_post(self):
         """
-        Add a ldap.server in clouder when we create a new ldap service.
+        Add a ldap.node in clouder when we create a new ldap service.
         """
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'openldap':
@@ -49,10 +49,10 @@ class ClouderContainer(models.Model):
                 if port.name == 'openldap':
                     hostport = port.hostport
 
-            server_obj = self.env['ldap.server']
-            server_obj.create({
+            node_obj = self.env['ldap.node']
+            node_obj.create({
                 'name': self.fullname,
-                'host': self.server_id.name,
+                'host': self.node_id.name,
                 'port': hostport,
                 'binddn': 'cn=admin,' + domain_dc,
                 'basedn': 'ou=people,' + domain_dc,
@@ -61,7 +61,7 @@ class ClouderContainer(models.Model):
 
     def purge(self):
         """
-        Remove the ldap.server in clouder when we unlink an ldap service.
+        Remove the ldap.node in clouder when we unlink an ldap service.
         """
         if self.application_id.type_id.name == 'openldap':
 
@@ -70,8 +70,8 @@ class ClouderContainer(models.Model):
                 if port.name == 'openldap':
                     hostport = port.hostport
 
-            server_obj = self.pool.get('ldap.server')
-            server_ids = server_obj.search([
-                ('host', '=', self.server_id.name), ('port', '=', hostport)])
-            server_ids.unlink()
+            node_obj = self.pool.get('ldap.node')
+            node_ids = node_obj.search([
+                ('host', '=', self.node_id.name), ('port', '=', hostport)])
+            node_ids.unlink()
         return super(ClouderContainer, self).purge()

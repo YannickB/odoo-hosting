@@ -22,8 +22,8 @@ class ClouderService(models.Model):
     _name = 'clouder.service'
     _inherit = ['clouder.model']
     _sql_constraints = [
-        ('name_uniq', 'unique(server_id,environment_id,suffix)',
-         'Name must be unique per server!'),
+        ('name_uniq', 'unique(node_id,environment_id,suffix)',
+         'Name must be unique per node!'),
     ]
 
     name = fields.Char('Name', compute='_compute_name', required=False)
@@ -33,7 +33,7 @@ class ClouderService(models.Model):
     application_id = fields.Many2one('clouder.application',
                                      'Application', required=True)
     image_id = fields.Many2one('clouder.image', 'Image', required=False)
-    server_id = fields.Many2one('clouder.server', 'Server', required=True)
+    node_id = fields.Many2one('clouder.node', 'Node', required=True)
     image_version_id = fields.Many2one('clouder.image.version',
                                        'Image version', required=False)
     time_between_save = fields.Integer('Minutes between each save')
@@ -101,7 +101,7 @@ class ClouderService(models.Model):
         """
         Property returning the full name of the service.
         """
-        return '%s_%s' % (self.name, self.server_id.fulldomain)
+        return '%s_%s' % (self.name, self.node_id.fulldomain)
 
     @property
     def volumes_save(self):
@@ -145,9 +145,9 @@ class ClouderService(models.Model):
         return db_type
 
     @property
-    def db_server(self):
+    def db_node(self):
         """
-        Property returning the database server connected to the service.
+        Property returning the database node connected to the service.
         """
         return self.database.host
 
@@ -161,7 +161,7 @@ class ClouderService(models.Model):
         elif self.runner == 'engine':
             res = self.application_id.code
         else:
-            res = self.server_id.private_ip
+            res = self.node_id.private_ip
         return res
 
     @property
@@ -310,7 +310,7 @@ class ClouderService(models.Model):
     @api.constrains('application_id')
     def _check_backup(self):
         """
-        Check that a backup server is specified.
+        Check that a backup node is specified.
         """
         if not self.backup_ids and \
                 not self.application_id.check_tags(['no-backup']):
@@ -349,15 +349,15 @@ class ClouderService(models.Model):
         if 'application_id' in vals and vals['application_id']:
             application = self.env['clouder.application'].browse(
                 vals['application_id'])
-            if 'server_id' not in vals or not vals['server_id']:
-                vals['server_id'] = application.next_server_id.id
-            if not vals['server_id']:
-                servers = self.env['clouder.server'].search([])[0]
-                if servers:
-                    vals['server_id'] = servers[0].id
+            if 'node_id' not in vals or not vals['node_id']:
+                vals['node_id'] = application.next_node_id.id
+            if not vals['node_id']:
+                nodes = self.env['clouder.node'].search([])[0]
+                if nodes:
+                    vals['node_id'] = nodes[0].id
                 else:
                     self.raise_error(
-                        "You need to create a server before "
+                        "You need to create a node before "
                         "creating a service.",
                     )
 
@@ -527,22 +527,22 @@ class ClouderService(models.Model):
                             'name': child[2].get('name', False),
                             'sequence': child[2].get('sequence', False),
                             'required': child[2].get('required', False),
-                            'server_id': child[2].get('server_id', False)
+                            'node_id': child[2].get('node_id', False)
                         }
                         # This case means we do not have an odoo recordset
                         # and need to load links manually
                         if isinstance(child['name'], int):
                             child['name'] = self.env['clouder.application'].\
                                 browse(child['name'])
-                        if isinstance(child['server_id'], int):
-                            child['server_id'] = self.env['clouder.server'].\
-                                browse(child['server_id'])
+                        if isinstance(child['node_id'], int):
+                            child['node_id'] = self.env['clouder.node'].\
+                                browse(child['node_id'])
                     else:
                         child = {
                             'name': getattr(child, 'name', False),
                             'sequence': getattr(child, 'sequence', False),
                             'required': getattr(child, 'required', False),
-                            'server_id': getattr(child, 'server_id', False)
+                            'node_id': getattr(child, 'node_id', False)
                         }
                     if child['name'] and child['name'].id in child_sources:
                         child['source'] = child_sources[child['name'].id]
@@ -550,10 +550,10 @@ class ClouderService(models.Model):
                             childs.append((0, 0, {
                                 'name': child['source'].id,
                                 'sequence':  child['sequence'],
-                                'server_id':
-                                    child['server_id'] and
-                                    child['server_id'].id or
-                                    child['source'].next_server_id.id
+                                'node_id':
+                                    child['node_id'] and
+                                    child['node_id'].id or
+                                    child['source'].next_node_id.id
                             }))
 
                         # Removing from sources
@@ -566,10 +566,10 @@ class ClouderService(models.Model):
                     childs.append((0, 0, {
                         'name': child.id,
                         'sequence': child.sequence,
-                        'server_id':
-                            getattr(child, 'server_id', False) and
-                            child.server_id.id or
-                            child.next_server_id.id
+                        'node_id':
+                            getattr(child, 'node_id', False) and
+                            child.node_id.id or
+                            child.next_node_id.id
                     }))
 
             # Replacing old childs
@@ -662,7 +662,7 @@ class ClouderService(models.Model):
     def onchange_application_id(self):
         vals = {
             'application_id': self.application_id.id,
-            'server_id': self.server_id.id,
+            'node_id': self.node_id.id,
             'option_ids': self.option_ids,
             'link_ids': self.link_ids,
             'child_ids': self.child_ids,
@@ -685,10 +685,10 @@ class ClouderService(models.Model):
         Update the ports and volumes when we change the image_id field.
         """
 
-        server = getattr(self, 'server_id', False) \
-            or 'server_id' in vals \
-            and self.env['clouder.server'].browse(vals['server_id'])
-        if not server:
+        node = getattr(self, 'node_id', False) \
+            or 'node_id' in vals \
+            and self.env['clouder.node'].browse(vals['node_id'])
+        if not node:
             return vals
 
         if 'image_id' in vals and vals['image_id']:
@@ -704,7 +704,7 @@ class ClouderService(models.Model):
                             application.next_image_version_id.id
 
             ports = []
-            nextport = server.start_port
+            nextport = node.start_port
             # Getting sources for new port
             port_sources = {x.name: x for x in image.port_ids}
             sources_to_add = port_sources.keys()
@@ -768,13 +768,13 @@ class ClouderService(models.Model):
                         port['hostport'] = context['service_ports'][name]
                 if not port['hostport']:
                     while not port['hostport'] \
-                            and nextport != server.end_port:
+                            and nextport != node.end_port:
                         port_ids = self.env['clouder.service.port'].search(
                             [('hostport', '=', nextport)])
-                        if not port_ids and not server.execute([
+                        if not port_ids and not node.execute([
                                 'netstat', '-an', '|', 'grep',
-                                (server.assign_ip and
-                                 server.private_ip + ':' or '') +
+                                (node.assign_ip and
+                                 node.private_ip + ':' or '') +
                                 str(nextport)]):
                             port['hostport'] = nextport
                         nextport += 1
@@ -783,7 +783,7 @@ class ClouderService(models.Model):
                         "We were not able to assign an hostport to the "
                         "localport %s .\n"
                         "If you don't want to assign one manually, "
-                        "make sure you fill the port range in the server "
+                        "make sure you fill the port range in the node "
                         "configuration, and that all ports in that range "
                         "are not already used.",
                         port['localport'],
@@ -1108,10 +1108,10 @@ class ClouderService(models.Model):
                      'skipping save service')
             return
 
-        for backup_server in self.backup_ids:
+        for backup_node in self.backup_ids:
             save_vals = {
                 'name': self.now_bup + '_' + self.fullname,
-                'backup_id': backup_server.id,
+                'backup_id': backup_node.id,
                 # 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration or
@@ -1165,9 +1165,9 @@ class ClouderService(models.Model):
         for port in self.port_ids:
             if self.runner != 'swarm':
                 ip = ''
-                if self.server_id.assign_ip \
+                if self.node_id.assign_ip \
                         and self.application_id.type_id.name != 'registry':
-                    ip = self.server_id.public_ip + ':'
+                    ip = self.node_id.public_ip + ':'
 
                 ports.append('%s:%s'
                              % (ip + str(port.hostport),
@@ -1325,7 +1325,7 @@ class ClouderService(models.Model):
     @api.multi
     def deploy(self):
         """
-        Deploy the service in the server.
+        Deploy the service in the node.
         """
 
         self = self.with_context(no_enqueue=True)
@@ -1459,7 +1459,7 @@ class ClouderService(models.Model):
         services = self.search([
             ('suffix', '=', subservice_name),
             ('environment_id', '=', self.environment_id.id),
-            ('server_id', '=', self.server_id.id)])
+            ('node_id', '=', self.node_id.id)])
         for service in services:
             if service.parent_id:
                 service.parent_id.unlink()
@@ -1480,7 +1480,7 @@ class ClouderService(models.Model):
         service_vals = {
             'environment_id': self.environment_id.id,
             'suffix': subservice_name,
-            'server_id': self.server_id.id,
+            'node_id': self.node_id.id,
             'application_id': self.application_id.id,
             'parent_id': parent and parent.id,
             'from_id': self.id,

@@ -46,13 +46,13 @@ class ClouderApplication(models.Model):
     )
 
     @api.multi
-    @api.constrains('web_create_type', 'next_server_id',
+    @api.constrains('web_create_type', 'next_node_id',
                     'next_service_id', 'base')
     def _check_web_create_type_next(self):
         """
         Checks that the base web type can only
         be applied on application that can have bases
-        Checks that the next service/server
+        Checks that the next service/node
         is correctly set depending on the web_create type
         """
         if self.web_create_type == 'base':
@@ -66,10 +66,10 @@ class ClouderApplication(models.Model):
                     _('Data error!'),
                     _("You need to specify the next service "
                       "for web type 'Base'"))
-        elif self.web_create_type == 'service' and not self.next_server_id:
+        elif self.web_create_type == 'service' and not self.next_node_id:
             raise except_orm(
                 _('Data error!'),
-                _("You need to specify the next server for "
+                _("You need to specify the next node for "
                   "web type 'Container'"))
 
     @api.multi

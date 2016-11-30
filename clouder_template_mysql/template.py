@@ -198,7 +198,7 @@ class ClouderSave(models.Model):
             for key, database in self.base_id.databases.iteritems():
                 service.execute([
                     'mysqldump',
-                    '-h', service.db_server,
+                    '-h', service.db_node,
                     '-u', service.db_user,
                     '-p' + service.db_password,
                     database, '>', '/base-backup/' + self.name +
@@ -223,7 +223,7 @@ class ClouderSave(models.Model):
                     "' -se \"grant all on " + database + ".* to '" +
                     base.conteneur_id.db_user + "';\""])
                 base.conteneur_id.execute([
-                    'mysql', '-h', base.conteneur_id.db_server, '-u',
+                    'mysql', '-h', base.conteneur_id.db_node, '-u',
                     base.conteneur_id.db_user,
                     '-p' + base.conteneur_id.db_password, database,
                     '<', '/base-backup/' + self.name + '/' +

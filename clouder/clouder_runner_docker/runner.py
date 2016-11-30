@@ -21,13 +21,13 @@ class ClouderImage(models.Model):
     _inherit = 'clouder.image'
 
     def build_image(
-            self, model, server, runner=False, expose_ports=None, salt=True):
+            self, model, node, runner=False, expose_ports=None, salt=True):
 
         if not expose_ports:
             expose_ports = []
 
         res = super(ClouderImage, self).build_image(
-            model, server, runner=runner, expose_ports=expose_ports, salt=salt)
+            model, node, runner=runner, expose_ports=expose_ports, salt=salt)
 
         if not runner or runner.application_id.type_id.name == 'docker':
 
@@ -43,12 +43,12 @@ class ClouderImage(models.Model):
                 build_dir = os.path.join(
                     '/srv', 'salt', 'services', 'build_%s' % model.name,
                 )
-                server = model.salt_master
+                node = model.salt_master
             else:
                 build_dir = self.env['clouder.model']._get_directory_tmp(name)
 
-            server.execute(['rm', '-rf', build_dir])
-            server.execute(['mkdir', '-p', build_dir])
+            node.execute(['rm', '-rf', build_dir])
+            node.execute(['mkdir', '-p', build_dir])
 
             if self.type_id:
                 if self.type_id.name in [
@@ -67,12 +67,12 @@ class ClouderImage(models.Model):
                 if sources_path and self.env['clouder.model'].local_dir_exist(
                     sources_path
                 ):
-                    server.send_dir(
+                    node.send_dir(
                         sources_path, os.path.join(build_dir, 'sources'),
                     )
 
             docker_file = os.path.join(build_dir, 'Dockerfile')
-            server.execute([
+            node.execute([
                 'echo "%s" >> "%s"' % (
                     self.computed_dockerfile.replace('"', r'\"'),
                     docker_file,
@@ -80,17 +80,17 @@ class ClouderImage(models.Model):
             ])
 
             if expose_ports:
-                server.execute([
+                node.execute([
                     'echo "EXPOSE %s" >> "%s"' % (
                         ' '.join(expose_ports), docker_file,
                     ),
                 ])
 
             if not salt:
-                server.execute([
+                node.execute([
                     'docker', 'build', '--pull', '-t', name, build_dir,
                 ])
-                server.execute(['rm', '-rf', build_dir])
+                node.execute(['rm', '-rf', build_dir])
 
             return name
         return res
@@ -109,12 +109,12 @@ class ClouderImageVersion(models.Model):
         res = super(ClouderImageVersion, self).hook_build()
 
         if self.registry_id.application_id.type_id.name == 'registry':
-            server = self.registry_id.server_id
-            name = self.image_id.build_image(self, server)
-            server.execute(
+            node = self.registry_id.node_id
+            name = self.image_id.build_image(self, node)
+            node.execute(
                 ['docker', 'push', name])
 
-            server.execute(['docker', 'rmi', self.name])
+            node.execute(['docker', 'rmi', self.name])
         return res
 
     @api.multi
@@ -137,16 +137,16 @@ class ClouderImageVersion(models.Model):
         return res
 
 
-class ClouderServer(models.Model):
+class ClouderNode(models.Model):
     """
-    Add methods to manage the docker server specificities.
+    Add methods to manage the docker node specificities.
     """
 
-    _inherit = 'clouder.server'
+    _inherit = 'clouder.node'
 
     @api.multi
     def configure_exec(self):
-        super(ClouderServer, self).configure_exec()
+        super(ClouderNode, self).configure_exec()
         # Activate swarm mode if master
         if self.runner == 'swarm':
             # If master, create swarm
@@ -178,19 +178,19 @@ class ClouderService(models.Model):
         if res:
             return res
         else:
-            if self.server_id == self.image_version_id.registry_id.server_id:
+            if self.node_id == self.image_version_id.registry_id.node_id:
                 return self.image_version_id.fullpath_localhost
             else:
                 # folder = '/etc/docker/certs.d/' +\
                 #          self.image_version_id.registry_address
                 # certfile = folder + '/ca.crt'
                 # tmp_file = '/tmp/' + self.fullname
-                # self.server_id.execute(['rm', certfile])
+                # self.node_id.execute(['rm', certfile])
                 # self.image_version_id.registry_id.get(
                 #     '/etc/ssl/certs/docker-registry.crt', tmp_file)
-                # self.server_id.execute(['mkdir', '-p', folder])
-                # self.server_id.send(tmp_file, certfile)
-                # self.server_id.execute_local(['rm', tmp_file])
+                # self.node_id.execute(['mkdir', '-p', folder])
+                # self.node_id.send(tmp_file, certfile)
+                # self.node_id.execute_local(['rm', tmp_file])
                 return self.image_version_id.fullpath
 
     @api.multi
@@ -213,7 +213,7 @@ class ClouderService(models.Model):
         for service_dict in res:
             service = service_dict['self']
             image = service.image_id.build_image(
-                service, service.server_id,
+                service, service.node_id,
                 expose_ports=service_dict['expose_ports'], salt=False)
             compose['services'][service_dict['compose_name']] = {
                 'image': image,
@@ -228,22 +228,22 @@ class ClouderService(models.Model):
         # Create directory and write compose file
         build_dir = self.env['clouder.model']._get_directory_tmp(
             'clouder-compose/' + self.name)
-        self.server_id.execute(['rm', '-rf', build_dir])
-        self.server_id.execute(['mkdir', '-p', build_dir])
-        self.server_id.execute(
+        self.node_id.execute(['rm', '-rf', build_dir])
+        self.node_id.execute(['mkdir', '-p', build_dir])
+        self.node_id.execute(
             ['echo "%s" > %s/docker-compose.yml' % (compose, build_dir)])
         return build_dir
 
     @api.multi
     def hook_deploy_compose(self):
         """
-        Deploy the service in the server.
+        Deploy the service in the node.
         """
 
         super(ClouderService, self).hook_deploy_compose()
 
-        if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name \
+        if not self.node_id.runner_id or \
+                self.node_id.runner_id.application_id.type_id.name \
                 == 'docker':
 
             if False:  # not self.application_id.check_tags(['no-salt']):
@@ -251,7 +251,7 @@ class ClouderService(models.Model):
             else:
                 # Create build directory and deploy
                 build_dir = self.refresh_compose_file()
-                self.server_id.execute(
+                self.node_id.execute(
                     ['docker-compose', '-p', self.name, 'up', '-d'],
                     path=build_dir)
         return
@@ -259,13 +259,13 @@ class ClouderService(models.Model):
     @api.multi
     def hook_deploy_one(self):
         """
-        Deploy the service in the server.
+        Deploy the service in the node.
         """
 
         super(ClouderService, self).hook_deploy_one()
 
-        if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name \
+        if not self.node_id.runner_id or \
+                self.node_id.runner_id.application_id.type_id.name \
                 == 'docker':
 
             res = self.get_service_res()
@@ -277,15 +277,15 @@ class ClouderService(models.Model):
                 self.salt_master.execute([
                     'rm', '-rf', '/var/cache/salt/master/file_lists/roots/'])
                 self.salt_master.execute([
-                    'salt', self.server_id.fulldomain, 'state.apply',
+                    'salt', self.node_id.fulldomain, 'state.apply',
                     'service_deploy',
                     "pillar=\"{'service_name': '" + self.name +
                     "', 'image': '" + self.name + '-' +
                     datetime.now().strftime('%Y%m%d.%H%M%S') +
                     "', 'build': True}\""])
 
-            elif self.server_id.provider_id and \
-                    self.server_id.provider_id.type == 'service':
+            elif self.node_id.provider_id and \
+                    self.node_id.provider_id.type == 'service':
                 self.log('TODO')
 
             else:
@@ -311,7 +311,7 @@ class ClouderService(models.Model):
                         # Build image and get his name
                         cmd.append(
                             self.image_id.build_image(
-                                self, self.server_id,
+                                self, self.node_id,
                                 expose_ports=res['expose_ports'], salt=False))
                     else:
                         # Get image name from private repository
@@ -321,7 +321,7 @@ class ClouderService(models.Model):
                     cmd.append(self.hook_deploy_special_cmd())
 
                     # Run service
-                    self.server_id.execute(cmd)
+                    self.node_id.execute(cmd)
 
                 elif self.runner == 'swarm':
 
@@ -380,8 +380,8 @@ class ClouderService(models.Model):
         """
         res = super(ClouderService, self).hook_purge_one()
 
-        if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name\
+        if not self.node_id.runner_id or \
+                self.node_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
             if False:  # not self.application_id.check_tags(['no-salt']):
@@ -389,9 +389,9 @@ class ClouderService(models.Model):
             else:
                 # Ensure build directory is up-to-date and purge
                 build_dir = self.refresh_compose_file()
-                self.server_id.execute(
+                self.node_id.execute(
                     ['docker-compose', 'down', '-v'], path=build_dir)
-                self.server_id.execute(['rm', '-rf', build_dir])
+                self.node_id.execute(['rm', '-rf', build_dir])
 
         return res
 
@@ -402,25 +402,25 @@ class ClouderService(models.Model):
         """
         res = super(ClouderService, self).hook_purge_one()
 
-        if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name\
+        if not self.node_id.runner_id or \
+                self.node_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
             if self.executor == 'salt' and \
                     self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
-                    'salt', self.server_id.fulldomain,
+                    'salt', self.node_id.fulldomain,
                     'state.apply', 'service_purge',
                     "pillar=\"{'service_name': '" + self.name + "'}\""])
 
-            elif self.server_id.provider_id and \
-                    self.server_id.provider_id.type == 'service':
+            elif self.node_id.provider_id and \
+                    self.node_id.provider_id.type == 'service':
                 self.log('TODO')
 
             else:
 
                 if self.runner == 'engine':
-                    self.server_id.execute(['docker', 'rm', '-v', self.name])
+                    self.node_id.execute(['docker', 'rm', '-v', self.name])
 
                 elif self.runner == 'swarm':
                     # Remove service
@@ -435,7 +435,7 @@ class ClouderService(models.Model):
                     if not self.search([
                             ('environment_id', '=', self.environment_id.id),
                             ('id', '!=', self.id)]):
-                        self.server_id.execute(
+                        self.node_id.execute(
                             ['docker', 'network', 'rm',
                              self.environment_id.prefix + '-network'])
 
@@ -453,23 +453,23 @@ class ClouderService(models.Model):
             self.childs['exec'].stop_exec()
             return res
 
-        if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name\
+        if not self.node_id.runner_id or \
+                self.node_id.runner_id.application_id.type_id.name\
                 == 'docker':
             if self.executor == 'salt' and \
                     self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
-                    'salt', self.server_id.fulldomain, 'state.apply',
+                    'salt', self.node_id.fulldomain, 'state.apply',
                     'service_stop',
                     "pillar=\"{'service_name': '" + self.name + "'}\""])
 
-            elif self.server_id.provider_id and \
-                    self.server_id.provider_id.type == 'service':
+            elif self.node_id.provider_id and \
+                    self.node_id.provider_id.type == 'service':
                 self.log('TODO')
 
             else:
                 if self.runner == 'engine':
-                    self.server_id.execute(['docker', 'stop', self.name])
+                    self.node_id.execute(['docker', 'stop', self.name])
                 elif self.runner == 'swarm':
                     self.master_id.execute(
                         ['docker', 'service', 'scale',
@@ -489,24 +489,24 @@ class ClouderService(models.Model):
             self.childs['exec'].start_exec()
             return res
 
-        if not self.server_id.runner_id or \
-                self.server_id.runner_id.application_id.type_id.name\
+        if not self.node_id.runner_id or \
+                self.node_id.runner_id.application_id.type_id.name\
                 == 'docker':
 
             if self.executor == 'salt' and \
                     self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
-                    'salt', self.server_id.fulldomain,
+                    'salt', self.node_id.fulldomain,
                     'state.apply', 'service_start',
                     "pillar=\"{'service_name': '" + self.name + "'}\""])
 
-            elif self.server_id.provider_id and \
-                    self.server_id.provider_id.type == 'service':
+            elif self.node_id.provider_id and \
+                    self.node_id.provider_id.type == 'service':
                 self.log('TODO')
 
             else:
                 if self.runner == 'engine':
-                    self.server_id.execute(['docker', 'start', self.name])
+                    self.node_id.execute(['docker', 'start', self.name])
                 elif self.runner == 'swarm':
                     self.master_id.execute(
                         ['docker', 'service', 'scale',

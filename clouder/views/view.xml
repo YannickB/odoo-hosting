@@ -189,7 +189,7 @@
                         <field name="environment_id"/>
                         <field name="suffix"/>
                         <field name="application_id"/>
-                        <field name="server_id"/>
+                        <field name="node_id"/>
                         <field name="image_id" attrs="{'invisible': [('child_ids','!=', [])], 'required': [('child_ids','=', [])]}"/>
                         <field name="image_version_id" domain="[('image_id','=',image_id)]" attrs="{'invisible': [('child_ids','!=', [])]}"/>
                         <newline/>
@@ -244,7 +244,7 @@
                                 <tree string="Childs" editable="bottom">
                                     <field name="name"/>
                                     <field name="sequence"/>
-                                    <field name="server_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
+                                    <field name="node_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
                                     <field name="child_id"/>
                                     <field name="save_id"/>
                                     <button name="create_child" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
@@ -300,7 +300,7 @@
             <field name="arch" type="xml">
                 <tree string="Services">
                     <field name="name"/>
-                    <field name="server_id"/>
+                    <field name="node_id"/>
                     <field name="application_id"/>
                     <field name="image_id"/>
                     <field name="image_version_id"/>
@@ -320,20 +320,20 @@
         </record>
 
 
-        <record id="action_clouder_server_form" model="ir.actions.act_window">
-            <field name="name">Servers</field>
+        <record id="action_clouder_node_form" model="ir.actions.act_window">
+            <field name="name">Nodes</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">clouder.server</field>
+            <field name="res_model">clouder.node</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_clouder_server_form" id="menu_action_clouder_server_form" parent="menu_clouder_clouder"/>
+        <menuitem action="action_clouder_node_form" id="menu_action_clouder_node_form" parent="menu_clouder_clouder"/>
 
-        <record id="view_clouder_server_form" model="ir.ui.view">
-            <field name="name">clouder.server.form</field>
-            <field name="model">clouder.server</field>
+        <record id="view_clouder_node_form" model="ir.ui.view">
+            <field name="name">clouder.node.form</field>
+            <field name="model">clouder.node</field>
             <field name="arch" type="xml">
-                <form string="Server" version="7.0">
+                <form string="Node" version="7.0">
                     <group col="4">
                         <field name="name"/>
                         <field name="domain_id"/>
@@ -398,11 +398,11 @@
                 </form>
             </field>
         </record>
-        <record id="view_clouder_server_tree" model="ir.ui.view">
-            <field name="name">clouder.server.tree</field>
-            <field name="model">clouder.server</field>
+        <record id="view_clouder_node_tree" model="ir.ui.view">
+            <field name="name">clouder.node.tree</field>
+            <field name="model">clouder.node</field>
             <field name="arch" type="xml">
-                <tree string="Servers">
+                <tree string="Nodes">
                     <field name="name"/>
                     <field name="domain_id"/>
                     <field name="runner_id"/>
@@ -475,15 +475,15 @@
                       <field name="environment"/>
                       <newline/>
                       <field name="service_suffix" attrs="{'invisible':[('base_id','!=',False)]}"/>
-                      <field name="service_server" attrs="{'invisible':[('base_id','!=',False)]}"/>
+                      <field name="service_node" attrs="{'invisible':[('base_id','!=',False)]}"/>
                       <field name="base_service_suffix" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
-                      <field name="base_service_server" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
+                      <field name="base_service_node" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="base_name" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="base_domain" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="restore_to_environment_id"/>
                       <newline/>
                       <field name="service_restore_to_suffix"/>
-                      <field name="service_restore_to_server_id"/>
+                      <field name="service_restore_to_node_id"/>
                       <field name="base_restore_to_name" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="base_restore_to_domain_id" attrs="{'invisible':[('base_id','=',False)]}"/>
                     </group>
@@ -708,7 +708,7 @@
                         <field name="default_image_id"/>
                         <field name="next_image_version_id" domain="[('image_id','=',default_image_id)]"/>
                         <newline/>
-                        <field name="next_server_id"/>
+                        <field name="next_node_id"/>
                         <field name="next_service_id" attrs="{'invisible': [('base','!=',True)]}" domain="[('application_id','=',id)]"/>
                         <newline/>
                         <newline/>
@@ -746,7 +746,7 @@
                                     <field name="name"/>
                                     <field name="code"/>
                                     <field name="sequence"/>
-                                    <field name="next_server_id"/>
+                                    <field name="next_node_id"/>
                                 </tree>
                             </field>
                         </page>

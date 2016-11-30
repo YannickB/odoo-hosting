@@ -18,7 +18,7 @@ class ClouderDomain(models.Model):
 
     name = fields.Char('Domain name', required=True)
     organisation = fields.Char('Organisation', required=True)
-    dns_id = fields.Many2one('clouder.service', 'DNS Server', required=False)
+    dns_id = fields.Many2one('clouder.service', 'DNS Node', required=False)
     cert_key = fields.Text('Wildcard Cert Key')
     cert_cert = fields.Text('Wildcart Cert')
     public = fields.Boolean('Public?')

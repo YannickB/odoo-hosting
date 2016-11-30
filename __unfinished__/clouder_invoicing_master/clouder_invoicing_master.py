@@ -41,7 +41,7 @@ class AccountInvoice(models.Model):
         :param amount - the amount of the invoice
         """
         url = "http://{0}:{1}".\
-            format(base.service_id.server_id.ip, base.odoo_port)
+            format(base.service_id.node_id.ip, base.odoo_port)
         conn = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
         dbname = base.fullname.replace('-', '_')
         uid = conn.authenticate(

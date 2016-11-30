@@ -132,7 +132,7 @@ class ClouderBaseLink(models.Model):
             ssh = self.connect(self.target.fullname)
             piwik_id = self.execute(ssh, [
                 'mysql', self.target_base.fullname_,
-                '-h ' + self.target_base.service_id.database_server,
+                '-h ' + self.target_base.service_id.database_node,
                 '-u ' + self.target_base.service_id.db_user,
                 '-p' + self.target_base.service_id.database_password,
                 '-se', '"select idsite from piwik_site WHERE name = \'' +
@@ -140,7 +140,7 @@ class ClouderBaseLink(models.Model):
             if not piwik_id:
                 self.execute(ssh, [
                     'mysql', self.target_base.fullname_,
-                    '-h ' + self.target_base.service_id.database_server,
+                    '-h ' + self.target_base.service_id.database_node,
                     '-u ' + self.target_base.service_id.db_user,
                     '-p' + self.target_base.service_id.database_password,
                     '-se', '"INSERT INTO piwik_site (name, main_url, '
@@ -150,14 +150,14 @@ class ClouderBaseLink(models.Model):
                     '\', NOW(), \'Europe/Paris\', \'EUR\');"'])
                 piwik_id = self.execute(ssh, [
                     'mysql', self.target_base.fullname_,
-                    '-h ' + self.target_base.service_id.database_server,
+                    '-h ' + self.target_base.service_id.database_node,
                     '-u ' + self.target_base.service_id.db_user,
                     '-p' + self.target_base.service_id.database_password,
                     '-se', '"select idsite from piwik_site WHERE name = \'' +
                     self.base_id.fulldomain + '\' LIMIT 1;"'])
                 # self.execute(ssh, [
                 #     'mysql', self.target_base.fullname_,
-                #     '-h ' + self.target_base.service_id.database_server,
+                #     '-h ' + self.target_base.service_id.database_node,
                 #     '-u ' + self.target_base.service_id.db_user,
                 #     '-p' + vals['link_target_service_db_password'], '-se',
                 #     '"INSERT INTO piwik_access (login, idsite, access) '
@@ -178,7 +178,7 @@ class ClouderBaseLink(models.Model):
             # piwik_id = \
             self.execute(ssh, [
                 'mysql', self.target_base.fullname_,
-                '-h ' + self.target_base.service_id.database_server,
+                '-h ' + self.target_base.service_id.database_node,
                 '-u ' + self.target_base.service_id.db_user,
                 '-p' + self.target_base.service_id.database_password,
                 '-se', '"select idsite from piwik_site WHERE name = \'' +
@@ -186,7 +186,7 @@ class ClouderBaseLink(models.Model):
             # if piwik_id:
             #     execute.execute(ssh, [
             #         'mysql', self.target_base.fullname_,
-            #         '-h ' + self.target_base.service_id.database_server,
+            #         '-h ' + self.target_base.service_id.database_node,
             #         '-u ' + self.target_base.service_id.db_user,
             #         '-p' + self.target_base.service_id.database_password,
             #         '-se', '"DELETE FROM piwik_access '

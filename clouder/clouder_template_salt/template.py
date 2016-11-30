@@ -7,18 +7,18 @@ import yaml
 import time
 
 
-class ClouderServer(models.Model):
+class ClouderNode(models.Model):
     """
     """
 
-    _inherit = 'clouder.server'
+    _inherit = 'clouder.node'
 
     @api.multi
     def configure_exec(self):
         """
         """
 
-        super(ClouderServer, self).configure_exec()
+        super(ClouderNode, self).configure_exec()
 
         if self.executor == 'salt':
 
@@ -28,7 +28,7 @@ class ClouderServer(models.Model):
                     'environment_id': self.environment_id.id,
                     'suffix': 'salt-master',
                     'application_id': application.id,
-                    'server_id': self.id,
+                    'node_id': self.id,
                 })
             else:
                 master = self.salt_master
@@ -38,7 +38,7 @@ class ClouderServer(models.Model):
                 'environment_id': self.environment_id.id,
                 'suffix': 'salt-minion',
                 'application_id': application.id,
-                'server_id': self.id,
+                'node_id': self.id,
             })
 
             time.sleep(3)
@@ -75,13 +75,13 @@ class ClouderServer(models.Model):
             try:
                 minion = self.env['clouder.service'].search(
                     [('environment_id', '=', self.environment_id.id),
-                     ('server_id', '=', self.id),
+                     ('node_id', '=', self.id),
                      ('suffix', '=', 'salt-minion')])
                 minion.unlink()
             except:
                 pass
 
-        super(ClouderServer, self).purge()
+        super(ClouderNode, self).purge()
 
 
 class ClouderService(models.Model):
@@ -150,13 +150,13 @@ class ClouderService(models.Model):
             ['echo "' + data + '" > /srv/pillar/services/' +
              self.name + '.sls'])
         self.salt_master.execute(
-            ['sed', '-i', '"/' + self.server_id.fulldomain +
+            ['sed', '-i', '"/' + self.node_id.fulldomain +
              '\':/a +++    - services/' + self.name + '"',
              '/srv/pillar/top.sls'])
         self.salt_master.execute(
             ['sed', '-i', '"s/+++//g"', '/srv/pillar/top.sls'])
         self.salt_master.execute(
-            ['salt', self.server_id.fulldomain, 'saltutil.refresh_pillar'])
+            ['salt', self.node_id.fulldomain, 'saltutil.refresh_pillar'])
 
     @api.multi
     def deploy(self):
@@ -166,8 +166,8 @@ class ClouderService(models.Model):
                     self.id
 
         if self.application_id.type_id.name == 'salt-minion':
-            if not self.server_id.salt_minion_id:
-                self.server_id.salt_minion_id = self.id
+            if not self.node_id.salt_minion_id:
+                self.node_id.salt_minion_id = self.id
         super(ClouderService, self).deploy()
 
     @api.multi
@@ -194,7 +194,7 @@ class ClouderService(models.Model):
                 'openssl', 'req', '-x509', '-nodes', '-days', '365',
                 '-newkey', 'rsa:2048', '-out', certfile, ' -keyout',
                 keyfile, '-subj', '"/C=FR/L=Paris/O=Clouder/CN=' +
-                self.server_id.name + '"'])
+                self.node_id.name + '"'])
 
         if self.application_id.type_id.name == 'salt-minion':
             config_file = '/etc/salt/minion'
@@ -202,7 +202,7 @@ class ClouderService(models.Model):
                 'sed', '-i',
                 '"s/#master: salt/master: ' +
                 self.env.ref('clouder.clouder_settings').
-                salt_master_id.server_id.ip + '/g"',
+                salt_master_id.node_id.ip + '/g"',
                 config_file])
             self.execute([
                 'sed', '-i',
@@ -212,7 +212,7 @@ class ClouderService(models.Model):
                 config_file])
             self.execute([
                 'sed', '-i',
-                '"s/#id:/id: ' + self.server_id.fulldomain + '/g"',
+                '"s/#id:/id: ' + self.node_id.fulldomain + '/g"',
                 config_file])
 
     @api.multi
@@ -243,7 +243,7 @@ class ClouderServiceLink(models.Model):
                 and self.service_id.application_id.type_id.name == \
                 'salt-minion':
 
-            self.target.deploy_shinken_server(self.service_id)
+            self.target.deploy_shinken_node(self.service_id)
 
     @api.multi
     def purge_link(self):
@@ -254,7 +254,7 @@ class ClouderServiceLink(models.Model):
                 and self.service_id.application_id.type_id.name == \
                 'salt-minion':
 
-            self.target.purge_shinken_server(self.service_id)
+            self.target.purge_shinken_node(self.service_id)
 
 
 class ClouderBase(models.Model):
@@ -280,13 +280,13 @@ class ClouderBase(models.Model):
             self.fullname_ + '.sls'])
         self.salt_master.execute([
             'sed', '-i',
-            '"/' + self.service_id.server_id.name +
+            '"/' + self.service_id.node_id.name +
             '\':/a +++    - bases/' + self.fullname_ +
             '"',  '/srv/pillar/top.sls'])
         self.salt_master.execute([
             'sed', '-i', '"s/+++//g"', '/srv/pillar/top.sls'])
         self.salt_master.execute([
-            'salt', self.service_id.server_id.fulldomain,
+            'salt', self.service_id.node_id.fulldomain,
             'saltutil.refresh_pillar'])
 
     @api.multi

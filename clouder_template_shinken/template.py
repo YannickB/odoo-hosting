@@ -24,12 +24,12 @@ from openerp import modules
 from openerp import models, api
 
 
-class ClouderServer(models.Model):
+class ClouderNode(models.Model):
     """
     Add methods to manage the shinken specificities.
     """
 
-    _inherit = 'clouder.server'
+    _inherit = 'clouder.node'
 
     @property
     def shinken_configfile(self):
@@ -54,41 +54,41 @@ class ClouderContainer(models.Model):
         return '/usr/local/shinken/etc/services/' + self.fullname + '.cfg'
 
     @api.multi
-    def deploy_shinken_server(self, nrpe):
+    def deploy_shinken_node(self, nrpe):
         """
-        Deploy the configuration file to watch the server performances.
+        Deploy the configuration file to watch the node performances.
         """
 
-        server = nrpe.server_id
+        node = nrpe.node_id
         self.send(
             modules.get_module_path('clouder_template_shinken') +
-            '/res/server-shinken.config', server.shinken_configfile,
+            '/res/node-shinken.config', node.shinken_configfile,
             username='shinken')
         self.execute([
             'sed', '-i',
-            '"s/IP/' + server.ip + '/g"',
-            server.shinken_configfile], username='shinken')
+            '"s/IP/' + node.ip + '/g"',
+            node.shinken_configfile], username='shinken')
         self.execute([
             'sed', '-i',
-            '"s/NAME/' + server.name + '/g"',
-            server.shinken_configfile], username='shinken')
+            '"s/NAME/' + node.name + '/g"',
+            node.shinken_configfile], username='shinken')
         self.execute([
             'sed', '-i',
-            '"s/SSHPORT/' + str(server.ssh_port) + '/g"',
-            server.shinken_configfile], username='shinken')
+            '"s/SSHPORT/' + str(node.ssh_port) + '/g"',
+            node.shinken_configfile], username='shinken')
         self.execute([
             'sed', '-i',
             '"s/NRPEPORT/' + nrpe.ports['nrpe']['hostport'] + '/g"',
-            server.shinken_configfile], username='shinken')
+            node.shinken_configfile], username='shinken')
         self.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'],
                      username='shinken')
 
     @api.multi
-    def purge_shinken_server(self, nrpe):
+    def purge_shinken_node(self, nrpe):
         """
         Remove the configuration file.
         """
-        self.execute(['rm', nrpe.server_id.shinken_configfile],
+        self.execute(['rm', nrpe.node_id.shinken_configfile],
                      username='shinken')
         self.execute(['/usr/local/shinken/bin/init.d/shinken', 'reload'],
                      username='shinken')
@@ -188,7 +188,7 @@ class ClouderContainerLink(models.Model):
                 self.target.execute([
                     'sed', '-i',
                     '"s/BACKUPIP/' +
-                    self.service_id.backup_ids[0].server_id.ip + '/g"',
+                    self.service_id.backup_ids[0].node_id.ip + '/g"',
                     self.service_id.shinken_configfile], username='shinken')
                 self.target.execute([
                     'sed', '-i',
@@ -206,7 +206,7 @@ class ClouderContainerLink(models.Model):
                 self.target.execute([
                     'sed', '-i',
                     '"s/BACKUPIP/' +
-                    self.service_id.backup_ids[0].server_id.ip + '/g"',
+                    self.service_id.backup_ids[0].node_id.ip + '/g"',
                     self.service_id.shinken_configfile], username='shinken')
                 self.target.execute([
                     'sed', '-i',
@@ -214,7 +214,7 @@ class ClouderContainerLink(models.Model):
                     self.service_id.shinken_configfile], username='shinken')
                 self.target.execute([
                     'sed', '-i',
-                    '"s/HOST/' + self.service_id.server_id.name + '/g"',
+                    '"s/HOST/' + self.service_id.node_id.name + '/g"',
                     self.service_id.shinken_configfile], username='shinken')
 
                 self.target.execute(
@@ -259,7 +259,7 @@ class ClouderBaseLink(models.Model):
             self.target.execute([
                 'sed', '-i',
                 '"s/BACKUPIP/' +
-                self.base_id.backup_ids[0].server_id.ip + '/g"',
+                self.base_id.backup_ids[0].node_id.ip + '/g"',
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute([
                 'sed', '-i',

@@ -52,29 +52,29 @@ class ClouderServiceLink(models.Model):
                 '/home/backup/.ssh/config', username='backup')
             service.send(
                 self.home_directory + '/.ssh/keys/' +
-                self.target.server_id.fulldomain + '.pub',
+                self.target.node_id.fulldomain + '.pub',
                 '/home/backup/.ssh/keys/' +
-                self.target.server_id.fulldomain + '.pub',
+                self.target.node_id.fulldomain + '.pub',
                 username='backup')
             service.send(
                 self.home_directory + '/.ssh/keys/' +
-                self.target.server_id.fulldomain,
+                self.target.node_id.fulldomain,
                 '/home/backup/.ssh/keys/' +
-                self.target.server_id.fulldomain, username='backup')
+                self.target.node_id.fulldomain, username='backup')
             service.execute([
                 'chmod', '-R', '700', '/home/backup/.ssh'], username='backup')
 
-            self.target.server_id.execute([
+            self.target.node_id.execute([
                 'mkdir', '-p', '/tmp/backup-upload'])
             service.execute([
                 'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-                tmp_file, self.target.server_id.fulldomain + ':' + tmp_file],
+                tmp_file, self.target.node_id.fulldomain + ':' + tmp_file],
                 username='backup')
             service.execute(['rm', tmp_file])
-            self.target.server_id.execute([
+            self.target.node_id.execute([
                 'docker', 'cp',
                 tmp_file, self.target.name + ':' + file_destination])
-            self.target.server_id.execute(['rm', tmp_file])
+            self.target.node_id.execute(['rm', tmp_file])
 
 #            service.self.execute(['rm', '/home/backup/.ssh/keys/*'],
 #                                   username='backup')

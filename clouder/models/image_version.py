@@ -49,7 +49,7 @@ class ClouderImageVersion(models.Model):
         the image version.
         """
         return self.registry_id and '%s:%s' % (
-            self.registry_id.base_ids[0].fulldomainserver_id.ip,
+            self.registry_id.base_ids[0].fulldomainnode_id.ip,
             self.registry_id.ports['http']['hostport'],
         )
 
@@ -66,7 +66,7 @@ class ClouderImageVersion(models.Model):
     def fullpath_localhost(self):
         """
         Property returning the full path to get the image version if the
-        registry is on the same server.
+        registry is on the same node.
         """
         return self.registry_id and 'localhost:%s/%s' % (
             self.registry_id.ports['http']['hostport'], self.fullname,

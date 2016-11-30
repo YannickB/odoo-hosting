@@ -21,26 +21,26 @@ except ImportError:
     _logger.warning('Cannot `import libcloud`.')
 
 
-class ClouderServer(models.Model):
+class ClouderNode(models.Model):
     """
-    Define the server object, which represent the servers
+    Define the node object, which represent the nodes
     clouder can connect to.
     """
 
-    _name = 'clouder.server'
+    _name = 'clouder.node'
     _inherit = ['clouder.model']
     _sql_constraints = [
         ('domain_id_name_uniq', 'unique(domain_id, name)',
          'This name already exists on this domain.'),
         ('ip_ssh_port_uniq', 'unique(ip, ssh_port)',
-         'Another server is already setup for this SSH Address and Port.'),
+         'Another node is already setup for this SSH Address and Port.'),
     ]
 
     @api.model
     def _default_private_key(self):
         """
-        Generate a couple of keys visible use on the server form, which
-        we can easily add to the server to connect it.
+        Generate a couple of keys visible use on the node form, which
+        we can easily add to the node to connect it.
         """
 
         destroy = True
@@ -59,8 +59,8 @@ class ClouderServer(models.Model):
     @api.model
     def _default_public_key(self):
         """
-        Generate a couple of keys visible use on the server form, which
-        we can easily add to the server to connect it.
+        Generate a couple of keys visible use on the node form, which
+        we can easily add to the node to connect it.
         """
 
         destroy = True
@@ -108,17 +108,17 @@ class ClouderServer(models.Model):
     assign_ip = fields.Boolean(
         'Assign ports with public ip?',
         help="This is especially useful if you want to have several "
-             "infrastructures on the same server, by using same ports but "
+             "infrastructures on the same node, by using same ports but "
              "different ips. Otherwise the ports will be bind to "
              "all interfaces.")
     public = fields.Boolean('Public?')
-    supervision_id = fields.Many2one('clouder.service', 'Supervision Server')
+    supervision_id = fields.Many2one('clouder.service', 'Supervision Node')
     runner_id = fields.Many2one('clouder.service', 'Runner')
     salt_minion_id = fields.Many2one(
         'clouder.service', 'Salt Minion', readonly=True)
     control_dns = fields.Boolean('Control DNS?')
     oneclick_ids = fields.Many2many(
-        'clouder.oneclick', 'clouder_server_oneclick_rel',
+        'clouder.oneclick', 'clouder_node_oneclick_rel',
         'service_id', 'oneclick_id', 'Oneclick Deployment')
     oneclick_ports = fields.Boolean('Assign critical ports?')
     libcloud_name = fields.Char('Name')
@@ -135,10 +135,10 @@ class ClouderServer(models.Model):
     @api.multi
     @api.depends('name', 'domain_id.name')
     def _compute_key_file(self):
-        for server in self:
-            server.key_file = os.path.join(
-                server.home_directory, '.ssh', 'keys',
-                '%s.%s' % (server.name, server.domain_id.name),
+        for node in self:
+            node.key_file = os.path.join(
+                node.home_directory, '.ssh', 'keys',
+                '%s.%s' % (node.name, node.domain_id.name),
             )
 
     @api.multi
@@ -169,32 +169,32 @@ class ClouderServer(models.Model):
     @api.multi
     @api.depends('private_key', 'key_file')
     def _compute_private_key(self):
-        for server in self:
-            server.private_key = self.execute_local(['cat', server.key_file])
+        for node in self:
+            node.private_key = self.execute_local(['cat', node.key_file])
 
     @api.multi
     @api.depends('public_key', 'key_file')
     def _compute_public_key(self):
-        for server in self:
-            server.public_key = self.execute_local([
-                'cat', '%s.pub' % server.key_file,
+        for node in self:
+            node.public_key = self.execute_local([
+                'cat', '%s.pub' % node.key_file,
             ])
 
     @api.multi
     def _inverse_private_key(self):
         """
         """
-        for server in self:
-            name = server.fulldomain
+        for node in self:
+            name = node.fulldomain
             self.execute_local([
                 'mkdir', '-p',
-                os.path.join(server.home_directory, '.ssh', 'keys'),
+                os.path.join(node.home_directory, '.ssh', 'keys'),
             ])
             key_file = os.path.join(
-                server.home_directory, '.ssh', 'keys', name,
+                node.home_directory, '.ssh', 'keys', name,
             )
             self.execute_write_file(
-                key_file, server.private_key, operator='w',
+                key_file, node.private_key, operator='w',
             )
             self.execute_local(['chmod', '600', key_file])
 
@@ -202,13 +202,13 @@ class ClouderServer(models.Model):
     def _inverse_public_key(self):
         """
         """
-        for server in self:
-            key_dir = os.path.join(server.home_directory, '.ssh', 'keys')
+        for node in self:
+            key_dir = os.path.join(node.home_directory, '.ssh', 'keys')
             self.execute_local(['mkdir', '-p', key_dir])
-            key_file = os.path.join(key_dir, server.fulldomain)
+            key_file = os.path.join(key_dir, node.fulldomain)
             key_file_pub = '%s.pub' % key_file
             self.execute_write_file(
-                key_file_pub, server.public_key, operator='w',
+                key_file_pub, node.public_key, operator='w',
             )
             self.execute_local(['chmod', '600', key_file_pub])
 
@@ -278,7 +278,7 @@ class ClouderServer(models.Model):
             ip = socket.gethostbyname(fulldomain)
             if ip != self.ip:
                 self.raise_error(
-                    'Could not resolve hostname of the server "%s"',
+                    'Could not resolve hostname of the node "%s"',
                     fulldomain,
                 )
         return fulldomain
@@ -287,7 +287,7 @@ class ClouderServer(models.Model):
     @api.constrains('name', 'public_ip', 'private_ip')
     def _check_name_ip(self):
         """
-        Check that the server domain does not contain any forbidden
+        Check that the node domain does not contain any forbidden
         characters.
         """
         if not re.match(r"^[\w\d-]*$", self.name):
@@ -305,8 +305,8 @@ class ClouderServer(models.Model):
 
     @api.multi
     def deploy_ssh_config(self):
-        for server in self:
-            name = server.fulldomain
+        for node in self:
+            name = node.fulldomain
             ssh_config = os.path.join(self.home_directory, '.ssh', 'config')
             sed = os.path.join(
                 modules.get_module_path('clouder'), 'res', 'sed.sh',
@@ -314,13 +314,13 @@ class ClouderServer(models.Model):
             self.execute_local([sed, name, ssh_config])
             self.execute_write_file(ssh_config, 'Host %s' % name)
             self.execute_write_file(
-                ssh_config, '\n  HostName %s' % server.public_ip,
+                ssh_config, '\n  HostName %s' % node.public_ip,
             )
             self.execute_write_file(
-                ssh_config, '\n  Port %s' % server.ssh_port,
+                ssh_config, '\n  Port %s' % node.ssh_port,
             )
             self.execute_write_file(
-                ssh_config, '\n  User %s' % (server.login or 'root'),
+                ssh_config, '\n  User %s' % (node.login or 'root'),
             )
             self.execute_write_file(
                 ssh_config, '\n  IdentityFile ~/.ssh/keys/%s' % name,
@@ -331,7 +331,7 @@ class ClouderServer(models.Model):
 
     @api.model
     def create(self, vals):
-        res = super(ClouderServer, self).create(vals)
+        res = super(ClouderNode, self).create(vals)
         # In swarm mode, set master node with current node if not already exist
         if self.runner == 'swarm' and not self.master_id:
             self.write({'manager': True})
@@ -340,7 +340,7 @@ class ClouderServer(models.Model):
 
     @api.multi
     def write(self, vals):
-        res = super(ClouderServer, self).write(vals)
+        res = super(ClouderNode, self).write(vals)
         self.deploy_ssh_config()
         return res
 
@@ -348,7 +348,7 @@ class ClouderServer(models.Model):
     def do(self, name, action, where=False):
         if action == 'deploy_frame':
             self = self.with_context(no_enqueue=True)
-        return super(ClouderServer, self).do(name, action, where=where)
+        return super(ClouderNode, self).do(name, action, where=where)
 
     @api.multi
     def start_services(self):
@@ -358,10 +358,10 @@ class ClouderServer(models.Model):
     @api.multi
     def start_services_exec(self):
         """
-        Restart all services of the server.
+        Restart all services of the node.
         """
         services = self.env['clouder.service'].search(
-            [('server_id', '=', self.id)])
+            [('node_id', '=', self.id)])
         for service in services:
             service.start()
 
@@ -373,10 +373,10 @@ class ClouderServer(models.Model):
     @api.multi
     def stop_services_exec(self):
         """
-        Stop all service of the server.
+        Stop all service of the node.
         """
         services = self.env['clouder.service'].search(
-            [('server_id', '=', self.id)])
+            [('node_id', '=', self.id)])
         for service in services:
             service.stop()
 
@@ -388,7 +388,7 @@ class ClouderServer(models.Model):
     @api.multi
     def configure_exec(self):
         """
-        Configure server
+        Configure node
         """
 
         # Recover ips from node if libcloud
@@ -405,25 +405,23 @@ class ClouderServer(models.Model):
     @api.multi
     def test_connection(self):
         """
-        Test connection to the server.
+        Test connection to the node.
         """
-        self.ensure_one()
-        ssh = self.connect()
-        with ssh.get_channel():
-            self.raise_error('Connection successful!')
+        self.connect()
+        self.raise_error('Connection successful!')
 
     @api.multi
     def deploy(self):
         """
         """
         self.deploy_ssh_config()
-        super(ClouderServer, self).deploy()
+        super(ClouderNode, self).deploy()
 
     @api.multi
     def purge(self):
         """
         """
-        super(ClouderServer, self).purge()
+        super(ClouderNode, self).purge()
 
     @api.multi
     def deploy_dns(self):
@@ -490,7 +488,7 @@ class ClouderServer(models.Model):
                 service = service_obj.create({
                     'suffix': code,
                     'environment_id': self.environment_id.id,
-                    'server_id': self.id,
+                    'node_id': self.id,
                     'application_id': application.id,
                 })
                 if self.oneclick_ports and ports:
@@ -557,7 +555,7 @@ class ClouderServer(models.Model):
     @api.multi
     def clean_exec(self):
         """
-        Clean the server from unused services / images / volumes.
+        Clean the node from unused services / images / volumes.
         http://blog.yohanliyanage.com/2015/05/docker-clean-up-after-yourself/
         """
         self.execute(['docker', 'rmi $(docker images -f "dangling=true" -q)'])

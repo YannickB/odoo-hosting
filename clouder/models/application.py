@@ -29,7 +29,7 @@ class ClouderApplication(models.Model):
         'clouder.application.template', 'clouder_application_template_rel',
         'application_id', 'template_id', 'Templates')
     current_version = fields.Char('Current version')
-    next_server_id = fields.Many2one('clouder.server', 'Next server')
+    next_node_id = fields.Many2one('clouder.node', 'Next node')
     default_image_id = fields.Many2one('clouder.image', 'Default Image',
                                        required=False)
     next_image_version_id = fields.Many2one(

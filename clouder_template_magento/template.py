@@ -67,7 +67,7 @@ class ClouderContainer(models.Model):
                     'sed',
                     '-i',
                     '"s/CLOUDER_TEMPLATE_MAGENTO_DB_HOST/{replace}/g"'.format(
-                        replace=self.db_server),
+                        replace=self.db_node),
                     config_file
                 ])
                 self.execute([
@@ -108,8 +108,8 @@ class ClouderContainer(models.Model):
     #                 '/opt/magento/bin/magento',
     #                 'setup:install',
     #                 '--base-url={domain}:{port}/'.
-    # format(domain=self.server_id.ip, port=self.ports['web']['hostport']),
-    #                 '--db-host={db_host}'.format(dbhost=self.db_server),
+    # format(domain=self.node_id.ip, port=self.ports['web']['hostport']),
+    #                 '--db-host={db_host}'.format(dbhost=self.db_node),
     #                 '--db-name={dbname}'.
     # format(dbname=self.name.replace('-', '_')),
     #                 '--db-user={dbuser}'.format(db_user=self.db_user),

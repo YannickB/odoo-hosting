@@ -104,7 +104,7 @@ class ClouderModel(models.AbstractModel):
     @property
     def user_partner(self):
         """
-        Property returning the full name of the server.
+        Property returning the full name of the node.
         """
         return self.env['res.partner'].search(
             [('user_ids', 'in', int(self.env.uid))])[0]
@@ -473,13 +473,13 @@ class ClouderModel(models.AbstractModel):
 
         self.ensure_one()
 
-        server = self
+        node = self
         if self._name == 'clouder.service':
             username = False
-            server = self.server_id
+            node = self.node_id
 
         if not host:
-            host = server.fulldomain
+            host = node.fulldomain
 
         self.log('connect: ssh %s%s%s' % (
             username and '%s@' % username or '',
@@ -497,9 +497,9 @@ class ClouderModel(models.AbstractModel):
             )
         except Exception as e:
             self.raise_error(
-                'We were not able to connect to your server. Please '
+                'We were not able to connect to your node. Please '
                 'make sure you add the public key in the '
-                'authorized_keys file of your root user on your server.\n'
+                'authorized_keys file of your root user on your node.\n'
                 'If you were trying to connect to a service, '
                 'a click on the "Reset Key" button on the service '
                 'record may resolve the problem.\n\n'
@@ -508,11 +508,11 @@ class ClouderModel(models.AbstractModel):
                 (host, e),
             )
 
-        env.server_record = server
+        env.node_record = node
         return env
 
     @api.multi
-    def __identity_file(self, server_name, username, port):
+    def __identity_file(self, node_name, username, port):
         """ It processes the Identity File for use with remote node
 
         Returns:
@@ -524,7 +524,7 @@ class ClouderModel(models.AbstractModel):
         if os.path.exists(user_config_file):
             with open(user_config_file) as f:
                 ssh_config.parse(f)
-        user_config = ssh_config.lookup(server_name)
+        user_config = ssh_config.lookup(node_name)
 
         identity_file = None
         if 'identityfile' in user_config:
@@ -538,11 +538,11 @@ class ClouderModel(models.AbstractModel):
         if identity_file is None:
             self.raise_error(
                 'Clouder does not have a record in the ssh config to '
-                'connect to your server.\n'
+                'connect to your node.\n'
                 'Make sure there is a "%s" record in the "~/.ssh/config" '
                 'of the Clouder system user.\n'
                 'To easily add this record, you can click on the '
-                '"Reinstall" button of the server record, or the '
+                '"Reinstall" button of the node record, or the '
                 '"Reset Key" button of the service record you are '
                 'trying to access',
                 self._name,
@@ -567,7 +567,7 @@ class ClouderModel(models.AbstractModel):
 
     @api.multi
     def execute(self, cmd, stdin_arg=None,
-                path=None, ssh=None, server_name=None,
+                path=None, ssh=None, node_name=None,
                 username=False, shell='bash',
                 ):
         """ It (possibly) connects and executes a command on a remote node
@@ -581,7 +581,7 @@ class ClouderModel(models.AbstractModel):
                 directory, which is usually ``$HOME``.
             ssh: (clouder.ssh.environment.SSHEnvironment) Will use this
                 instead of connecting to a new session, if provided
-            server_name: (str|None) Name of server to connect to. None to
+            node_name: (str|None) Name of node to connect to. None to
                 use the default for the Recordset. Will be ignored if a
                 ``session`` dict is provided.
             username: (str|None) Name of user on remote node. None to
@@ -590,7 +590,7 @@ class ClouderModel(models.AbstractModel):
         """
 
         if not ssh:
-            ssh = self.connect(server_name, username=username)
+            ssh = self.connect(node_name, username=username)
         for record in self:
             res = record.__execute(cmd, stdin_arg, path, ssh, username, shell)
         return res
@@ -721,7 +721,7 @@ class ClouderModel(models.AbstractModel):
             if record._name == 'clouder.service':
                 # TODO
                 record.insert(0, 'docker exec ' + record.name)
-                host = record.server_id.name
+                host = record.node_id.name
 
             if not ssh:
                 ssh = record.connect(host)
@@ -754,9 +754,9 @@ class ClouderModel(models.AbstractModel):
 
             final_destination = destination
             tmp_dir = False
-            if record != ssh.server_record:
+            if record != ssh.node_record:
                 tmp_dir = record.get_directory_clouder(time.time())
-                ssh.server_record.execute(['mkdir', '-p', tmp_dir])
+                ssh.node_record.execute(['mkdir', '-p', tmp_dir])
                 destination = os.path.join(tmp_dir, 'file')
 
             sftp = ssh.open_sftp()
@@ -765,17 +765,17 @@ class ClouderModel(models.AbstractModel):
             sftp.close()
 
             if tmp_dir:
-                ssh.server_record.execute([
+                ssh.node_record.execute([
                     'cat', destination, '|', 'docker', 'exec', '-i',
                     username and ('-u %s' % username) or '',
                     record.name, 'sh', '-c',
                     "'cat > %s'" % final_destination,
                 ])
     #            if username:
-    #                ssh.server_record.execute([
+    #                ssh.node_record.execute([
     #                    'docker', 'exec', '-i', self.name,
     #                    'chown', username, final_destination])
-                ssh.server_record.execute(['rm', '-rf', tmp_dir])
+                ssh.node_record.execute(['rm', '-rf', tmp_dir])
 
     @api.multi
     def send_dir(self, source, destination, ssh=False, username=False):

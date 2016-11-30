@@ -242,10 +242,10 @@ class ClouderBaseLink(models.Model):
                 'sed', '-i', '"s/DOMAIN/' + self.base_id.fulldomain +
                 '/g"', self.base_id.nginx_configfile])
 
-            server = self.base_id.service_id.server_id.private_ip
+            node = self.base_id.service_id.node_id.private_ip
             type = 'hostport'
             if self.runner == 'swarm':
-                server = self.base_id.service_id.host
+                node = self.base_id.service_id.host
                 type = 'localport'
             if 'http' in self.base_id.service_id.ports:
                 protocol = 'http'
@@ -256,7 +256,7 @@ class ClouderBaseLink(models.Model):
 
             target.execute([
                 'sed', '-i', '"s/SERVER/' +
-                server + '/g"',
+                node + '/g"',
                 self.base_id.nginx_configfile])
             target.execute([
                 'sed', '-i', '"s/PORT/' +

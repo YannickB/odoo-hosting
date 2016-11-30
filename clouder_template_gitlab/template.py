@@ -61,7 +61,7 @@ class ClouderContainer(models.Model):
             secrets_file = '/opt/gitlab/config/secrets.yml'
             if self.application_id.code == 'data':
                 self.execute(['sed', '-i', 's/DB_SERVER/' +
-                             self.db_server + '/g',
+                             self.db_node + '/g',
                              database_file])
                 self.execute([
                     'sed', '-i',
@@ -246,14 +246,14 @@ class ClouderContainerLink(models.Model):
                             'variable', 'SALT_DOMAIN',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.salt_master.server_id.fulldomain +
+                                  self.salt_master.node_id.fulldomain +
                                   ':' +
                                   self.salt_master.ports['api']['hostport']})
                         self.gitlab_ressource(
                             'variable', 'PRODUCTION_SERVER',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.service_id.server_id.fulldomain})
+                                  self.service_id.node_id.fulldomain})
                         self.gitlab_ressource(
                             'variable', 'PRODUCTION_PASSWORD',
                             project_id=str(project['id']),
@@ -310,7 +310,7 @@ class ClouderContainerLink(models.Model):
                             'variable', 'STAGING_SERVER',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.service_id.server_id.fulldomain})
+                                  self.service_id.node_id.fulldomain})
                         link.gitlab_ressource(
                             'variable', 'STAGING_PASSWORD',
                             project_id=str(project['id']),
@@ -413,7 +413,7 @@ class ClouderBase(models.Model):
                 '/etc/nginx/sites-available/' + self.fullname])
             self.service_id.execute([
                 'sed', '-i',
-                '"s/server_name [A-Z0-9a-z_.]*;/server_name ' +
+                '"s/node_name [A-Z0-9a-z_.]*;/node_name ' +
                 self.fulldomain + ';/g"',
                 '/etc/nginx/sites-available/' + self.fullname])
             self.service_id.execute([

@@ -38,7 +38,7 @@ class ClouderContainer(models.Model):
     def hook_deploy_special_cmd(self):
         if self.application_id.type_id.name == 'kubernetes':
             return '/hyperkube kubelet \
-                          --api-servers=http://127.0.0.1:8080 \
+                          --api-nodes=http://127.0.0.1:8080 \
                           --config=/etc/kubernetes/manifests \
                           --hostname-override=127.0.0.1 \
                           --address=0.0.0.0 \

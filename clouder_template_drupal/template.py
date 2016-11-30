@@ -93,7 +93,7 @@ class ClouderBase(models.Model):
                 '--db-url=' + self.service_id.db_type +
                 '://' + self.service_id.db_user + ':' +
                 self.service_id.db_password + '@' +
-                self.service_id.db_server + '/' +
+                self.service_id.db_node + '/' +
                 self.fullname_,
                 '--account-mail=' + self.admin_email,
                 '--account-name=' + self.admin_name,
@@ -125,7 +125,7 @@ class ClouderBase(models.Model):
         return res
 
     # post restore
-    #     ssh $system_user@$server << EOF
+    #     ssh $system_user@$node << EOF
     #       mkdir $instances_path/$instance/sites/$clouder.$domain
     #       cp -r $instances_path/$instance/$db_type/sites/*
     # $instances_path/$instance/sites/$clouder.$domain/
@@ -139,7 +139,7 @@ class ClouderBase(models.Model):
     #       sed -i "s/'password' => '[#a-z0-9_!]*'/'password' =>
     # '$database_passwpord'/g" $instances_path/$instance/
     # sites/$clouder.$domain/settings.php
-    #       sed -i "s/'host' => '[0-9.]*'/'host' => '$database_server'/g"
+    #       sed -i "s/'host' => '[0-9.]*'/'host' => '$database_node'/g"
     # $instances_path/$instance/sites/$clouder.$domain/settings.php
     #       pwd
     #       echo Title $title

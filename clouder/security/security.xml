@@ -256,9 +256,9 @@
             <field name="perm_unlink" eval="True"/>
         </record>
 
-        <record id="clouder_server_appmanager_write_rule" model="ir.rule">
-            <field name="name">clouder server appmanager write</field>
-            <field name="model_id" ref="model_clouder_server"/>
+        <record id="clouder_node_appmanager_write_rule" model="ir.rule">
+            <field name="name">clouder node appmanager write</field>
+            <field name="model_id" ref="model_clouder_node"/>
             <field name="domain_force">[('partner_id', '=', user.partner_id.id)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_appmanager')])]"/>
             <field name="perm_read" eval="True"/>
@@ -423,9 +423,9 @@
             <field name="perm_unlink" eval="True"/>
         </record>
 
-        <record id="clouder_server_administrator_write_rule" model="ir.rule">
-            <field name="name">clouder server administrator write</field>
-            <field name="model_id" ref="model_clouder_server"/>
+        <record id="clouder_node_administrator_write_rule" model="ir.rule">
+            <field name="name">clouder node administrator write</field>
+            <field name="model_id" ref="model_clouder_node"/>
             <field name="domain_force">[(1,'=',1)]</field>
             <field name="groups" eval="[(6,0,[ref('group_clouder_administrator')])]"/>
             <field name="perm_read" eval="True"/>

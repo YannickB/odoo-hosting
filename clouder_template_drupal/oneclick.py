@@ -23,17 +23,17 @@
 from openerp import models, api
 
 
-class ClouderServer(models.Model):
+class ClouderNode(models.Model):
     """
     Add methods to manage the postgres specificities.
     """
 
-    _inherit = 'clouder.server'
+    _inherit = 'clouder.node'
 
     @api.multi
     def oneclick_deploy_exec(self):
 
-        super(ClouderServer, self).oneclick_deploy_exec()
+        super(ClouderNode, self).oneclick_deploy_exec()
 
         for oneclick in self.oneclick_ids:
             if oneclick.code == 'drupal':
@@ -49,4 +49,4 @@ class ClouderServer(models.Model):
         service_obj.search([('environment_id', '=', self.environment_id.id),
                             ('suffix', '=', 'drupal-all')]).unlink()
 
-        super(ClouderServer, self).oneclick_purge_exec()
+        super(ClouderNode, self).oneclick_purge_exec()

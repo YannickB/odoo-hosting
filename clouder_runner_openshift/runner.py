@@ -36,12 +36,12 @@ class ClouderContainer(models.Model):
     @api.multi
     def hook_deploy(self, ports, volumes):
         """
-        Deploy the service in the server.
+        Deploy the service in the node.
         """
 
         res = super(ClouderContainer, self).hook_deploy(ports, volumes)
 
-        if self.server_id.runner_id.application_id.type_id.name == 'openshift':
+        if self.node_id.runner_id.application_id.type_id.name == 'openshift':
 
             ports_dict = '['
             for port in ports:
@@ -75,7 +75,7 @@ class ClouderContainer(models.Model):
 
             _logger.info('%s', ports_dict.replace('\"', '\\"'))
 
-            runner = self.server_id.runner_id
+            runner = self.node_id.runner_id
             service_file = '/tmp/config'
             runner.send(modules.get_module_path('clouder_runner_openshift') +
                         '/res/service.config', service_file)
@@ -107,9 +107,9 @@ class ClouderContainer(models.Model):
         """
         res = super(ClouderContainer, self).purge()
 
-        if self.server_id.runner_id.application_id.type_id.name == 'openshift':
+        if self.node_id.runner_id.application_id.type_id.name == 'openshift':
 
-            runner = self.server_id.runner_id
+            runner = self.node_id.runner_id
             runner.execute(['oc', 'stop', 'dc', self.name])
             runner.execute(['oc', 'delete', 'route', self.name])
             runner.execute(['oc', 'stop', 'svc', self.name])
@@ -124,9 +124,9 @@ class ClouderContainer(models.Model):
 
         res = super(ClouderContainer, self).stop()
 
-        # if self.server_id.runner_id.name == 'docker':
+        # if self.node_id.runner_id.name == 'docker':
         #
-        #     ssh = self.connect(self.server_id.name)
+        #     ssh = self.connect(self.node_id.name)
         #     self.execute(ssh, ['docker', 'stop', self.name])
         #     ssh.close()
 
@@ -140,9 +140,9 @@ class ClouderContainer(models.Model):
 
         res = super(ClouderContainer, self).start()
 
-        # if self.server_id.runner_id.name == 'docker':
+        # if self.node_id.runner_id.name == 'docker':
         #
-        #     ssh = self.connect(self.server_id.name)
+        #     ssh = self.connect(self.node_id.name)
         #     self.execute(ssh, ['docker', 'start', self.name])
         #     ssh.close()
         #     time.sleep(3)

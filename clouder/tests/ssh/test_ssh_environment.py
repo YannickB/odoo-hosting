@@ -306,12 +306,12 @@ class TestSSHEnvironment(SetUpClouderTest):
 
     @mock.patch.object(SSHEnvironment, '_connect')
     def test_new_connect_true(self, _connect):
-        """ It should connect to server """
+        """ It should connect to node """
         with self.mock_environment():
             _connect.assert_called_once_with()
 
     def test_new_connect_false(self):
-        """ It should not connect to server """
+        """ It should not connect to node """
         with mock.patch.object(SSHEnvironment, '_connect') as _connect:
             with self.mock_environment(connect=False):
                 _connect.assert_not_called()
