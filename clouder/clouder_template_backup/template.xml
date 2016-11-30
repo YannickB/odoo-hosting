@@ -137,7 +137,7 @@
             <field name="name">image_backup_bup</field>
             <field name="type_id" ref="application_type_backup"/>
             <field name="template_ids" eval="[(4, [ref('image_template_backup_bup')])]"/>
-            <field name="parent_from">yannickburon/clouder:backup-bup</field>
+            <field name="parent_from">clouder/backup-bup:0.10.1</field>
             <field name="parent_id"/>
             <field name="dockerfile"/>
         </record>

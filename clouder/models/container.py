@@ -1288,7 +1288,8 @@ class ClouderContainer(models.Model):
         """
 
         if self.child_ids:
-            self.child_ids.mapped('child_id').recursive_deploy_one()
+            for child in self.child_ids:
+                child.child_id.recursive_deploy_one()
         else:
             # We only call the hook if service without children
             self.hook_deploy_one()
@@ -1300,7 +1301,8 @@ class ClouderContainer(models.Model):
         Recursively execute deploy_post function
         """
         if self.child_ids:
-            self.child_ids.mapped('child_id').recursive_deploy_post()
+            for child in self.child_ids:
+                child.child_id.recursive_deploy_post()
         else:
             # We only call the hook if service without children
             self.deploy_post()
@@ -1312,7 +1314,8 @@ class ClouderContainer(models.Model):
         Recursively execute save
         """
         if self.child_ids:
-            self.child_ids.mapped('child_id').recursive_save()
+            for child in self.child_ids:
+                child.child_id.recursive_save()
         else:
             # Avoid backup alert on monitoring
             self = self.with_context(save_comment='First save')
@@ -1397,7 +1400,8 @@ class ClouderContainer(models.Model):
             if self.compose and not self.parent_id:
                 self.hook_purge_compose()
             # Recursively delete childs in Odoo
-            childs.delete_child_exec()
+            for child in childs:
+                child.delete_child_exec()
         else:
             # If not compose, purge current container
             if not self.compose:

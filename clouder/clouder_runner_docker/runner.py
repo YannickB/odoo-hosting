@@ -294,14 +294,13 @@ class ClouderContainer(models.Model):
 
                     # Build run command
                     cmd = ['docker', 'run', '-d', '-t', '--restart=always']
-
-                    cmd += (['-p', port] for port in res['ports'])
-                    cmd += (['-v', volume] for volume in res['volumes'])
-                    cmd += (['--volumes-from', volume]
+                    cmd += ('-p %s' % port for port in res['ports'])
+                    cmd += ('-v %s' % volume for volume in res['volumes'])
+                    cmd += ('--volumes-from %s' % volume
                             for volume in res['volumes_from'])
-                    cmd += (['--link', '%s:%s' % (link['name'], link['code'])]
+                    cmd += ('--link %s:%s' % (link['name'], link['code'])
                             for link in res['links'])
-                    cmd += (['-e', '"%s=%s"' % (key, environment)]
+                    cmd += ('-e "%s=%s"' % (key, environment)
                             for key, environment
                             in res['environment'].iteritems())
                     # Get special arguments depending of the application
@@ -339,12 +338,12 @@ class ClouderContainer(models.Model):
                     # Build service create command
                     cmd = ['docker', 'service', 'create']
 
-                    cmd += (['-p', port] for port in res['ports'])
-                    cmd += (['--mount', volume] for volume in res['volumes'])
+                    cmd += ('-p %s' % port for port in res['ports'])
+                    cmd += ('--mount %s' % volume for volume in res['volumes'])
                     # Get volumes from data container
-                    cmd += (['--mount', volume]
+                    cmd += ('--mount %s' % volume
                             for volume in res['volumes_from'])
-                    cmd += (['-e', '"%s=%s"' % (key, environment)]
+                    cmd += ('-e "%s=%s"' % (key, environment)
                             for key, environment
                             in res['environment'].iteritems())
                     cmd += ['--network', network]
