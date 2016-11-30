@@ -35,56 +35,56 @@ class ClouderServer(models.Model):
 
         super(ClouderServer, self).oneclick_deploy_exec()
 
-        self.oneclick_deploy_element('container', 'backup-bup')
+        self.oneclick_deploy_element('service', 'backup-bup')
 
-        bind = self.oneclick_deploy_element('container', 'bind', ports=[53])
+        bind = self.oneclick_deploy_element('service', 'bind', ports=[53])
         if not self.domain_id.dns_id:
             self.domain_id.write({'dns_id': bind.id})
             self.deploy_dns_exec()
 
-        self.oneclick_deploy_element('container', 'postfix', ports=[25])
+        self.oneclick_deploy_element('service', 'postfix', ports=[25])
 
-        self.oneclick_deploy_element('container', 'proxy', ports=[80, 443])
+        self.oneclick_deploy_element('service', 'proxy', ports=[80, 443])
 
-        # container = self.oneclick_deploy_element('container', 'shinken')
-        # self.oneclick_deploy_element('base', 'shinken', container=container)
+        # service = self.oneclick_deploy_element('service', 'shinken')
+        # self.oneclick_deploy_element('base', 'shinken', service=service)
         #
-        # container = self.oneclick_deploy_element('container', 'registry')
-        # self.oneclick_deploy_element('base', 'registry', container=container)
+        # service = self.oneclick_deploy_element('service', 'registry')
+        # self.oneclick_deploy_element('base', 'registry', service=service)
         #
-        # self.oneclick_deploy_element('container', 'gitlab-all')
+        # self.oneclick_deploy_element('service', 'gitlab-all')
         # self.oneclick_deploy_element(
-        #     'base', 'gitlab', code_container='gitlab-all-gitlab')
+        #     'base', 'gitlab', code_service='gitlab-all-gitlab')
         #
-        # self.oneclick_deploy_element('container', 'gitlabci')
+        # self.oneclick_deploy_element('service', 'gitlabci')
 
     @api.multi
     def oneclick_purge_exec(self):
 
-        container_obj = self.env['clouder.container']
+        service_obj = self.env['clouder.service']
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'gitlabci')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'gitlabci')]).unlink()
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'gitlab-all')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'gitlab-all')]).unlink()
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'registry')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'registry')]).unlink()
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'shinken')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'shinken')]).unlink()
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'proxy')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'proxy')]).unlink()
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'bind')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'bind')]).unlink()
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'postfix')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'postfix')]).unlink()
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'backup-bup')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'backup-bup')]).unlink()
 
         super(ClouderServer, self).oneclick_purge_exec()

@@ -19,7 +19,7 @@ class ClouderApplicationLink(models.Model):
 
     _template_parent_model = 'clouder.application'
     _template_parent_many2one = 'application_id'
-    _template_fields = ['required', 'auto', 'make_link', 'container', 'base']
+    _template_fields = ['required', 'auto', 'make_link', 'service', 'base']
 
     application_id = fields.Many2one('clouder.application', 'Application',
                                      ondelete="cascade", required=False)
@@ -31,9 +31,9 @@ class ClouderApplicationLink(models.Model):
     required = fields.Boolean('Required?')
     auto = fields.Boolean('Auto?')
     make_link = fields.Boolean('Make docker link?')
-    container = fields.Boolean('Container?')
+    service = fields.Boolean('Service?')
     base = fields.Boolean('Base?')
-    next = fields.Many2one('clouder.container', 'Next')
+    next = fields.Many2one('clouder.service', 'Next')
 
     _sql_constraints = [
         ('name_uniq', 'unique(application_id,template_id,name)',

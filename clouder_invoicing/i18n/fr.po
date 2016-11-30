@@ -45,17 +45,17 @@ msgid "Base"
 msgstr "Base"
 
 #. module: clouder_invoicing
-#: field:clouder.invoicing.pricegrid.line,link_container:0
+#: field:clouder.invoicing.pricegrid.line,link_service:0
 msgid "Container"
 msgstr "Contenaire"
 
 #. module: clouder_invoicing
-#: model:product.category,name:clouder_invoicing.container_instance_product_category
+#: model:product.category,name:clouder_invoicing.service_instance_product_category
 msgid "Container/Base Instance"
 msgstr "Instance de Contenaire/Base"
 
 #. module: clouder_invoicing
-#: model:product.template,name:clouder_invoicing.container_instance_product_product_template
+#: model:product.template,name:clouder_invoicing.service_instance_product_product_template
 msgid "Container/Base Instance Fee"
 msgstr "Frais pour instance de Contenaire/Base"
 
@@ -97,13 +97,13 @@ msgstr "Facture"
 #. module: clouder_invoicing
 #: view:clouder.application:clouder_invoicing.view_clouder_application_form_invoicing
 #: view:clouder.base:clouder_invoicing.view_clouder_base_form_invoicing
-#: view:clouder.container:clouder_invoicing.view_clouder_container_form_invoicing
+#: view:clouder.service:clouder_invoicing.view_clouder_service_form_invoicing
 msgid "Invoicing"
 msgstr "Facturation"
 
 #. module: clouder_invoicing
 #: field:clouder.base,invoicing_period:0
-#: field:clouder.container,invoicing_period:0
+#: field:clouder.service,invoicing_period:0
 msgid "Invoicing Period (months)"
 msgstr "Période de facturation (mois)"
 
@@ -119,7 +119,7 @@ msgstr "Produit de facturation"
 
 #. module: clouder_invoicing
 #: field:clouder.base,last_invoiced:0
-#: field:clouder.container,last_invoiced:0
+#: field:clouder.service,last_invoiced:0
 msgid "Last Invoiced"
 msgstr "Dernière facturation"
 
@@ -178,19 +178,19 @@ msgstr "Ligne de grille de prix"
 #. module: clouder_invoicing
 #: code:addons/clouder_invoicing/clouder_invoicing.py:78
 #, python-format
-msgid "Pricegrid links to application/container/base are exclusive to one another."
+msgid "Pricegrid links to application/service/base are exclusive to one another."
 msgstr "Les liens d'une grille de prix vers une application/contenaire/base sont exclusifs."
 
 #. module: clouder_invoicing
 #: field:clouder.application,pricegrid_ids:0
 #: field:clouder.base,pricegrid_ids:0
-#: field:clouder.container,pricegrid_ids:0
+#: field:clouder.service,pricegrid_ids:0
 msgid "Pricegrids"
 msgstr "Grilles de prix"
 
 #. module: clouder_invoicing
 #: view:clouder.base:clouder_invoicing.view_clouder_base_form_invoicing
-#: view:clouder.container:clouder_invoicing.view_clouder_container_form_invoicing
+#: view:clouder.service:clouder_invoicing.view_clouder_service_form_invoicing
 msgid "Pricing"
 msgstr "Tarification"
 
@@ -200,7 +200,7 @@ msgid "Pricing grid"
 msgstr "Grille de tarification"
 
 #. module: clouder_invoicing
-#: model:product.template,description_sale:clouder_invoicing.container_instance_product_product_template
+#: model:product.template,description_sale:clouder_invoicing.service_instance_product_product_template
 msgid "The managing fee for your Container/Base instance"
 msgstr "Les frais de gestion pour vos instances de Contenaires/Bases."
 
@@ -212,22 +212,22 @@ msgstr "La métadonnée doit être associée à la même application que la gril
 
 #. module: clouder_invoicing
 #: help:clouder.base,invoicing_period:0
-#: help:clouder.container,invoicing_period:0
+#: help:clouder.service,invoicing_period:0
 msgid "The period separating two invoices.\n"
-"Set to nothing to disable invoicing for this container."
+"Set to nothing to disable invoicing for this service."
 msgstr "La période séparant deux facturations.\n"
 "Laisser vide pour désactiver la facturation de ce contenaire."
 
 #. module: clouder_invoicing
-#: model:product.template,description:clouder_invoicing.container_instance_product_product_template
+#: model:product.template,description:clouder_invoicing.service_instance_product_product_template
 msgid "The service fee to keep an instance running"
 msgstr "Frais de service pour le fonctionnement de l'instance"
 
 #. module: clouder_invoicing
 #: code:addons/clouder_invoicing/clouder_invoicing.py:139
 #, python-format
-msgid "This function should only be called from a set of records linked to the same container OR base OR application."
-msgstr "Cette fonction devrait seulement être appelée sur des enregistrements liés au même container OU base OU application."
+msgid "This function should only be called from a set of records linked to the same service OR base OR application."
+msgstr "Cette fonction devrait seulement être appelée sur des enregistrements liés au même service OU base OU application."
 
 #. module: clouder_invoicing
 #: help:clouder.application,initial_invoice_amount:0
@@ -260,8 +260,8 @@ msgstr "Multiplicateur de valeur"
 #. module: clouder_invoicing
 #: code:addons/clouder_invoicing/clouder_invoicing.py:70
 #, python-format
-msgid "You cannot define a pricegrid line without linking it to a base or container or application."
-msgstr "Vous ne pouvez pas définir une grille de prix qui n'est pas liée a une base ou container ou application."
+msgid "You cannot define a pricegrid line without linking it to a base or service or application."
+msgstr "Vous ne pouvez pas définir une grille de prix qui n'est pas liée a une base ou service ou application."
 
 #. module: clouder_invoicing
 #: code:addons/clouder_invoicing/clouder_invoicing.py:226

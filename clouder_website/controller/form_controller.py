@@ -381,14 +381,14 @@ class FormController(http.Controller):
         if 'inst_type' not in post:
             result = {'error': _('Missing inst_type parameter')}
             return request.make_response(json.dumps(result), headers=HEADERS)
-        if post['inst_type'] not in ['container', 'base']:
+        if post['inst_type'] not in ['service', 'base']:
             result = {
                 'error': _('Incorrect inst_type parameter: {0}')
                 .format(post['inst_type'])}
             return request.make_response(json.dumps(result), headers=HEADERS)
 
-        # Checking data errors for container requests
-        if post['inst_type'] == 'container':
+        # Checking data errors for service requests
+        if post['inst_type'] == 'service':
             # Check that the required data has been passed
             if ('environment_id' not in post and
                     'environment_prefix' not in post) or \
@@ -419,14 +419,14 @@ class FormController(http.Controller):
                     return request.make_response(
                         json.dumps(result), headers=HEADERS)
 
-                orm_cont = request.env['clouder.container'].sudo()
-                # Searching for existing containers with
+                orm_cont = request.env['clouder.service'].sudo()
+                # Searching for existing services with
                 # the environment and suffix
                 result = orm_cont.search([
                     ('environment_id', '=', int(post['environment_id'])),
                     ('suffix', '=', post['suffix'])
                 ])
-                # If a container is found, return an error for those fields
+                # If a service is found, return an error for those fields
                 if result:
                     result = {
                         'next_step_validated': False,
@@ -488,7 +488,7 @@ class FormController(http.Controller):
                 orm_app = request.env['clouder.application'].sudo()
                 app_ids = [
                     app.id for app in orm_app.search([
-                        ('web_create_type', '=', 'container')
+                        ('web_create_type', '=', 'service')
                     ])
                 ]
 

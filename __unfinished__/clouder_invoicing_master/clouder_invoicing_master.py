@@ -41,7 +41,7 @@ class AccountInvoice(models.Model):
         :param amount - the amount of the invoice
         """
         url = "http://{0}:{1}".\
-            format(base.container_id.server_id.ip, base.odoo_port)
+            format(base.service_id.server_id.ip, base.odoo_port)
         conn = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
         dbname = base.fullname.replace('-', '_')
         uid = conn.authenticate(
@@ -59,12 +59,12 @@ class AccountInvoice(models.Model):
         )
 
     @api.model
-    def invoice_master_clouder_containers(self, containers):
-        # Gathering invoice data from containers
-        invoice_data = containers.get_invoicing_data()
+    def invoice_master_clouder_services(self, services):
+        # Gathering invoice data from services
+        invoice_data = services.get_invoicing_data()
 
         # Processing bases only,
-        # since there is no container-based invoicing on clouder
+        # since there is no service-based invoicing on clouder
         for base_data in invoice_data['invoice_base_data']:
             # TODO: create a real invoice
             _logger.info(
@@ -82,7 +82,7 @@ class AccountInvoice(models.Model):
     @api.model
     def clouder_invoicing(self):
         """
-        Invoice containers
+        Invoice services
         """
         clouder_app_ids = [
             self.env.ref('clouder_template_odoo.app_odoo_clouder').id,
@@ -92,12 +92,12 @@ class AccountInvoice(models.Model):
             self.env.ref('clouder_template_odoo.app_odoo_clouder_ssh').id
         ]
 
-        # Invoicing all non-clouder containers
-        containers = self.env['clouder.container'].search(
+        # Invoicing all non-clouder services
+        services = self.env['clouder.service'].search(
             [('application_id', 'not in', clouder_app_ids)])
-        self.invoice_containers(containers)
+        self.invoice_services(services)
 
-        # Invoicing all clouder containers
-        clouder_containers = self.env['clouder.container'].search(
+        # Invoicing all clouder services
+        clouder_services = self.env['clouder.service'].search(
             [('application_id', 'in', clouder_app_ids)])
-        self.invoice_master_clouder_containers(clouder_containers)
+        self.invoice_master_clouder_services(clouder_services)

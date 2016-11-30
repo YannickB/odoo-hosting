@@ -9,23 +9,23 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderContainerMetadata(models.Model):
+class ClouderServiceMetadata(models.Model):
     """
     Defines an object to store metadata linked to an application
     """
 
-    _name = 'clouder.container.metadata'
+    _name = 'clouder.service.metadata'
 
     name = fields.Many2one(
         'clouder.application.metadata', 'Application Metadata',
         ondelete="cascade", required=True)
-    container_id = fields.Many2one(
-        'clouder.container', 'Container', ondelete="cascade", required=True)
+    service_id = fields.Many2one(
+        'clouder.service', 'Service', ondelete="cascade", required=True)
     value_data = fields.Text('Value')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(name, container_id)',
-         'Metadata must be unique per container!'),
+        ('name_uniq', 'unique(name, service_id)',
+         'Metadata must be unique per service!'),
     ]
 
     @property
@@ -36,7 +36,7 @@ class ClouderContainerMetadata(models.Model):
         def _missing_function():
             # If the function is missing, raise an exception
             self.raise_error(
-                'Invalid function name "%s" for clouder.container',
+                'Invalid function name "%s" for clouder.service',
                 self.name.func_name,
             )
 
@@ -44,7 +44,7 @@ class ClouderContainerMetadata(models.Model):
         val_to_convert = self.value_data
         if self.name.is_function:
             val_to_convert = "{0}".format(getattr(
-                self.container_id, self.name.func_name, _missing_function)())
+                self.service_id, self.name.func_name, _missing_function)())
             # If it is a function,
             # the text version should be updated for display
             self.with_context(skip_check=True).write({
@@ -66,9 +66,9 @@ class ClouderContainerMetadata(models.Model):
     @api.constrains('name')
     def _check_clouder_type(self):
         """
-        Checks that the metadata is intended for containers
+        Checks that the metadata is intended for services
         """
-        if self.name.clouder_type != 'container':
+        if self.name.clouder_type != 'service':
             self.raise_error(
                 "This metadata is intended for %s only.",
                 self.name.clouder_type,

@@ -45,25 +45,25 @@
          <record id="application_type_postfix_smtp_host" model="clouder.application.type.option">
              <field name="application_type_id" ref="application_type_postfix"/>
              <field name="name">smtp_host</field>
-             <field name="type">container</field>
+             <field name="type">service</field>
              <field name="auto" eval="True"/>
          </record>
          <record id="application_type_postfix_smtp_relayhost" model="clouder.application.type.option">
              <field name="application_type_id" ref="application_type_postfix"/>
              <field name="name">smtp_relayhost</field>
-             <field name="type">container</field>
+             <field name="type">service</field>
              <field name="auto" eval="True"/>
          </record>
          <record id="application_type_postfix_smtp_username" model="clouder.application.type.option">
              <field name="application_type_id" ref="application_type_postfix"/>
              <field name="name">smtp_username</field>
-             <field name="type">container</field>
+             <field name="type">service</field>
              <field name="auto" eval="True"/>
          </record>
          <record id="application_type_postfix_smtp_key" model="clouder.application.type.option">
              <field name="application_type_id" ref="application_type_postfix"/>
              <field name="name">smtp_key</field>
-             <field name="type">container</field>
+             <field name="type">service</field>
              <field name="auto" eval="True"/>
          </record>
 
@@ -125,7 +125,7 @@
             <field name="name" ref="application_spamassassin"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
         </record>
         <record id="application_postfix_exec" model="clouder.application">
             <field name="name">Postfix Exec</field>
@@ -145,13 +145,13 @@
             <field name="child_ids" eval="[(4, [ref('application_spamassassin'), ref('application_postfix_data'),ref('application_postfix_exec')])]"/>
         </record>
 
-        <record id="application_template_container_postfix" model="clouder.application.template">
+        <record id="application_template_service_postfix" model="clouder.application.template">
             <field name="name">Container Postfix</field>
         </record>
-        <record id="application_template_container_postfix_link_postfix" model="clouder.application.link">
-            <field name="template_id" ref="application_template_container_postfix"/>
+        <record id="application_template_service_postfix_link_postfix" model="clouder.application.link">
+            <field name="template_id" ref="application_template_service_postfix"/>
             <field name="name" ref="application_postfix"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>

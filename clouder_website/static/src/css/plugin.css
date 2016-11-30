@@ -260,7 +260,7 @@
     clear: both
 }
 
-#ClouderPlugin .ui-textbox-container * {
+#ClouderPlugin .ui-textbox-service * {
     box-sizing: border-box;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
@@ -410,7 +410,7 @@
     color: gray;
 }
 
-#ClouderPlugin .ui-dropdown-container * {
+#ClouderPlugin .ui-dropdown-service * {
     box-sizing: border-box;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;

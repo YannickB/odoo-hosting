@@ -29,7 +29,7 @@ class ClouderContainer(models.Model):
     Add methods to manage the postgres specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def send_drush_file(self):
@@ -76,13 +76,13 @@ class ClouderBase(models.Model):
         res = super(ClouderBase, self).deploy_test()
         if self.application_id.type_id.name == 'drupal' \
                 and self.application_id.code == 'wkc':
-            self.container_id.execute([
+            self.service_id.execute([
                 'drush', 'vset', '--yes', '--exact',
                 'wikicompare_test_platform', '1'],
                 path='/var/www/drupal/sites/' + self.fulldomain,
                 username='www-data')
             if self.poweruser_name and self.poweruser_email:
-                self.container_id.execute([
+                self.service_id.execute([
                     'drush', '/var/www/drupal/wikicompare.script',
                     '--user=' + self.poweruser_name, 'deploy_demo'],
                     path='/var/www/drupal/sites/' + self.fulldomain,

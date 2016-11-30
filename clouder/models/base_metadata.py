@@ -27,7 +27,7 @@ class ClouderBaseMetadata(models.Model):
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, base_id)',
-         'Metadata must be unique per container!'),
+         'Metadata must be unique per service!'),
     ]
 
     @property
@@ -68,7 +68,7 @@ class ClouderBaseMetadata(models.Model):
     @api.constrains('name')
     def _check_clouder_type(self):
         """
-        Checks that the metadata is intended for containers
+        Checks that the metadata is intended for services
         """
         if self.name.clouder_type != 'base':
             self.raise_error(

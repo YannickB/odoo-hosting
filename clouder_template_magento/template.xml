@@ -14,7 +14,7 @@
         <record id="application_type_magento_option_db_password" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">db_password</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
@@ -22,7 +22,7 @@
         <record id="application_type_magento_option_locale" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">locale</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">en_US</field>
@@ -31,7 +31,7 @@
         <record id="application_type_magento_option_timezone" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">timezone</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">America/Chicago</field>
@@ -40,7 +40,7 @@
         <record id="application_type_magento_option_currency" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">currency</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">USD</field>
@@ -51,7 +51,7 @@
         <record id="application_type_magento_option_admin_firstname" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">admin_firstname</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">Magento</field>
@@ -62,7 +62,7 @@
         <record id="application_type_magento_option_admin_lastname" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">admin_lastname</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">User</field>
@@ -73,7 +73,7 @@
         <record id="application_type_magento_option_admin_email" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">admin_email</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <!--TODO: Re-add when an automated default value has been implemented
@@ -83,7 +83,7 @@
         <record id="application_type_magento_option_admin_user" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">admin_user</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">admin</field>
@@ -94,7 +94,7 @@
         <record id="application_type_magento_option_admin_password" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">admin_password</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <!--TODO: Re-add when an automated default value has been implemented
@@ -104,7 +104,7 @@
         <record id="application_type_magento_option_use_rewrites" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_magento"/>
             <field name="name">use_rewrites</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="application_code">data</field>
             <field name="auto" eval="True"/>
             <field name="default">1</field>
@@ -250,7 +250,7 @@
             <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="application_magento_link_mysql" model="clouder.application.link">
@@ -295,7 +295,7 @@
         <record id="application_magento_data_link_mysql" model="clouder.application.link">
             <field name="application_id" ref="application_magento_data"/>
             <field name="name" ref="clouder_template_mysql.application_mysql"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
@@ -376,7 +376,7 @@
             <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="application_magento_odoo_link_mysql" model="clouder.application.link">
@@ -421,7 +421,7 @@
         <record id="application_magento_odoo_data_link_mysql" model="clouder.application.link">
             <field name="application_id" ref="application_magento_odoo_data"/>
             <field name="name" ref="clouder_template_mysql.application_mysql"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>

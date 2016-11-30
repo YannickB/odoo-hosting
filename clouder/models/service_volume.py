@@ -10,17 +10,17 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderContainerVolume(models.Model):
+class ClouderServiceVolume(models.Model):
     """
-    Define the container.volume object, used to define the volume which
-    will be saved in the container or will be linked to a directory
+    Define the service.volume object, used to define the volume which
+    will be saved in the service or will be linked to a directory
     in the host server.
     """
 
-    _name = 'clouder.container.volume'
+    _name = 'clouder.service.volume'
 
-    container_id = fields.Many2one(
-        'clouder.container', 'Container', ondelete="cascade", required=True)
+    service_id = fields.Many2one(
+        'clouder.service', 'Service', ondelete="cascade", required=True)
     name = fields.Char('Name', required=True)
     localpath = fields.Char('Local Path', required=True)
     hostpath = fields.Char('Host path')
@@ -29,6 +29,6 @@ class ClouderContainerVolume(models.Model):
     nosave = fields.Boolean('No save?')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(container_id,name)',
-         'Volume name must be unique per container!'),
+        ('name_uniq', 'unique(service_id,name)',
+         'Volume name must be unique per service!'),
     ]

@@ -19,7 +19,7 @@ class ClouderApplicationMetadata(models.Model):
     name = fields.Char('Name', required=True, size=64)
     clouder_type = fields.Selection(
         [
-            ('container', 'Container'),
+            ('service', 'Service'),
             ('base', 'Base')
         ], 'Type', required=True)
     is_function = fields.Boolean(

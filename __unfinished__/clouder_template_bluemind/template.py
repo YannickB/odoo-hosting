@@ -25,10 +25,10 @@ from openerp import models, api, modules
 
 class ClouderContainer(models.Model):
     """
-    Add methods to manage the bluemind container specificities.
+    Add methods to manage the bluemind service specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def hook_deploy_special_args(self, cmd):

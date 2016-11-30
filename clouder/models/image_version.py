@@ -29,9 +29,9 @@ class ClouderImageVersion(models.Model):
     name = fields.Char('Version', required=True)
     parent_id = fields.Many2one('clouder.image.version', 'Parent version')
     registry_id = fields.Many2one(
-        'clouder.container', 'Registry', ondelete="cascade")
-    container_ids = fields.One2many(
-        'clouder.container', 'image_version_id', 'Containers')
+        'clouder.service', 'Registry', ondelete="cascade")
+    service_ids = fields.One2many(
+        'clouder.service', 'image_version_id', 'Services')
     child_ids = fields.One2many(
         'clouder.image.version', 'parent_id', 'Childs')
 
@@ -89,11 +89,11 @@ class ClouderImageVersion(models.Model):
     def unlink(self):
         """
         Override unlink method to prevent image version unlink if
-        some containers are linked to it.
+        some services are linked to it.
         """
-        if self.container_ids:
+        if self.service_ids:
             self.raise_error(
-                _("A container is linked to this image version, "
+                _("A service is linked to this image version, "
                   "you can't delete it!"))
         if self.child_ids:
             self.raise_error(
@@ -125,7 +125,7 @@ class ClouderImageVersion(models.Model):
 
     # In case of problems with ssh authentification
     # - Make sure the /opt/keys belong to root:root with 700 rights
-    # - Make sure the user in the container can access the keys,
+    # - Make sure the user in the service can access the keys,
     #     and if possible make the key belong to the user with 700 rights
 
     @api.multi

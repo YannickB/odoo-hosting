@@ -37,9 +37,9 @@ class ClouderServer(models.Model):
 
         for oneclick in self.oneclick_ids:
             if oneclick.code == 'odoo':
-                self.oneclick_deploy_element('container', 'clouder9-all')
+                self.oneclick_deploy_element('service', 'clouder9-all')
                 self.oneclick_deploy_element(
-                    'base', 'clouder9', code_container='clouder9-all-clouder9')
+                    'base', 'clouder9', code_service='clouder9-all-clouder9')
 
                 # self.oneclick_deploy_element(
                 #     'subservice', 'clouder9-all-clouder9')
@@ -47,12 +47,12 @@ class ClouderServer(models.Model):
     @api.multi
     def oneclick_purge_exec(self):
 
-        container_obj = self.env['clouder.container']
+        service_obj = self.env['clouder.service']
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'clouder-test')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'clouder-test')]).unlink()
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'clouder9-all')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'clouder9-all')]).unlink()
 
         super(ClouderServer, self).oneclick_purge_exec()

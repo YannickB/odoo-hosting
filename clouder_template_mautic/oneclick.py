@@ -37,16 +37,16 @@ class ClouderServer(models.Model):
 
         for oneclick in self.oneclick_ids:
             if oneclick.code == 'mautic':
-                self.oneclick_deploy_element('container', 'mautic-all')
+                self.oneclick_deploy_element('service', 'mautic-all')
                 self.oneclick_deploy_element(
-                    'base', 'mautic', code_container='mautic-all-mautic')
+                    'base', 'mautic', code_service='mautic-all-mautic')
 
     @api.multi
     def oneclick_purge_exec(self):
 
-        container_obj = self.env['clouder.container']
+        service_obj = self.env['clouder.service']
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'mautic-all')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'mautic-all')]).unlink()
 
         super(ClouderServer, self).oneclick_purge_exec()

@@ -1,21 +1,21 @@
 
-{% set container = pillar[pillar['container_name']] %}
+{% set service = pillar[pillar['service_name']] %}
 
-{% if not 'secretkey' in pillar or pillar.secretkey == container['secretkey'] %}
+{% if not 'secretkey' in pillar or pillar.secretkey == service['secretkey'] %}
 
 include:
-  - container_purge
+  - service_purge
 
 {% if 'build' in pillar %}
 
 copy:
   file.recurse:
     - name: /tmp/salt_build/build_{{ pillar['image'] }}
-    - source: salt://containers/build_{{ pillar['container_name'] }}
+    - source: salt://services/build_{{ pillar['service_name'] }}
 
 pull:
   dockerng.image_present:
-    - name: {{ container['from'] }}
+    - name: {{ service['from'] }}
     - force: True
 
 build:
@@ -31,20 +31,20 @@ clean:
 
 deploy:
   dockerng.running:
-    - name: {{ pillar['container_name'] }}
+    - name: {{ pillar['service_name'] }}
     - image: {{ pillar['image'] }}
     - detach: True
     - tty: True
     - restart_policy: always
-    - port_bindings: {{ container['ports'] }}
-    - binds:  {{ container['volumes'] }}
-    - volumes_from:  {{ container['volumes_from'] }}
-    - links:  {{ container['links'] }}
-    - environment: {{ container['environment'] }}
+    - port_bindings: {{ service['ports'] }}
+    - binds:  {{ service['volumes'] }}
+    - volumes_from:  {{ service['volumes_from'] }}
+    - links:  {{ service['links'] }}
+    - environment: {{ service['environment'] }}
 
 
 {% if 'update_bases' in pillar %}
-{% for base_name in container['bases'] %}
+{% for base_name in service['bases'] %}
 
 {% do pillar.update({'base_name': base_name}) %}
 

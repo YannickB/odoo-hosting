@@ -28,7 +28,7 @@
                         <field name="prefix"/>
                         <newline/>
                         <field name="user_ids"/>
-                        <field name="container_ids"/>
+                        <field name="service_ids"/>
                     </group>
                 </form>
             </field>
@@ -66,7 +66,7 @@
                         <field name="environment_id"/>
                         <field name="title"/>
                         <field name="application_id" domain="[('base','=',True)]"/>
-                        <field name="container_id" required="0" domain="[('application_id.base', '=', True)]"/>
+                        <field name="service_id" required="0" domain="[('application_id.base', '=', True)]"/>
                         <field name="admin_name"/>
                         <field name="admin_password"/>
                         <field name="admin_email"/>
@@ -96,7 +96,7 @@
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('application_type_id.application_ids.container_ids','in',parent.container_id),('type','=','base')]"/>
+                                    <field name="name" domain="[('application_type_id.application_ids.service_ids','in',parent.service_id),('type','=','base')]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
@@ -117,7 +117,7 @@
                                     <field name="sequence"/>
                                     <field name="domainname"/>
                                     <field name="domain_id" attrs="{'required': [('domainname', '!=', False)]}"/>
-                                    <field name="container_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
+                                    <field name="service_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
                                     <field name="child_id"/>
                                     <field name="save_id"/>
                                     <button name="create_child" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
@@ -167,22 +167,22 @@
         </record>
 
 
-        <record id="action_clouder_container_form" model="ir.actions.act_window">
-            <field name="name">Containers</field>
+        <record id="action_clouder_service_form" model="ir.actions.act_window">
+            <field name="name">Services</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">clouder.container</field>
+            <field name="res_model">clouder.service</field>
             <field name="domain">[]</field>
             <field name="context">{'search_default_root': 1}</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_clouder_container_form" id="menu_action_clouder_container_form" parent="menu_clouder_clouder"/>
+        <menuitem action="action_clouder_service_form" id="menu_action_clouder_service_form" parent="menu_clouder_clouder"/>
 
-        <record id="view_clouder_container_form" model="ir.ui.view">
-            <field name="name">clouder.container.form</field>
-            <field name="model">clouder.container</field>
+        <record id="view_clouder_service_form" model="ir.ui.view">
+            <field name="name">clouder.service.form</field>
+            <field name="model">clouder.service</field>
             <field name="arch" type="xml">
-                <form string="Container" version="7.0">
+                <form string="Service" version="7.0">
                     <group col="4">
                         <field name="name"/>
                         <newline/>
@@ -204,7 +204,7 @@
                         <page string="General">
                             <field name="option_ids" colspan="4">
                                 <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('application_type_id.application_ids','in',parent.application_id),('type','=','container'),('tag_ids.application_ids','in',parent.application_id)]"/>
+                                    <field name="name" domain="[('application_type_id.application_ids','in',parent.application_id),('type','=','service'),('tag_ids.application_ids','in',parent.application_id)]"/>
                                     <field name="value"/>
                                 </tree>
                             </field>
@@ -294,11 +294,11 @@
                 </form>
             </field>
         </record>
-        <record id="view_clouder_container_tree" model="ir.ui.view">
-            <field name="name">clouder.container.tree</field>
-            <field name="model">clouder.container</field>
+        <record id="view_clouder_service_tree" model="ir.ui.view">
+            <field name="name">clouder.service.tree</field>
+            <field name="model">clouder.service</field>
             <field name="arch" type="xml">
-                <tree string="Containers">
+                <tree string="Services">
                     <field name="name"/>
                     <field name="server_id"/>
                     <field name="application_id"/>
@@ -308,11 +308,11 @@
                 </tree>
             </field>
         </record>
-        <record id="view_clouder_container_filter" model="ir.ui.view">
-            <field name="name">clouder.container.filter</field>
-            <field name="model">clouder.container</field>
+        <record id="view_clouder_service_filter" model="ir.ui.view">
+            <field name="name">clouder.service.filter</field>
+            <field name="model">clouder.service</field>
             <field name="arch" type="xml">
-                <search string="Containers">
+                <search string="Services">
                     <field name="name"/>
                     <filter name="root" string="Root" domain="[('parent_id', '=', False)]"/>
                 </search>
@@ -343,7 +343,7 @@
                         <field name="ssh_port" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <field name="environment_id"/>
                         <field name="manager"/>
-                        <field name="provider_id" domain="[('type','in',['node','container'])]"/>
+                        <field name="provider_id" domain="[('type','in',['node','service'])]"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -364,8 +364,8 @@
                             <button name="purge" string="Purge" type="object"/>
                             <button name="configure" string="Configure" type="object"/>
                             <button name="test_connection" string="Test connection" type="object"/>
-                            <button name="start_containers" string="Restart Containers" type="object"/>
-                            <button name="stop_containers" string="Stop Containers" type="object"/>
+                            <button name="start_services" string="Restart Services" type="object"/>
+                            <button name="stop_services" string="Stop Services" type="object"/>
                             <button name="deploy_dns" string="Reinstall DNS" type="object"/>
                             <button name="purge_dns" string="Purge DNS" type="object"/>
                             <button name="clean" string="Clean disk space" type="object"/>
@@ -435,18 +435,18 @@
                       <field name="date_expiration"/>
                     </group>
                     <notebook>
-                        <page string="Container">
+                        <page string="Service">
                             <group col="4">
-                                <field name="container_id"/>
-                                <field name="container_fullname"/>
-                                <field name="container_app"/>
-                                <field name="container_img"/>
-                                <field name="container_img_version"/>
-                                <field name="container_ports"/>
-                                <field name="container_options"/>
-                                <field name="container_links"/>
-                                <field name="container_volumes_comma"/>
-                                <field name="container_volumes"/>
+                                <field name="service_id"/>
+                                <field name="service_fullname"/>
+                                <field name="service_app"/>
+                                <field name="service_img"/>
+                                <field name="service_img_version"/>
+                                <field name="service_ports"/>
+                                <field name="service_options"/>
+                                <field name="service_links"/>
+                                <field name="service_volumes_comma"/>
+                                <field name="service_volumes"/>
                             </group>
                        </page>
                         <page string="Base" attrs="{'invisible':[('base_fullname','=',False)]}">
@@ -474,16 +474,16 @@
                       <newline/>
                       <field name="environment"/>
                       <newline/>
-                      <field name="container_suffix" attrs="{'invisible':[('base_id','!=',False)]}"/>
-                      <field name="container_server" attrs="{'invisible':[('base_id','!=',False)]}"/>
-                      <field name="base_container_suffix" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
-                      <field name="base_container_server" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
+                      <field name="service_suffix" attrs="{'invisible':[('base_id','!=',False)]}"/>
+                      <field name="service_server" attrs="{'invisible':[('base_id','!=',False)]}"/>
+                      <field name="base_service_suffix" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
+                      <field name="base_service_server" readonly="1" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="base_name" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="base_domain" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="restore_to_environment_id"/>
                       <newline/>
-                      <field name="container_restore_to_suffix"/>
-                      <field name="container_restore_to_server_id"/>
+                      <field name="service_restore_to_suffix"/>
+                      <field name="service_restore_to_server_id"/>
                       <field name="base_restore_to_name" attrs="{'invisible':[('base_id','=',False)]}"/>
                       <field name="base_restore_to_domain_id" attrs="{'invisible':[('base_id','=',False)]}"/>
                     </group>
@@ -498,7 +498,7 @@
             <field name="arch" type="xml">
                 <tree string="Save">
                     <field name="name"/>
-                    <field name='container_fullname' attrs="{'invisible': [('base_fullname','!=',False)]}"/>
+                    <field name='service_fullname' attrs="{'invisible': [('base_fullname','!=',False)]}"/>
                     <field name='base_fullname'/>
                     <field name='comment'/>
                     <field name='date_expiration'/>
@@ -662,7 +662,7 @@
                                     <field name="required"/>
                                     <field name="auto"/>
                                     <field name="make_link"/>
-                                    <field name="container"/>
+                                    <field name="service"/>
                                     <field name="base"/>
                                 </tree>
                             </field>
@@ -709,7 +709,7 @@
                         <field name="next_image_version_id" domain="[('image_id','=',default_image_id)]"/>
                         <newline/>
                         <field name="next_server_id"/>
-                        <field name="next_container_id" attrs="{'invisible': [('base','!=',True)]}" domain="[('application_id','=',id)]"/>
+                        <field name="next_service_id" attrs="{'invisible': [('base','!=',True)]}" domain="[('application_id','=',id)]"/>
                         <newline/>
                         <newline/>
                         <field name="admin_name"/>
@@ -736,7 +736,7 @@
                                     <field name="required"/>
                                     <field name="auto"/>
                                     <field name="make_link"/>
-                                    <field name="container"/>
+                                    <field name="service"/>
                                     <field name="base"/>
                                     <field name="next" domain="[('application_id','=',name)]"/>
                                 </tree>
@@ -754,11 +754,11 @@
                             <group>
                                 <field name="autosave"/>
                                 <newline/>
-                                <field name="container_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
+                                <field name="service_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
                                 <field name="base_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
-                                <field name="container_time_between_save"/>
+                                <field name="service_time_between_save"/>
                                 <field name="base_time_between_save"/>
-                                <field name="container_save_expiration"/>
+                                <field name="service_save_expiration"/>
                                 <field name="base_save_expiration"/>
                             </group>
                         </page>
@@ -973,7 +973,7 @@
                     <field name="image_id"/>
                     <field name="name"/>
                     <field name="registry_id"/>
-                    <field name="container_ids"/>
+                    <field name="service_ids"/>
                 </tree>
             </field>
         </record>
@@ -1021,14 +1021,14 @@
                         <field name="executor"/>
                         <newline/>
                         <field name="end_save_all"/>
-                        <field name="end_update_containers"/>
+                        <field name="end_update_services"/>
                         <field name="end_reset_bases"/>
                         <field name="end_certs_renewal"/>
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
                     <button name="save_all" string="Save All" type="object"/>
                     <button name="purge_expired_saves" string="Purge expired Saves" type="object"/>
-                    <button name="update_containers" string="Update containers" type="object"/>
+                    <button name="update_services" string="Update services" type="object"/>
                     <button name="reset_bases" string="Reset Bases" type="object"/>
                     <button name="certs_renewal" string="Certs Renewal" type="object"/>
                     <button name="launch_next_saves" string="Launch Next Saves" type="object"/>

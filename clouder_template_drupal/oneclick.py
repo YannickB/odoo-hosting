@@ -37,16 +37,16 @@ class ClouderServer(models.Model):
 
         for oneclick in self.oneclick_ids:
             if oneclick.code == 'drupal':
-                self.oneclick_deploy_element('container', 'drupal-all')
+                self.oneclick_deploy_element('service', 'drupal-all')
                 self.oneclick_deploy_element(
-                    'base', 'drupal', code_container='drupal-all-drupal')
+                    'base', 'drupal', code_service='drupal-all-drupal')
 
     @api.multi
     def oneclick_purge_exec(self):
 
-        container_obj = self.env['clouder.container']
+        service_obj = self.env['clouder.service']
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'drupal-all')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'drupal-all')]).unlink()
 
         super(ClouderServer, self).oneclick_purge_exec()

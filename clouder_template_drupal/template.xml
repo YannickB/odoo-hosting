@@ -34,7 +34,7 @@
         <record id="application_type_drupal_option_db_password" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_drupal"/>
             <field name="name">db_password</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
@@ -84,7 +84,7 @@
             <field name="name">Drupal Data</field>
             <field name="code">data</field>
             <field name="type_id" ref="application_type_drupal"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_service_shinken'),ref('clouder_template_postgres.application_template_service_postgres')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_drupal_data"/>
             <field name="sequence">1</field>
@@ -96,7 +96,7 @@
             <field name="name">Drupal Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="application_type_drupal"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_postgres.application_template_container_postgres')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_service_postfix'),ref('clouder_template_postgres.application_template_service_postgres')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_drupal_exec"/>
             <field name="sequence">2</field>

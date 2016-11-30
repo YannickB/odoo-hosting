@@ -27,17 +27,17 @@ import openerp.addons.clouder.model as clouder_model
 
 class ClouderContainer(models.Model):
     """
-    Add methods to manage the ldap container specificities.
+    Add methods to manage the ldap service specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.model
     def create(self, vals):
         """
         Override create to generate a random password for the passord option.
 
-        :param vals: The values used to create the container.
+        :param vals: The values used to create the service.
         """
         if 'application_id' in vals and vals['application_id']:
             application = self.env['clouder.application'].browse(

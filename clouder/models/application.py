@@ -12,7 +12,7 @@ from openerp import models, fields, api
 class ClouderApplication(models.Model):
     """
     Define the application object, which represent the software which will be
-    installed in container.
+    installed in service.
     """
 
     _name = 'clouder.application'
@@ -38,10 +38,10 @@ class ClouderApplication(models.Model):
     tag_ids = fields.Many2many(
         'clouder.application.tag', 'clouder_application_tag_rel',
         'application_id', 'tag_id', 'Tags')
-    next_container_id = fields.Many2one('clouder.container', 'Next container')
+    next_service_id = fields.Many2one('clouder.service', 'Next service')
     admin_name = fields.Char('Admin name')
     admin_email = fields.Char('Admin email')
-    archive_id = fields.Many2one('clouder.container', 'Archive')
+    archive_id = fields.Many2one('clouder.service', 'Archive')
     option_ids = fields.One2many('clouder.application.option',
                                  'application_id', 'Options')
     link_ids = fields.One2many('clouder.application.link', 'application_id',
@@ -55,22 +55,22 @@ class ClouderApplication(models.Model):
     child_ids = fields.Many2many(
         'clouder.application', 'clouder_application_parent_child_rel',
         'parent_id', 'child_id', 'Childs')
-    container_ids = fields.One2many('clouder.container', 'application_id',
-                                    'Containers')
+    service_ids = fields.One2many('clouder.service', 'application_id',
+                                  'Services')
     update_strategy = fields.Selection([
         ('never', 'Never'), ('manual', 'Manual'), ('auto', 'Automatic')],
-        string='Container Update Strategy', required=True, default='never')
+        string='Service Update Strategy', required=True, default='never')
     update_bases = fields.Boolean('Update bases?')
     autosave = fields.Boolean('Save?')
-    container_backup_ids = fields.Many2many(
-        'clouder.container', 'clouder_application_container_backup_rel',
-        'application_id', 'backup_id', 'Backups Containers')
-    container_time_between_save = fields.Integer(
-        'Minutes between each container save', required=True, default=9999)
-    container_save_expiration = fields.Integer(
-        'Days before container save expiration', required=True, default=5)
+    service_backup_ids = fields.Many2many(
+        'clouder.service', 'clouder_application_service_backup_rel',
+        'application_id', 'backup_id', 'Backups Services')
+    service_time_between_save = fields.Integer(
+        'Minutes between each service save', required=True, default=9999)
+    service_save_expiration = fields.Integer(
+        'Days before service save expiration', required=True, default=5)
     base_backup_ids = fields.Many2many(
-        'clouder.container', 'clouder_application_base_backup_rel',
+        'clouder.service', 'clouder_application_base_backup_rel',
         'application_id', 'backup_id', 'Backups Bases')
     base_time_between_save = fields.Integer('Minutes between each base save',
                                             required=True, default=9999)
@@ -91,7 +91,7 @@ class ClouderApplication(models.Model):
     def full_archivepath(self):
         """
         Property returning the full path to the archive
-        in the archive container
+        in the archive service
         """
         return os.path.join(
             self.env['clouder.model'].archive_path,
@@ -113,7 +113,7 @@ class ClouderApplication(models.Model):
     def full_localpath(self):
         """
         Property returning the full path to the instance
-        in the destination container
+        in the destination service
         """
         return os.path.join(
             self.type_id.localpath and self.type_id.localpath,

@@ -31,7 +31,7 @@ class ClouderProvider(models.Model):
     @api.multi
     def _get_types(self):
         return [
-            ('node', 'Node'), ('container', 'Container'),
+            ('node', 'Node'), ('service', 'Service'),
             ('dns', 'DNS'), ('load', 'Load Balancing'), ('backup', 'Backup')]
 
     @api.multi

@@ -74,10 +74,10 @@
             <field name="current_version">1</field>
             <field name="type_id" ref="application_type_openshift"/>
             <field name="default_image_id" ref="image_openshift"/>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
+            <field name="service_time_between_save">9999</field>
+            <field name="service_saverepo_change">30</field>
+            <field name="service_saverepo_expiration">90</field>
+            <field name="service_save_expiration">5</field>
             <field name="base_time_between_save">9999</field>
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>

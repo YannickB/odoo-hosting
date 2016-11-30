@@ -56,7 +56,7 @@
             <field name="name">Shinken Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="application_type_shinken"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_service_postfix')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_shinken_exec"/>
             <field name="sequence">2</field>
@@ -73,13 +73,13 @@
             <field name="base" eval="True"/>
         </record>
 
-        <record id="application_template_container_shinken" model="clouder.application.template">
+        <record id="application_template_service_shinken" model="clouder.application.template">
             <field name="name">Container Shinken</field>
         </record>
-        <record id="application_template_container_shinken_link_shinken" model="clouder.application.link">
-            <field name="template_id" ref="application_template_container_shinken"/>
+        <record id="application_template_service_shinken_link_shinken" model="clouder.application.link">
+            <field name="template_id" ref="application_template_service_shinken"/>
             <field name="name" ref="application_shinken"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="auto" eval="True"/>
         </record>
 
@@ -92,16 +92,16 @@
 
         <!--
         <record id="clouder.application_salt_minion" model="clouder.application">
-            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
+            <field name="template_ids" eval="[(4, [ref('application_template_service_shinken')])]"/>
         </record>
         <record id="clouder_template_postfix.application_postfix_data" model="clouder.application">
-            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
+            <field name="template_ids" eval="[(4, [ref('application_template_service_shinken')])]"/>
         </record>
         <record id="clouder_template_bind.application_bind_data" model="clouder.application">
-            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
+            <field name="template_ids" eval="[(4, [ref('application_template_service_shinken')])]"/>
         </record>
         <record id="clouder_template_proxy.application_proxy_data" model="clouder.application">
-            <field name="template_ids" eval="[(4, [ref('application_template_container_shinken')])]"/>
+            <field name="template_ids" eval="[(4, [ref('application_template_service_shinken')])]"/>
         </record>
         -->
 

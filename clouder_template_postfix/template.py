@@ -28,12 +28,12 @@ class ClouderContainer(models.Model):
     Add methods to manage the postfix specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def deploy_post(self):
         """
-        Add a ssmtp file if the container is linked to a postfix, and the
+        Add a ssmtp file if the service is linked to a postfix, and the
         configure the postfix.
         """
         super(ClouderContainer, self).deploy_post()
@@ -56,7 +56,7 @@ class ClouderContainer(models.Model):
 
             # Adding boolean flag to see if all SMTP options are set
             smtp_options = False
-            options = self.parent_id.container_id.options
+            options = self.parent_id.service_id.options
             if options['smtp_relayhost']['value'] and \
                     options['smtp_username']['value'] and \
                     options['smtp_key']['value']:
@@ -112,26 +112,26 @@ class ClouderContainerLink(models.Model):
     Add methods to manage the spamassassin specificities.
     """
 
-    _inherit = 'clouder.container.link'
+    _inherit = 'clouder.service.link'
 
     @api.multi
     def deploy_link(self):
         """
-        Deploy the configuration file to watch the container.
+        Deploy the configuration file to watch the service.
         """
         super(ClouderContainerLink, self).deploy_link()
         if self.name.type_id.name == 'spamassassin' \
-                and self.container_id.application_id.type_id.name == 'postfix':
+                and self.service_id.application_id.type_id.name == 'postfix':
 
-            self.container_id.execute([
+            self.service_id.execute([
                 "echo '#spamassassin-flag'"
                 ">> /etc/postfix/master.cf"])
-            self.container_id.execute([
+            self.service_id.execute([
                 "echo 'smtp      inet  n       "
                 "-       -       -       -       "
                 "smtpd -o content_filter=spamassassin' "
                 ">> /etc/postfix/master.cf"])
-            self.container_id.execute([
+            self.service_id.execute([
                 "echo 'spamassassin unix -     "
                 "n       n       -       -       "
                 "pipe user=nobody argv=/usr/bin/spamc -d " +
@@ -140,11 +140,11 @@ class ClouderContainerLink(models.Model):
                 " -f -e /usr/sbin/sendmail "
                 r"-oi -f \${sender} \${recipient}' "
                 ">> /etc/postfix/master.cf"])
-            self.container_id.execute([
+            self.service_id.execute([
                 "echo '#spamassassin-endflag'"
                 ">> /etc/postfix/master.cf"])
 
-            self.container_id.execute(
+            self.service_id.execute(
                 ['/etc/init.d/postfix', 'reload'])
 
     @api.multi
@@ -154,13 +154,13 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).purge_link()
         if self.name.type_id.name == 'spamassassin' \
-                and self.container_id.application_id.type_id.name == 'postfix':
+                and self.service_id.application_id.type_id.name == 'postfix':
 
-            self.container_id.execute([
+            self.service_id.execute([
                 'sed', '-i',
                 '"/#spamassassin-flag/,/#spamassassin-endflag/d"',
                 '/etc/postfix/master.cf'])
-            self.container_id.execute(
+            self.service_id.execute(
                 ['/etc/init.d/postfix', 'reload'])
 
 

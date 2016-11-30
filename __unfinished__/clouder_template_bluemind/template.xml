@@ -10,7 +10,7 @@
         <record id="application_type_bluemind_option_domain" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_bluemind"/>
             <field name="name">domain</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>
@@ -57,7 +57,7 @@ RUN chmod +X bluemind.bin
             <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="application_bluemind_link_postgres" model="clouder.application.link">
@@ -66,7 +66,7 @@ RUN chmod +X bluemind.bin
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
         </record>
         <record id="application_bluemind_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="application_bluemind"/>

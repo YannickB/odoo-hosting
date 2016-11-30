@@ -99,10 +99,10 @@ VOLUME /base-backup
             <field name="bdd">mysql</field>
             <field name="default_image_id" ref="image_seafile"/>
             <field name="current_version">3.1.3</field>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
+            <field name="service_time_between_save">9999</field>
+            <field name="service_saverepo_change">30</field>
+            <field name="service_saverepo_expiration">90</field>
+            <field name="service_save_expiration">5</field>
             <field name="base_time_between_save">9999</field>
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>
@@ -120,7 +120,7 @@ VOLUME /base-backup
             <field name="name" ref="clouder_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="application_seafile_link3" model="clouder.application.link">

@@ -16,7 +16,7 @@ _logger = logging.getLogger(__name__)
 
 class ClouderSave(models.Model):
     """
-    Define the save.save object, which represent the saves of containers/bases.
+    Define the save.save object, which represent the saves of services/bases.
     """
 
     _name = 'clouder.save'
@@ -24,27 +24,27 @@ class ClouderSave(models.Model):
 
     name = fields.Char('Name', required=True)
     backup_id = fields.Many2one(
-        'clouder.container', 'Backup Server', required=True)
+        'clouder.service', 'Backup Server', required=True)
     date_expiration = fields.Date('Expiration Date')
     comment = fields.Text('Comment')
     now_bup = fields.Char('Now bup')
     environment = fields.Char(
         'Environment', readonly=True)
-    container_id = fields.Many2one('clouder.container', 'Container')
-    container_fullname = fields.Char('Container Fullname')
-    container_app = fields.Char('Application')
-    container_img = fields.Char('Image')
-    container_img_version = fields.Char('Image Version')
-    container_ports = fields.Text('Ports')
-    container_volumes = fields.Text('Volumes')
-    container_volumes_comma = fields.Text('Volumes comma')
-    container_options = fields.Text('Container Options')
-    container_links = fields.Text('Container Links')
+    service_id = fields.Many2one('clouder.service', 'Service')
+    service_fullname = fields.Char('Service Fullname')
+    service_app = fields.Char('Application')
+    service_img = fields.Char('Image')
+    service_img_version = fields.Char('Image Version')
+    service_ports = fields.Text('Ports')
+    service_volumes = fields.Text('Volumes')
+    service_volumes_comma = fields.Text('Volumes comma')
+    service_options = fields.Text('Service Options')
+    service_links = fields.Text('Service Links')
     base_id = fields.Many2one('clouder.base', 'Base')
     base_fullname = fields.Char('Base Fullname')
     base_title = fields.Char('Title')
-    base_container_suffix = fields.Char('Container Name')
-    base_container_server = fields.Char('Server')
+    base_service_suffix = fields.Char('Service Name')
+    base_service_server = fields.Char('Server')
     base_admin_name = fields.Char('Admin name')
     base_admin_password = fields.Char('Admin passwd')
     base_admin_email = fields.Char('Admin email')
@@ -57,15 +57,15 @@ class ClouderSave(models.Model):
     base_autosave = fields.Boolean('Save?')
     base_options = fields.Text('Base Options')
     base_links = fields.Text('Base Links')
-    container_suffix = fields.Char(
-        'Container Suffix', readonly=True)
-    container_server = fields.Char(
-        'Container Server',
+    service_suffix = fields.Char(
+        'Service Suffix', readonly=True)
+    service_server = fields.Char(
+        'Service Server',
         type='char', readonly=True)
     restore_to_environment_id = fields.Many2one(
         'clouder.environment', 'Restore to (Environment)')
-    container_restore_to_suffix = fields.Char('Restore to (Suffix)')
-    container_restore_to_server_id = fields.Many2one(
+    service_restore_to_suffix = fields.Char('Restore to (Suffix)')
+    service_restore_to_server_id = fields.Many2one(
         'clouder.server', 'Restore to (Server)')
     base_name = fields.Char(
         'Base Name',
@@ -102,20 +102,20 @@ class ClouderSave(models.Model):
             or self.environment
 
     @property
-    def computed_container_restore_to_suffix(self):
+    def computed_service_restore_to_suffix(self):
         """
-        Property returning the container suffix which will be restored.
+        Property returning the service suffix which will be restored.
         """
-        return self.container_restore_to_suffix or self.base_container_suffix \
-            or self.repo_id.container_suffix
+        return self.service_restore_to_suffix or self.base_service_suffix \
+            or self.repo_id.service_suffix
 
     @property
-    def computed_container_restore_to_server(self):
+    def computed_service_restore_to_server(self):
         """
-        Property returning the container server which will be restored.
+        Property returning the service server which will be restored.
         """
-        return self.container_restore_to_server_id.fulldomain \
-            or self.base_container_server or self.repo_id.container_server
+        return self.service_restore_to_server_id.fulldomain \
+            or self.base_service_server or self.repo_id.service_server
 
     @property
     def computed_base_restore_to_name(self):
@@ -133,7 +133,7 @@ class ClouderSave(models.Model):
 
     @property
     def repo_name(self):
-        repo_name = self.container_fullname
+        repo_name = self.service_fullname
         if self.base_fullname:
             repo_name = self.base_fullname
         return repo_name
@@ -143,50 +143,50 @@ class ClouderSave(models.Model):
     @api.multi
     def create(self, vals):
         """
-        Override create method to add the data in container and base in the
-        save record, so we can restore it if the container/service/base are
+        Override create method to add the data in service and base in the
+        save record, so we can restore it if the service/service/base are
         deleted.
 
         :param vals: The values we need to create the record.
         """
-        if 'container_id' in vals:
-            container = self.env['clouder.container'] \
-                .browse(vals['container_id'])
+        if 'service_id' in vals:
+            service = self.env['clouder.service'] \
+                .browse(vals['service_id'])
 
-            container_ports = {}
-            for port in container.port_ids:
-                container_ports[port.name] = {
+            service_ports = {}
+            for port in service.port_ids:
+                service_ports[port.name] = {
                     'name': port.name, 'localport': port.localport,
                     'expose': port.expose, 'udp': port.udp}
 
-            container_volumes = {}
-            for volume in container.volume_ids:
-                container_volumes[volume.id] = {
+            service_volumes = {}
+            for volume in service.volume_ids:
+                service_volumes[volume.id] = {
                     'name': volume.name, 'hostpath': volume.hostpath,
                     'user': volume.user, 'readonly': volume.readonly,
                     'nosave': volume.nosave}
 
-            container_links = {}
-            for link in container.link_ids:
-                container_links[link.name.code] = {
+            service_links = {}
+            for link in service.link_ids:
+                service_links[link.name.code] = {
                     'name': link.name.id,
                     'code': link.name.code,
                     'target': link.target and link.target.id or False
                 }
 
             vals.update({
-                'environment': container.environment_id.prefix,
-                'container_fullname': container.fullname,
-                'container_suffix': container.suffix,
-                'container_server': container.server_id.fulldomain,
-                'container_volumes_comma': container.volumes_save,
-                'container_app': container.application_id.code,
-                'container_img': container.image_id.name,
-                'container_img_version': container.image_version_id.name,
-                'container_ports': str(container_ports),
-                'container_volumes': str(container_volumes),
-                'container_options': str(container.options),
-                'container_links': str(container_links),
+                'environment': service.environment_id.prefix,
+                'service_fullname': service.fullname,
+                'service_suffix': service.suffix,
+                'service_server': service.server_id.fulldomain,
+                'service_volumes_comma': service.volumes_save,
+                'service_app': service.application_id.code,
+                'service_img': service.image_id.name,
+                'service_img_version': service.image_version_id.name,
+                'service_ports': str(service_ports),
+                'service_volumes': str(service_volumes),
+                'service_options': str(service.options),
+                'service_links': str(service_links),
             })
 
         if 'base_id' in vals:
@@ -206,11 +206,11 @@ class ClouderSave(models.Model):
                 'base_name': base.name,
                 'base_domain': base.domain_id.name,
                 'base_title': base.title,
-                'base_container_environment':
-                    base.container_id.environment_id.prefix,
-                'base_container_suffix': base.container_id.suffix,
-                'base_container_server':
-                base.container_id.server_id.fulldomain,
+                'base_service_environment':
+                    base.service_id.environment_id.prefix,
+                'base_service_suffix': base.service_id.suffix,
+                'base_service_server':
+                base.service_id.server_id.fulldomain,
                 'base_admin_name': base.admin_name,
                 'base_admin_password': base.admin_password,
                 'base_admin_email': base.admin_email,
@@ -246,7 +246,7 @@ class ClouderSave(models.Model):
     @api.multi
     def deploy(self):
         """
-        Build the save and move it into the backup container.
+        Build the save and move it into the backup service.
         """
 
         super(ClouderSave, self).deploy()
@@ -256,19 +256,19 @@ class ClouderSave(models.Model):
         self.log('Saving "%s"' % self.name)
         self.log('Comment: "%s"' % self.comment)
 
-        container = 'exec' in self.container_id.childs \
-                    and self.container_id.childs['exec'] or self.container_id
+        service = 'exec' in self.service_id.childs \
+                  and self.service_id.childs['exec'] or self.service_id
         backup_dir = os.path.join(self.BACKUP_BASE_DIR, self.name)
 
         if self.base_fullname:
-            container = container.base_backup_container
-            container.execute([
+            service = service.base_backup_service
+            service.execute([
                 'mkdir', '-p', backup_dir,
             ],
                 username='root',
             )
 
-            container.execute([
+            service.execute([
                 'chmod', '-R', '777', backup_dir,
             ],
                 username='root',
@@ -277,33 +277,33 @@ class ClouderSave(models.Model):
             self.deploy_base()
 
         directory = self.get_directory_clouder(self.name)
-        container.server_id.execute([
+        service.server_id.execute([
             'rm', '-rf', os.path.join(directory, '*'),
         ])
-        container.server_id.execute(['mkdir', directory])
+        service.server_id.execute(['mkdir', directory])
 
         if self.base_fullname:
-            container.server_id.execute([
+            service.server_id.execute([
                 'docker', 'cp',
-                '%s:%s' % (container.pod, backup_dir),
+                '%s:%s' % (service.pod, backup_dir),
                 self.get_directory_clouder(),
             ])
         else:
-            for volume in self.container_volumes_comma.split(','):
-                container.server_id.execute([
+            for volume in self.service_volumes_comma.split(','):
+                service.server_id.execute([
                     'mkdir', '-p', os.path.join(directory, volume),
                 ])
-                container.server_id.execute([
-                    'docker', 'cp', '%s:%s' % (container.pod, volume),
+                service.server_id.execute([
+                    'docker', 'cp', '%s:%s' % (service.pod, volume),
                     os.path.join(directory, os.path.split(volume)[0]),
                 ])
 
-        container.server_id.execute([
+        service.server_id.execute([
             'echo "%s" > "%s"' % (
                 self.now_date, os.path.join(directory, self.BACKUP_DATE_FILE),
             ),
         ])
-        container.server_id.execute([
+        service.server_id.execute([
             'chmod', '-R', '777', os.path.join(directory, '*'),
         ])
 
@@ -311,7 +311,7 @@ class ClouderSave(models.Model):
         if self.base_fullname:
             name = self.base_id.fullname_
         else:
-            name = self.container_id.fullname
+            name = self.service_id.fullname
 
         backup.execute([
             'rm', '-rf', os.path.join(
@@ -344,16 +344,16 @@ class ClouderSave(models.Model):
         )
         backup.send(
             os.path.join(self.home_directory, '.ssh', 'keys',
-                         '%s.pub' % self.container_id.server_id.fulldomain),
+                         '%s.pub' % self.service_id.server_id.fulldomain),
             os.path.join(self.BACKUP_HOME_DIR, '.ssh', 'keys',
-                         '%s.pub' % self.container_id.server_id.fulldomain),
+                         '%s.pub' % self.service_id.server_id.fulldomain),
             username='backup',
         )
         backup.send(
             os.path.join(self.home_directory, '.ssh', 'keys',
-                         self.container_id.server_id.fulldomain),
+                         self.service_id.server_id.fulldomain),
             os.path.join(self.BACKUP_HOME_DIR, '.ssh', 'keys',
-                         self.container_id.server_id.fulldomain),
+                         self.service_id.server_id.fulldomain),
             username='backup',
         )
         backup.execute([
@@ -367,7 +367,7 @@ class ClouderSave(models.Model):
 
         backup.execute([
             'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-            '%s:%s/' % (self.container_id.server_id.fulldomain, directory),
+            '%s:%s/' % (self.service_id.server_id.fulldomain, directory),
             directory,
         ],
             username='backup',
@@ -421,14 +421,14 @@ class ClouderSave(models.Model):
 
         delete_dir = ['rm', '-rf', os.path.join(directory, '*')]
         backup.execute(delete_dir, username='backup')
-        container.execute(delete_dir)
+        service.execute(delete_dir)
 
         # Should we delete the keys directory?
         # More security, but may cause concurrency problems
         # backup.execute(['rm', '/home/backup/.ssh/keys/*'], username='backup')
 
         if self.base_fullname:
-            container.execute([
+            service.execute([
                 'rm', '-rf', os.path.join(self.BACKUP_BASE_DIR, self.name),
             ],
                 username='root',
@@ -438,7 +438,7 @@ class ClouderSave(models.Model):
     @api.multi
     def purge(self):
         """
-        Remove the save from the backup container.
+        Remove the save from the backup service.
         """
 
         backup_root = os.path.join(
@@ -452,7 +452,7 @@ class ClouderSave(models.Model):
         if self.base_fullname:
             search_field = 'base_fullname'
         else:
-            search_field = 'container_fullname'
+            search_field = 'service_fullname'
 
         if self.search([(search_field, '=', self.repo_name)]) == self:
             self.backup_id.execute(['rm', '-rf', backup_root])
@@ -483,10 +483,10 @@ class ClouderSave(models.Model):
     @api.multi
     def restore(self):
         """
-        Restore a save to a container or a base. If container/service/base
+        Restore a save to a service or a base. If service/service/base
         aren't specified, they will be created.
         """
-        container_obj = self.env['clouder.container']
+        service_obj = self.env['clouder.service']
         base_obj = self.env['clouder.base']
         environment_obj = self.env['clouder.environment']
         server_obj = self.env['clouder.server']
@@ -503,24 +503,24 @@ class ClouderSave(models.Model):
                     'Could not find environment "%s". Aborting restoration.',
                     self.computed_restore_to_environment,
                 )
-        apps = application_obj.search([('code', '=', self.container_app)])
+        apps = application_obj.search([('code', '=', self.service_app)])
         if not apps:
             self.raise_error(
                 'Could not find application "%s". Aborting restoration.',
-                self.container_app,
+                self.service_app,
             )
 
-        if self.container_restore_to_suffix or not self.container_id:
+        if self.service_restore_to_suffix or not self.service_id:
 
-            imgs = image_obj.search([('name', '=', self.container_img)])
+            imgs = image_obj.search([('name', '=', self.service_img)])
             if not imgs:
                 self.raise_error(
                     'Could not find the image "%s". Aborting restoration.',
-                    self.container_img,
+                    self.service_img,
                 )
 
             img_versions = image_version_obj.search(
-                [('name', '=', self.container_img_version)])
+                [('name', '=', self.service_img_version)])
             # upgrade = True
             if not img_versions:
                 self.log(
@@ -532,45 +532,45 @@ class ClouderSave(models.Model):
                     self.raise_error(
                         'Could not find versions for image "%s". '
                         'Aborting restoration.',
-                        self.container_img,
+                        self.service_img,
                     )
                 img_versions = [versions[0]]
 
-            containers = container_obj.search([
+            services = service_obj.search([
                 ('environment_id.prefix', '=',
                  self.computed_restore_to_environment),
-                ('suffix', '=', self.computed_container_restore_to_suffix),
+                ('suffix', '=', self.computed_service_restore_to_suffix),
                 ('server_id.name', '=',
-                 self.computed_container_restore_to_server)
+                 self.computed_service_restore_to_server)
             ])
 
-            if not containers:
-                self.log("Can't find any corresponding container, "
+            if not services:
+                self.log("Can't find any corresponding service, "
                          "creating a new one")
                 servers = server_obj.search([
-                    ('name', '=', self.computed_container_restore_to_server)])
+                    ('name', '=', self.computed_service_restore_to_server)])
                 if not servers:
                     self.raise_error(
                         'Could not find server "%s". Aborting restoration.',
-                        self.computed_container_restore_to_server,
+                        self.computed_service_restore_to_server,
                     )
 
                 ports = []
                 for port, port_vals \
-                        in ast.literal_eval(self.container_ports).iteritems():
+                        in ast.literal_eval(self.service_ports).iteritems():
                     ports.append((0, 0, port_vals))
                 volumes = []
                 for volume, volume_vals in \
-                        ast.literal_eval(self.container_volumes).iteritems():
+                        ast.literal_eval(self.service_volumes).iteritems():
                     volumes.append((0, 0, volume_vals))
                 options = []
                 for option, option_vals in \
-                        ast.literal_eval(self.container_options).iteritems():
+                        ast.literal_eval(self.service_options).iteritems():
                     del option_vals['id']
                     options.append((0, 0, option_vals))
                 links = []
                 for link, link_vals in ast.literal_eval(
-                        self.container_links).iteritems():
+                        self.service_links).iteritems():
                     if not link_vals['name']:
                         link_apps = application_link_obj.search([
                             ('name.code', '=', link_vals['code']),
@@ -581,9 +581,9 @@ class ClouderSave(models.Model):
                             continue
                     del link_vals['code']
                     links.append((0, 0, link_vals))
-                container_vals = {
+                service_vals = {
                     'environment_id': environments[0].id,
-                    'suffix': self.computed_container_restore_to_suffix,
+                    'suffix': self.computed_service_restore_to_suffix,
                     'server_id': servers[0].id,
                     'application_id': apps[0].id,
                     'image_id': imgs[0].id,
@@ -593,39 +593,39 @@ class ClouderSave(models.Model):
                     'option_ids': options,
                     'link_ids': links
                 }
-                container = container_obj.create(container_vals)
+                service = service_obj.create(service_vals)
 
             else:
-                self.log("A corresponding container was found")
-                container = containers[0]
+                self.log("A corresponding service was found")
+                service = services[0]
         else:
-            self.log("A container_id was linked in the save")
-            container = self.container_id
+            self.log("A service_id was linked in the save")
+            service = self.service_id
 
         if not self.base_fullname:
 
-            if container.image_version_id != img_versions[0]:
+            if service.image_version_id != img_versions[0]:
                 # if upgrade:
-                container.image_version_id = img_versions[0]
+                service.image_version_id = img_versions[0]
                 self = self.with_context(forcesave=False)
                 self = self.with_context(nosave=True)
 
             self = self.with_context(
                 save_comment='Before restore ' + self.name)
-            container.save_exec(no_enqueue=True)
+            service.save_exec(no_enqueue=True)
 
-            self.restore_action(container)
+            self.restore_action(service)
 
-            for volume in container.volume_ids:
+            for volume in service.volume_ids:
                 if volume.user:
-                    container.execute(['chown', '-R',
-                                       volume.user + ':' + volume.user,
-                                       volume.name])
+                    service.execute(['chown', '-R',
+                                     volume.user + ':' + volume.user,
+                                     volume.name])
 
-            container.start()
+            service.start()
 
-            container.deploy_links()
-            res = container
+            service.deploy_links()
+            res = service
 
         else:
 
@@ -668,7 +668,7 @@ class ClouderSave(models.Model):
                     base_vals = {
                         'name': self.computed_base_restore_to_name,
                         'environment_id': environments[0].id,
-                        'container_id': container.id,
+                        'service_id': service.id,
                         'application_id': apps[0].id,
                         'domain_id': domains[0].id,
                         'title': self.base_title,
@@ -708,7 +708,7 @@ class ClouderSave(models.Model):
 
             base_obj.deploy_links()
 
-            base.container_id.base_backup_container.execute([
+            base.service_id.base_backup_service.execute([
                 'rm', '-rf', os.path.join(
                     self.BACKUP_BASE_DIR, 'restore-%s' % self.name,
                 )
@@ -717,8 +717,8 @@ class ClouderSave(models.Model):
             )
             res = base
         self.write({'restore_to_environment_id': False,
-                    'container_restore_to_suffix': False,
-                    'container_restore_to_server_id': False,
+                    'service_restore_to_suffix': False,
+                    'service_restore_to_server_id': False,
                     'base_restore_to_name': False,
                     'base_restore_to_domain_id': False})
 
@@ -727,15 +727,15 @@ class ClouderSave(models.Model):
     @api.multi
     def restore_action(self, obj):
         """
-        Execute the command on the backup container et destination container
+        Execute the command on the backup service et destination service
         to get the save and restore it.
 
         :param obj: The object which will be restored.
         """
 
-        container = obj
+        service = obj
         if obj._name == 'clouder.base':
-            container = obj.container_id.base_backup_container
+            service = obj.service_id.base_backup_service
 
         directory = self.get_directory_clouder('restore-%s' % self.name)
 
@@ -747,16 +747,16 @@ class ClouderSave(models.Model):
         )
         backup.send(
             os.path.join(self.home_directory, '.ssh', 'keys',
-                         '%s.pub' % container.server_id.fulldomain),
+                         '%s.pub' % service.server_id.fulldomain),
             os.path.join(self.BACKUP_HOME_DIR, '.ssh', 'keys',
-                         '%s.pub' % container.server_id.fulldomain),
+                         '%s.pub' % service.server_id.fulldomain),
             username='backup',
         )
         backup.send(
             os.path.join(self.home_directory, '.ssh', 'keys',
-                         container.server_id.fulldomain),
+                         service.server_id.fulldomain),
             os.path.join(self.BACKUP_HOME_DIR, '.ssh', 'keys',
-                         container.server_id.fulldomain),
+                         service.server_id.fulldomain),
             username='backup',
         )
         backup.execute([
@@ -801,7 +801,7 @@ class ClouderSave(models.Model):
 
         backup.execute([
             'rsync', "-e 'ssh -o StrictHostKeyChecking=no'", '-ra',
-            directory, '%s:%s' % (container.server_id.fulldomain, directory),
+            directory, '%s:%s' % (service.server_id.fulldomain, directory),
         ],
             username='backup',
         )
@@ -812,51 +812,51 @@ class ClouderSave(models.Model):
         # backup.execute(['rm', '/home/backup/.ssh/keys/*'], username='backup')
 
         if not self.base_fullname:
-            for volume in self.container_volumes_comma.split(','):
-                container.execute([
+            for volume in self.service_volumes_comma.split(','):
+                service.execute([
                     'rm', '-rf', os.path.join(volume, '*'),
                 ],
                     username='root',
                 )
         else:
-            container.execute([
+            service.execute([
                 'rm', '-rf',
                 os.path.join(self.BACKUP_BASE_DIR, 'restore-%s' % self.name),
             ],
                 username='root',
             )
 
-        container.server_id.execute(['ls', directory])
-        container.server_id.execute([
+        service.server_id.execute(['ls', directory])
+        service.server_id.execute([
             'cat', os.path.join(directory, self.BACKUP_DATE_FILE),
         ])
-        container.server_id.execute([
+        service.server_id.execute([
             'rm', '-rf', os.path.join(directory, self.BACKUP_DATE_FILE),
         ])
         if not self.base_fullname:
             for item in \
-                    container.server_id.execute(['ls', directory]).split('\n'):
+                    service.server_id.execute(['ls', directory]).split('\n'):
                 if item:
-                    container.server_id.execute([
+                    service.server_id.execute([
                         'docker', 'cp',
                         os.path.join(directory, item),
-                        '%s:/' % container.name,
+                        '%s:/' % service.name,
                     ])
         else:
-            container.execute(
+            service.execute(
                 ['mkdir', self.BACKUP_BASE_DIR],
                 username='root',
             )
-            container.server_id.execute([
+            service.server_id.execute([
                 'docker', 'cp', directory,
-                '%s:/base-backup' % container.name,
+                '%s:/base-backup' % service.name,
             ])
-            container.execute([
+            service.execute([
                 'chmod', '-R', '777',
                 os.path.join(self.BACKUP_BASE_DIR, 'restore-%s' % self.name),
             ],
                 username='root',
             )
-        container.server_id.execute(
+        service.server_id.execute(
             ['rm', '-rf', os.path.join(directory, '*')],
         )

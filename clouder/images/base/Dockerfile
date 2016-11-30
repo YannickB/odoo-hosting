@@ -14,7 +14,7 @@ RUN apk add --update ssmtp wget curl rsync bash
 #       net-tools \
 #       --no-install-recommends
 #RUN DEBIAN_FRONTEND=noninteractive apt-get install -y vim ssmtp mailutils wget patch rsync ca-certificates
-#/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix container.
+#/usr/bin/mail is used by shinken. I did all I could but I couldn't make it call ssmtp for the relay to postfix service.
 #Be cautious to any application which also use it.
 #RUN rm /usr/bin/mail
 #RUN ln -s /usr/sbin/ssmtp /usr/bin/mail

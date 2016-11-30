@@ -1,13 +1,13 @@
 {% set postdata = data.get('post', {}) %}
 
-container deploy:
+service deploy:
   local.state.apply:
     - tgt: {{ postdata.tgt }}
     - arg:
-      - container_deploy
+      - service_deploy
     - kwarg:
         pillar:
-          container_name: {{ postdata.container_name }}
+          service_name: {{ postdata.service_name }}
           image: {{ postdata.image }}
           secretkey: {{ postdata.secretkey }}
           update_bases: True

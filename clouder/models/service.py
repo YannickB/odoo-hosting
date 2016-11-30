@@ -13,13 +13,13 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderContainer(models.Model):
+class ClouderService(models.Model):
     """
-    Define the container object, which represent the containers managed by
+    Define the service object, which represent the services managed by
     the clouder.
     """
 
-    _name = 'clouder.container'
+    _name = 'clouder.service'
     _inherit = ['clouder.model']
     _sql_constraints = [
         ('name_uniq', 'unique(server_id,environment_id,suffix)',
@@ -41,33 +41,33 @@ class ClouderContainer(models.Model):
     date_next_save = fields.Datetime('Next save planned')
     save_comment = fields.Text('Save Comment')
     autosave = fields.Boolean('Save?')
-    port_ids = fields.One2many('clouder.container.port',
-                               'container_id', 'Ports')
-    volume_ids = fields.One2many('clouder.container.volume',
-                                 'container_id', 'Volumes')
-    option_ids = fields.One2many('clouder.container.option',
-                                 'container_id', 'Options')
-    link_ids = fields.One2many('clouder.container.link',
-                               'container_id', 'Links')
+    port_ids = fields.One2many('clouder.service.port',
+                               'service_id', 'Ports')
+    volume_ids = fields.One2many('clouder.service.volume',
+                                 'service_id', 'Volumes')
+    option_ids = fields.One2many('clouder.service.option',
+                                 'service_id', 'Options')
+    link_ids = fields.One2many('clouder.service.link',
+                               'service_id', 'Links')
     base_ids = fields.One2many('clouder.base',
-                               'container_id', 'Bases')
+                               'service_id', 'Bases')
     metadata_ids = fields.One2many(
-        'clouder.container.metadata', 'container_id', 'Metadata')
-    parent_id = fields.Many2one('clouder.container.child', 'Parent')
-    child_ids = fields.One2many('clouder.container.child',
-                                'container_id', 'Childs')
-    from_id = fields.Many2one('clouder.container', 'From')
+        'clouder.service.metadata', 'service_id', 'Metadata')
+    parent_id = fields.Many2one('clouder.service.child', 'Parent')
+    child_ids = fields.One2many('clouder.service.child',
+                                'service_id', 'Childs')
+    from_id = fields.Many2one('clouder.service', 'From')
     subservice_name = fields.Char('Subservice Name')
     ports_string = fields.Text('Ports', compute='_compute_ports')
     reset_base_ids = fields.Many2many(
-        'clouder.base', 'clouder_container_reset_base_rel',
-        'container_id', 'base_id', 'Bases to duplicate')
+        'clouder.base', 'clouder_service_reset_base_rel',
+        'service_id', 'base_id', 'Bases to duplicate')
     backup_ids = fields.Many2many(
-        'clouder.container', 'clouder_container_backup_rel',
-        'container_id', 'backup_id', 'Backup containers')
+        'clouder.service', 'clouder_service_backup_rel',
+        'service_id', 'backup_id', 'Backup services')
     volumes_from_ids = fields.Many2many(
-        'clouder.container', 'clouder_container_volumes_from_rel',
-        'container_id', 'from_id', 'Volumes from')
+        'clouder.service', 'clouder_service_volumes_from_rel',
+        'service_id', 'from_id', 'Volumes from')
     public = fields.Boolean('Public?')
     scale = fields.Integer('Scale', default=1)
     dummy = fields.Boolean('Dummy?')
@@ -76,7 +76,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def _compute_ports(self):
         """
-        Display the ports on the container lists.
+        Display the ports on the service lists.
         """
         for rec in self:
             rec.ports_string = ''
@@ -91,7 +91,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def _compute_name(self):
         """
-        Return the name of the container
+        Return the name of the service
         """
         for rec in self:
             rec.name = '%s-%s' % (rec.environment_id.prefix, rec.suffix)
@@ -99,7 +99,7 @@ class ClouderContainer(models.Model):
     @property
     def fullname(self):
         """
-        Property returning the full name of the container.
+        Property returning the full name of the service.
         """
         return '%s_%s' % (self.name, self.server_id.fulldomain)
 
@@ -116,7 +116,7 @@ class ClouderContainer(models.Model):
     def root_password(self):
         """
         Property returning the root password of the application
-        hosted in this container.
+        hosted in this service.
         """
         root_password = ''
         for option in self.option_ids:
@@ -127,7 +127,7 @@ class ClouderContainer(models.Model):
     @property
     def database(self):
         """
-        Property returning the database container connected to the service.
+        Property returning the database service connected to the service.
         """
         database = False
         for link in self.link_ids:
@@ -167,7 +167,7 @@ class ClouderContainer(models.Model):
     @property
     def pod(self):
         """
-        For swarm, replace container name in system command by
+        For swarm, replace service name in system command by
         command which return the first pod of the service.
         :return:
         """
@@ -185,7 +185,7 @@ class ClouderContainer(models.Model):
         """
         fullname = self.fullname
         if self.parent_id and not self.child_ids:
-            fullname = self.parent_id.container_id.fullname
+            fullname = self.parent_id.service_id.fullname
         db_user = fullname.replace('-', '_').replace('.', '_')
         return db_user
 
@@ -193,7 +193,7 @@ class ClouderContainer(models.Model):
     def db_password(self):
         """
         Property returning the db password of the application
-        hosted in this container.
+        hosted in this service.
         """
         db_password = ''
         for key, option in self.options.iteritems():
@@ -202,13 +202,13 @@ class ClouderContainer(models.Model):
         return db_password
 
     @property
-    def base_backup_container(self):
+    def base_backup_service(self):
         return self
 
     @property
     def ports(self):
         """
-        Property returning the ports linked to this container, in a dict.
+        Property returning the ports linked to this service, in a dict.
         """
         ports = {}
         for child in self.child_ids:
@@ -224,11 +224,11 @@ class ClouderContainer(models.Model):
     def options(self):
         """
         Property returning a dictionary containing the value of all options
-        for this container, even is they are not defined here.
+        for this service, even is they are not defined here.
         """
         options = {}
         for option in self.application_id.type_id.option_ids:
-            if option.type == 'container':
+            if option.type == 'service':
                 options[option.name] = {
                     'id': option.id, 'name': option.id,
                     'value': option.default}
@@ -246,7 +246,7 @@ class ClouderContainer(models.Model):
     def links(self):
         """
         Property returning a dictionary containing the value of all links
-        for this container.
+        for this service.
         """
         links = {}
         for link in self.link_ids:
@@ -270,10 +270,10 @@ class ClouderContainer(models.Model):
         """
         links = {}
         if self.parent_id:
-            for code, link in self.parent_id.container_id.links.iteritems():
+            for code, link in self.parent_id.service_id.links.iteritems():
                 if link.target:
                     links[code] = link.target
-            for code, child in self.parent_id.container_id.childs.iteritems():
+            for code, child in self.parent_id.service_id.childs.iteritems():
                 links[code] = child
 
         for code, link in self.links.iteritems():
@@ -287,7 +287,7 @@ class ClouderContainer(models.Model):
     @api.constrains('environment_id')
     def _check_environment(self):
         """
-        Check that the environment linked to the container have a prefix.
+        Check that the environment linked to the service have a prefix.
         """
         if not self.environment_id.prefix:
             self.raise_error(
@@ -298,7 +298,7 @@ class ClouderContainer(models.Model):
     @api.constrains('suffix')
     def _check_suffix(self):
         """
-        Check that the container name does not contain any forbidden
+        Check that the service name does not contain any forbidden
         characters.
         """
         if not re.match(r"^[\w\d-]*$", self.suffix):
@@ -315,7 +315,7 @@ class ClouderContainer(models.Model):
         if not self.backup_ids and \
                 not self.application_id.check_tags(['no-backup']):
             self.raise_error(
-                "You need to create at least one backup container.",
+                "You need to create at least one backup service.",
             )
 
     @api.multi
@@ -323,13 +323,13 @@ class ClouderContainer(models.Model):
     def _check_config(self):
         """
         Check that a the image of the image version is the same than the image
-        of the container.
+        of the service.
         """
         if self.image_version_id \
                 and self.image_id.id != self.image_version_id.image_id.id:
             self.raise_error(
                 "The image of image version must be "
-                "the same than the image of container.",
+                "the same than the image of service.",
             )
 
     # @api.one
@@ -358,7 +358,7 @@ class ClouderContainer(models.Model):
                 else:
                     self.raise_error(
                         "You need to create a server before "
-                        "creating a container.",
+                        "creating a service.",
                     )
 
             options = []
@@ -389,7 +389,7 @@ class ClouderContainer(models.Model):
                     if option['name'] and option['name'].id in option_sources:
                         option['source'] = option_sources[option['name'].id]
 
-                        if option['source'].type == 'container' \
+                        if option['source'].type == 'service' \
                                 and option['source'].auto:
                             flag = True
                             for tag in option['source'].tag_ids:
@@ -410,7 +410,7 @@ class ClouderContainer(models.Model):
 
             # Adding remaining options from sources
             for def_opt_key in sources_to_add:
-                if option_sources[def_opt_key].type == 'container' \
+                if option_sources[def_opt_key].type == 'service' \
                         and option_sources[def_opt_key].auto:
                     flag = True
                     for tag in option_sources[def_opt_key].tag_ids:
@@ -481,23 +481,23 @@ class ClouderContainer(models.Model):
             # Running algorithm to determine new links
             links = []
             for link in links_to_process:
-                if link['source'].container and \
+                if link['source'].service and \
                         link['source'].auto or link['source'].make_link:
                     next_id = link['next']
                     if 'parent_id' in vals and vals['parent_id']:
-                        parent = self.env['clouder.container.child'].browse(
+                        parent = self.env['clouder.service.child'].browse(
                             vals['parent_id'])
                         for parent_code, parent_link \
-                                in parent.container_id.\
+                                in parent.service_id.\
                                 available_links.iteritems():
                             if link['source'].name.id == \
                                     parent_link.application_id.id:
                                 next_id = parent_link.id
                     context = self.env.context
-                    if not next_id and 'container_links' in context:
+                    if not next_id and 'service_links' in context:
                         fullcode = link['source'].name.fullcode
-                        if fullcode in context['container_links']:
-                            next_id = context['container_links'][fullcode]
+                        if fullcode in context['service_links']:
+                            next_id = context['service_links'][fullcode]
                     if not next_id:
                         next_id = link['source'].next.id
                     if not next_id:
@@ -579,7 +579,7 @@ class ClouderContainer(models.Model):
             metadata_vals = []
             metadata_sources = {
                 x.id: x for x in application.metadata_ids
-                if x.clouder_type == 'container'}
+                if x.clouder_type == 'service'}
             sources_to_add = metadata_sources.keys()
             metadata_to_process = []
             if 'metadata_ids' in vals:
@@ -627,7 +627,7 @@ class ClouderContainer(models.Model):
 
             # Processing new metadata
             for metadata in metadata_to_process:
-                if metadata['source'].clouder_type == 'container':
+                if metadata['source'].clouder_type == 'service':
                     metadata_vals.append((0, 0, {
                         'name': metadata['source'].id,
                         'value_data':  metadata['value_data']}))
@@ -639,11 +639,11 @@ class ClouderContainer(models.Model):
                 vals['image_id'] = application.default_image_id.id
 
             if 'backup_ids' not in vals or not vals['backup_ids']:
-                if application.container_backup_ids:
+                if application.service_backup_ids:
                     vals['backup_ids'] = [(6, 0, [
-                        b.id for b in application.container_backup_ids])]
+                        b.id for b in application.service_backup_ids])]
                 else:
-                    backups = self.env['clouder.container'].search([
+                    backups = self.env['clouder.service'].search([
                         ('application_id.type_id.name', '=', 'backup')])
                     if backups:
                         vals['backup_ids'] = [(6, 0, [backups[0].id])]
@@ -652,9 +652,9 @@ class ClouderContainer(models.Model):
             vals['dummy'] = application.dummy
 
             vals['time_between_save'] = \
-                application.container_time_between_save
+                application.service_time_between_save
             vals['save_expiration'] = \
-                application.container_save_expiration
+                application.service_save_expiration
         return vals
 
     @api.multi
@@ -670,12 +670,12 @@ class ClouderContainer(models.Model):
             'parent_id': self.parent_id and self.parent_id.id or False
             }
         vals = self.onchange_application_id_vals(vals)
-        self.env['clouder.container.option'].search(
-            [('container_id', '=', self.id)]).unlink()
-        self.env['clouder.container.link'].search(
-            [('container_id', '=', self.id)]).unlink()
-        self.env['clouder.container.child'].search(
-            [('container_id', '=', self.id)]).unlink()
+        self.env['clouder.service.option'].search(
+            [('service_id', '=', self.id)]).unlink()
+        self.env['clouder.service.link'].search(
+            [('service_id', '=', self.id)]).unlink()
+        self.env['clouder.service.child'].search(
+            [('service_id', '=', self.id)]).unlink()
         for key, value in vals.iteritems():
             setattr(self, key, value)
 
@@ -761,15 +761,15 @@ class ClouderContainer(models.Model):
                 if not getattr(port, 'hostport', False):
                     port['hostport'] = False
                 context = self.env.context
-                if 'container_ports' in context:
+                if 'service_ports' in context:
                     name = port['name']
                     if not port['hostport'] \
-                            and name in context['container_ports']:
-                        port['hostport'] = context['container_ports'][name]
+                            and name in context['service_ports']:
+                        port['hostport'] = context['service_ports'][name]
                 if not port['hostport']:
                     while not port['hostport'] \
                             and nextport != server.end_port:
-                        port_ids = self.env['clouder.container.port'].search(
+                        port_ids = self.env['clouder.service.port'].search(
                             [('hostport', '=', nextport)])
                         if not port_ids and not server.execute([
                                 'netstat', '-an', '|', 'grep',
@@ -875,17 +875,17 @@ class ClouderContainer(models.Model):
             'parent_id': self.parent_id.id
             }
         vals = self.onchange_image_id_vals(vals)
-        self.env['clouder.container.port'].search(
-            [('container_id', '=', self.id)]).unlink()
-        self.env['clouder.container.volume'].search(
-            [('container_id', '=', self.id)]).unlink()
+        self.env['clouder.service.port'].search(
+            [('service_id', '=', self.id)]).unlink()
+        self.env['clouder.service.volume'].search(
+            [('service_id', '=', self.id)]).unlink()
 
         image = self.env['clouder.image'].browse(vals['image_id'])
         if vals['parent_id'] and image.volumes_from:
             volumes_from = image.volumes_from.split(',')
             targets = []
-            for child in self.env['clouder.container.child'].\
-                    browse(vals['parent_id']).container_id.child_ids:
+            for child in self.env['clouder.service.child'].\
+                    browse(vals['parent_id']).service_id.child_ids:
                 for code in volumes_from:
                     if child.name.check_tags([code]):
                         targets.append(child.child_id)
@@ -895,17 +895,17 @@ class ClouderContainer(models.Model):
             setattr(self, key, value)
 
     @api.multi
-    def check_priority_childs(self, container):
+    def check_priority_childs(self, service):
         priority = False
         for child in self.child_ids:
-            if child.child_id == container:
+            if child.child_id == service:
                 return False
             if child.child_id:
                 child_priority = child.child_id.check_priority()
                 if not priority or priority < child_priority:
                     priority = child_priority
                 childs_priority = child.child_id.check_priority_childs(
-                    container)
+                    service)
                 if not priority or priority < childs_priority:
                     priority = childs_priority
         return priority
@@ -915,7 +915,7 @@ class ClouderContainer(models.Model):
         priority = self.image_version_id.check_priority()
         if self.parent_id:
             parent_priority = \
-                self.parent_id.container_id.check_priority_childs(self)
+                self.parent_id.service_id.check_priority_childs(self)
             if not priority or priority < parent_priority:
                 priority = parent_priority
         return priority
@@ -925,21 +925,21 @@ class ClouderContainer(models.Model):
 
         # Make sure one2one relation with
         # parent link is immediately established
-        if self._name == 'clouder.container' and 'parent_id' in vals:
-            self.env['clouder.container.child'].browse(
+        if self._name == 'clouder.service' and 'parent_id' in vals:
+            self.env['clouder.service.child'].browse(
                 vals['parent_id']).write({'child_id': self.id})
 
         # Deploy links and childs stored in context
-        for child in self.env.context.get('container_childs', []):
+        for child in self.env.context.get('service_childs', []):
             child_vals = child[2]
-            child_vals.update({'container_id': self.id})
-            self.env['clouder.container.child'].create(child_vals)
-        for link in self.env.context.get('container_links', []):
+            child_vals.update({'service_id': self.id})
+            self.env['clouder.service.child'].create(child_vals)
+        for link in self.env.context.get('service_links', []):
             link_vals = link[2]
-            link_vals.update({'container_id': self.id})
-            self.env['clouder.container.link'].create(link_vals)
+            link_vals.update({'service_id': self.id})
+            self.env['clouder.service.link'].create(link_vals)
 
-        self = self.with_context(container_childs=[], container_links=[])
+        self = self.with_context(service_childs=[], service_links=[])
 
         # Refresh self with added one2many
         self = self.browse(self.id)
@@ -949,7 +949,7 @@ class ClouderContainer(models.Model):
             self.onchange_application_id()
             self.onchange_image_id()
 
-        return super(ClouderContainer, self).hook_create(vals)
+        return super(ClouderService, self).hook_create(vals)
 
     @api.multi
     def create(self, vals):
@@ -960,16 +960,16 @@ class ClouderContainer(models.Model):
         # create and deploy.
         # We have to do this because they are newid otherwise.
         if vals['child_ids']:
-            self = self.with_context(container_childs=vals['child_ids'])
+            self = self.with_context(service_childs=vals['child_ids'])
             vals['child_ids'] = []
         if vals['link_ids']:
-            self = self.with_context(container_links=vals['link_ids'])
+            self = self.with_context(service_links=vals['link_ids'])
             vals['link_ids'] = []
 
-        res = super(ClouderContainer, self).create(vals)
+        res = super(ClouderService, self).create(vals)
 
-        # Deploy all links waiting for this type of container
-        links = self.env['clouder.container.link'].search([
+        # Deploy all links waiting for this type of service
+        links = self.env['clouder.service.link'].search([
             ('name', '=', res.application_id.id), ('auto', '=', True),
             ('target', '=', False)])
         links.write({'target': res.id})
@@ -1009,13 +1009,13 @@ class ClouderContainer(models.Model):
         #         else:
         #             self = self.with_context(
         #                 save_comment='Change on port or volumes')
-        res = super(ClouderContainer, self).write(vals)
+        res = super(ClouderService, self).write(vals)
         # if flag:
         #     self.reinstall()
         if 'suffix' in vals:
             self.raise_error(
                 "You cannot modify the suffix "
-                "after the container was created."
+                "after the service was created."
             )
 
         if 'autosave' in vals and self.autosave != vals['autosave']:
@@ -1026,19 +1026,19 @@ class ClouderContainer(models.Model):
     def unlink(self):
         """
         Override unlink method to remove all services
-        and make a save before deleting a container.
+        and make a save before deleting a service.
         """
-        for container in self:
-            container.base_ids and container.base_ids.unlink()
+        for service in self:
+            service.base_ids and service.base_ids.unlink()
             self.env['clouder.save'].search(
-                [('backup_id', '=', container.id)]).unlink()
+                [('backup_id', '=', service.id)]).unlink()
             self.env['clouder.image.version'].search(
-                [('registry_id', '=', container.id)]).unlink()
+                [('registry_id', '=', service.id)]).unlink()
             self = self.with_context(save_comment='Before unlink')
-            save = container.save_exec(no_enqueue=True)
-            if container.parent_id:
-                container.parent_id.save_id = save
-        return super(ClouderContainer, self).unlink()
+            save = service.save_exec(no_enqueue=True)
+            if service.parent_id:
+                service.parent_id.save_id = save
+        return super(ClouderService, self).unlink()
 
     @api.multi
     def reinstall(self):
@@ -1049,10 +1049,10 @@ class ClouderContainer(models.Model):
             self = self.with_context(save_comment='Before reinstall')
         self.save_exec(no_enqueue=True)
         self = self.with_context(nosave=True)
-        super(ClouderContainer, self).reinstall()
+        super(ClouderService, self).reinstall()
         if self.parent_id:
-            childs = self.env['clouder.container.child'].search([
-                ('container_id', '=', self.parent_id.container_id.id),
+            childs = self.env['clouder.service.child'].search([
+                ('service_id', '=', self.parent_id.service_id.id),
                 ('sequence', '>', self.parent_id.sequence)])
             for child in childs:
                 if child.child_id:
@@ -1064,20 +1064,20 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def update_exec(self):
-        containers = [self]
+        services = [self]
         for child in self.child_ids:
             if child.child_id:
-                containers.append(child.child_id)
+                services.append(child.child_id)
 
         bases = {}
-        for container in containers:
-            if container.application_id.update_strategy != 'never':
-                container.reinstall()
-                if container.application_id.update_bases:
+        for service in services:
+            if service.application_id.update_strategy != 'never':
+                service.reinstall()
+                if service.application_id.update_bases:
                     for base in self.base_ids:
                         bases[base.id] = base
                     if self.parent_id:
-                        for base in self.parent_id.container_id.base_ids:
+                        for base in self.parent_id.service_id.base_ids:
                             bases[base.id] = base
         for base_id, base in bases.iteritems():
             base.update_exec()
@@ -1089,7 +1089,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def save_exec(self, no_enqueue=False, forcesave=False):
         """
-        Create a new container save.
+        Create a new service save.
         """
 
         save = False
@@ -1103,9 +1103,9 @@ class ClouderContainer(models.Model):
 
         if 'nosave' in self.env.context \
                 or (not self.autosave and 'forcesave' not in self.env.context):
-            self.log('This container shall not be saved '
+            self.log('This service shall not be saved '
                      'or the backup isnt configured in conf, '
-                     'skipping save container')
+                     'skipping save service')
             return
 
         for backup_server in self.backup_ids:
@@ -1115,7 +1115,7 @@ class ClouderContainer(models.Model):
                 # 'repo_id': self.save_repository_id.id,
                 'date_expiration': (now + timedelta(
                     days=self.save_expiration or
-                    self.application_id.container_save_expiration
+                    self.application_id.service_save_expiration
                 )).strftime("%Y-%m-%d"),
                 'comment': 'save_comment' in self.env.context and
                            self.env.context['save_comment'] or
@@ -1124,12 +1124,12 @@ class ClouderContainer(models.Model):
                 # and self.env.context['save_comment']
                 # or self.save_comment or 'Manual',
                 'now_bup': self.now_bup,
-                'container_id': self.id,
+                'service_id': self.id,
             }
             save = self.env['clouder.save'].create(save_vals)
         date_next_save = (datetime.now() + timedelta(
             minutes=self.time_between_save or
-            self.application_id.container_time_between_save
+            self.application_id.service_time_between_save
         )).strftime("%Y-%m-%d %H:%M:%S")
         self.write({'save_comment': False, 'date_next_save': date_next_save})
         return save
@@ -1146,7 +1146,7 @@ class ClouderContainer(models.Model):
     def hook_deploy_compose(self):
         """
         Hook which can be called by submodules to execute commands to
-        deploy a set of containers.
+        deploy a set of services.
         """
         return
 
@@ -1154,12 +1154,12 @@ class ClouderContainer(models.Model):
     def hook_deploy_one(self):
         """
         Hook which can be called by submodules to execute commands to
-        deploy a container.
+        deploy a service.
         """
         return
 
     @api.multi
-    def get_container_res(self):
+    def get_service_res(self):
         ports = []
         expose_ports = []
         for port in self.port_ids:
@@ -1194,10 +1194,10 @@ class ClouderContainer(models.Model):
         volumes_from = []
         for volume_from in self.volumes_from_ids:
             if self.runner != 'swarm':
-                # If not swarm, only return the name of the container
+                # If not swarm, only return the name of the service
                 volumes_from.append(volume_from.name)
             else:
-                # If swarm, return all volumes of container
+                # If swarm, return all volumes of service
                 for volume in volume_from.volume_ids:
                     volumes_from.append(
                         'type=volume,source=%s-%s,destination=%s'
@@ -1211,7 +1211,7 @@ class ClouderContainer(models.Model):
                 if self.runner != 'swarm':
                     links.append({'name': target.name, 'code': link.name.code})
                 else:
-                    # If swarm, return network of linked container
+                    # If swarm, return network of linked service
                     if target.environment_id != self.environment_id:
                         network = self.environment_id.prefix + '-network'
                         if network not in links:
@@ -1229,24 +1229,24 @@ class ClouderContainer(models.Model):
             'links': links, 'environment': {}}
 
     @api.multi
-    def get_container_compose_res(self):
+    def get_service_compose_res(self):
         """
         Recursively build data needed for compose file
         """
         res = []
 
-        # If root, the project name is container name
+        # If root, the project name is service name
         if 'prefix' not in self.env.context:
             self = self.with_context(prefix=self.name + '-')
 
         # Only add service if service without children
         if not self.child_ids:
-            res.append(self.get_container_res())
+            res.append(self.get_service_res())
 
         # Recursively add services from children
         for child in self.child_ids:
             if child.child_id:
-                res.extend(child.child_id.get_container_compose_res())
+                res.extend(child.child_id.get_service_compose_res())
 
         services = {}
         for service in res:
@@ -1277,14 +1277,14 @@ class ClouderContainer(models.Model):
     def deploy_post(self):
         """
         Hook which can be called by submodules to execute commands after we
-        deployed a container.
+        deployed a service.
         """
         return
 
     @api.multi
     def recursive_deploy_one(self):
         """
-        Recursively deploy containers one by one
+        Recursively deploy services one by one
         """
 
         if self.child_ids:
@@ -1325,11 +1325,11 @@ class ClouderContainer(models.Model):
     @api.multi
     def deploy(self):
         """
-        Deploy the container in the server.
+        Deploy the service in the server.
         """
 
         self = self.with_context(no_enqueue=True)
-        super(ClouderContainer, self).deploy()
+        super(ClouderService, self).deploy()
 
         # Create childs
         if self.child_ids:
@@ -1374,7 +1374,7 @@ class ClouderContainer(models.Model):
     def hook_purge_compose(self):
         """
         Hook which can be called by submodules to execute commands to
-        purge a container compose.
+        purge a service compose.
         """
         return
 
@@ -1382,18 +1382,18 @@ class ClouderContainer(models.Model):
     def hook_purge_one(self):
         """
         Hook which can be called by submodules to execute commands to
-        purge a container.
+        purge a service.
         """
         return
 
     @api.multi
     def purge(self):
         """
-        Remove the container.
+        Remove the service.
         """
 
-        childs = self.env['clouder.container.child'].search(
-            [('container_id', '=', self.id)], order='sequence DESC')
+        childs = self.env['clouder.service.child'].search(
+            [('service_id', '=', self.id)], order='sequence DESC')
 
         if childs:
             # If compose mode, purge if root
@@ -1403,12 +1403,12 @@ class ClouderContainer(models.Model):
             for child in childs:
                 child.delete_child_exec()
         else:
-            # If not compose, purge current container
+            # If not compose, purge current service
             if not self.compose:
                 self.stop()
                 # self.purge_salt()
                 self.hook_purge_one()
-        super(ClouderContainer, self).purge()
+        super(ClouderService, self).purge()
 
         return
 
@@ -1420,7 +1420,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def stop_exec(self):
         """
-        Stop the container.
+        Stop the service.
         """
         return
 
@@ -1432,7 +1432,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def start_exec(self):
         """
-        Restart the container.
+        Restart the service.
         """
         self.stop_exec()
         return
@@ -1456,19 +1456,19 @@ class ClouderContainer(models.Model):
         self = self.with_context(no_enqueue=True)
 
         subservice_name = self.suffix + '-' + self.subservice_name
-        containers = self.search([
+        services = self.search([
             ('suffix', '=', subservice_name),
             ('environment_id', '=', self.environment_id.id),
             ('server_id', '=', self.server_id.id)])
-        for container in containers:
-            if container.parent_id:
-                container.parent_id.unlink()
-        containers.unlink()
+        for service in services:
+            if service.parent_id:
+                service.parent_id.unlink()
+        services.unlink()
 
         parent = False
         if self.parent_id:
-            parent = self.env['clouder.container.child'].create({
-                'container_id': self.parent_id.container_id.id,
+            parent = self.env['clouder.service.child'].create({
+                'service_id': self.parent_id.service_id.id,
                 'name': self.parent_id.name.id,
                 'sequence': self.parent_id.sequence + 1
             })
@@ -1476,8 +1476,8 @@ class ClouderContainer(models.Model):
         links = {}
         for link in self.link_ids:
             links[link.name.fullcode] = link.target.id
-        self = self.with_context(container_links=links)
-        container_vals = {
+        self = self.with_context(service_links=links)
+        service_vals = {
             'environment_id': self.environment_id.id,
             'suffix': subservice_name,
             'server_id': self.server_id.id,
@@ -1486,7 +1486,7 @@ class ClouderContainer(models.Model):
             'from_id': self.id,
             'image_version_id': self.image_version_id.id
         }
-        subservice = self.create(container_vals)
+        subservice = self.create(service_vals)
 
         if parent:
             parent.target = subservice
@@ -1495,6 +1495,6 @@ class ClouderContainer(models.Model):
             subbase_name = self.subservice_name + '-' + base.name
             base = base.with_context(
                 save_comment='Duplicate base into ' + subbase_name,
-                reset_base_name=subbase_name, reset_container=subservice)
+                reset_base_name=subbase_name, reset_service=subservice)
             base.reset_base_exec()
         self.subservice_name = False

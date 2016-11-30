@@ -26,7 +26,7 @@
         <record id="image_kubernetes" model="clouder.image">
             <field name="name">image_kubernetes</field>
             <field name="template_ids" eval="[(4, [ref('image_template_kubernetes')])]"/>
-            <field name="parent_from">gcr.io/google_containers/hyperkube:v1.4.5</field>
+            <field name="parent_from">gcr.io/google_services/hyperkube:v1.4.5</field>
             <field name="dockerfile"><![CDATA[
 
 ]]></field>

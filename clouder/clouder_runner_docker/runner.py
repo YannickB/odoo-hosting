@@ -34,14 +34,14 @@ class ClouderImage(models.Model):
             path = '%s-%s' % (
                 model.name, datetime.now().strftime('%Y%m%d.%H%M%S'),
             )
-            if model._name == 'clouder.container':
+            if model._name == 'clouder.service':
                 name = path
             else:
                 name = model.fullpath
 
             if salt:
                 build_dir = os.path.join(
-                    '/srv', 'salt', 'containers', 'build_%s' % model.name,
+                    '/srv', 'salt', 'services', 'build_%s' % model.name,
                 )
                 server = model.salt_master
             else:
@@ -164,17 +164,17 @@ class ClouderServer(models.Model):
                     '--token', token, self.master_id.private_ip + ':2377'])
 
 
-class ClouderContainer(models.Model):
+class ClouderService(models.Model):
     """
-    Add methods to manage the docker container specificities.
+    Add methods to manage the docker service specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def hook_deploy_source(self):
 
-        res = super(ClouderContainer, self).hook_deploy_source()
+        res = super(ClouderService, self).hook_deploy_source()
         if res:
             return res
         else:
@@ -206,7 +206,7 @@ class ClouderContainer(models.Model):
         """
         Refresh compose directory
         """
-        res = self.get_container_compose_res()
+        res = self.get_service_compose_res()
 
         # Build compose dictionary
         compose = {'version': '2', 'services': {}}
@@ -237,10 +237,10 @@ class ClouderContainer(models.Model):
     @api.multi
     def hook_deploy_compose(self):
         """
-        Deploy the container in the server.
+        Deploy the service in the server.
         """
 
-        super(ClouderContainer, self).hook_deploy_compose()
+        super(ClouderService, self).hook_deploy_compose()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name \
@@ -259,16 +259,16 @@ class ClouderContainer(models.Model):
     @api.multi
     def hook_deploy_one(self):
         """
-        Deploy the container in the server.
+        Deploy the service in the server.
         """
 
-        super(ClouderContainer, self).hook_deploy_one()
+        super(ClouderService, self).hook_deploy_one()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name \
                 == 'docker':
 
-            res = self.get_container_res()
+            res = self.get_service_res()
 
             if self.executor == 'salt' and \
                     self.application_id.check_tags(['no-salt']):
@@ -278,14 +278,14 @@ class ClouderContainer(models.Model):
                     'rm', '-rf', '/var/cache/salt/master/file_lists/roots/'])
                 self.salt_master.execute([
                     'salt', self.server_id.fulldomain, 'state.apply',
-                    'container_deploy',
-                    "pillar=\"{'container_name': '" + self.name +
+                    'service_deploy',
+                    "pillar=\"{'service_name': '" + self.name +
                     "', 'image': '" + self.name + '-' +
                     datetime.now().strftime('%Y%m%d.%H%M%S') +
                     "', 'build': True}\""])
 
             elif self.server_id.provider_id and \
-                    self.server_id.provider_id.type == 'container':
+                    self.server_id.provider_id.type == 'service':
                 self.log('TODO')
 
             else:
@@ -320,7 +320,7 @@ class ClouderContainer(models.Model):
                     # Get special command depending of the application
                     cmd.append(self.hook_deploy_special_cmd())
 
-                    # Run container
+                    # Run service
                     self.server_id.execute(cmd)
 
                 elif self.runner == 'swarm':
@@ -340,14 +340,15 @@ class ClouderContainer(models.Model):
 
                     cmd += ('-p %s' % port for port in res['ports'])
                     cmd += ('--mount %s' % volume for volume in res['volumes'])
-                    # Get volumes from data container
+
+                    # Get volumes from data service
                     cmd += ('--mount %s' % volume
                             for volume in res['volumes_from'])
                     cmd += ('-e "%s=%s"' % (key, environment)
                             for key, environment
                             in res['environment'].iteritems())
                     cmd += ['--network', network]
-                    # Get network from application link to this container
+                    # Get network from application link to this service
                     cmd += (['--network', link] for link in res['links'])
                     # Get special arguments depending of the application
                     cmd = self.hook_deploy_special_args(cmd)
@@ -375,9 +376,9 @@ class ClouderContainer(models.Model):
     @api.multi
     def hook_purge_compose(self):
         """
-        Remove container compose.
+        Remove service compose.
         """
-        res = super(ClouderContainer, self).hook_purge_one()
+        res = super(ClouderService, self).hook_purge_one()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\
@@ -397,9 +398,9 @@ class ClouderContainer(models.Model):
     @api.multi
     def hook_purge_one(self):
         """
-        Remove the container.
+        Remove the service.
         """
-        res = super(ClouderContainer, self).hook_purge_one()
+        res = super(ClouderService, self).hook_purge_one()
 
         if not self.server_id.runner_id or \
                 self.server_id.runner_id.application_id.type_id.name\
@@ -409,11 +410,11 @@ class ClouderContainer(models.Model):
                     self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
                     'salt', self.server_id.fulldomain,
-                    'state.apply', 'container_purge',
-                    "pillar=\"{'container_name': '" + self.name + "'}\""])
+                    'state.apply', 'service_purge',
+                    "pillar=\"{'service_name': '" + self.name + "'}\""])
 
             elif self.server_id.provider_id and \
-                    self.server_id.provider_id.type == 'container':
+                    self.server_id.provider_id.type == 'service':
                 self.log('TODO')
 
             else:
@@ -430,7 +431,7 @@ class ClouderContainer(models.Model):
                         self.master_id.execute(
                             ['docker', 'volume', 'rm',
                              self.name + '-' + volume.name])
-                    # If last container using this network, delete it
+                    # If last service using this network, delete it
                     if not self.search([
                             ('environment_id', '=', self.environment_id.id),
                             ('id', '!=', self.id)]):
@@ -443,10 +444,10 @@ class ClouderContainer(models.Model):
     @api.multi
     def stop_exec(self):
         """
-        Stop the container.
+        Stop the service.
         """
 
-        res = super(ClouderContainer, self).stop_exec()
+        res = super(ClouderService, self).stop_exec()
 
         if self.childs and 'exec' in self.childs:
             self.childs['exec'].stop_exec()
@@ -459,11 +460,11 @@ class ClouderContainer(models.Model):
                     self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
                     'salt', self.server_id.fulldomain, 'state.apply',
-                    'container_stop',
-                    "pillar=\"{'container_name': '" + self.name + "'}\""])
+                    'service_stop',
+                    "pillar=\"{'service_name': '" + self.name + "'}\""])
 
             elif self.server_id.provider_id and \
-                    self.server_id.provider_id.type == 'container':
+                    self.server_id.provider_id.type == 'service':
                 self.log('TODO')
 
             else:
@@ -479,10 +480,10 @@ class ClouderContainer(models.Model):
     @api.multi
     def start_exec(self):
         """
-        Restart the container.
+        Restart the service.
         """
 
-        res = super(ClouderContainer, self).start_exec()
+        res = super(ClouderService, self).start_exec()
 
         if self.childs and 'exec' in self.childs:
             self.childs['exec'].start_exec()
@@ -496,11 +497,11 @@ class ClouderContainer(models.Model):
                     self.application_id.check_tags(['no-salt']):
                 self.salt_master.execute([
                     'salt', self.server_id.fulldomain,
-                    'state.apply', 'container_start',
-                    "pillar=\"{'container_name': '" + self.name + "'}\""])
+                    'state.apply', 'service_start',
+                    "pillar=\"{'service_name': '" + self.name + "'}\""])
 
             elif self.server_id.provider_id and \
-                    self.server_id.provider_id.type == 'container':
+                    self.server_id.provider_id.type == 'service':
                 self.log('TODO')
 
             else:

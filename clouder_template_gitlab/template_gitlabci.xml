@@ -9,7 +9,7 @@
         <record id="application_type_gitlab_option_concurrent" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_gitlabci"/>
             <field name="name">concurrent</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
             <field name="default">2</field>
@@ -45,7 +45,7 @@
             <field name="name" ref="application_gitlab"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
         </record>
         <record id="application_gitlabci" model="clouder.application">
             <field name="name">Gitlab CI</field>

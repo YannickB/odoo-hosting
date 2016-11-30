@@ -9,27 +9,27 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderContainerOption(models.Model):
+class ClouderServiceOption(models.Model):
     """
-    Define the container.option object, used to define custom values
-    specific to a container.
+    Define the service.option object, used to define custom values
+    specific to a service.
     """
 
-    _name = 'clouder.container.option'
+    _name = 'clouder.service.option'
 
-    container_id = fields.Many2one(
-        'clouder.container', 'Container', ondelete="cascade", required=True)
+    service_id = fields.Many2one(
+        'clouder.service', 'Service', ondelete="cascade", required=True)
     name = fields.Many2one(
         'clouder.application.type.option', 'Option', required=True)
     value = fields.Text('Value')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(container_id,name)',
-         'Option name must be unique per container!'),
+        ('name_uniq', 'unique(service_id,name)',
+         'Option name must be unique per service!'),
     ]
 
     @api.multi
-    @api.constrains('container_id')
+    @api.constrains('service_id')
     def _check_required(self):
         """
         Check that we specify a value for the option
@@ -38,6 +38,6 @@ class ClouderContainerOption(models.Model):
         if self.name.required and not self.value:
             self.raise_error(
                 'You need to specify a value for the option '
-                '"%s" for the container "%s".',
-                self.name.name, self.container_id.name,
+                '"%s" for the service "%s".',
+                self.name.name, self.service_id.name,
             )

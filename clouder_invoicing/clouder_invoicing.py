@@ -56,12 +56,12 @@ class ClouderInvoicingPricegridLine(models.Model):
         required=True
     )
     link_application = fields.Many2one('clouder.application', 'Application')
-    link_container = fields.Many2one('clouder.container', 'Container')
+    link_service = fields.Many2one('clouder.service', 'Container')
     link_base = fields.Many2one('clouder.base', 'Base')
 
     @api.multi
     @api.constrains(
-        'link_application', 'link_container',
+        'link_application', 'link_service',
         'link_base', 'application_metadata')
     def _check_links_and_metadata(self):
         """
@@ -73,15 +73,15 @@ class ClouderInvoicingPricegridLine(models.Model):
             raise except_orm(
                 _('Pricegrid error!'),
                 _("You cannot define a pricegrid line without linking "
-                  "it to a base or container or application.")
+                  "it to a base or service or application.")
             )
         # No more than one should be defined
         if (self.link_base and self.link_application or
-                self.link_base and self.link_container or
-                self.link_application and self.link_container):
+                self.link_base and self.link_service or
+                self.link_application and self.link_service):
             raise except_orm(
                 _('Pricegrid error!'),
-                _("Pricegrid links to application/container/base "
+                _("Pricegrid links to application/service/base "
                   "are exclusive to one another.")
             )
 
@@ -101,7 +101,7 @@ class ClouderInvoicingPricegridLine(models.Model):
         """
         Returns the link defined
         """
-        return self.link_application or self.link_container or self.link_base
+        return self.link_application or self.link_service or self.link_base
 
     @property
     def link_type(self):
@@ -136,7 +136,7 @@ class ClouderInvoicingPricegridLine(models.Model):
     @api.multi
     def invoice_amount(self):
         """
-        Given pricegrid lines for a single container/base:
+        Given pricegrid lines for a single service/base:
         computes the amount to invoice
         """
         # Check that all lines are linked to the same object
@@ -148,7 +148,7 @@ class ClouderInvoicingPricegridLine(models.Model):
                     raise except_orm(
                         _('Pricegrid invoice_amount error!'),
                         _("This function should only be called from a set of "
-                          "records linked to the same container "
+                          "records linked to the same service "
                           "OR base OR application.")
                     )
         # Grouping lines by invoicing unit
@@ -211,8 +211,8 @@ class ClouderApplication(models.Model):
     def _get_default_product(self):
         product = \
             self.env.ref(
-                'clouder_invoicing.container_instance_product', False) and \
-            self.env.ref('clouder_invoicing.container_instance_product') or \
+                'clouder_invoicing.service_instance_product', False) and \
+            self.env.ref('clouder_invoicing.service_instance_product') or \
             self.env['product.product']
         return product
 
@@ -260,7 +260,7 @@ class ClouderContainer(models.Model):
     """
     Defines invoicing settings for an application
     """
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     def version(self):
         return int(release.version.split('.')[0])
@@ -273,14 +273,14 @@ class ClouderContainer(models.Model):
 
     pricegrid_ids = fields.One2many(
         'clouder.invoicing.pricegrid.line',
-        'link_container',
+        'link_service',
         'Pricegrids'
     )
     invoicing_period = fields.Integer(
         'Invoicing Period (months)',
         default=1,
         help="The period separating two invoices.\n" +
-             "Set to nothing to disable invoicing for this container."
+             "Set to nothing to disable invoicing for this service."
     )
     last_invoiced = fields.Date(
         'Last Invoiced', required=True,
@@ -333,7 +333,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def should_invoice(self):
         """
-        Returns a boolean telling if the container should be invoiced or not
+        Returns a boolean telling if the service should be invoiced or not
         """
         self.ensure_one()
         if not self.invoicing_period:
@@ -356,13 +356,13 @@ class ClouderContainer(models.Model):
         # Preparing results
         results = {
             'invoice_base_data': [],
-            'invoice_container_data': []
+            'invoice_service_data': []
         }
 
-        for container in self:
-            if container.base_ids:
+        for service in self:
+            if service.base_ids:
                 # Invoicing per base
-                for base in container.base_ids:
+                for base in service.base_ids:
                     if base.should_invoice() and base.pricegrid_ids:
                         curr_res = {
                             'id': base.id,
@@ -381,26 +381,26 @@ class ClouderContainer(models.Model):
                                 base.environment_id.partner_id\
                                 .property_account_receivable.id
                         results['invoice_base_data'].append(curr_res)
-            elif container.should_invoice() and container.pricegrid_ids:
-                # Invoicing per container
+            elif service.should_invoice() and service.pricegrid_ids:
+                # Invoicing per service
                 curr_res = {
-                    'id': container.id,
+                    'id': service.id,
                     'product_id':
-                        container.application_id.invoicing_product_id,
-                    'partner_id': container.environment_id.partner_id.id,
+                        service.application_id.invoicing_product_id,
+                    'partner_id': service.environment_id.partner_id.id,
 
-                    'amount': container.pricegrid_ids.invoice_amount()
+                    'amount': service.pricegrid_ids.invoice_amount()
                 }
                 if self.version() >= 9.0:
                     curr_res['account_id'] = \
-                        container.environment_id.partner_id\
+                        service.environment_id.partner_id\
                         .property_account_receivable_id.id
                 else:
                     curr_res['account_id'] = \
-                        container.environment_id\
+                        service.environment_id\
                         .partner_id.property_account_receivable.id
 
-                results['invoice_container_data'].append(curr_res)
+                results['invoice_service_data'].append(curr_res)
         return results
 
 
@@ -425,7 +425,7 @@ class ClouderBase(models.Model):
         'Invoicing Period (months)',
         default=1,
         help="The period separating two invoices.\n" +
-             "Set to nothing to disable invoicing for this container."
+             "Set to nothing to disable invoicing for this service."
     )
     last_invoiced = fields.Date(
         'Last Invoiced', required=True, default=_compute_last_invoiced_default)
@@ -433,15 +433,15 @@ class ClouderBase(models.Model):
     @api.multi
     def get_default_pricegrids(self, vals):
         """
-        Get default pricegrids from container
+        Get default pricegrids from service
         """
-        if 'container_id' in vals and vals['container_id']:
-            container = \
-                self.env['clouder.container'].browse([vals['container_id']])[0]
+        if 'service_id' in vals and vals['service_id']:
+            service = \
+                self.env['clouder.service'].browse([vals['service_id']])[0]
             pricegrids = []
 
             # Adding default pricegrids from application
-            for cont_pricegrid in container.pricegrid_ids:
+            for cont_pricegrid in service.pricegrid_ids:
                 pricegrids.append((0, 0, {
                     'application_metadata':
                         cont_pricegrid.application_metadata.id,
@@ -453,13 +453,13 @@ class ClouderBase(models.Model):
 
         return vals
 
-    @api.onchange('container_id')
-    def onchange_container_id_pricegrids(self):
+    @api.onchange('service_id')
+    def onchange_service_id_pricegrids(self):
         """
         Reset pricegrids to default when changing application
         """
         # Getting default pricegrids
-        vals = {'container_id': self.container_id.id}
+        vals = {'service_id': self.service_id.id}
         vals = self.get_default_pricegrids(vals)
 
         # Replacing old pricegrids
@@ -469,7 +469,7 @@ class ClouderBase(models.Model):
     @api.model
     def create(self, vals):
         """
-        Override create to add default pricegrids from container
+        Override create to add default pricegrids from service
         """
         vals = self.get_default_pricegrids(vals)
         return super(ClouderBase, self).create(vals)
@@ -477,7 +477,7 @@ class ClouderBase(models.Model):
     @api.multi
     def should_invoice(self):
         """
-        Returns a boolean telling if the container should be invoiced or not
+        Returns a boolean telling if the service should be invoiced or not
         """
         self.ensure_one()
         if not self.invoicing_period:
@@ -543,9 +543,9 @@ class AccountInvoice(models.Model):
         return invoice.id
 
     @api.model
-    def clouder_invoice_containers(self, containers):
+    def clouder_invoice_services(self, services):
         """
-        Launch invoice-related data gathering for container
+        Launch invoice-related data gathering for service
         and their linked bases,
         the use that data to create relevant invoices.
         """
@@ -570,26 +570,26 @@ class AccountInvoice(models.Model):
 
             return invoice.id
 
-        orm_cont = self.env['clouder.container']
+        orm_cont = self.env['clouder.service']
         orm_base = self.env['clouder.base']
 
         result = {
-            'containers': {},
+            'services': {},
             'bases': {}
         }
 
-        # Gathering invoice data from containers
-        invoice_data = containers.get_invoicing_data()
+        # Gathering invoice data from services
+        invoice_data = services.get_invoicing_data()
 
-        # Processing containers
-        for container_data in invoice_data['invoice_container_data']:
-            invoice_id = make_invoice_and_update(orm_cont, container_data)
-            result['containers'][container_data['id']] = invoice_id
+        # Processing services
+        for service_data in invoice_data['invoice_service_data']:
+            invoice_id = make_invoice_and_update(orm_cont, service_data)
+            result['services'][service_data['id']] = invoice_id
 
         # Processing bases
         for base_data in invoice_data['invoice_base_data']:
             invoice_id = make_invoice_and_update(orm_base, base_data)
-            result['containers'][base_data['id']] = invoice_id
+            result['services'][base_data['id']] = invoice_id
         return result
 
     @api.model
@@ -597,9 +597,9 @@ class AccountInvoice(models.Model):
         """
         Launch invoicing on all existing instances
         """
-        # Getting all containers
-        containers = self.env['clouder.container'].search([])
-        self.clouder_invoice_containers(containers)
+        # Getting all services
+        services = self.env['clouder.service'].search([])
+        self.clouder_invoice_services(services)
 
     @api.model
     def create_clouder_supplier_invoice(self, amount):

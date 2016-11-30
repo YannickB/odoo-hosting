@@ -14,7 +14,7 @@
         <record id="application_type_wordpress_option_db_password" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_wordpress"/>
             <field name="name">db_password</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
@@ -24,7 +24,7 @@
             <field name="name">Wordpress Data</field>
             <field name="code">data</field>
             <field name="type_id" ref="application_type_wordpress"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken'),ref('clouder_template_mysql.application_template_container_mysql')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_service_shinken'),ref('clouder_template_mysql.application_template_service_mysql')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="clouder.image_php_data"/>
             <field name="sequence">1</field>
@@ -36,7 +36,7 @@
             <field name="name">Wordpress Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="application_type_wordpress"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_container_postfix'),ref('clouder_template_mysql.application_template_container_mysql')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_service_postfix'),ref('clouder_template_mysql.application_template_service_mysql')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="clouder.image_php_exec"/>
             <field name="sequence">2</field>

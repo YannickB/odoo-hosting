@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 class ClouderBaseChild(models.Model):
     """
     Define the base.child object, used to specify the applications linked
-    to a container.
+    to a service.
     """
 
     _name = 'clouder.base.child'
@@ -28,10 +28,10 @@ class ClouderBaseChild(models.Model):
     sequence = fields.Integer('Sequence')
     domainname = fields.Char('Name')
     domain_id = fields.Many2one('clouder.domain', 'Domain')
-    container_id = fields.Many2one(
-        'clouder.container', 'Container')
+    service_id = fields.Many2one(
+        'clouder.service', 'Service')
     child_id = fields.Many2one(
-        'clouder.container', 'Container')
+        'clouder.service', 'Service')
     save_id = fields.Many2one('clouder.save',
                               'Restore this save on deployment')
 
@@ -42,7 +42,7 @@ class ClouderBaseChild(models.Model):
     def _check_child_id(self):
         if self.child_id and not self.child_id.parent_id == self:
             self.raise_error(
-                "The child container is not correctly linked to the parent",
+                "The child service is not correctly linked to the parent",
             )
 
     @api.multi
@@ -65,10 +65,10 @@ class ClouderBaseChild(models.Model):
             'parent_id': self.id,
             'environment_id': self.base_id.environment_id.id,
             'application_id': self.name.id,
-            'container_id': self.container_id.id
+            'service_id': self.service_id.id
         })
         if self.save_id:
-            self.save_id.container_id = self.child_id.container_id
+            self.save_id.service_id = self.child_id.service_id
             self.save_id.base_id = self.child_id
             self.save_id.restore()
 

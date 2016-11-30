@@ -11,25 +11,25 @@
         <record id="application_type_backup_upload_option_protocol" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_backup_upload"/>
             <field name="name">protocol</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_backup_upload_option_host" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_backup_upload"/>
             <field name="name">host</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_backup_upload_option_login" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_backup_upload"/>
             <field name="name">login</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="auto" eval="True"/>
         </record>
         <record id="application_type_backup_upload_option_password" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_backup_upload"/>
             <field name="name">password</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="auto" eval="True"/>
         </record>
 
@@ -95,7 +95,7 @@
             <field name="template_id" ref="application_template_backup"/>
             <field name="name" ref="application_backup_upload"/>
             <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
         </record>
 
         <record id="application_backup_simple" model="clouder.application">
@@ -149,7 +149,7 @@
             <field name="template_id" ref="application_template_backup_bup"/>
             <field name="name" ref="application_backup_upload"/>
             <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
         </record>
         <record id="application_backup_bup" model="clouder.application">
             <field name="name">Backup Bup</field>

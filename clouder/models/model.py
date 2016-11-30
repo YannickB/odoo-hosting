@@ -113,7 +113,7 @@ class ClouderModel(models.AbstractModel):
     def archive_path(self):
         """
         Property returning the path where are stored the archives
-        in the archive container.
+        in the archive service.
         """
         return '/opt/archives'
 
@@ -474,7 +474,7 @@ class ClouderModel(models.AbstractModel):
         self.ensure_one()
 
         server = self
-        if self._name == 'clouder.container':
+        if self._name == 'clouder.service':
             username = False
             server = self.server_id
 
@@ -500,8 +500,8 @@ class ClouderModel(models.AbstractModel):
                 'We were not able to connect to your server. Please '
                 'make sure you add the public key in the '
                 'authorized_keys file of your root user on your server.\n'
-                'If you were trying to connect to a container, '
-                'a click on the "Reset Key" button on the container '
+                'If you were trying to connect to a service, '
+                'a click on the "Reset Key" button on the service '
                 'record may resolve the problem.\n\n'
                 'Target: "%s" \n'
                 'Error: \n%r',
@@ -543,7 +543,7 @@ class ClouderModel(models.AbstractModel):
                 'of the Clouder system user.\n'
                 'To easily add this record, you can click on the '
                 '"Reinstall" button of the server record, or the '
-                '"Reset Key" button of the container record you are '
+                '"Reset Key" button of the service record you are '
                 'trying to access',
                 self._name,
             )
@@ -600,7 +600,7 @@ class ClouderModel(models.AbstractModel):
 
         self.ensure_one()
 
-        if all([self._name == 'clouder.container',
+        if all([self._name == 'clouder.service',
                 'exec' in getattr(self, 'childs', []),
                 ]):
                 return self.childs['exec'].execute(
@@ -612,9 +612,9 @@ class ClouderModel(models.AbstractModel):
             self.log('path : ' + path)
             cmd.insert(0, 'cd ' + path + ';')
 
-        if self._name == 'clouder.container':
+        if self._name == 'clouder.service':
 
-            container = self.pod
+            service = self.pod
 
             cmd_temp = []
             first = True
@@ -626,7 +626,9 @@ class ClouderModel(models.AbstractModel):
                 cmd_temp.append(cmd_arg)
             cmd = cmd_temp
             cmd.append('"')
-            cmd.insert(0, '%s %s -c ' % (container, shell))
+
+            cmd.insert(0, '%s %s -c ' % (service, shell))
+
             if username:
                 cmd.insert(0, '-u ' + username)
             cmd.insert(0, 'docker exec')
@@ -707,7 +709,7 @@ class ClouderModel(models.AbstractModel):
 
         for record in self:
 
-            if all([record._name == 'clouder.container',
+            if all([record._name == 'clouder.service',
                     'exec' in getattr(record, 'childs', []),
                     ]):
                 return record.childs['exec'].get(
@@ -715,7 +717,7 @@ class ClouderModel(models.AbstractModel):
                 )
 
             host = record.name
-            if record._name == 'clouder.container':
+            if record._name == 'clouder.service':
                 # TODO
                 record.insert(0, 'docker exec ' + record.name)
                 host = record.server_id.name
@@ -739,7 +741,7 @@ class ClouderModel(models.AbstractModel):
         """
 
         for record in self:
-            if all([record._name == 'clouder.container',
+            if all([record._name == 'clouder.service',
                     'exec' in getattr(record, 'childs', []),
                     ]):
                 return record.childs.mapped('exec').send(

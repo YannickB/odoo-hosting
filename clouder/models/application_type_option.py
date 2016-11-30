@@ -11,7 +11,7 @@ from ..tools import generate_random_password
 class ClouderApplicationTypeOption(models.Model):
     """
     Define the application.type.option object, used to know which option can be
-    assigned to application/container/service/base.
+    assigned to application/service/service/base.
     """
 
     _name = 'clouder.application.type.option'
@@ -21,7 +21,7 @@ class ClouderApplicationTypeOption(models.Model):
         'Application Type', ondelete="cascade", required=True)
     name = fields.Char('Name', required=True)
     type = fields.Selection(
-        [('application', 'Application'), ('container', 'Container'),
+        [('application', 'Application'), ('service', 'Service'),
          ('service', 'Service'), ('base', 'Base')], 'Type', required=True)
     application_code = fields.Char('Application Code')
     tag_ids = fields.Many2many(

@@ -37,7 +37,7 @@ class ClouderApplication(models.Model):
     web_create_type = fields.Selection(
         [
             ('disabled', 'Disabled'),
-            ('container', 'Container'),
+            ('service', 'Container'),
             ('base', 'Base')
         ],
         'Web creation',
@@ -47,12 +47,12 @@ class ClouderApplication(models.Model):
 
     @api.multi
     @api.constrains('web_create_type', 'next_server_id',
-                    'next_container_id', 'base')
+                    'next_service_id', 'base')
     def _check_web_create_type_next(self):
         """
         Checks that the base web type can only
         be applied on application that can have bases
-        Checks that the next container/server
+        Checks that the next service/server
         is correctly set depending on the web_create type
         """
         if self.web_create_type == 'base':
@@ -61,12 +61,12 @@ class ClouderApplication(models.Model):
                     _('Data error!'),
                     _("You cannot attribute the web type 'Base' to an "
                       "application that cannot have bases."))
-            if not self.next_container_id:
+            if not self.next_service_id:
                 raise except_orm(
                     _('Data error!'),
-                    _("You need to specify the next container "
+                    _("You need to specify the next service "
                       "for web type 'Base'"))
-        elif self.web_create_type == 'container' and not self.next_server_id:
+        elif self.web_create_type == 'service' and not self.next_server_id:
             raise except_orm(
                 _('Data error!'),
                 _("You need to specify the next server for "
@@ -75,7 +75,7 @@ class ClouderApplication(models.Model):
     @api.multi
     def create_instance_from_request(self, session_id):
         """
-        Creates a clouder container or base using provided data
+        Creates a clouder service or base using provided data
         """
         orm_clws = self.env['clouder.web.session'].sudo()
         data = orm_clws.browse([session_id])[0]
@@ -111,8 +111,8 @@ class ClouderApplication(models.Model):
                 })
 
         # Create the requested instance
-        if data.application_id.web_create_type == 'container':
-            return self.env['clouder.container'].create({
+        if data.application_id.web_create_type == 'service':
+            return self.env['clouder.service'].create({
                 'environment_id': data.environment_id.id,
                 'suffix': data.suffix,
                 'application_id': data.application_id.id
@@ -121,7 +121,7 @@ class ClouderApplication(models.Model):
             return self.env['clouder.base'].create({
                 'name': data.prefix,
                 'domain_id': data.domain_id.id,
-                'container_id': data.application_id.next_container_id.id,
+                'service_id': data.application_id.next_service_id.id,
                 'environment_id': data.environment_id.id,
                 'title': data.title,
                 'application_id': data.application_id.id,
@@ -157,7 +157,7 @@ class ClouderWebSession(models.Model):
                     rec.prefix,
                     rec.domain_id.name
                 )
-            elif rec.application_id.web_create_type == 'container':
+            elif rec.application_id.web_create_type == 'service':
                 name += "_{0}-{1}".format(
                     rec.environment_id and rec.environment_id.prefix or
                     rec.environment_prefix,
@@ -183,17 +183,17 @@ class ClouderWebSession(models.Model):
     @api.constrains('environment_id', 'suffix', 'application_id')
     def _check_env_and_prefix_not_used(self):
         """
-        Checks that there is no existing container
-        using this environment with the same container suffix
+        Checks that there is no existing service
+        using this environment with the same service suffix
         """
-        if self.application_id.web_create_type == 'container' \
+        if self.application_id.web_create_type == 'service' \
                 and self.environment_id:
-            container = self.env['clouder.container'].search([
+            service = self.env['clouder.service'].search([
                 ('suffix', '=', self.suffix),
                 ('environment_id', '=', self.environment_id.id)
             ])
 
-            if container:
+            if service:
                 raise except_orm(
                     _('Session duplicate error!'),
                     _('Container already exists with environment '
@@ -223,7 +223,7 @@ class ClouderWebSession(models.Model):
         """
         Checks that there is no existing environment using the same prefix
         """
-        if self.application_id.web_create_type == 'container' \
+        if self.application_id.web_create_type == 'service' \
                 and self.prefix and not self.environment_id:
             env = self.env['clouder.environment'].search([
                 ('prefix', '=', self.environment_prefix)
@@ -238,7 +238,7 @@ class ClouderWebSession(models.Model):
 
             app_ids = [
                 app.id for app in self.env['clouder.application'].search([
-                    ('web_create_type', '=', 'container')
+                    ('web_create_type', '=', 'service')
                 ])
             ]
             session = self.search([
@@ -319,16 +319,16 @@ class ClouderWebSession(models.Model):
                     _('Data error!'),
                     _("You need to specify a domain when applying for a base")
                 )
-        elif self.application_id.web_create_type == "container":
+        elif self.application_id.web_create_type == "service":
             if not self.suffix:
                 raise except_orm(
                     _('Data error!'),
                     _("You need to specify a suffix when "
-                      "applying for a container")
+                      "applying for a service")
                 )
             if not (self.environment_id or self.environment_prefix):
                 raise except_orm(
                     _('Data error!'),
                     _("You need to specify an existing or new environment "
-                      "when applying for a container")
+                      "when applying for a service")
                 )

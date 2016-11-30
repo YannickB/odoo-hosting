@@ -25,7 +25,7 @@ from openerp import models, api
 
 class ClouderContainer(models.Model):
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def hook_deploy_special_args(self, cmd):

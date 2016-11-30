@@ -28,15 +28,15 @@ _logger = logging.getLogger(__name__)
 
 class ClouderContainer(models.Model):
     """
-    Add methods to manage the docker container specificities.
+    Add methods to manage the docker service specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def hook_deploy(self, ports, volumes):
         """
-        Deploy the container in the server.
+        Deploy the service in the server.
         """
 
         res = super(ClouderContainer, self).hook_deploy(ports, volumes)
@@ -103,7 +103,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def purge(self):
         """
-        Remove the container.
+        Remove the service.
         """
         res = super(ClouderContainer, self).purge()
 
@@ -119,7 +119,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def stop(self):
         """
-        Stop the container.
+        Stop the service.
         """
 
         res = super(ClouderContainer, self).stop()
@@ -135,7 +135,7 @@ class ClouderContainer(models.Model):
     @api.multi
     def start(self):
         """
-        Restart the container.
+        Restart the service.
         """
 
         res = super(ClouderContainer, self).start()

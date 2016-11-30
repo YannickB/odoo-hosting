@@ -28,11 +28,11 @@ class ClouderContainer(models.Model):
     Adds methods to manage magneto specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @property
-    def base_backup_container(self):
-        res = super(ClouderContainer, self).base_backup_container
+    def base_backup_service(self):
+        res = super(ClouderContainer, self).base_backup_service
         if self.application_id.type_id.name == 'magento':
             res = self.childs['exec']  # TODO: Ask what this does
         return res
@@ -145,8 +145,8 @@ class ClouderBase(models.Model):
 
     @property
     def magento_port(self):
-        return self.container_id.childs['exec'] and \
-            self.container_id.childs['exec'].ports['web']['hostport']
+        return self.service_id.childs['exec'] and \
+            self.service_id.childs['exec'].ports['web']['hostport']
 
     @api.multi
     def deploy_database(self):
@@ -155,34 +155,34 @@ class ClouderBase(models.Model):
         """
         if self.application_id.type_id.name == 'magento':
             if self.build == 'build':
-                dbname = self.container_id.name.replace('-', '_')
+                dbname = self.service_id.name.replace('-', '_')
                 # Create database
-                self.container_id.database.execute([
+                self.service_id.database.execute([
                     "mysql -u root -p'" +
-                    self.container_id.database.root_password +
+                    self.service_id.database.root_password +
                     "' -se \"create database " + dbname + ";\""
                 ])
                 # Create user
-                self.container_id.database.execute([
+                self.service_id.database.execute([
                     "mysql -u root -p'" +
-                    self.container_id.database.root_password +
-                    "' -se \"create user '" + self.container_id.db_user +
+                    self.service_id.database.root_password +
+                    "' -se \"create user '" + self.service_id.db_user +
                     "'@'%' IDENTIFIED BY '" +
-                    self.container_id.childs['data']
+                    self.service_id.childs['data']
                         .options['db_password']['value'] +
                     "';\""
                 ])
                 # Grant user rights on database
-                self.container_id.database.execute([
+                self.service_id.database.execute([
                     "mysql -u root -p'" +
-                    self.container_id.database.root_password +
+                    self.service_id.database.root_password +
                     "' -se \"grant all on " + dbname +
-                    ".* to '" + self.container_id.db_user + "';\""
+                    ".* to '" + self.service_id.db_user + "';\""
                 ])
                 # Make sure rights are applied
-                self.container_id.database.execute([
+                self.service_id.database.execute([
                     "mysql -u root -p'" +
-                    self.container_id.database.root_password +
+                    self.service_id.database.root_password +
                     "' -se \"FLUSH PRIVILEGES;\""
                 ])
 

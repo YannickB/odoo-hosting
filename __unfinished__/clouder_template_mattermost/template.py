@@ -28,7 +28,7 @@ class ClouderContainer(models.Model):
     Add methods to manage the wordpress specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def deploy_post(self):
@@ -60,18 +60,18 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'wordpress':
 
             config_file = '/etc/nginx/sites-available/' + self.fullname
-            self.container_id.send(
+            self.service_id.send(
                 modules.get_module_path('clouder_template_wordpress') +
                 '/res/nginx.config', config_file)
-            self.container_id.execute([
+            self.service_id.execute([
                 'sed', '-i', '"s/BASE/' + self.name + '/g"', config_file])
-            self.container_id.execute([
+            self.service_id.execute([
                 'sed', '-i', '"s/DOMAIN/' + self.domain_id.name + '/g"',
                 config_file])
-            self.container_id.execute([
+            self.service_id.execute([
                 'ln', '-s', '/etc/nginx/sites-available/' + self.fullname,
                 '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.execute(['/etc/init.d/nginx', 'reload'])
+            self.service_id.execute(['/etc/init.d/nginx', 'reload'])
 
         return res
 
@@ -82,8 +82,8 @@ class ClouderBase(models.Model):
         """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'wordpress':
-            self.container_id.execute([
+            self.service_id.execute([
                 'rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.execute([
+            self.service_id.execute([
                 'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.execute(['/etc/init.d/nginx', 'reload'])
+            self.service_id.execute(['/etc/init.d/nginx', 'reload'])

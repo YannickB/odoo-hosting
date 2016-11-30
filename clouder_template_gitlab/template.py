@@ -44,11 +44,11 @@ class ClouderContainer(models.Model):
     Add methods to manage the gitlab specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @property
-    def base_backup_container(self):
-        res = super(ClouderContainer, self).base_backup_container
+    def base_backup_service(self):
+        res = super(ClouderContainer, self).base_backup_service
         if self.application_id.type_id.name == 'gitlab':
             res = self.childs['exec']
         return res
@@ -103,7 +103,7 @@ class ClouderContainerLink(models.Model):
     Add methods to manage the gitlab specificities.
     """
 
-    _inherit = 'clouder.container.link'
+    _inherit = 'clouder.service.link'
 
     @property
     def gitlab_url(self):
@@ -157,7 +157,7 @@ class ClouderContainerLink(models.Model):
         if type == 'file':
             with open(modules.get_module_path(
                     'clouder_template_' +
-                    self.container_id.application_id.type_id.name) +
+                    self.service_id.application_id.type_id.name) +
                     '/res/' + name, 'rb') as file:
                 res = self.request(
                     self.gitlab_url + '/projects/' + project_id +
@@ -177,70 +177,70 @@ class ClouderContainerLink(models.Model):
         super(ClouderContainerLink, self).deploy_link()
 
         if self.name.type_id.name == 'gitlab' \
-                and self.container_id.application_id.type_id.name \
+                and self.service_id.application_id.type_id.name \
                 == 'gitlabci':
             if self.target.base_ids:
-                container = self.target.childs['data']
+                service = self.target.childs['data']
                 base = self.target.base_ids[0]
                 token = self.target.execute([
-                    'psql', '-h', 'postgres', '-U',  container.db_user,
+                    'psql', '-h', 'postgres', '-U',  service.db_user,
                     '-tA', '-c',
                     '"SELECT runners_registration_token '
                     'FROM application_settings ORDER BY id desc LIMIT 1;"',
                     base.fullname_])
-                self.container_id.execute([
+                self.service_id.execute([
                     'gitlab-runner', 'register', '-n',
                     '-u', 'https://' + base.fulldomain + '/ci',
                     '-r', token.replace('\n', ''),
-                    '--name', self.container_id.fullname,
+                    '--name', self.service_id.fullname,
                     '--executor', 'docker',
                     '--docker-image', 'docker:latest',
                     # '--docker-privileged'
                     '--docker-volumes '
                     '/var/run/docker.sock:/var/run/docker.sock'
                 ])
-                self.container_id.execute([
+                self.service_id.execute([
                     'sed', '-i',
                     '"s/concurrent = [0-9]*/concurrent = ' +
-                    self.container_id.options['concurrent']['value'] + '/g"',
+                    self.service_id.options['concurrent']['value'] + '/g"',
                     '/etc/gitlab-runner/config.toml'])
 
         elif self.name.type_id.name == 'gitlab' \
-                and self.container_id.application_id.check_tags(['files']):
+                and self.service_id.application_id.check_tags(['files']):
             if self.target.base_ids:
 
-                if not self.container_id.parent_id.container_id.from_id:
+                if not self.service_id.parent_id.service_id.from_id:
 
                     group_id = self.gitlab_ressource(
-                        'group', self.container_id.environment_id.prefix,
-                        data={'name': self.container_id.environment_id.name}
+                        'group', self.service_id.environment_id.prefix,
+                        data={'name': self.service_id.environment_id.name}
                     )['id']
 
                     project = self.request(
                         self.gitlab_url + '/projects/' +
-                        self.container_id.environment_id.prefix + '%2F' +
-                        self.container_id.name, headers=self.gitlab_headers,
-                        params={'name': self.container_id.fullname})
+                        self.service_id.environment_id.prefix + '%2F' +
+                        self.service_id.name, headers=self.gitlab_headers,
+                        params={'name': self.service_id.fullname})
                     if project.status_code != 200:
                         project = self.request(
                             self.gitlab_url + '/projects',
                             headers=self.gitlab_headers, method='post',
-                            data={'name': self.container_id.name,
+                            data={'name': self.service_id.name,
                                   'namespace_id': group_id}).json()
                         self.gitlab_ressource(
                             'variable', 'REGISTRY_DOMAIN',
                             project_id=str(project['id']),
                             data={
                                 'value':
-                                    self.container_id.links['registry'].
+                                    self.service_id.links['registry'].
                                     target.base_ids[0].fulldomain +
-                                    ':' + self.container_id.links['registry'].
+                                    ':' + self.service_id.links['registry'].
                                         target.ports['http']['hostport']})
                         self.gitlab_ressource(
                             'variable', 'REGISTRY_PASSWORD',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.container_id.options[
+                                  self.service_id.options[
                                       'registry_password']['value']})
                         self.gitlab_ressource(
                             'variable', 'SALT_DOMAIN',
@@ -253,12 +253,12 @@ class ClouderContainerLink(models.Model):
                             'variable', 'PRODUCTION_SERVER',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.container_id.server_id.fulldomain})
+                                  self.service_id.server_id.fulldomain})
                         self.gitlab_ressource(
                             'variable', 'PRODUCTION_PASSWORD',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.container_id.
+                                  self.service_id.
                                   options['registry_password']['value']})
                         self.gitlab_ressource(
                             'file', '.gitignore',
@@ -275,26 +275,26 @@ class ClouderContainerLink(models.Model):
                             'variable', 'REGISTRY_DOMAIN',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.container_id.links['registry'].
+                                  self.service_id.links['registry'].
                                   target.base_ids[0].fulldomain +
                                   ':' +
-                                  self.container_id.links['registry'].
+                                  self.service_id.links['registry'].
                                   target.ports['http']['hostport']})
                         self.gitlab_ressource(
                             'variable', 'REGISTRY_PASSWORD',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.container_id.
+                                  self.service_id.
                                   options['registry_password']['value']})
                         self.gitlab_ressource(
                             'variable', 'PRODUCTION_PASSWORD',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.container_id.
+                                  self.service_id.
                                   options['registry_password']['value']})
 
                 else:
-                    from_id = self.container_id.parent_id.container_id.from_id
+                    from_id = self.service_id.parent_id.service_id.from_id
                     link = 'files' in from_id.childs \
                            and 'gitlab' in from_id.childs['files'].links \
                            and from_id.childs['files'].links['gitlab']
@@ -302,25 +302,25 @@ class ClouderContainerLink(models.Model):
                     if link:
                         project = link.request(
                             self.gitlab_url + '/projects/' +
-                            link.container_id.environment_id.prefix + '%2F' +
-                            link.container_id.name,
+                            link.service_id.environment_id.prefix + '%2F' +
+                            link.service_id.name,
                             headers=link.gitlab_headers,
-                            params={'name': link.container_id.fullname}).json()
+                            params={'name': link.service_id.fullname}).json()
                         link.gitlab_ressource(
                             'variable', 'STAGING_SERVER',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.container_id.server_id.fulldomain})
+                                  self.service_id.server_id.fulldomain})
                         link.gitlab_ressource(
                             'variable', 'STAGING_PASSWORD',
                             project_id=str(project['id']),
                             data={'value':
-                                  self.container_id.
+                                  self.service_id.
                                   options['registry_password']['value']})
 
         if self.name.type_id.name == 'registry':
-            if 'gitlab' in self.container_id.links:
-                self.container_id.links['gitlab'].deploy_link()
+            if 'gitlab' in self.service_id.links:
+                self.service_id.links['gitlab'].deploy_link()
 
     @api.multi
     def purge_link(self):
@@ -330,14 +330,14 @@ class ClouderContainerLink(models.Model):
         super(ClouderContainerLink, self).purge_link()
 
         if self.name.type_id.name == 'gitlab' \
-                and self.container_id.application_id.type_id.name \
+                and self.service_id.application_id.type_id.name \
                 == 'gitlabci':
-            if self.target.base_ids and 'exec' in self.container_id.childs:
+            if self.target.base_ids and 'exec' in self.service_id.childs:
                 base = self.target.base_ids[0]
-                self.container_id.execute([
+                self.service_id.execute([
                     'gitlab-runner', 'unregister',
                     '-u', 'https://' + base.fulldomain + '/ci',
-                    '-n', self.container_id.fullname,
+                    '-n', self.service_id.fullname,
                 ])
 
 
@@ -355,24 +355,24 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'gitlab':
-            self.container_id.childs['exec'].execute([
+            self.service_id.childs['exec'].execute([
                 'sed', '-i',
                 r'"s/https:\/\/[0-9a-z_-.]*\//https:\/\/' +
                 self.fulldomain + r'\//g"',
                 '/home/git/gitlab-shell/config.yml'])
-            self.container_id.childs['exec'].execute([
+            self.service_id.childs['exec'].execute([
                 'sed', '-i',
                 '"s/host: [A-Z0-9a-z_.]*/host: ' + self.fulldomain + '/g"',
                 '/opt/gitlab/config/gitlab.yml'])
-            self.container_id.database.execute([
+            self.service_id.database.execute([
                 'psql', '-d', 'template1', '-c',
                 '"CREATE EXTENSION IF NOT EXISTS pg_trgm;"'
             ], username='postgres')
-            self.container_id.childs['data'].execute([
+            self.service_id.childs['data'].execute([
                 'sed', '-i',
                 '"s/database: [0-9a-z_]*/database: ' + self.fullname_ + '/g"',
                 '/opt/gitlab/config/database.yml'])
-            self.container_id.database.execute([
+            self.service_id.database.execute([
                 'psql', '-c',
                 '"update pg_database set datallowconn = \'false\' '
                 'where datname = \'' + self.fullname_ + '\'; '
@@ -380,20 +380,20 @@ class ClouderBase(models.Model):
                 'FROM pg_stat_activity WHERE datname = \'' +
                 self.fullname_ + '\';"'
             ], username='postgres')
-            self.container_id.execute([
+            self.service_id.execute([
                 'yes', 'yes', '|', 'bundle', 'exec', 'rake',
                 'gitlab:setup', 'RAILS_ENV=production',
                 'GITLAB_ROOT_PASSWORD=' + self.admin_password,
                 'GITLAB_ROOT_EMAIL=' + self.admin_email],
                 path='/opt/gitlab/files', username='git')
-            self.container_id.execute([
+            self.service_id.execute([
                 'bundle', 'exec', 'rake', 'assets:precompile',
                 'RAILS_ENV=production'], path='/opt/gitlab/files',
                 username='git')
 
-            self.container_id.execute([
+            self.service_id.execute([
                 'psql', '-h', 'postgres', '-U',
-                self.container_id.db_user, '-c',
+                self.service_id.db_user, '-c',
                 '"INSERT INTO personal_access_tokens '
                 '(user_id, token, name, created_at, updated_at) '
                 'VALUES (1, \'' + self.options['token']['value'] +
@@ -401,30 +401,30 @@ class ClouderBase(models.Model):
                 datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\', \'' +
                 datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\')"',
                 self.fullname_])
-            self.container_id.execute(['mkdir', '-p', '/etc/nginx/ssl'])
-            self.container_id.execute([
+            self.service_id.execute(['mkdir', '-p', '/etc/nginx/ssl'])
+            self.service_id.execute([
                 'openssl', 'req', '-x509', '-nodes', '-days', '365',
                 '-newkey', 'rsa:2048', '-out', '/etc/nginx/ssl/gitlab.crt',
                 ' -keyout', '/etc/nginx/ssl/gitlab.key',
                 '-subj', '"/C=FR/L=Paris/O=' + self.domain_id.organisation +
                 '/CN=' + self.fulldomain + '"'])
-            self.container_id.execute([
+            self.service_id.execute([
                 'cp', '/opt/gitlab/files/lib/support/nginx/gitlab-ssl',
                 '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.execute([
+            self.service_id.execute([
                 'sed', '-i',
                 '"s/server_name [A-Z0-9a-z_.]*;/server_name ' +
                 self.fulldomain + ';/g"',
                 '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.execute([
+            self.service_id.execute([
                 'sed', '-i', r'"s/\/home\/git\/gitlab/\/opt\/gitlab\/files/g"',
                 '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.execute([
+            self.service_id.execute([
                 'ln', '-s', '/etc/nginx/sites-available/' + self.fullname,
                 '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.execute([
+            self.service_id.execute([
                 'chown', '-R', 'git:git', '/opt/gitlab'])
-            self.container_id.start()
+            self.service_id.start()
         return res
 
     @api.multi
@@ -433,11 +433,11 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'gitlab':
-            self.container_id.execute([
+            self.service_id.execute([
                 'rm', '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.execute([
+            self.service_id.execute([
                 'rm', '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.start()
+            self.service_id.start()
         return res
 
 
@@ -460,9 +460,9 @@ class ClouderBaseLink(models.Model):
                 'cat', '/etc/ssl/private/' + self.base_id.fulldomain + '.key'])
             cert = self.target.execute([
                 'cat', '/etc/ssl/certs/' + self.base_id.fulldomain + '.crt'])
-            self.base_id.container_id.execute([
+            self.base_id.service_id.execute([
                 'echo', '"' + cert + '"', '>', '/etc/nginx/ssl/gitlab.crt'
             ])
-            self.base_id.container_id.execute([
+            self.base_id.service_id.execute([
                 'echo', '"' + key + '"', '>', '/etc/nginx/ssl/gitlab.key'])
-            self.base_id.container_id.execute(['/etc/init.d/nginx', 'reload'])
+            self.base_id.service_id.execute(['/etc/init.d/nginx', 'reload'])

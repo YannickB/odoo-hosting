@@ -14,14 +14,14 @@
         </record>
 
         <!-- Default application invoicing product -->
-        <record id="container_instance_product_category" model="product.category">
+        <record id="service_instance_product_category" model="product.category">
           <field name="parent_id" ref="product.product_category_all"/>
           <field name="name">Container/Base Instance</field>
         </record>
 
-        <record id="container_instance_product" model="product.product">
+        <record id="service_instance_product" model="product.product">
             <field name="name">Container/Base Instance Fee</field>
-            <field name="categ_id" ref="container_instance_product_category"/>
+            <field name="categ_id" ref="service_instance_product_category"/>
             <field name="standard_price">0</field>
             <field name="list_price">0</field>
             <field name="type">service</field>

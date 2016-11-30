@@ -10,7 +10,7 @@
         <record id="application_type_dolibarr_option_db_password" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_dolibarr"/>
             <field name="name">db_password</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="auto" eval="True"/>
         </record>
 
@@ -58,7 +58,7 @@
             <field name="name" ref="clouder_template_shinken.application_shinken"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="base" eval="True"/>
         </record>
         <record id="application_dolibarr_link_mysql" model="clouder.application.link">
@@ -67,7 +67,7 @@
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
         </record>
         <record id="application_dolibarr_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="application_dolibarr"/>

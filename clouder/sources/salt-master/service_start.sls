@@ -1,8 +1,8 @@
 include:
-  - container_stop
+  - service_stop
 
 start:
   module.run:
     - name: dockerng.start
     - args:
-      - {{ pillar['container_name'] }}
+      - {{ pillar['service_name'] }}

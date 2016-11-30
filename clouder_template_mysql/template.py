@@ -42,18 +42,18 @@ class ClouderApplicationTypeOption(models.Model):
 
 class ClouderContainer(models.Model):
     """
-    Add methods to manage the mysql container specificities.
+    Add methods to manage the mysql service specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
-    def get_container_res(self):
-        res = super(ClouderContainer, self).get_container_res()
+    def get_service_res(self):
+        res = super(ClouderContainer, self).get_service_res()
         if self.image_id.type_id.name == 'mysql':
             res['environment'].update({
                 'MYSQL_ROOT_PASSWORD':
-                    self.parent_id.container_id
+                    self.parent_id.service_id
                         .options['root_password']['value']})
         return res
 
@@ -84,7 +84,7 @@ class ClouderContainer(models.Model):
             self.execute([
                 'sed', '-i', '"/bind-address/d"', '/etc/mysql/my.cnf'])
             password = \
-                self.parent_id.container_id.options['root_password']['value']
+                self.parent_id.service_id.options['root_password']['value']
             self.execute(['mysqladmin', '-u', 'root', 'password', password])
 
             # Granting network permissions
@@ -103,23 +103,23 @@ class ClouderContainerLink(models.Model):
     Add methods to manage the postgres specificities.
     """
 
-    _inherit = 'clouder.container.link'
+    _inherit = 'clouder.service.link'
 
     @api.multi
     def deploy_link(self):
         """
-        Deploy the configuration file to watch the container.
+        Deploy the configuration file to watch the service.
         """
         super(ClouderContainerLink, self).deploy_link()
         if self.name.type_id.name == 'mysql' \
-                and self.container_id.application_id.check_tags(['data']):
+                and self.service_id.application_id.check_tags(['data']):
             self.log('Creating database user')
 
-            self.container_id.database.execute([
+            self.service_id.database.execute([
                 "mysql -u root -p'" +
-                self.container_id.database.root_password +
-                "' -se \"create user '" + self.container_id.db_user +
-                "' identified by '" + self.container_id.db_password + "';\""])
+                self.service_id.database.root_password +
+                "' -se \"create user '" + self.service_id.db_user +
+                "' identified by '" + self.service_id.db_password + "';\""])
 
             self.log('Database user created')
 
@@ -130,11 +130,11 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).purge_link()
         if self.name.type_id.name == 'mysql' \
-                and self.container_id.application_id.check_tags(['data']):
-            self.container_id.database.execute([
+                and self.service_id.application_id.check_tags(['data']):
+            self.service_id.database.execute([
                 "mysql -u root -p'" +
-                self.container_id.database.root_password +
-                "' -se \"drop user " + self. container_id.db_user + ";\""])
+                self.service_id.database.root_password +
+                "' -se \"drop user " + self. service_id.db_user + ";\""])
 
 
 class ClouderBase(models.Model):
@@ -150,18 +150,18 @@ class ClouderBase(models.Model):
         Create the database with odoo functions.
         """
 
-        if self.container_id.db_type == 'mysql':
+        if self.service_id.db_type == 'mysql':
             for key, database in self.databases.iteritems():
-                self.container_id.database.execute([
+                self.service_id.database.execute([
                     "mysql -u root -p'" +
-                    self.container_id.database.root_password +
+                    self.service_id.database.root_password +
                     "' -se \"create database " + database + ";\""
                 ])
-                self.container_id.database.execute([
+                self.service_id.database.execute([
                     "mysql -u root -p'" +
-                    self.container_id.database.root_password +
+                    self.service_id.database.root_password +
                     "' -se \"grant all on " + database +
-                    ".* to '" + self.container_id.db_user + "';\""
+                    ".* to '" + self.service_id.db_user + "';\""
                 ])
         return super(ClouderBase, self).deploy_database()
 
@@ -170,11 +170,11 @@ class ClouderBase(models.Model):
         """
         Purge the database.
         """
-        if self.container_id.db_type == 'mysql':
+        if self.service_id.db_type == 'mysql':
             for key, database in self.databases.iteritems():
-                self.container_id.database.execute([
+                self.service_id.database.execute([
                     "mysql -u root -p'" +
-                    self.container_id.database.root_password +
+                    self.service_id.database.root_password +
                     "' -se \"drop database " + database + ";\""
                 ])
         return super(ClouderBase, self).purge_database()
@@ -193,14 +193,14 @@ class ClouderSave(models.Model):
 
         res = super(ClouderSave, self).save_database()
 
-        if self.base_id.container_id.db_type == 'mysql':
-            container = self.base_id.container_id
+        if self.base_id.service_id.db_type == 'mysql':
+            service = self.base_id.service_id
             for key, database in self.base_id.databases.iteritems():
-                container.execute([
+                service.execute([
                     'mysqldump',
-                    '-h', container.db_server,
-                    '-u', container.db_user,
-                    '-p' + container.db_password,
+                    '-h', service.db_server,
+                    '-u', service.db_user,
+                    '-p' + service.db_password,
                     database, '>', '/base-backup/' + self.name +
                     '/' + self.base_dumpfile],
                     username=self.base_id.application_id.type_id.system_user)
@@ -209,10 +209,10 @@ class ClouderSave(models.Model):
     @api.multi
     def restore_database(self, base):
         super(ClouderSave, self).restore_database(base)
-        if base.container_id.db_type == 'mysql':
+        if base.service_id.db_type == 'mysql':
 
             for key, database in base.databases.iteritems():
-                db = base.container_id.database
+                db = base.service_id.database
                 db.execute([
                     "mysql -u root -p'" +
                     database.root_password +

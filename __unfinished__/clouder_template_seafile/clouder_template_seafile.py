@@ -75,7 +75,7 @@ class ClouderBase(models.Model):
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'seafile':
             ssh = self.connect(
-                self.service_id.container_id.fullname,
+                self.service_id.service_id.fullname,
                 username=self.application_id.type_id.system_user)
             install_args = [
                 '\n', self.title + '\n', self.fulldomain + '\n', '\n', '\n',
@@ -119,7 +119,7 @@ class ClouderBase(models.Model):
         res = super(ClouderBase, self).deploy_post()
         if self.application_id.type_id.name == 'seafile':
             ssh = self.connect(
-                self.service_id.container_id.fullname,
+                self.service_id.service_id.fullname,
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, [
                 'echo "[program:' + self.fullname +
@@ -149,7 +149,7 @@ class ClouderBase(models.Model):
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'seafile':
             ssh = self.connect(
-                self.service_id.container_id.fullname,
+                self.service_id.service_id.fullname,
                 username=self.application_id.type_id.system_user)
             self.execute(ssh, [
                 'sed', '-i',

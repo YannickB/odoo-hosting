@@ -526,7 +526,7 @@ msgstr "Vous devez spécifier un préfixe pour la base"
 #. module: clouder_website
 #: code:addons/clouder_website/clouder_website.py:307
 #, python-format
-msgid "You need to specify a suffix when applying for a container"
+msgid "You need to specify a suffix when applying for a service"
 msgstr "Vous devez spécifier un suffixe pour le contenaire"
 
 #. module: clouder_website
@@ -538,13 +538,13 @@ msgstr "Vous devez spécifier un titre pour la base"
 #. module: clouder_website
 #: code:addons/clouder_website/clouder_website.py:312
 #, python-format
-msgid "You need to specify an existing or new environment when applying for a container"
+msgid "You need to specify an existing or new environment when applying for a service"
 msgstr "Vous devez spéricier un environnement, nouveau ou existant, pour demander un contenaire"
 
 #. module: clouder_website
 #: code:addons/clouder_website/clouder_website.py:63
 #, python-format
-msgid "You need to specify the next container for web type 'Base'"
+msgid "You need to specify the next service for web type 'Base'"
 msgstr "Vous devez spécifier le prochain contenaire utilisé pour le type de création web 'Base'"
 
 #. module: clouder_website

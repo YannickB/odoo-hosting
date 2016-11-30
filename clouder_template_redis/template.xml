@@ -44,7 +44,7 @@
             <field name="name">Redis Data</field>
             <field name="code">data</field>
             <field name="type_id" ref="application_type_redis"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_service_shinken')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_redis_data"/>
             <field name="sequence">1</field>
@@ -71,13 +71,13 @@
             <field name="required" eval="True"/>
         </record>
 
-        <record id="application_template_container_redis" model="clouder.application.template">
+        <record id="application_template_service_redis" model="clouder.application.template">
             <field name="name">Container Redis</field>
         </record>
-        <record id="application_template_container_redis_link_redis" model="clouder.application.link">
-            <field name="template_id" ref="application_template_container_redis"/>
+        <record id="application_template_service_redis_link_redis" model="clouder.application.link">
+            <field name="template_id" ref="application_template_service_redis"/>
             <field name="name" ref="application_redis"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>

@@ -112,14 +112,14 @@ class ClouderServer(models.Model):
              "different ips. Otherwise the ports will be bind to "
              "all interfaces.")
     public = fields.Boolean('Public?')
-    supervision_id = fields.Many2one('clouder.container', 'Supervision Server')
-    runner_id = fields.Many2one('clouder.container', 'Runner')
+    supervision_id = fields.Many2one('clouder.service', 'Supervision Server')
+    runner_id = fields.Many2one('clouder.service', 'Runner')
     salt_minion_id = fields.Many2one(
-        'clouder.container', 'Salt Minion', readonly=True)
+        'clouder.service', 'Salt Minion', readonly=True)
     control_dns = fields.Boolean('Control DNS?')
     oneclick_ids = fields.Many2many(
         'clouder.oneclick', 'clouder_server_oneclick_rel',
-        'container_id', 'oneclick_id', 'Oneclick Deployment')
+        'service_id', 'oneclick_id', 'Oneclick Deployment')
     oneclick_ports = fields.Boolean('Assign critical ports?')
     libcloud_name = fields.Char('Name')
     libcloud_state = fields.Char(
@@ -351,34 +351,34 @@ class ClouderServer(models.Model):
         return super(ClouderServer, self).do(name, action, where=where)
 
     @api.multi
-    def start_containers(self):
+    def start_services(self):
         self = self.with_context(no_enqueue=True)
-        self.do('start_containers', 'start_containers_exec')
+        self.do('start_services', 'start_services_exec')
 
     @api.multi
-    def start_containers_exec(self):
+    def start_services_exec(self):
         """
-        Restart all containers of the server.
+        Restart all services of the server.
         """
-        containers = self.env['clouder.container'].search(
+        services = self.env['clouder.service'].search(
             [('server_id', '=', self.id)])
-        for container in containers:
-            container.start()
+        for service in services:
+            service.start()
 
     @api.multi
-    def stop_containers(self):
+    def stop_services(self):
         self = self.with_context(no_enqueue=True)
-        self.do('stop_containers', 'stop_containers_exec')
+        self.do('stop_services', 'stop_services_exec')
 
     @api.multi
-    def stop_containers_exec(self):
+    def stop_services_exec(self):
         """
-        Stop all container of the server.
+        Stop all service of the server.
         """
-        containers = self.env['clouder.container'].search(
+        services = self.env['clouder.service'].search(
             [('server_id', '=', self.id)])
-        for container in containers:
-            container.stop()
+        for service in services:
+            service.stop()
 
     @api.multi
     def configure(self):
@@ -460,34 +460,34 @@ class ClouderServer(models.Model):
 
     @api.multi
     def oneclick_deploy_element(
-            self, type, code, container=False, code_container='', ports=None):
+            self, type, code, service=False, code_service='', ports=None):
 
         if not ports:
             ports = []
 
         application_obj = self.env['clouder.application']
-        container_obj = self.env['clouder.container']
-        port_obj = self.env['clouder.container.port']
+        service_obj = self.env['clouder.service']
+        port_obj = self.env['clouder.service.port']
         base_obj = self.env['clouder.base']
 
         application = application_obj.search([('code', '=', code)])
 
-        if not container and code_container:
-            container = container_obj.search([
+        if not service and code_service:
+            service = service_obj.search([
                 ('environment_id', '=', self.environment_id.id),
-                ('suffix', '=', code_container)])
-        if not container:
-            container = container_obj.search([
+                ('suffix', '=', code_service)])
+        if not service:
+            service = service_obj.search([
                 ('environment_id', '=', self.environment_id.id),
                 ('suffix', '=', code)])
 
-        if type == 'container':
-            if not container:
+        if type == 'service':
+            if not service:
                 # ports = []
                 # if self.oneclick_ports:
                 #     ports = [(0,0,{'name':'bind', 'localport': 53,
                 # 'hostport': 53, 'expose': 'internet', 'udp': True})]
-                container = container_obj.create({
+                service = service_obj.create({
                     'suffix': code,
                     'environment_id': self.environment_id.id,
                     'server_id': self.id,
@@ -496,12 +496,12 @@ class ClouderServer(models.Model):
                 if self.oneclick_ports and ports:
                     for port in ports:
                         port_record = port_obj.search([
-                            ('container_id', '=', container.childs['exec'].id),
+                            ('service_id', '=', service.childs['exec'].id),
                             ('localport', '=', port)])
                         port_record.write({'hostport': port})
-                    container = container.with_context(container_childs=False)
-                    container.childs['exec'].deploy()
-            return container
+                    service = service.with_context(service_childs=False)
+                    service.childs['exec'].deploy()
+            return service
 
         if type == 'base':
             base = base_obj.search([
@@ -513,7 +513,7 @@ class ClouderServer(models.Model):
                     'environment_id': self.environment_id.id,
                     'title': application.name,
                     'application_id': application.id,
-                    'container_id': container.id,
+                    'service_id': service.id,
                     'admin_name': 'admin',
                     'admin_password': 'adminadmin',
                     'ssl_only': True,
@@ -522,13 +522,13 @@ class ClouderServer(models.Model):
             return base
 
         if type == 'subservice':
-            if not container_obj.search([
+            if not service_obj.search([
                     ('environment_id', '=', self.environment_id.id),
-                    ('suffix', '=', container.name + '-test')]):
-                container.reset_base_ids = [
-                    (6, 0, [b.id for b in container.base_ids])]
-                container.subservice_name = 'test'
-                container.install_subservice()
+                    ('suffix', '=', service.name + '-test')]):
+                service.reset_base_ids = [
+                    (6, 0, [b.id for b in service.base_ids])]
+                service.subservice_name = 'test'
+                service.install_subservice()
 
     @api.multi
     def oneclick_deploy(self):
@@ -557,7 +557,7 @@ class ClouderServer(models.Model):
     @api.multi
     def clean_exec(self):
         """
-        Clean the server from unused containers / images / volumes.
+        Clean the server from unused services / images / volumes.
         http://blog.yohanliyanage.com/2015/05/docker-clean-up-after-yourself/
         """
         self.execute(['docker', 'rmi $(docker images -f "dangling=true" -q)'])

@@ -37,17 +37,17 @@ class ClouderServer(models.Model):
 
         for oneclick in self.oneclick_ids:
             if oneclick.code == 'wordpress':
-                self.oneclick_deploy_element('container', 'wordpress-all')
+                self.oneclick_deploy_element('service', 'wordpress-all')
                 self.oneclick_deploy_element(
                     'base', 'wordpress',
-                    code_container='wordpress-all-wordpress')
+                    code_service='wordpress-all-wordpress')
 
     @api.multi
     def oneclick_purge_exec(self):
 
-        container_obj = self.env['clouder.container']
+        service_obj = self.env['clouder.service']
 
-        container_obj.search([('environment_id', '=', self.environment_id.id),
-                              ('suffix', '=', 'wordpress-all')]).unlink()
+        service_obj.search([('environment_id', '=', self.environment_id.id),
+                            ('suffix', '=', 'wordpress-all')]).unlink()
 
         super(ClouderServer, self).oneclick_purge_exec()

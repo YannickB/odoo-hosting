@@ -25,15 +25,15 @@ from openerp import models, api
 
 class ClouderContainer(models.Model):
     """
-    Manage link between ldap.server object and ldap container.
+    Manage link between ldap.server object and ldap service.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def deploy_post(self):
         """
-        Add a ldap.server in clouder when we create a new ldap container.
+        Add a ldap.server in clouder when we create a new ldap service.
         """
         super(ClouderContainer, self).deploy_post()
         if self.application_id.type_id.name == 'openldap':
@@ -61,7 +61,7 @@ class ClouderContainer(models.Model):
 
     def purge(self):
         """
-        Remove the ldap.server in clouder when we unlink an ldap container.
+        Remove the ldap.server in clouder when we unlink an ldap service.
         """
         if self.application_id.type_id.name == 'openldap':
 

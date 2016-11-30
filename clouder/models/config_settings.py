@@ -23,18 +23,18 @@ class ClouderConfigSettings(models.Model):
     master_id = fields.Many2one(
         'clouder.server', 'Master')
     salt_master_id = fields.Many2one(
-        'clouder.container', 'Salt Master', readonly=True)
+        'clouder.service', 'Salt Master', readonly=True)
     runner = fields.Selection(
         lambda s: s._get_runners(),
         required=True, default='swarm')
-    runner_id = fields.Many2one('clouder.container', 'Runner')
+    runner_id = fields.Many2one('clouder.service', 'Runner')
     executor = fields.Selection(
         lambda s: s._get_executors(),
         required=True, default='ssh')
     compose = fields.Boolean('Compose? (Experimental)', default=False)
     end_reset_keys = fields.Datetime('Last Reset Keys ended at')
     end_save_all = fields.Datetime('Last Save All ended at')
-    end_update_containers = fields.Datetime('Last Update Containers ended at')
+    end_update_services = fields.Datetime('Last Update Services ended at')
     end_reset_bases = fields.Datetime('Last Reset Bases ended at')
     end_certs_renewal = fields.Datetime('Last Certs Renewal ended at')
     provider_ids = fields.One2many(
@@ -90,8 +90,8 @@ class ClouderConfigSettings(models.Model):
     @api.multi
     def save_all_exec(self):
         """
-        Execute some maintenance on backup containers, and force a save
-        on all containers and bases.
+        Execute some maintenance on backup services, and force a save
+        on all services and bases.
         """
 
         context = {
@@ -101,11 +101,11 @@ class ClouderConfigSettings(models.Model):
         with self.with_context(**context)._private_env() as self:
 
             backup_dir = os.path.join(self.BACKUP_DIR, 'bup')
-            ClouderContainer = self.env['clouder.container']
-            ContainerLink = self.env['clouder.container.link']
+            ClouderService = self.env['clouder.service']
+            ServiceLink = self.env['clouder.service.link']
             ClouderBase = self.env['clouder.base'].with_context(**context)
 
-            backups = ClouderContainer.search([
+            backups = ClouderService.search([
                 ('application_id.type_id.name', '=', 'backup'),
             ])
             for backup in backups:
@@ -132,16 +132,16 @@ class ClouderConfigSettings(models.Model):
 
             domain = [('autosave', '=', True)]
 
-            containers = ClouderContainer.search(domain)
-            for container in containers:
-                container.save_exec()
+            services = ClouderService.search(domain)
+            for service in services:
+                service.save_exec()
 
             bases = ClouderBase.search(domain)
             for base in bases:
                 base.save_exec()
 
-            links = ContainerLink.search([
-                ('container_id.application_id.type_id.name', '=', 'backup'),
+            links = ServiceLink.search([
+                ('service_id.application_id.type_id.name', '=', 'backup'),
                 ('name.code', '=', 'backup-upload'),
             ])
             for link in links:
@@ -173,16 +173,16 @@ class ClouderConfigSettings(models.Model):
     @api.multi
     def launch_next_saves_exec(self):
         """
-        Save all containers and bases which passed their next save date.
+        Save all services and bases which passed their next save date.
         """
         self = self.with_context(no_enqueue=True, save_comment='Auto save')
-        containers = self.env['clouder.container'].search([
+        services = self.env['clouder.service'].search([
             ('autosave', '=', True),
             ('date_next_save', '!=', False),
             ('date_next_save', '<',
              self.now_date + ' ' + self.now_hour_regular)])
-        for container in containers:
-            container.save_exec()
+        for service in services:
+            service.save_exec()
         bases = self.env['clouder.base'].search([
             ('autosave', '=', True),
             ('date_next_save', '!=', False),
@@ -192,25 +192,25 @@ class ClouderConfigSettings(models.Model):
             base.save_exec()
 
     @api.multi
-    def update_containers(self):
-        self.do('update_containers', 'update_containers_exec')
+    def update_services(self):
+        self.do('update_services', 'update_services_exec')
 
     @api.multi
-    def update_containers_exec(self):
+    def update_services_exec(self):
         """
         """
 
         with self._private_env() as self:
 
-            containers = self.env['clouder.container'].search([
+            services = self.env['clouder.service'].search([
                 ('application_id.update_strategy', '=', 'auto'),
             ])
-            containers.update_exec()
+            services.update_exec()
 
             now = fields.Datetime.now()
 
             for rec_id in self:
-                rec_id.settings_id.end_update_containers = now
+                rec_id.settings_id.end_update_services = now
 
     @api.multi
     def reset_bases(self):

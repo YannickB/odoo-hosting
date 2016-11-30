@@ -69,7 +69,7 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).deploy_build()
         if self.application_id.type_id.name == 'piwik':
-            ssh = self.connect(self.service_id.container_id.fullname)
+            ssh = self.connect(self.service_id.service_id.fullname)
             config_file = '/etc/nginx/sites-available/' + self.fullname
             self.send(ssh, modules.get_module_path(
                 'clouder_template_piwik') + '/res/nginx.config', config_file)
@@ -96,7 +96,7 @@ class ClouderBase(models.Model):
         """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'piwik':
-            ssh = self.connect(self.service_id.container_id.fullname)
+            ssh = self.connect(self.service_id.service_id.fullname)
             self.execute(ssh, [
                 'rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname])
             self.execute(ssh, [

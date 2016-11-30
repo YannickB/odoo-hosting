@@ -6,12 +6,12 @@ from openerp import models, api
 import re
 
 
-class ClouderContainer(models.Model):
+class ClouderService(models.Model):
     """
-    Add methods to manage the docker container specificities.
+    Add methods to manage the docker service specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def write(self, vals):
@@ -21,7 +21,7 @@ class ClouderContainer(models.Model):
 
         :param vals: The values to update.
         """
-        res = super(ClouderContainer, self).write(vals)
+        res = super(ClouderService, self).write(vals)
         if 'option_ids' in vals:
             if self.application_id.type_id.name == 'docker' \
                     and 'public_key' in self.options:
@@ -33,7 +33,7 @@ class ClouderContainer(models.Model):
         """
         Ensure the ports are correctly configured.
 
-        :param vals: The values which will be used to create the container.
+        :param vals: The values which will be used to create the service.
         """
 
         application = 'application_id' in vals \
@@ -77,11 +77,11 @@ class ClouderContainer(models.Model):
                             'hostport': str(i), 'expose': 'internet'}))
                         i += 1
 
-        return super(ClouderContainer, self).create(vals)
+        return super(ClouderService, self).create(vals)
 
     @api.multi
     def hook_deploy_special_args(self, cmd):
-        cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)
+        cmd = super(ClouderService, self).hook_deploy_special_args(cmd)
         if self.application_id.type_id.name == 'docker':
             cmd.extend(['--privileged'])
         return cmd
@@ -89,9 +89,9 @@ class ClouderContainer(models.Model):
     @api.multi
     def deploy_post(self):
         """
-        Add the public key to the allowed keys in the container.
+        Add the public key to the allowed keys in the service.
         """
-        super(ClouderContainer, self).deploy_post()
+        super(ClouderService, self).deploy_post()
         if self.application_id.type_id.name == 'docker':
             if 'public_key' in self.options \
                     and self.options['public_key']['value']:

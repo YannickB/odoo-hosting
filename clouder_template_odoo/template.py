@@ -36,11 +36,11 @@ class ClouderContainer(models.Model):
     Add methods to manage the postgres specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     # @property
-    # def base_backup_container(self):
-    #     res = super(ClouderContainer, self).base_backup_container
+    # def base_backup_service(self):
+    #     res = super(ClouderContainer, self).base_backup_service
     #     if self.application_id.type_id.name == 'odoo':
     #         res = self.childs['exec']
     #     return res
@@ -53,7 +53,7 @@ class ClouderContainer(models.Model):
             if self.application_id.code == 'data':
                 self.execute([
                     'sed', '-i', '"s/APPLICATION/' +
-                    self.parent_id.container_id.application_id.fullcode
+                    self.parent_id.service_id.application_id.fullcode
                     .replace('-', '_') + '/g"', config_file])
                 self.execute([
                     'sed', '-i', 's/DB_SERVER/' + self.db_server + '/g',
@@ -96,8 +96,8 @@ class ClouderBase(models.Model):
 
     @property
     def odoo_port(self):
-        return self.container_id.childs['exec'] and \
-            self.container_id.childs['exec'].ports['http']['hostport']
+        return self.service_id.childs['exec'] and \
+            self.service_id.childs['exec'].ports['http']['hostport']
 
     @api.multi
     def deploy_database(self):
@@ -105,7 +105,7 @@ class ClouderBase(models.Model):
         Create the database with odoo functions.
         """
         if self.application_id.type_id.name == 'odoo':
-            self.container_id.base_backup_container.execute([
+            self.service_id.base_backup_service.execute([
                 'mkdir', '-p',
                 '/opt/odoo/data/filestore/' +
                 self.fullname_],
@@ -113,23 +113,23 @@ class ClouderBase(models.Model):
 
             if self.build == 'build':
                 self.log("client = erppeek.Client('http://" +
-                         self.container_id.server_id.public_ip + ":" +
+                         self.service_id.server_id.public_ip + ":" +
                          self.odoo_port + "')")
                 client = erppeek.Client(
-                    'http://' + self.container_id.server_id.public_ip +
+                    'http://' + self.service_id.server_id.public_ip +
                     ':' + self.odoo_port)
                 self.log(
                     "client.create_database('$$$" +
-                    self.container_id.childs['data'].db_password + "$$$','" +
+                    self.service_id.childs['data'].db_password + "$$$','" +
                     self.fullname_ + "'," + "demo=" + str(self.test) +
                     "," + "lang='" + self.lang + "'," +
                     "user_password='" + self.admin_password + "')")
                 client.create_database(
-                    self.container_id.childs['data'].db_password,
+                    self.service_id.childs['data'].db_password,
                     self.fullname_, demo=self.test,
                     lang=self.lang,
                     user_password=self.admin_password)
-                self.container_id.childs['exec'].start_exec()
+                self.service_id.childs['exec'].start_exec()
                 return True
         return super(ClouderBase, self).deploy_database()
 
@@ -142,12 +142,12 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'odoo':
             self.log(
                 "client = erppeek.Client('http://" +
-                self.container_id.server_id.public_ip + ":" +
+                self.service_id.server_id.public_ip + ":" +
                 self.odoo_port + "," +
                 "db=" + self.fullname_ + "," +
                 "user='admin', password=$$$" + self.admin_password + "$$$)")
             client = erppeek.Client(
-                'http://' + self.container_id.server_id.public_ip + ':' +
+                'http://' + self.service_id.server_id.public_ip + ':' +
                 self.odoo_port,
                 db=self.fullname_, user='admin',
                 password=self.admin_password)
@@ -206,13 +206,13 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'odoo':
             self.log(
                 "client = erppeek.Client('http://" +
-                self.container_id.server_id.public_ip + ":" +
+                self.service_id.server_id.public_ip + ":" +
                 self.odoo_port +
                 ", db=" + self.fullname_ +
                 ", user=" + self.admin_name +
                 ", password=$$$" + self.admin_password + "$$$)")
             client = erppeek.Client(
-                'http://' + self.container_id.server_id.public_ip + ':' +
+                'http://' + self.service_id.server_id.public_ip + ':' +
                 self.odoo_port,
                 db=self.fullname_, user=self.admin_name,
                 password=self.admin_password)
@@ -274,14 +274,14 @@ class ClouderBase(models.Model):
                     and self.admin_name != self.poweruser_name:
                 self.log(
                     "client = erppeek.Client('http://" +
-                    self.container_id.server_id.public_ip + ":" +
+                    self.service_id.server_id.public_ip + ":" +
                     self.odoo_port + "," +
                     "db=" + self.fullname_ + "," + "user=" +
                     self.admin_name + ", password=$$$" +
                     self.admin_password + "$$$)"
                 )
                 client = erppeek.Client(
-                    'http://' + self.container_id.server_id.name +
+                    'http://' + self.service_id.server_id.name +
                     ':' + self.odoo_port,
                     db=self.fullname_, user=self.admin_name,
                     password=self.admin_password)
@@ -334,14 +334,14 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'odoo':
             self.log(
                 "client = erppeek.Client('http://" +
-                self.container_id.server_id.public_ip + ":" +
+                self.service_id.server_id.public_ip + ":" +
                 self.odoo_port + "," +
                 "db=" + self.fullname_ + "," + "user=" +
                 self.admin_name + ", password=$$$" +
                 self.admin_password + "$$$)"
             )
             client = erppeek.Client(
-                'http://' + self.container_id.server_id.public_ip + ':' +
+                'http://' + self.service_id.server_id.public_ip + ':' +
                 self.odoo_port,
                 db=self.fullname_, user=self.admin_name,
                 password=self.admin_password)
@@ -363,13 +363,13 @@ class ClouderBase(models.Model):
         res = super(ClouderBase, self).post_reset()
         if self.application_id.type_id.name == 'odoo':
             self.log("client = erppeek.Client('http://" +
-                     self.container_id.server_id.public_ip + ":" +
+                     self.service_id.server_id.public_ip + ":" +
                      self.odoo_port +
                      ", db=" + self.fullname_ +
                      ", user=" + self.admin_name +
                      ", password=$$$" + self.admin_password + "$$$)")
             client = erppeek.Client(
-                'http://' + self.container_id.server_id.public_ip + ':' +
+                'http://' + self.service_id.server_id.public_ip + ':' +
                 self.odoo_port,
                 db=self.fullname_, user=self.admin_name,
                 password=self.admin_password)
@@ -402,13 +402,13 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'odoo':
             # try:
             #     self.log("client = erppeek.Client('http://" +
-            #              self.container_id.server_id.public_ip + ":" +
+            #              self.service_id.server_id.public_ip + ":" +
             #              self.odoo_port + "," +
             #              "db=" + self.fullname_ + "," + "user=" +
             #              self.admin_name + ", password=$$$" +
             #              self.admin_password + "$$$)")
             #     client = erppeek.Client(
-            #         'http://' + self.container_id.server_id.public_ip +
+            #         'http://' + self.service_id.server_id.public_ip +
             #         ':' + self.odoo_port,
             #         db=self.fullname_, user=self.admin_name,
             #         password=self.admin_password)
@@ -418,7 +418,7 @@ class ClouderBase(models.Model):
             #     pass
 
             self.salt_master.execute([
-                'salt', self.container_id.server_id.fulldomain,
+                'salt', self.service_id.server_id.fulldomain,
                 'state.apply', 'base_update',
                 "pillar=\"{'base_name': '" + self.fullname_ + "'}\""])
 
@@ -431,7 +431,7 @@ class ClouderBase(models.Model):
         """
         res = super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'odoo':
-            self.container_id.base_backup_container.execute([
+            self.service_id.base_backup_service.execute([
                 'rm', '-rf',
                 '/opt/odoo/data/filestore/' + self.fullname_])
         return res
@@ -453,7 +453,7 @@ class ClouderBaseLink(models.Model):
 
             target.execute([
                 'sed', '-i', '"s/LONGPOLLING/' +
-                self.base_id.container_id.ports['longpolling']['hostport'] +
+                self.base_id.service_id.ports['longpolling']['hostport'] +
                 '/g"', self.base_id.nginx_configfile])
         return res
 
@@ -472,7 +472,7 @@ class ClouderBaseLink(models.Model):
                 return
 
             self.log("client = erppeek.Client('http://" +
-                     self.base_id.container_id.server_id.public_ip +
+                     self.base_id.service_id.server_id.public_ip +
                      ":" +
                      self.base_id.odoo_port +
                      "," + "db=" + self.base_id.fullname_ + "," +
@@ -480,7 +480,7 @@ class ClouderBaseLink(models.Model):
                      self.base_id.admin_password + "$$$)")
             client = erppeek.Client(
                 'http://' +
-                self.base_id.container_id.server_id.public_ip + ':' +
+                self.base_id.service_id.server_id.public_ip + ':' +
                 self.base_id.odoo_port,
                 db=self.base_id.fullname_,
                 user=self.base_id.admin_name,
@@ -511,7 +511,7 @@ class ClouderBaseLink(models.Model):
             self.target.execute([
                 "echo '" + self.base_id.fullname_ +
                 ": \"|openerp_mailgate.py --host=" +
-                self.base_id.container_id.server_id.private_ip +
+                self.base_id.service_id.server_id.private_ip +
                 " --port=" +
                 self.base_id.odoo_port +
                 " -u 1 -p $$$" + self.base_id.admin_password + "$$$ -d " +
@@ -559,7 +559,7 @@ class ClouderSave(models.Model):
         """
         res = super(ClouderSave, self).deploy_base()
         if self.base_id.application_id.type_id.name == 'odoo':
-            self.container_id.base_backup_container.execute([
+            self.service_id.base_backup_service.execute([
                 'cp', '-R',
                 '/opt/odoo/data/filestore/' +
                 self.base_id.fullname_,
@@ -574,11 +574,11 @@ class ClouderSave(models.Model):
         """
         res = super(ClouderSave, self).restore_base(base)
         if self.base_id.application_id.type_id.name == 'odoo':
-            base.container_id.base_backup_container.execute([
+            base.service_id.base_backup_service.execute([
                 'rm', '-rf',
                 '/opt/odoo/data/filestore/' + self.base_id.fullname_],
                 username=self.base_id.application_id.type_id.system_user)
-            base.container_id.base_backup_container.execute([
+            base.service_id.base_backup_service.execute([
                 'cp', '-R',
                 '/base-backup/restore-' + self.name + '/filestore',
                 '/opt/odoo/data/filestore/' +

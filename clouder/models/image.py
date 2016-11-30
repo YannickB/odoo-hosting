@@ -14,7 +14,7 @@ from ..exceptions import ClouderError
 
 class ClouderImage(models.Model):
     """
-    Define the image object, which represent the container image which
+    Define the image object, which represent the service image which
     can be generated on this clouder.
     """
 
@@ -33,7 +33,7 @@ class ClouderImage(models.Model):
     parent_version_id = fields.Many2one(
         'clouder.image.version', 'Parent version')
     parent_from = fields.Char('From')
-    registry_id = fields.Many2one('clouder.container', 'Registry')
+    registry_id = fields.Many2one('clouder.service', 'Registry')
     dockerfile = fields.Text('DockerFile')
     volumes_from = fields.Char('Volumes from')
     volume_ids = fields.One2many('clouder.image.volume', 'image_id', 'Volumes')

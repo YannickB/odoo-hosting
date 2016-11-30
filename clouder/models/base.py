@@ -35,8 +35,8 @@ class ClouderBase(models.Model):
     title = fields.Char('Title', required=True)
     application_id = fields.Many2one('clouder.application', 'Application',
                                      required=True)
-    container_id = fields.Many2one(
-        'clouder.container', 'Container', required=True)
+    service_id = fields.Many2one(
+        'clouder.service', 'Service', required=True)
     admin_name = fields.Char('Admin name', required=True)
     admin_password = fields.Char(
         'Admin password',
@@ -80,8 +80,8 @@ class ClouderBase(models.Model):
     cert_renewal_date = fields.Date('Cert renewal date')
     reset_id = fields.Many2one('clouder.base', 'Reset with this base')
     backup_ids = fields.Many2many(
-        'clouder.container', 'clouder_base_backup_rel',
-        'base_id', 'backup_id', 'Backup containers', required=True)
+        'clouder.service', 'clouder_base_backup_rel',
+        'base_id', 'backup_id', 'Backup services', required=True)
     public = fields.Boolean('Public?')
 
     @property
@@ -143,8 +143,8 @@ class ClouderBase(models.Model):
 
     @property
     def http_port(self):
-        return self.container_id.childs['exec'] and \
-            self.container_id.childs['exec'].ports['http']['hostport']
+        return self.service_id.childs['exec'] and \
+            self.service_id.childs['exec'].ports['http']['hostport']
 
     @property
     def options(self):
@@ -204,17 +204,17 @@ class ClouderBase(models.Model):
             )
 
     @api.multi
-    @api.constrains('container_id', 'application_id')
+    @api.constrains('service_id', 'application_id')
     def _check_application(self):
         """
         Check that the application of the base is the same than application
         of services.
         """
         if self.application_id.id != \
-                self.container_id.application_id.id:
+                self.service_id.application_id.id:
             self.raise_error(
                 "The application of base must be the same "
-                "than the application of the container."
+                "than the application of the service."
             )
 
     @api.multi
@@ -358,7 +358,7 @@ class ClouderBase(models.Model):
                     if not next_id:
                         next_id = link['source'].next.id
                     if not next_id:
-                        target_ids = self.env['clouder.container'].search([
+                        target_ids = self.env['clouder.service'].search([
                             ('application_id.code', '=',
                              link['source'].name.code),
                             ('parent_id', '=', False)])
@@ -489,7 +489,7 @@ class ClouderBase(models.Model):
                     vals['backup_ids'] = [(6, 0, [
                         b.id for b in application.base_backup_ids])]
                 else:
-                    backups = self.env['clouder.container'].search([
+                    backups = self.env['clouder.service'].search([
                         ('application_id.type_id.name', '=', 'backup')])
                     if backups:
                         vals['backup_ids'] = [(6, 0, [backups[0].id])]
@@ -508,9 +508,9 @@ class ClouderBase(models.Model):
     def onchange_application_id(self):
         vals = {
             'application_id': self.application_id.id,
-            'container_id':
-                self.application_id.next_container_id and
-                self.application_id.next_container_id.id or False,
+            'service_id':
+                self.application_id.next_service_id and
+                self.application_id.next_service_id.id or False,
             'admin_name': self.admin_name,
             'admin_email': self.admin_email,
             'option_ids': self.option_ids,
@@ -520,31 +520,31 @@ class ClouderBase(models.Model):
             'parent_id': self.parent_id and self.parent_id.id or False
             }
         vals = self.onchange_application_id_vals(vals)
-        self.env['clouder.container.option'].search(
-            [('container_id', '=', self.id)]).unlink()
-        self.env['clouder.container.link'].search(
-            [('container_id', '=', self.id)]).unlink()
-        self.env['clouder.container.child'].search(
-            [('container_id', '=', self.id)]).unlink()
+        self.env['clouder.service.option'].search(
+            [('service_id', '=', self.id)]).unlink()
+        self.env['clouder.service.link'].search(
+            [('service_id', '=', self.id)]).unlink()
+        self.env['clouder.service.child'].search(
+            [('service_id', '=', self.id)]).unlink()
         for key, value in vals.iteritems():
             setattr(self, key, value)
 
     @api.multi
     def control_priority(self):
-        return self.container_id.check_priority_childs(self)
+        return self.service_id.check_priority_childs(self)
 
     @api.model
     def create(self, vals):
         """
-        Override create method to create a container and a service if none
+        Override create method to create a service and a service if none
         are specified.
 
         :param vals: The values needed to create the record.
         """
-        if ('container_id' not in vals) or (not vals['container_id']):
+        if ('service_id' not in vals) or (not vals['service_id']):
             application_obj = self.env['clouder.application']
             domain_obj = self.env['clouder.domain']
-            container_obj = self.env['clouder.container']
+            service_obj = self.env['clouder.service']
             if 'application_id' not in vals or not vals['application_id']:
                 self.raise_error(
                     "You need to specify the application of the base."
@@ -553,12 +553,12 @@ class ClouderBase(models.Model):
             if not application.next_server_id:
                 self.raise_error(
                     "You need to specify the next server in "
-                    "application for the container autocreate."
+                    "application for the service autocreate."
                 )
             if not application.default_image_id.version_ids:
                 self.raise_error(
                     "No version for the image linked to the application, "
-                    "abandoning container autocreate..."
+                    "abandoning service autocreate..."
                 )
             if 'domain_id' not in vals or not vals['domain_id']:
                 self.raise_error(
@@ -569,7 +569,7 @@ class ClouderBase(models.Model):
                     "You need to specify the environment of the base."
                 )
             domain = domain_obj.browse(vals['domain_id'])
-            container_vals = {
+            service_vals = {
                 'name': vals['name'] + '-' +
                 domain.name.replace('.', '-'),
                 'server_id': application.next_server_id.id,
@@ -580,7 +580,7 @@ class ClouderBase(models.Model):
                 'environment_id': vals['environment_id'],
                 'suffix': vals['name']
             }
-            vals['container_id'] = container_obj.create(container_vals).id
+            vals['service_id'] = service_obj.create(service_vals).id
 
         vals = self.onchange_application_id_vals(vals)
 
@@ -666,7 +666,7 @@ class ClouderBase(models.Model):
                            self.env.context['save_comment'] or
                            self.save_comment or 'Manual',
                 'now_bup': self.now_bup,
-                'container_id': self.container_id.id,
+                'service_id': self.service_id.id,
                 'base_id': self.id,
             }
             save = self.env['clouder.save'].create(save_vals)
@@ -705,9 +705,9 @@ class ClouderBase(models.Model):
         base_name = False
         if 'reset_base_name' in self.env.context:
             base_name = self.env.context['reset_base_name']
-        container = False
-        if 'reset_container' in self.env.context:
-            container = self.env.context['reset_container']
+        service = False
+        if 'reset_service' in self.env.context:
+            service = self.env.context['reset_service']
         base_reset_id = self.reset_id and self.reset_id or self
         if 'save_comment' not in self.env.context:
             self = self.with_context(save_comment='Reset base')
@@ -715,18 +715,18 @@ class ClouderBase(models.Model):
         self.with_context(nosave=True)
         vals = {'base_id': self.id, 'base_restore_to_name': self.name,
                 'base_restore_to_domain_id': self.domain_id.id,
-                'container_id': self.container_id.id, 'base_nosave': True}
-        if base_name and container:
+                'service_id': self.service_id.id, 'base_nosave': True}
+        if base_name and service:
             vals = {'base_id': False, 'base_restore_to_name': base_name,
                     'base_restore_to_domain_id': self.domain_id.id,
-                    'container_id': container.id, 'base_nosave': True}
+                    'service_id': service.id, 'base_nosave': True}
         save.write(vals)
         base = save.restore()
         base.write({'reset_id': base_reset_id.id})
         base = base.with_context(
             base_reset_fullname_=base_reset_id.fullname_)
         base = base.with_context(
-            container_reset_name=base_reset_id.container_id.name)
+            service_reset_name=base_reset_id.service_id.name)
         # base.deploy_salt()
         base.update_exec()
         base.post_reset()
@@ -822,8 +822,8 @@ class ClouderBase(models.Model):
         self.save_exec(no_enqueue=True)
 
         # if self.application_id.update_bases:
-        #     self.container_id.deploy_salt()
-        # for key, child in self.container_id.childs.iteritems():
+        #     self.service_id.deploy_salt()
+        # for key, child in self.service_id.childs.iteritems():
         #     if child.application_id.update_bases:
         #         child.deploy_salt()
 
@@ -852,8 +852,8 @@ class ClouderBase(models.Model):
         # self.purge_salt()
 
         # if self.application_id.update_bases:
-        #     self.container_id.deploy_salt()
-        # for key, child in self.container_id.childs.iteritems():
+        #     self.service_id.deploy_salt()
+        # for key, child in self.service_id.childs.iteritems():
         #     if child.application_id.update_bases:
         #         child.deploy_salt()
 

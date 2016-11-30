@@ -11,7 +11,7 @@ class ClouderImageVolume(models.Model):
     """
     Define the image.volume object, which represent the volumes which
     will define the volume in the generated image and which will be
-    inherited in the containers.
+    inherited in the services.
     """
 
     _name = 'clouder.image.volume'

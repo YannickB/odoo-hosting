@@ -10,16 +10,16 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderContainerPort(models.Model):
+class ClouderServicePort(models.Model):
     """
-    Define the container.port object, used to define the ports which
-    will be mapped in the container.
+    Define the service.port object, used to define the ports which
+    will be mapped in the service.
     """
 
-    _name = 'clouder.container.port'
+    _name = 'clouder.service.port'
 
-    container_id = fields.Many2one(
-        'clouder.container', 'Container', ondelete="cascade", required=True)
+    service_id = fields.Many2one(
+        'clouder.service', 'Service', ondelete="cascade", required=True)
     name = fields.Char('Name', required=True)
     localport = fields.Char('Local port', required=True)
     hostport = fields.Char('Host port')
@@ -30,6 +30,6 @@ class ClouderContainerPort(models.Model):
     use_hostport = fields.Boolean('Use hostpost?')
 
     _sql_constraints = [
-        ('name_uniq', 'unique(container_id,name)',
-         'Port name must be unique per container!'),
+        ('name_uniq', 'unique(service_id,name)',
+         'Port name must be unique per service!'),
     ]

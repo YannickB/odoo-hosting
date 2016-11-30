@@ -35,14 +35,14 @@ from . import base_option
 from . import config_backup_method
 from . import config_settings
 
-# Container
-from . import container
-from . import container_child
-from . import container_link
-from . import container_metadata
-from . import container_option
-from . import container_port
-from . import container_volume
+# Service
+from . import service
+from . import service_child
+from . import service_link
+from . import service_metadata
+from . import service_option
+from . import service_port
+from . import service_volume
 
 # Image
 from . import image

@@ -11,7 +11,7 @@ class ClouderImagePort(models.Model):
     """
     Define the image.port object, which represent the ports which
     will define the ports in the generated image and which will be inherited
-    in the containers.
+    in the services.
     """
 
     _name = 'clouder.image.port'

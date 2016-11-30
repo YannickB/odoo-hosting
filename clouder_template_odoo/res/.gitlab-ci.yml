@@ -70,7 +70,7 @@ staging:
   before_script:
     - apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install curl
   script:
-    - 'curl -H "Accept: application/json" -d tgt=$STAGING_SERVER -d container_name=$CI_PROJECT_NAME -d secretkey=$STAGING_PASSWORD -d image=$CONTAINER_TEST_IMAGE -k https://$SALT_DOMAIN/hook/container_deploy'
+    - 'curl -H "Accept: application/json" -d tgt=$STAGING_SERVER -d service_name=$CI_PROJECT_NAME -d secretkey=$STAGING_PASSWORD -d image=$CONTAINER_TEST_IMAGE -k https://$SALT_DOMAIN/hook/service_deploy'
   only:
     - master
 
@@ -79,7 +79,7 @@ deploy:
   before_script:
     - apt-get -qq update && DEBIAN_FRONTEND=noninteractive apt-get -y -qq install curl
   script:
-    - 'curl -H "Accept: application/json" -d tgt=$PRODUCTION_SERVER -d container_name=$CI_PROJECT_NAME -d secretkey=$PRODUCTION_PASSWORD -d image=$CONTAINER_TEST_IMAGE -k https://$SALT_DOMAIN/hook/container_deploy'
+    - 'curl -H "Accept: application/json" -d tgt=$PRODUCTION_SERVER -d service_name=$CI_PROJECT_NAME -d secretkey=$PRODUCTION_PASSWORD -d image=$CONTAINER_TEST_IMAGE -k https://$SALT_DOMAIN/hook/service_deploy'
   only:
     - master
   when: manual

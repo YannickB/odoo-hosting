@@ -17,8 +17,8 @@ Clouder.run = function($){
         $clouder_form.find('.CL_hint').hide();
         // Hide environment_id itself
         $clouder_form.find('select[name="environment_id"]').parents(".CL_form-group").hide();
-        // Hide base and container specific forms until application_id is selected
-        $clouder_form.find('.CL_container_form').hide();
+        // Hide base and service specific forms until application_id is selected
+        $clouder_form.find('.CL_service_form').hide();
         $clouder_form.find('.CL_base_form').hide();
 
         // Show step 1 by default
@@ -51,18 +51,18 @@ Clouder.run = function($){
         // Controls the appearance of env/title inputs depending on application_id
         $clouder_form.on('change', "select[name='application_id']", function(){
             var $app_id = $clouder_form.find("select[name='application_id']");
-            var $container_div = $clouder_form.find('.CL_container_form');
+            var $service_div = $clouder_form.find('.CL_service_form');
             var $base_div = $clouder_form.find('.CL_base_form');
-            if ($app_id.find('option:selected').attr('inst_type')==='container'){
-                $container_div.show();
+            if ($app_id.find('option:selected').attr('inst_type')==='service'){
+                $service_div.show();
                 $base_div.hide();
             }
             else if ($app_id.find('option:selected').attr('inst_type')==='base'){
-                $container_div.hide();
+                $service_div.hide();
                 $base_div.show();
             }
             else {
-                $container_div.hide();
+                $service_div.hide();
                 $base_div.hide();
             }
         });
@@ -309,7 +309,7 @@ Clouder.submit_override = function(){
 
     // Empty env values depending on application type
     $app_id = $form.find('select[name="application_id"]');
-    if ($app_id.find('option:selected').attr('inst_type')!=='container'){
+    if ($app_id.find('option:selected').attr('inst_type')!=='service'){
         $form.find('select[name="suffix"]').val('');
         $form.find('select[name="environment_id"]').val('');
         $form.find('input[name="environment_prefix"]').val('');
@@ -413,7 +413,7 @@ Clouder.error_step = function(step){
             Clouder.getHintMsg("CL_HINT_EMAIL")
         ) || has_error;
 
-        if ($app_select.find('option:selected').attr('inst_type')==='container'){
+        if ($app_select.find('option:selected').attr('inst_type')==='service'){
             $suffix = Clouder.$plugin.find('input[name="suffix"]');
             $env_prefix = Clouder.$plugin.find('input[name="environment_prefix"]');
             $env_id = Clouder.$plugin.find('select[name="environment_id"]');

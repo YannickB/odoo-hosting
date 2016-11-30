@@ -20,16 +20,16 @@ class ClouderApplicationTypeOption(models.Model):
         return res
 
 
-class ClouderContainer(models.Model):
+class ClouderService(models.Model):
     """
     Add some methods to manage specificities of the registry building.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
-    def get_container_res(self):
-        res = super(ClouderContainer, self).get_container_res()
+    def get_service_res(self):
+        res = super(ClouderService, self).get_service_res()
         if self.image_id.type_id.name == 'registry':
             res['environment'].update({
                 'REGISTRY_HTTP_TLS_CERTIFICATE': '/certs/domain.crt',
@@ -66,27 +66,27 @@ class ClouderContainer(models.Model):
                 ),
             ])
 
-        return super(ClouderContainer, self).deploy_post()
+        return super(ClouderService, self).deploy_post()
 
 
-class ClouderContainerLink(models.Model):
+class ClouderServiceLink(models.Model):
     """
     Add methods to manage the registry specificities.
     """
 
-    _inherit = 'clouder.container.link'
+    _inherit = 'clouder.service.link'
 
     @api.multi
     def deploy_link(self):
         """
         """
-        super(ClouderContainerLink, self).deploy_link()
+        super(ClouderServiceLink, self).deploy_link()
 
         if self.name.type_id.name == 'registry':
             if 'exec' in self.target.childs:
                 self.target.execute([
-                    'htpasswd', '-Bbn',  self.container_id.name,
-                    self.container_id.options['registry_password']['value'],
+                    'htpasswd', '-Bbn',  self.service_id.name,
+                    self.service_id.options['registry_password']['value'],
                     '>', 'auth/htpasswd',
                 ],
                     executor='sh',
@@ -97,12 +97,12 @@ class ClouderContainerLink(models.Model):
     def purge_link(self):
         """
         """
-        super(ClouderContainerLink, self).purge_link()
+        super(ClouderServiceLink, self).purge_link()
 
         if self.name.type_id.name == 'registry':
             if 'exec' in self.target.childs:
                 self.target.execute([
-                    'sed', '-i', '"/%s/d"' % self.container_id.name,
+                    'sed', '-i', '"/%s/d"' % self.service_id.name,
                     'auth/htpasswd',
                 ],
                     executor='sh',
@@ -125,7 +125,7 @@ class ClouderBaseLink(models.Model):
 
         if self.name.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'registry':
-            registry = self.base_id.container_id.childs['exec']
+            registry = self.base_id.service_id.childs['exec']
             if self.base_id.cert_cert and self.base_id.cert_key:
                 registry.execute([
                     'echo', '"%s"' % self.base_id.cert_cert,

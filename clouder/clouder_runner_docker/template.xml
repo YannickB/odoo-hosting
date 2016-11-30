@@ -9,14 +9,14 @@
         <record id="application_type_docker_option_ports" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_docker"/>
             <field name="name">ports</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
         </record>
         <record id="application_type_docker_option_publickey" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_docker"/>
             <field name="name">public_key</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="auto" eval="True"/>
         </record>
 

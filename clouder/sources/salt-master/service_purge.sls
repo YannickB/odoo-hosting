@@ -1,10 +1,10 @@
 include:
-  - container_stop
+  - service_stop
 
 purge:
   module.run:
     - name: dockerng.rm
     - args:
-      - {{ pillar['container_name'] }}
+      - {{ pillar['service_name'] }}
     - kargs:
       - volumes = True

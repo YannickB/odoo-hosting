@@ -24,7 +24,7 @@ class ClouderServer(models.Model):
 
             if not self.env.ref('clouder.clouder_settings').salt_master_id:
                 application = self.env.ref('clouder.application_salt_master')
-                master = self.env['clouder.container'].create({
+                master = self.env['clouder.service'].create({
                     'environment_id': self.environment_id.id,
                     'suffix': 'salt-master',
                     'application_id': application.id,
@@ -34,7 +34,7 @@ class ClouderServer(models.Model):
                 master = self.salt_master
 
             application = self.env.ref('clouder.application_salt_minion')
-            self.env['clouder.container'].create({
+            self.env['clouder.service'].create({
                 'environment_id': self.environment_id.id,
                 'suffix': 'salt-minion',
                 'application_id': application.id,
@@ -73,7 +73,7 @@ class ClouderServer(models.Model):
                 except:
                     pass
             try:
-                minion = self.env['clouder.container'].search(
+                minion = self.env['clouder.service'].search(
                     [('environment_id', '=', self.environment_id.id),
                      ('server_id', '=', self.id),
                      ('suffix', '=', 'salt-minion')])
@@ -84,15 +84,15 @@ class ClouderServer(models.Model):
         super(ClouderServer, self).purge()
 
 
-class ClouderContainer(models.Model):
+class ClouderService(models.Model):
     """
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def hook_deploy_special_args(self, cmd):
-        cmd = super(ClouderContainer, self).hook_deploy_special_args(cmd)
+        cmd = super(ClouderService, self).hook_deploy_special_args(cmd)
         if self.application_id.type_id.name == 'salt-minion':
             cmd.extend(['--pid host'])
         return cmd
@@ -103,7 +103,7 @@ class ClouderContainer(models.Model):
         self.purge_salt()
 
         # if not self.childs_ids:
-        res = self.get_container_res()
+        res = self.get_service_res()
         self.image_id.build_image(
             self, self.salt_master, expose_ports=res['expose_ports'])
 
@@ -117,15 +117,15 @@ class ClouderContainer(models.Model):
         bases = {}
         if self.application_id.update_bases:
             for base in self.env['clouder.base'].search(
-                    [('container_id', '=', self.id)]):
+                    [('service_id', '=', self.id)]):
                 bases[base.fullname_] = base.fullname_
             if self.parent_id:
                 for base in self.env['clouder.base'].search(
-                        [('container_id', '=',
-                          self.parent_id.container_id.id)]):
+                        [('service_id', '=',
+                          self.parent_id.service_id.id)]):
                     bases[base.fullname_] = base.fullname_
         data['bases'] = [base for key, base in bases.iteritems()]
-        data.update(self.get_container_res())
+        data.update(self.get_service_res())
 
         links = []
         for link in data['links']:
@@ -147,11 +147,11 @@ class ClouderContainer(models.Model):
 
         data = yaml.safe_dump(data, default_flow_style=False)
         self.salt_master.execute(
-            ['echo "' + data + '" > /srv/pillar/containers/' +
+            ['echo "' + data + '" > /srv/pillar/services/' +
              self.name + '.sls'])
         self.salt_master.execute(
             ['sed', '-i', '"/' + self.server_id.fulldomain +
-             '\':/a +++    - containers/' + self.name + '"',
+             '\':/a +++    - services/' + self.name + '"',
              '/srv/pillar/top.sls'])
         self.salt_master.execute(
             ['sed', '-i', '"s/+++//g"', '/srv/pillar/top.sls'])
@@ -168,11 +168,11 @@ class ClouderContainer(models.Model):
         if self.application_id.type_id.name == 'salt-minion':
             if not self.server_id.salt_minion_id:
                 self.server_id.salt_minion_id = self.id
-        super(ClouderContainer, self).deploy()
+        super(ClouderService, self).deploy()
 
     @api.multi
     def deploy_post(self):
-        super(ClouderContainer, self).deploy_post()
+        super(ClouderService, self).deploy_post()
 
         if self.application_id.type_id.name == 'salt-master' \
                 and self.application_id.check_tags(['exec']):
@@ -220,41 +220,41 @@ class ClouderContainer(models.Model):
 
         if self.salt_master:
             self.salt_master.execute([
-                'sed', '-i', r'"/containers\/' + self.name + '/d"',
+                'sed', '-i', r'"/services\/' + self.name + '/d"',
                 '/srv/pillar/top.sls'])
             self.salt_master.execute([
-                'rm', '-rf', '/srv/salt/containers/build_' + self.name])
+                'rm', '-rf', '/srv/salt/services/build_' + self.name])
             self.salt_master.execute([
-                'rm', '-rf', '/srv/pillar/containers/' + self.name + '.sls'])
+                'rm', '-rf', '/srv/pillar/services/' + self.name + '.sls'])
 
 
-class ClouderContainerLink(models.Model):
+class ClouderServiceLink(models.Model):
     """
     """
 
-    _inherit = 'clouder.container.link'
+    _inherit = 'clouder.service.link'
 
     @api.multi
     def deploy_link(self):
         """
         """
-        super(ClouderContainerLink, self).deploy_link()
+        super(ClouderServiceLink, self).deploy_link()
         if self.name.type_id.name == 'shinken' \
-                and self.container_id.application_id.type_id.name == \
+                and self.service_id.application_id.type_id.name == \
                 'salt-minion':
 
-            self.target.deploy_shinken_server(self.container_id)
+            self.target.deploy_shinken_server(self.service_id)
 
     @api.multi
     def purge_link(self):
         """
         """
-        super(ClouderContainerLink, self).purge_link()
+        super(ClouderServiceLink, self).purge_link()
         if self.name.type_id.name == 'shinken' \
-                and self.container_id.application_id.type_id.name == \
+                and self.service_id.application_id.type_id.name == \
                 'salt-minion':
 
-            self.target.purge_shinken_server(self.container_id)
+            self.target.purge_shinken_server(self.service_id)
 
 
 class ClouderBase(models.Model):
@@ -280,13 +280,13 @@ class ClouderBase(models.Model):
             self.fullname_ + '.sls'])
         self.salt_master.execute([
             'sed', '-i',
-            '"/' + self.container_id.server_id.name +
+            '"/' + self.service_id.server_id.name +
             '\':/a +++    - bases/' + self.fullname_ +
             '"',  '/srv/pillar/top.sls'])
         self.salt_master.execute([
             'sed', '-i', '"s/+++//g"', '/srv/pillar/top.sls'])
         self.salt_master.execute([
-            'salt', self.container_id.server_id.fulldomain,
+            'salt', self.service_id.server_id.fulldomain,
             'saltutil.refresh_pillar'])
 
     @api.multi

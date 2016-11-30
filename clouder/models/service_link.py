@@ -9,39 +9,39 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderContainerLink(models.Model):
+class ClouderServiceLink(models.Model):
     """
-    Define the container.link object, used to specify the applications linked
-    to a container.
+    Define the service.link object, used to specify the applications linked
+    to a service.
     """
 
-    _name = 'clouder.container.link'
+    _name = 'clouder.service.link'
     _inherit = ['clouder.model']
     _autodeploy = False
 
-    container_id = fields.Many2one(
-        'clouder.container', 'Container', ondelete="cascade", required=True)
+    service_id = fields.Many2one(
+        'clouder.service', 'Service', ondelete="cascade", required=True)
     name = fields.Many2one(
         'clouder.application', 'Application', required=True)
-    target = fields.Many2one('clouder.container', 'Target')
+    target = fields.Many2one('clouder.service', 'Target')
     required = fields.Boolean('Required?')
     auto = fields.Boolean('Auto?')
     make_link = fields.Boolean('Make docker link?')
     deployed = fields.Boolean('Deployed?', readonly=True)
 
     @api.multi
-    @api.constrains('container_id')
+    @api.constrains('service_id')
     def _check_required(self):
         """
         Check that we specify a value for the link
         if this link is required.
         """
         if self.required and not self.target \
-                and not self.container_id.child_ids:
+                and not self.service_id.child_ids:
             self.raise_error(
                 'You need to specify a link to '
-                '"%s" for the container "%s".',
-                self.name.name, self.container_id.name,
+                '"%s" for the service "%s".',
+                self.name.name, self.service_id.name,
             )
 
     @api.multi
@@ -68,8 +68,8 @@ class ClouderContainerLink(models.Model):
         """
         Make the control to know if we can launch the deploy/purge.
         """
-        if self.container_id.child_ids:
-            self.log('The container has children, skipping deploy link')
+        if self.service_id.child_ids:
+            self.log('The service has children, skipping deploy link')
             return False
         if not self.target:
             self.log('The target isnt configured in the link, '
@@ -82,7 +82,7 @@ class ClouderContainerLink(models.Model):
         self = self.with_context(no_enqueue=True)
         self.do(
             'deploy_link ' + self.name.name,
-            'deploy_exec', where=self.container_id)
+            'deploy_exec', where=self.service_id)
 
     @api.multi
     def deploy_exec(self):
@@ -96,7 +96,7 @@ class ClouderContainerLink(models.Model):
         self = self.with_context(no_enqueue=True)
         self.do(
             'purge_link ' + self.name.name,
-            'purge_exec', where=self.container_id)
+            'purge_exec', where=self.service_id)
 
     @api.multi
     def purge_exec(self):

@@ -14,7 +14,7 @@
         <record id="application_type_mysql_option_network" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_mysql"/>
             <field name="name">network</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="default">172.17.0.0/16</field>
             <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
@@ -23,7 +23,7 @@
         <record id="application_type_mysql_option_root_password" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_mysql"/>
             <field name="name">root_password</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="tag_ids" eval="[(6, 0, [ref('tag_root_password')])]"/>
             <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
@@ -72,7 +72,7 @@
             <field name="code">data</field>
             <field name="type_id" ref="application_type_mysql"/>
             <field name="default_image_id" ref="image_mysql_data"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_service_shinken')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
@@ -99,13 +99,13 @@
             <field name="required" eval="True"/>
         </record>
 
-        <record id="application_template_container_mysql" model="clouder.application.template">
+        <record id="application_template_service_mysql" model="clouder.application.template">
             <field name="name">Container MySQL</field>
         </record>
-        <record id="application_template_container_mysql_link_mysql" model="clouder.application.link">
-            <field name="template_id" ref="application_template_container_mysql"/>
+        <record id="application_template_service_mysql_link_mysql" model="clouder.application.link">
+            <field name="template_id" ref="application_template_service_mysql"/>
             <field name="name" ref="application_mysql"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>

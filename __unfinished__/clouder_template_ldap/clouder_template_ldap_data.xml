@@ -10,19 +10,19 @@
         <record id="application_type_openldap_option1" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_openldap"/>
             <field name="name">domain</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="required" eval="True"/>
         </record>
         <record id="application_type_openldap_option2" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_openldap"/>
             <field name="name">password</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="required" eval="True"/>
         </record>
         <record id="application_type_openldap_option3" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_openldap"/>
             <field name="name">organization</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="required" eval="True"/>
         </record>
 
@@ -83,10 +83,10 @@ RUN echo "command=/bin/bash -c 'source /etc/apache2/envvars && exec /usr/sbin/ap
             <field name="current_version">1</field>
             <field name="type_id" ref="application_type_openldap"/>
             <field name="default_image_id" ref="image_openldap"/>
-            <field name="container_time_between_save">9999</field>
-            <field name="container_saverepo_change">30</field>
-            <field name="container_saverepo_expiration">90</field>
-            <field name="container_save_expiration">5</field>
+            <field name="service_time_between_save">9999</field>
+            <field name="service_saverepo_change">30</field>
+            <field name="service_saverepo_expiration">90</field>
+            <field name="service_save_expiration">5</field>
             <field name="base_time_between_save">9999</field>
             <field name="base_saverepo_change">30</field>
             <field name="base_saverepo_expiration">90</field>
@@ -95,7 +95,7 @@ RUN echo "command=/bin/bash -c 'source /etc/apache2/envvars && exec /usr/sbin/ap
         <record id="application_openldap_link1" model="clouder.application.link">
             <field name="application_id" ref="application_openldap"/>
             <field name="name" ref="clouder_template_shinken.application_shinken"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="auto" eval="True"/>
         </record>
 

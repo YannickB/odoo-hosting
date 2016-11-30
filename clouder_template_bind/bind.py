@@ -30,7 +30,7 @@ import socket
 
 class ClouderDomain(models.Model):
     """
-    Add method to manage domain general configuration on the bind container.
+    Add method to manage domain general configuration on the bind service.
     """
 
     _inherit = 'clouder.domain'
@@ -39,7 +39,7 @@ class ClouderDomain(models.Model):
     def configfile(self):
         """
         Property returning the path to the domain config file
-        in the bind container.
+        in the bind service.
         """
         return'/etc/bind/db.' + self.name
 
@@ -66,7 +66,7 @@ class ClouderDomain(models.Model):
     @api.multi
     def deploy(self):
         """
-        Configure the domain in the bind container, if configured.
+        Configure the domain in the bind service, if configured.
         """
 
         super(ClouderDomain, self).deploy()
@@ -106,7 +106,7 @@ class ClouderDomain(models.Model):
     @api.multi
     def purge(self):
         """
-        Remove the domain config in the bind container.
+        Remove the domain config in the bind service.
         """
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
             self.dns_id.execute([
@@ -119,7 +119,7 @@ class ClouderDomain(models.Model):
 
 class ClouderBaseLink(models.Model):
     """
-    Add method to manage links between bases and the bind container.
+    Add method to manage links between bases and the bind service.
     """
 
     _inherit = 'clouder.base.link'
@@ -131,7 +131,7 @@ class ClouderBaseLink(models.Model):
         self.target.execute([
             'echo "' + name + ' IN A ' +
             (proxy_link and proxy_link[0].target.server_id.public_ip or
-             self.base_id.container_id.server_id.public_ip) +
+             self.base_id.service_id.server_id.public_ip) +
             '" >> ' + self.base_id.domain_id.configfile])
         self.base_id.domain_id.refresh_serial(self.base_id.fulldomain)
 
@@ -165,7 +165,7 @@ class ClouderBaseLink(models.Model):
     @api.multi
     def purge_link(self):
         """
-        Remove base records on the bind container.
+        Remove base records on the bind service.
         """
         super(ClouderBaseLink, self).purge_link()
         if self.name.type_id.name == 'bind':

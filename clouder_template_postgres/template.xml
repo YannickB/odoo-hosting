@@ -11,13 +11,13 @@
         <record id="application_type_postgres_option_network" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_postgres"/>
             <field name="name">network</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="default">172.17.0.0/16</field>
         </record>
         <record id="application_type_postgres_option_listen" model="clouder.application.type.option">
             <field name="application_type_id" ref="application_type_postgres"/>
             <field name="name">listen</field>
-            <field name="type">container</field>
+            <field name="type">service</field>
             <field name="default">*</field>
         </record>
 
@@ -58,7 +58,7 @@
             <field name="name">Postgresql Data</field>
             <field name="code">data</field>
             <field name="type_id" ref="application_type_postgres"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_container_shinken')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_service_shinken')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
             <field name="default_image_id" ref="image_postgres_data"/>
             <field name="sequence">1</field>
@@ -85,13 +85,13 @@
             <field name="required" eval="True"/>
         </record>
 
-        <record id="application_template_container_postgres" model="clouder.application.template">
+        <record id="application_template_service_postgres" model="clouder.application.template">
             <field name="name">Container Postgres</field>
         </record>
-        <record id="application_template_container_postgres_link_postgres" model="clouder.application.link">
-            <field name="template_id" ref="application_template_container_postgres"/>
+        <record id="application_template_service_postgres_link_postgres" model="clouder.application.link">
+            <field name="template_id" ref="application_template_service_postgres"/>
             <field name="name" ref="application_postgres"/>
-            <field name="container" eval="True"/>
+            <field name="service" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>

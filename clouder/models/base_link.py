@@ -24,7 +24,7 @@ class ClouderBaseLink(models.Model):
                               required=True)
     name = fields.Many2one('clouder.application', 'Application',
                            required=True)
-    target = fields.Many2one('clouder.container', 'Target')
+    target = fields.Many2one('clouder.service', 'Target')
     required = fields.Boolean('Required?')
     auto = fields.Boolean('Auto?')
     deployed = fields.Boolean('Deployed?', readonly=True)
@@ -32,7 +32,7 @@ class ClouderBaseLink(models.Model):
     @property
     def target_base(self):
         """
-        Property returning the first base of the target container.
+        Property returning the first base of the target service.
         """
         return self.target.base_ids and \
             self.target.base_ids[0]

@@ -36,7 +36,7 @@ class ClouderContainer(models.Model):
     Add methods to manage the mautic specificities.
     """
 
-    _inherit = 'clouder.container'
+    _inherit = 'clouder.service'
 
     @api.multi
     def deploy_post(self):
@@ -82,18 +82,18 @@ class ClouderBase(models.Model):
         if self.application_id.type_id.name == 'mautic':
 
             config_file = '/etc/nginx/sites-available/' + self.fullname
-            self.container_id.send(
+            self.service_id.send(
                 modules.get_module_path('clouder_template_mautic') +
                 '/res/nginx.config', config_file)
-            self.container_id.execute([
+            self.service_id.execute([
                 'sed', '-i', '"s/BASE/' + self.name + '/g"', config_file])
-            self.container_id.execute([
+            self.service_id.execute([
                 'sed', '-i', '"s/DOMAIN/' + self.domain_id.name + '/g"',
                 config_file])
-            self.container_id.execute([
+            self.service_id.execute([
                 'ln', '-s', '/etc/nginx/sites-available/' + self.fullname,
                 '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.execute(['/etc/init.d/nginx', 'reload'])
+            self.service_id.execute(['/etc/init.d/nginx', 'reload'])
 
         return res
 
@@ -104,11 +104,11 @@ class ClouderBase(models.Model):
         """
         super(ClouderBase, self).purge_post()
         if self.application_id.type_id.name == 'mautic':
-            self.container_id.execute([
+            self.service_id.execute([
                 'rm', '-rf', '/etc/nginx/sites-enabled/' + self.fullname])
-            self.container_id.execute([
+            self.service_id.execute([
                 'rm', '-rf', '/etc/nginx/sites-available/' + self.fullname])
-            self.container_id.execute(['/etc/init.d/nginx', 'reload'])
+            self.service_id.execute(['/etc/init.d/nginx', 'reload'])
 
     @api.multi
     def deploy_post(self):
@@ -185,11 +185,11 @@ class ClouderBase(models.Model):
             # arr["install_user_step[lastname]"] = self.admin_name
             # arr["install_user_step[email]"] = self.admin_email
             # arr["install_user_step[password]"] =
-            # self.container_id.db_password
+            # self.service_id.db_password
             # arr["install_user_step[username]"] = "admin"
             #
             # logging.info("usernames will be " + self.admin_name + "
-            # and root pswd is " + self.container_id.db_password + "
+            # and root pswd is " + self.service_id.db_password + "
             # and admin email is " + self.admin_email)
             #
             #
