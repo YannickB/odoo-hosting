@@ -452,15 +452,15 @@ class ClouderModel(models.AbstractModel):
         return res
 
     @api.multi
-    def connect(self, host=None, port=None, username=None):
+    def connect(self, host=None, username=None, port=None):
         """ It provides an SSHEnvironment for use
 
         Params:
             host: (str|None) IP/Host name of remote node. None to compile from
                 recordset
-            port: (int|None) SSH port of remote node. None for default (22)
             username: (str|None) Username to login to remote node. None for
                 blank.
+            port: (int|None) SSH port of remote node. None for default (22)
 
         Returns:
             clouder.ssh.SSHEnvironment: SSH Environment representing remote
@@ -590,9 +590,10 @@ class ClouderModel(models.AbstractModel):
         """
 
         if not ssh:
-            ssh = self.connect(server_name, username)
+            ssh = self.connect(server_name, username=username)
         for record in self:
-            record.__execute(cmd, stdin_arg, path, ssh, username, shell)
+            res = record.__execute(cmd, stdin_arg, path, ssh, username, shell)
+        return res
 
     @api.multi
     def __execute(self, cmd, stdin_arg, path, ssh, username, shell):
@@ -744,7 +745,7 @@ class ClouderModel(models.AbstractModel):
             if all([record._name == 'clouder.service',
                     'exec' in getattr(record, 'childs', []),
                     ]):
-                return record.childs.mapped('exec').send(
+                return record.childs['exec'].send(
                     source, destination, ssh=ssh, username=username,
                 )
 
