@@ -15,7 +15,7 @@
             <field name="localpath">/var/run/docker.sock</field>
             <field name="hostpath">/var/run/docker.sock</field>
             <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_template_kubernetes_port_kubernetes" model="clouder.image.port">
             <field name="template_id" ref="image_template_kubernetes"/>

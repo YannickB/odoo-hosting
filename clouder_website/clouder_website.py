@@ -130,7 +130,7 @@ class ClouderApplication(models.Model):
                 'lang': 'lang' in self.env.context and
                         self.env.context['lang'] or 'en_US',
                 'ssl_only': True,
-                'autosave': True,
+                'auto_backup': True,
             })
 
         return False

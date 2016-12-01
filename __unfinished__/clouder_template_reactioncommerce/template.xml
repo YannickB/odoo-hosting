@@ -79,7 +79,7 @@ CMD reaction
             <field name="default_image_id" ref="image_reactioncommerce_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
+            <field name="auto_backup" eval="True"/>
         </record>
 
         <record id="application_reactioncommerce_exec" model="clouder.application">

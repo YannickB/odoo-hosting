@@ -29,7 +29,7 @@
             <field name="localpath">/opt/versions</field>
             <field name="hostpath">/opt/services</field>
             <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_piwik_volume_www" model="clouder.image.volume">
             <field name="image_id" ref="image_piwik"/>

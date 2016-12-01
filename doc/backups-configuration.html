@@ -13,7 +13,7 @@ Simple, will simply copy the files in a directory of the backup container.
 | Bup, will store the backup into a bup repository. Bup is a backup solution based on git which will do global deduplication on the backup to massively save disk space. With bup, you can make hourly backup without having to worry about disk space.
 | Among the downside it’s difficult to remove a backup once on bup, that’s why we sometimes change the repository where backup are stored, and we need to manage the concept of repository on Clouder.
 
-You can see the list of all backup on the Save menu.
+You can see the list of all backup on the Backup menu.
 
 .. image:: images/save-list.png
 
@@ -59,7 +59,7 @@ On the Configure Clouder menu you’ll find some buttons to execute maintenance 
 
 - Reset keys will reset the keys of all containers managed by Clouder.
 
-- Save All will perform some maintenance task on the backup containers (if they use Bup), will launch a save on all containers and bases, and upload a copy of the backup containers to their backup-upload links.
+- Backup All will perform some maintenance task on the backup containers (if they use Bup), will launch a save on all containers and bases, and upload a copy of the backup containers to their backup-upload links.
 
 - Purge expired saves will drop all saves which pass their expiration date.
 
@@ -71,6 +71,6 @@ On the Configure Clouder menu you’ll find some buttons to execute maintenance 
 
 - Launch next save will execute a backup on all containers/bases which pass the next save date. It’s linked to a cron which is executed every thirty minutes.
 
-Reset keys, Save All and Reset bases, the longest tasks, will update the configuration dates when they end their actions, so you can easily know at which time the actions finished.
+Reset keys, Backup All and Reset bases, the longest tasks, will update the configuration dates when they end their actions, so you can easily know at which time the actions finished.
 
 You also have to indicate in the configuration the sysadmin email. It’s a requirement, you can’t use Clouder with this field empty.

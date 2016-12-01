@@ -249,22 +249,22 @@ class ClouderBase(models.Model):
             self.service_id.execute(['/etc/init.d/nginx', 'reload'])
 
 
-class ClouderSave(models.Model):
+class ClouderBackup(models.Model):
     """
-    Add methods to manage the drupal save specificities.
+    Add methods to manage the drupal backup specificities.
     """
 
-    _inherit = 'clouder.save'
+    _inherit = 'clouder.backup'
 
     @api.multi
     def deploy_base(self):
         """
         Backup the sites folder.
         """
-        res = super(ClouderSave, self).deploy_base()
+        res = super(ClouderBackup, self).deploy_base()
         if self.base_id.application_id.type_id.name == 'drupal':
             # self.execute(ssh, ['drush', 'archive-dump', self.fullname_,
-            #  '--destination=/base-backup/' + vals['saverepo_name'] +
+            #  '--destination=/base-backup/' + vals['backup_repo_name'] +
             # 'tar.gz'])
             self.service_id.execute([
                 'cp', '-R', '/var/www/drupal/sites/' + self.base_id.fulldomain,
@@ -277,7 +277,7 @@ class ClouderSave(models.Model):
         """
         Restore the sites folder.
         """
-        res = super(ClouderSave, self).restore_base(base)
+        res = super(ClouderBackup, self).restore_base(base)
         if self.base_id.application_id.type_id.name == 'drupal':
             self.service_id.execute([
                 'rm', '-rf',

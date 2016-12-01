@@ -32,7 +32,7 @@ switch ($args[0]) {
     $node->letscoop_instance['und'][0]['target_type'] = "node";
     $node->letscoop_bdd_server['und'][0]['target_id'] = $args[6];
     $node->letscoop_bdd_server['und'][0]['target_type'] = "node";
-    node_save($node);
+    node_backup($node);
 
     drush_print('The node is created in the website');
     break;
@@ -51,10 +51,10 @@ switch ($args[0]) {
 
     $node = node_load($nid);
     $node->letscoop_state['und'][0]['value'] = 'enabled';
-    node_save($node);
+    node_backup($node);
 
     $user = user_load(1);
-    user_save($user,array('name'=>$args[2], 'password'=>$args[3]));
+    user_backup($user,array('name'=>$args[2], 'password'=>$args[3]));
 
     break;
 
@@ -72,7 +72,7 @@ switch ($args[0]) {
 
     $node = node_load($nid);
     $node->letscoop_version['und'][0]['value'] = $args[2];
-    node_save($node);      
+    node_backup($node);
     
     break;
     
@@ -85,7 +85,7 @@ switch ($args[0]) {
     foreach($result as $record) {
       $node = node_load($record->nid);
       $node->letscoop_state['und'][0]['value'] = 'removing';
-      node_save($node);
+      node_backup($node);
     }
 
 

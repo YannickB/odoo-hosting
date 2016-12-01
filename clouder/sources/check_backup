@@ -24,8 +24,8 @@ fi
 
 
 date=`date +%Y-%m-%d`
-date_save=( $(cat $directory/backup-date) )
-if [[ $date != $date_save ]]
+date_backup=( $(cat $directory/backup-date) )
+if [[ $date != $date_backup ]]
 then
   echo "No backup for today."
   exit 2

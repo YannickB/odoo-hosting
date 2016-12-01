@@ -280,7 +280,7 @@ class FormController(http.Controller):
             if mandat not in post or not post[mandat]:
                 return self.bad_request('Missing field "{0}"'.format(mandat))
 
-            # Make sure we only save lower-case email adresses
+            # Make sure we only backup lower-case email adresses
             # to avoid mismatch when checking login
             if mandat == "email":
                 post[mandat] = post[mandat].lower()

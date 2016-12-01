@@ -30,7 +30,7 @@
             <field name="default_image_id" ref="clouder.image_php_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
+            <field name="auto_backup" eval="True"/>
         </record>
 
         <record id="application_mautic_exec" model="clouder.application">

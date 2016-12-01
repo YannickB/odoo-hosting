@@ -76,7 +76,7 @@
                         <field name="build"/>
                         <field name="lang"/>
                         <field name="ssl_only"/>
-                        <field name="autosave"/>
+                        <field name="auto_backup"/>
                         <field name="test"/>
                         <field name="reset_each_day"/>
                         <newline/>
@@ -119,7 +119,7 @@
                                     <field name="domain_id" attrs="{'required': [('domainname', '!=', False)]}"/>
                                     <field name="service_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
                                     <field name="child_id"/>
-                                    <field name="save_id"/>
+                                    <field name="backup_id"/>
                                     <button name="create_child" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
                                     <button name="delete_child" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
                                 </tree>
@@ -131,16 +131,16 @@
                             <button name="update" string="Update" type="object"/>
                             <field name="job_ids" colspan="4"/>
                         </page>
-                        <page name="save" string="Save">
+                        <page name="backup" string="Backup">
                             <group col="4">
                                 <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
-                                <field name="time_between_save"/>
-                                <field name="save_expiration"/>
+                                <field name="time_between_backup"/>
+                                <field name="backup_expiration"/>
                                 <newline/>
-                                <field name="date_next_save"/>
-                                <field name="save_comment"/>
+                                <field name="date_next_backup"/>
+                                <field name="backup_comment"/>
                             </group>
-                            <button name="save" string="Save" type="object"/>
+                            <button name="backup" string="Backup" type="object"/>
                         </page>
                         <page string="Metadata">
                             <field name="metadata_ids" colspan="4">
@@ -198,7 +198,7 @@
                         <field name="scale"/>
                         <field name="from_id" attrs="{'invisible': [('from_id','=', False)]}"/>
                         <field name="dummy"/>
-                        <field name="provider_id" attrs="{'invisible': [('dummy','=', False)], 'required': [('dummy', '=', True)]}"/>
+                        <field name="provider_id"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -225,7 +225,7 @@
                                     <field name="hostpath"/>
                                     <field name="user"/>
                                     <field name="readonly"/>
-                                    <field name="nosave"/>
+                                    <field name="no_backup"/>
                                 </tree>
                             </field>
                             <field name="link_ids" colspan="4">
@@ -246,7 +246,7 @@
                                     <field name="sequence"/>
                                     <field name="node_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
                                     <field name="child_id"/>
-                                    <field name="save_id"/>
+                                    <field name="backup_id"/>
                                     <button name="create_child" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
                                     <button name="delete_child" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
                                 </tree>
@@ -268,17 +268,17 @@
                                 <button name="install_subservice" string="Install Subservice" type="object"/>
                             </group>
                         </page>
-                        <page name="save" string="Save">
+                        <page name="backup" string="Backup">
                             <group col="4">
                                 <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
-                                <field name="autosave"/>
-                                <field name="time_between_save"/>
-                                <field name="save_expiration"/>
+                                <field name="auto_backup"/>
+                                <field name="time_between_backup"/>
+                                <field name="backup_expiration"/>
                                 <newline/>
-                                <field name="date_next_save"/>
-                                <field name="save_comment"/>
+                                <field name="date_next_backup"/>
+                                <field name="backup_comment"/>
                             </group>
-                            <button name="save" string="Save" type="object"/>
+                            <button name="backup" string="Backup" type="object"/>
                         </page>
                         <page string="Metadata">
                             <field name="metadata_ids" colspan="4">
@@ -413,20 +413,20 @@
             </field>
         </record>
 
-        <record id="action_clouder_save_form" model="ir.actions.act_window">
-            <field name="name">Saves</field>
+        <record id="action_clouder_backup_form" model="ir.actions.act_window">
+            <field name="name">Backups</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">clouder.save</field>
+            <field name="res_model">clouder.backup</field>
             <field name="view_type">form</field>
         </record>
 
-        <menuitem action="action_clouder_save_form" id="menu_action_clouder_save_form" parent="menu_clouder_clouder"/>
+        <menuitem action="action_clouder_backup_form" id="menu_action_clouder_backup_form" parent="menu_clouder_clouder"/>
 
-        <record id="view_clouder_save_form" model="ir.ui.view">
-            <field name="name">clouder.save.form</field>
-            <field name="model">clouder.save</field>
+        <record id="view_clouder_backup_form" model="ir.ui.view">
+            <field name="name">clouder.backup.form</field>
+            <field name="model">clouder.backup</field>
             <field name="arch" type="xml">
-                <form string="Save" version="7.0">
+                <form string="Backup" version="7.0">
                     <group col="4">
                       <field name="name"/>
                       <field name="backup_id"/>
@@ -463,7 +463,7 @@
                                 <field name="base_build"/>
                                 <field name="base_test"/>
                                 <field name="base_lang"/>
-                                <field name="base_autosave"/>
+                                <field name="base_auto_backup"/>
                                 <field name="base_options"/>
                                 <field name="base_links"/>
                             </group>
@@ -492,11 +492,11 @@
                 </form>
             </field>
         </record>
-        <record id="view_clouder_save_tree" model="ir.ui.view">
-            <field name="name">clouder.save.tree</field>
-            <field name="model">clouder.save</field>
+        <record id="view_clouder_backup_tree" model="ir.ui.view">
+            <field name="name">clouder.backup.tree</field>
+            <field name="model">clouder.backup</field>
             <field name="arch" type="xml">
-                <tree string="Save">
+                <tree string="Backup">
                     <field name="name"/>
                     <field name='service_fullname' attrs="{'invisible': [('base_fullname','!=',False)]}"/>
                     <field name='base_fullname'/>
@@ -721,6 +721,7 @@
                         <field name="update_strategy"/>
                         <field name="update_bases"/>
                         <field name="dummy"/>
+                        <field name="provider"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -750,16 +751,16 @@
                                 </tree>
                             </field>
                         </page>
-                        <page name="save" string="Save">
+                        <page name="backup" string="Backup">
                             <group>
-                                <field name="autosave"/>
+                                <field name="auto_backup"/>
                                 <newline/>
                                 <field name="service_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
                                 <field name="base_backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
-                                <field name="service_time_between_save"/>
-                                <field name="base_time_between_save"/>
-                                <field name="service_save_expiration"/>
-                                <field name="base_save_expiration"/>
+                                <field name="service_time_between_backup"/>
+                                <field name="base_time_between_backup"/>
+                                <field name="service_backup_expiration"/>
+                                <field name="base_backup_expiration"/>
                             </group>
                         </page>
                         <page name="metadata" string="Metadata">
@@ -852,7 +853,7 @@
                             <field name="hostpath"/>
                             <field name="user"/>
                             <field name="readonly"/>
-                            <field name="nosave"/>
+                            <field name="no_backup"/>
                         </tree>
                     </field>
                     <field name="port_ids" colspan="4">
@@ -908,7 +909,7 @@
                             <field name="hostpath"/>
                             <field name="user"/>
                             <field name="readonly"/>
-                            <field name="nosave"/>
+                            <field name="no_backup"/>
                         </tree>
                     </field>
                     <field name="port_ids" colspan="4">
@@ -1020,18 +1021,18 @@
                         <field name="compose"/>
                         <field name="executor"/>
                         <newline/>
-                        <field name="end_save_all"/>
+                        <field name="end_backup_all"/>
                         <field name="end_update_services"/>
                         <field name="end_reset_bases"/>
                         <field name="end_certs_renewal"/>
                     </group>
                     <button name="cron_daily" string="Launch daily cron" type="object"/>
-                    <button name="save_all" string="Save All" type="object"/>
-                    <button name="purge_expired_saves" string="Purge expired Saves" type="object"/>
+                    <button name="backup_all" string="Backup All" type="object"/>
+                    <button name="purge_expired_backups" string="Purge expired Backups" type="object"/>
                     <button name="update_services" string="Update services" type="object"/>
                     <button name="reset_bases" string="Reset Bases" type="object"/>
                     <button name="certs_renewal" string="Certs Renewal" type="object"/>
-                    <button name="launch_next_saves" string="Launch Next Saves" type="object"/>
+                    <button name="launch_next_backups" string="Launch Next Backups" type="object"/>
                     <button name="reset_all_jobs" string="Reset Jobs" type="object"/>
                     <group col="4">
                         <field name="provider_ids" colspan="4"/>
@@ -1057,7 +1058,7 @@
         <menuitem id="menu_clouder_admin_configuration" parent="menu_clouder_configuration"
             sequence="15" action="action_clouder_configuration"/>
 
-        <record id="save_clouder_daily_scheduler" model="ir.cron">
+        <record id="backup_clouder_daily_scheduler" model="ir.cron">
           <field name="name">Clouder Daily Cron</field>
           <field eval="1" name="interval_number"/>
           <field name="interval_type">days</field>
@@ -1068,14 +1069,14 @@
           <field name="args">([1])</field>
         </record>
 
-        <record id="save_clouder_nextsaves_scheduler" model="ir.cron">
-          <field name="name">Clouder Next Saves</field>
+        <record id="backup_clouder_nextbackups_scheduler" model="ir.cron">
+          <field name="name">Clouder Next Backups</field>
           <field eval="30" name="interval_number"/>
           <field name="interval_type">minutes</field>
           <field eval="-1" name="numbercall"/>
           <field eval="0" name="doall"/>
           <field name="model">clouder.config.settings</field>
-          <field name="function">launch_next_saves</field>
+          <field name="function">launch_next_backups</field>
           <field name="args">([1])</field>
         </record>
 

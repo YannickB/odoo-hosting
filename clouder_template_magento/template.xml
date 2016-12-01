@@ -140,7 +140,7 @@
             <field name="image_id" ref="image_magento_data"/>
             <field name="name">config</field>
             <field name="localpath">/opt/magento/config</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_magento_data_volume_sites_enabled" model="clouder.image.volume">
             <field name="image_id" ref="image_magento_data"/>
@@ -160,7 +160,7 @@
             <field name="image_id" ref="image_magento_files1_9"/>
             <field name="name">files</field>
             <field name="localpath">/opt/magento/files</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
 
         <record id="image_magento_exec" model="clouder.image">
@@ -176,35 +176,35 @@
             <field name="from_code">data</field>
             <field name="name">log</field>
             <field name="localpath">/opt/magento/exec/var/log</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_magento_exec_volume_config" model="clouder.image.volume">
             <field name="image_id" ref="image_magento_exec"/>
             <field name="from_code">data</field>
             <field name="name">config</field>
             <field name="localpath">/opt/magento/exec/app/etc</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_magento_exec_volume_local_modules" model="clouder.image.volume">
             <field name="image_id" ref="image_magento_exec"/>
             <field name="from_code">data</field>
             <field name="name">local</field>
             <field name="localpath">/opt/magento/exec/app/code/local</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_magento_exec_volume_sites_enabled" model="clouder.image.volume">
             <field name="image_id" ref="image_magento_exec"/>
             <field name="from_code">data</field>
             <field name="name">sites-enabled</field>
             <field name="localpath">/etc/apache2/sites-enabled</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_magento_exec_volume_files" model="clouder.image.volume">
             <field name="image_id" ref="image_magento_exec"/>
             <field name="from_code">files</field>
             <field name="name">files</field>
             <field name="localpath">/opt/magento/files</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_magento_exec_port_web" model="clouder.image.port">
             <field name="image_id" ref="image_magento_exec"/>
@@ -290,7 +290,7 @@
             <field name="default_image_id" ref="image_magento_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
+            <field name="auto_backup" eval="True"/>
         </record>
         <record id="application_magento_data_link_mysql" model="clouder.application.link">
             <field name="application_id" ref="application_magento_data"/>
@@ -353,7 +353,7 @@
         <record id="image_magento_odoo_files8_volume_files" model="clouder.image.volume">
             <field name="image_id" ref="image_magento_odoo_files8"/>
             <field name="name">/opt/magento/files</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         
         <record id="application_magento_odoo" model="clouder.application">
@@ -416,7 +416,7 @@
             <field name="default_image_id" ref="image_magento_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
+            <field name="auto_backup" eval="True"/>
         </record>
         <record id="application_magento_odoo_data_link_mysql" model="clouder.application.link">
             <field name="application_id" ref="application_magento_odoo_data"/>

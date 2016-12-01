@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 class ClouderServiceVolume(models.Model):
     """
     Define the service.volume object, used to define the volume which
-    will be saved in the service or will be linked to a directory
+    will be backuped in the service or will be linked to a directory
     in the host node.
     """
 
@@ -26,7 +26,7 @@ class ClouderServiceVolume(models.Model):
     hostpath = fields.Char('Host path')
     user = fields.Char('System User')
     readonly = fields.Boolean('Readonly?')
-    nosave = fields.Boolean('No save?')
+    no_backup = fields.Boolean('No backup?')
 
     _sql_constraints = [
         ('name_uniq', 'unique(service_id,name)',

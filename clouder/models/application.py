@@ -61,26 +61,29 @@ class ClouderApplication(models.Model):
         ('never', 'Never'), ('manual', 'Manual'), ('auto', 'Automatic')],
         string='Service Update Strategy', required=True, default='never')
     update_bases = fields.Boolean('Update bases?')
-    autosave = fields.Boolean('Save?')
+    auto_backup = fields.Boolean('Backup?')
     service_backup_ids = fields.Many2many(
         'clouder.service', 'clouder_application_service_backup_rel',
         'application_id', 'backup_id', 'Backups Services')
-    service_time_between_save = fields.Integer(
-        'Minutes between each service save', required=True, default=9999)
-    service_save_expiration = fields.Integer(
-        'Days before service save expiration', required=True, default=5)
+    service_time_between_backup = fields.Integer(
+        'Minutes between each service backup', required=True, default=9999)
+    service_backup_expiration = fields.Integer(
+        'Days before service backup expiration', required=True, default=5)
     base_backup_ids = fields.Many2many(
         'clouder.service', 'clouder_application_base_backup_rel',
         'application_id', 'backup_id', 'Backups Bases')
-    base_time_between_save = fields.Integer('Minutes between each base save',
-                                            required=True, default=9999)
-    base_save_expiration = fields.Integer('Days before base save expiration',
-                                          required=True, default=5)
+    base_time_between_backup = \
+        fields.Integer('Minutes between each base backup',
+                       required=True, default=9999)
+    base_backup_expiration = \
+        fields.Integer('Days before base backup expiration',
+                       required=True, default=5)
     public = fields.Boolean('Public?')
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
         default=lambda self: self.env['clouder.model'].user_partner)
     dummy = fields.Boolean('Dummy?')
+    provider = fields.Boolean('Display Provider?')
 
     @property
     def fullcode(self):

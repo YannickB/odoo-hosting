@@ -14,12 +14,13 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class ClouderSave(models.Model):
+class ClouderBackup(models.Model):
     """
-    Define the save.save object, which represent the saves of services/bases.
+    Define the clouder.backup object,
+    which represent the backups of services/bases.
     """
 
-    _name = 'clouder.save'
+    _name = 'clouder.backup'
     _inherit = ['clouder.model']
 
     name = fields.Char('Name', required=True)
@@ -54,7 +55,7 @@ class ClouderSave(models.Model):
     base_build = fields.Char('Build')
     base_test = fields.Boolean('Test?')
     base_lang = fields.Char('Lang')
-    base_autosave = fields.Boolean('Save?')
+    base_auto_backup = fields.Boolean('Backup?')
     base_options = fields.Text('Base Options')
     base_links = fields.Text('Base Links')
     service_suffix = fields.Char(
@@ -144,7 +145,7 @@ class ClouderSave(models.Model):
     def create(self, vals):
         """
         Override create method to add the data in service and base in the
-        save record, so we can restore it if the service/service/base are
+        backup record, so we can restore it if the service/service/base are
         deleted.
 
         :param vals: The values we need to create the record.
@@ -164,7 +165,7 @@ class ClouderSave(models.Model):
                 service_volumes[volume.id] = {
                     'name': volume.name, 'hostpath': volume.hostpath,
                     'user': volume.user, 'readonly': volume.readonly,
-                    'nosave': volume.nosave}
+                    'no_backup': volume.no_backup}
 
             service_links = {}
             for link in service.link_ids:
@@ -179,7 +180,7 @@ class ClouderSave(models.Model):
                 'service_fullname': service.fullname,
                 'service_suffix': service.suffix,
                 'service_node': service.node_id.fulldomain,
-                'service_volumes_comma': service.volumes_save,
+                'service_volumes_comma': service.volumes_backup,
                 'service_app': service.application_id.code,
                 'service_img': service.image_id.name,
                 'service_img_version': service.image_version_id.name,
@@ -220,15 +221,15 @@ class ClouderSave(models.Model):
                 'base_build': base.build,
                 'base_test': base.test,
                 'base_lang': base.lang,
-                'base_autosave': base.autosave,
+                'base_auto_backup': base.auto_backup,
                 'base_options': str(base.options),
                 'base_links': str(base_links),
             })
 
-        return super(ClouderSave, self).create(vals)
+        return super(ClouderBackup, self).create(vals)
 
     @api.multi
-    def save_database(self):
+    def backup_database(self):
         """
 
         :return:
@@ -246,10 +247,10 @@ class ClouderSave(models.Model):
     @api.multi
     def deploy(self):
         """
-        Build the save and move it into the backup service.
+        Build the backup and move it into the backup service.
         """
 
-        super(ClouderSave, self).deploy()
+        super(ClouderBackup, self).deploy()
 
         self.ensure_one()
 
@@ -273,7 +274,7 @@ class ClouderSave(models.Model):
             ],
                 username='root',
             )
-            self.save_database()
+            self.backup_database()
             self.deploy_base()
 
         directory = self.get_directory_clouder(self.name)
@@ -408,7 +409,7 @@ class ClouderSave(models.Model):
             )
             backup.execute([
                 'export BUP_DIR="%s";' % backup_dir,
-                'bup save -n "%s" -d %d --strip "%s"' % (
+                'bup backup -n "%s" -d %d --strip "%s"' % (
                     self.repo_name, int(self.now_epoch), directory,
                 )
             ],
@@ -438,7 +439,7 @@ class ClouderSave(models.Model):
     @api.multi
     def purge(self):
         """
-        Remove the save from the backup service.
+        Remove the backup from the backup service.
         """
 
         backup_root = os.path.join(
@@ -483,7 +484,7 @@ class ClouderSave(models.Model):
     @api.multi
     def restore(self):
         """
-        Restore a save to a service or a base. If service/service/base
+        Restore a backup to a service or a base. If service/service/base
         aren't specified, they will be created.
         """
         service_obj = self.env['clouder.service']
@@ -599,7 +600,7 @@ class ClouderSave(models.Model):
                 self.log("A corresponding service was found")
                 service = services[0]
         else:
-            self.log("A service_id was linked in the save")
+            self.log("A service_id was linked in the backup")
             service = self.service_id
 
         if not self.base_fullname:
@@ -607,12 +608,12 @@ class ClouderSave(models.Model):
             if service.image_version_id != img_versions[0]:
                 # if upgrade:
                 service.image_version_id = img_versions[0]
-                self = self.with_context(forcesave=False)
-                self = self.with_context(nosave=True)
+                self = self.with_context(forcebackup=False)
+                self = self.with_context(no_backup=True)
 
             self = self.with_context(
-                save_comment='Before restore ' + self.name)
-            service.save_exec(no_enqueue=True)
+                backup_comment='Before restore ' + self.name)
+            service.backup_exec(no_enqueue=True)
 
             self.restore_action(service)
 
@@ -681,7 +682,7 @@ class ClouderSave(models.Model):
                         'build': self.base_build,
                         'test': self.base_test,
                         'lang': self.base_lang,
-                        'autosave': self.base_autosave,
+                        'auto_backup': self.base_auto_backup,
                         'option_ids': options,
                         'link_ids': links,
                         'backup_ids': [(6, 0, [self.backup_id.id])]
@@ -693,12 +694,12 @@ class ClouderSave(models.Model):
                     self.log("A corresponding base was found")
                     base = bases[0]
             else:
-                self.log("A base_id was linked in the save")
+                self.log("A base_id was linked in the backup")
                 base = self.base_id
 
             self = self.with_context(
-                save_comment='Before restore ' + self.name)
-            base.save_exec(no_enqueue=True)
+                backup_comment='Before restore ' + self.name)
+            base.backup_exec(no_enqueue=True)
 
             self.restore_action(base)
 
@@ -728,7 +729,7 @@ class ClouderSave(models.Model):
     def restore_action(self, obj):
         """
         Execute the command on the backup service et destination service
-        to get the save and restore it.
+        to get the backup and restore it.
 
         :param obj: The object which will be restored.
         """

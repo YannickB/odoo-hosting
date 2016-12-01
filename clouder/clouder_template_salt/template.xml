@@ -84,7 +84,7 @@
             <field name="default_image_id" ref="image_salt_master_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
+            <field name="auto_backup" eval="True"/>
         </record>
         <record id="application_salt_master_exec" model="clouder.application">
             <field name="name">Salt Master Exec</field>
@@ -117,7 +117,7 @@
             <field name="template_id" ref="image_template_salt_minion"/>
             <field name="name">nagios</field>
             <field name="localpath">/etc/nagios</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_template_salt_minion_volume_docker" model="clouder.image.volume">
             <field name="template_id" ref="image_template_salt_minion"/>
@@ -125,7 +125,7 @@
             <field name="localpath">/var/run/docker.sock</field>
             <field name="hostpath">/var/run/docker.sock</field>
             <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_template_salt_minion_port_nrpe" model="clouder.image.port">
             <field name="template_id" ref="image_template_salt_minion"/>

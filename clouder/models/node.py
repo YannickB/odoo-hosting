@@ -32,7 +32,7 @@ class ClouderNode(models.Model):
     _sql_constraints = [
         ('domain_id_name_uniq', 'unique(domain_id, name)',
          'This name already exists on this domain.'),
-        ('ip_ssh_port_uniq', 'unique(ip, ssh_port)',
+        ('ip_ssh_port_uniq', 'unique(private_ip, ssh_port)',
          'Another node is already setup for this SSH Address and Port.'),
     ]
 
@@ -515,7 +515,7 @@ class ClouderNode(models.Model):
                     'admin_name': 'admin',
                     'admin_password': 'adminadmin',
                     'ssl_only': True,
-                    'autosave': True,
+                    'auto_backup': True,
                 })
             return base
 

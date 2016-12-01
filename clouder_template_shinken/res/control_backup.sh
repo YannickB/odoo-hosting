@@ -25,8 +25,8 @@ fi
 
 
 date=`date +%Y-%m-%d`
-date_save=( $(ssh $3 cat $directory/backup-date) )
-if [[ $date != $date_save ]]
+date_backup=( $(ssh $3 cat $directory/backup-date) )
+if [[ $date != $date_backup ]]
 then
   echo "No backup for today."
   exit 2

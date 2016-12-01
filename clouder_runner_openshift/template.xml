@@ -20,14 +20,14 @@
             <field name="localpath">/rootfs</field>
             <field name="hostpath">/</field>
             <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_openshift_volume_var_run" model="clouder.image.volume">
             <field name="image_id" ref="image_openshift"/>
             <field name="name">var_run</field>
             <field name="localpath">/var/run</field>
             <field name="hostpath">/var/run</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_openshift_volume_sys" model="clouder.image.volume">
             <field name="image_id" ref="image_openshift"/>
@@ -35,21 +35,21 @@
             <field name="localpath">/sys</field>
             <field name="hostpath">/sys</field>
             <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_openshift_volume_docker" model="clouder.image.volume">
             <field name="image_id" ref="image_openshift"/>
             <field name="name">docker</field>
             <field name="localpath">/var/lib/docker</field>
             <field name="hostpath">/var/lib/docker</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_openshift_volume_openshift_volumes" model="clouder.image.volume">
             <field name="image_id" ref="image_openshift"/>
             <field name="name">openshift_volumes</field>
             <field name="localpath">/var/lib/openshift/openshift.local.volumes</field>
             <field name="hostpath">/var/lib/openshift/openshift.local.volumes</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_openshift_port_dns" model="clouder.image.port">
             <field name="image_id" ref="image_openshift"/>
@@ -74,14 +74,14 @@
             <field name="current_version">1</field>
             <field name="type_id" ref="application_type_openshift"/>
             <field name="default_image_id" ref="image_openshift"/>
-            <field name="service_time_between_save">9999</field>
-            <field name="service_saverepo_change">30</field>
-            <field name="service_saverepo_expiration">90</field>
-            <field name="service_save_expiration">5</field>
-            <field name="base_time_between_save">9999</field>
-            <field name="base_saverepo_change">30</field>
-            <field name="base_saverepo_expiration">90</field>
-            <field name="base_save_expiration">5</field>
+            <field name="service_time_between_backup">9999</field>
+            <field name="service_backup_repo_change">30</field>
+            <field name="service_backup_repo_expiration">90</field>
+            <field name="service_backup_expiration">5</field>
+            <field name="base_time_between_backup">9999</field>
+            <field name="base_backup_repo_change">30</field>
+            <field name="base_backup_repo_expiration">90</field>
+            <field name="base_backup_expiration">5</field>
         </record>
 
     </data>

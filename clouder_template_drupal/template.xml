@@ -89,7 +89,7 @@
             <field name="default_image_id" ref="image_drupal_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
+            <field name="auto_backup" eval="True"/>
         </record>
 
         <record id="application_drupal_exec" model="clouder.application">

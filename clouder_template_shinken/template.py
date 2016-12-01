@@ -179,7 +179,7 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).deploy_link()
         if self.name.type_id.name == 'shinken':
-            if self.service_id.autosave:
+            if self.service_id.auto_backup:
                 config_file = 'service-shinken'
                 self.target.send(
                     modules.get_module_path('clouder_template_shinken') +
@@ -250,8 +250,8 @@ class ClouderBaseLink(models.Model):
         super(ClouderBaseLink, self).deploy_link()
         if self.name.type_id.name == 'shinken':
             config_file = 'base-shinken'
-            if not self.base_id.autosave:
-                config_file = 'base-shinken-nosave'
+            if not self.base_id.auto_backup:
+                config_file = 'base-shinken-no-backup'
             self.target.send(
                 modules.get_module_path('clouder_template_shinken') +
                 '/res/' + config_file + '.config',

@@ -8,7 +8,7 @@ from openerp import models, fields
 class ClouderConfigBackupMethod(models.Model):
     """
     Define the config.backup.method object, which represent all backup method
-    available for save.
+    available for backup.
     """
 
     _name = 'clouder.config.backup.method'

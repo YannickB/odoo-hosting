@@ -109,7 +109,7 @@
             <field name="template_id" ref="image_template_odoo_files"/>
             <field name="name">files</field>
             <field name="localpath">/opt/odoo/files</field>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
 
         <record id="image_template_odoo_exec" model="clouder.image.template">
@@ -225,7 +225,7 @@
             <field name="default_image_id" ref="image_odoo_data"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
-            <field name="autosave" eval="True"/>
+            <field name="auto_backup" eval="True"/>
         </record>
 
         <record id="application_odoo8_files" model="clouder.application">

@@ -36,11 +36,11 @@ class ClouderService(models.Model):
     node_id = fields.Many2one('clouder.node', 'Node', required=True)
     image_version_id = fields.Many2one('clouder.image.version',
                                        'Image version', required=False)
-    time_between_save = fields.Integer('Minutes between each save')
-    save_expiration = fields.Integer('Days before save expiration')
-    date_next_save = fields.Datetime('Next save planned')
-    save_comment = fields.Text('Save Comment')
-    autosave = fields.Boolean('Save?')
+    time_between_backup = fields.Integer('Minutes between each backup')
+    backup_expiration = fields.Integer('Days before backup expiration')
+    date_next_backup = fields.Datetime('Next backup planned')
+    backup_comment = fields.Text('Backup Comment')
+    auto_backup = fields.Boolean('Backup?')
     port_ids = fields.One2many('clouder.service.port',
                                'service_id', 'Ports')
     volume_ids = fields.One2many('clouder.service.volume',
@@ -104,12 +104,12 @@ class ClouderService(models.Model):
         return '%s_%s' % (self.name, self.node_id.fulldomain)
 
     @property
-    def volumes_save(self):
+    def volumes_backup(self):
         """
         Property returning the all volume path, separated by a comma.
         """
         return ','.join([
-            volume.name for volume in self.volume_ids if not volume.nosave
+            volume.name for volume in self.volume_ids if not volume.no_backup
         ])
 
     @property
@@ -648,13 +648,13 @@ class ClouderService(models.Model):
                     if backups:
                         vals['backup_ids'] = [(6, 0, [backups[0].id])]
 
-            vals['autosave'] = application.autosave
+            vals['auto_backup'] = application.auto_backup
             vals['dummy'] = application.dummy
 
-            vals['time_between_save'] = \
-                application.service_time_between_save
-            vals['save_expiration'] = \
-                application.service_save_expiration
+            vals['time_between_backup'] = \
+                application.service_time_between_backup
+            vals['backup_expiration'] = \
+                application.service_backup_expiration
         return vals
 
     @api.multi
@@ -815,7 +815,7 @@ class ClouderService(models.Model):
                             'hostpath': volume[2].get('hostpath', False),
                             'user': volume[2].get('user', False),
                             'readonly': volume[2].get('readonly', False),
-                            'nosave': volume[2].get('nosave', False)
+                            'no_backup': volume[2].get('no_backup', False)
                         }
                     else:
                         volume = {
@@ -824,7 +824,7 @@ class ClouderService(models.Model):
                             'hostpath': getattr(volume, 'hostpath', False),
                             'user': getattr(volume, 'user', False),
                             'readonly': getattr(volume, 'readonly', False),
-                            'nosave': getattr(volume, 'nosave', False)
+                            'no_backup': getattr(volume, 'no_backup', False)
                         }
                     # Keeping the volume if there is a match with the sources
                     if volume['name'] in volume_sources:
@@ -847,8 +847,8 @@ class ClouderService(models.Model):
                         volume_sources[def_key_volume], 'user', False),
                     'readonly': getattr(
                         volume_sources[def_key_volume], 'readonly', False),
-                    'nosave': getattr(
-                        volume_sources[def_key_volume], 'nosave', False),
+                    'no_backup': getattr(
+                        volume_sources[def_key_volume], 'no_backup', False),
                     'source': volume_sources[def_key_volume]
                 }
                 volumes_to_process.append(volume)
@@ -860,7 +860,7 @@ class ClouderService(models.Model):
                     'hostpath': volume['hostpath'],
                     'user': volume['user'],
                     'readonly': volume['readonly'],
-                    'nosave': volume['nosave']
+                    'no_backup': volume['no_backup']
                 })))
             vals['volume_ids'] = volumes
         return vals
@@ -1003,12 +1003,12 @@ class ClouderService(models.Model):
         #         if 'image_version_id' in vals:
         #             ew_version = version_obj.browse(vals['image_version_id'])
         #             self = self.with_context(
-        #                 save_comment='Before upgrade from ' +
+        #                 backup_comment='Before upgrade from ' +
         #                              self.image_version_id.name +
         #                              ' to ' + new_version.name)
         #         else:
         #             self = self.with_context(
-        #                 save_comment='Change on port or volumes')
+        #                 backup_comment='Change on port or volumes')
         res = super(ClouderService, self).write(vals)
         # if flag:
         #     self.reinstall()
@@ -1018,7 +1018,7 @@ class ClouderService(models.Model):
                 "after the service was created."
             )
 
-        if 'autosave' in vals and self.autosave != vals['autosave']:
+        if 'auto_backup' in vals and self.auto_backup != vals['auto_backup']:
             self.deploy_links()
         return res
 
@@ -1026,29 +1026,29 @@ class ClouderService(models.Model):
     def unlink(self):
         """
         Override unlink method to remove all services
-        and make a save before deleting a service.
+        and make a backup before deleting a service.
         """
         for service in self:
             service.base_ids and service.base_ids.unlink()
-            self.env['clouder.save'].search(
+            self.env['clouder.backup'].search(
                 [('backup_id', '=', service.id)]).unlink()
             self.env['clouder.image.version'].search(
                 [('registry_id', '=', service.id)]).unlink()
-            self = self.with_context(save_comment='Before unlink')
-            save = service.save_exec(no_enqueue=True)
+            self = self.with_context(backup_comment='Before unlink')
+            backup = service.backup_exec(no_enqueue=True)
             if service.parent_id:
-                service.parent_id.save_id = save
+                service.parent_id.backup_id = backup
         return super(ClouderService, self).unlink()
 
     @api.multi
     def reinstall(self):
         """
-        Make a save before making a reinstall.
+        Make a backup before making a reinstall.
         """
-        if 'save_comment' not in self.env.context:
-            self = self.with_context(save_comment='Before reinstall')
-        self.save_exec(no_enqueue=True)
-        self = self.with_context(nosave=True)
+        if 'backup_comment' not in self.env.context:
+            self = self.with_context(backup_comment='Before reinstall')
+        self.backup_exec(no_enqueue=True)
+        self = self.with_context(no_backup=True)
         super(ClouderService, self).reinstall()
         if self.parent_id:
             childs = self.env['clouder.service.child'].search([
@@ -1083,56 +1083,58 @@ class ClouderService(models.Model):
             base.update_exec()
 
     @api.multi
-    def save(self):
-        self.do('save', 'save_exec')
+    def backup(self):
+        self.do('backup', 'backup_exec')
 
     @api.multi
-    def save_exec(self, no_enqueue=False, forcesave=False):
+    def backup_exec(self, no_enqueue=False, forcebackup=False):
         """
-        Create a new service save.
+        Create a new service backup.
         """
 
-        save = False
+        backup = False
         now = datetime.now()
 
-        if forcesave:
-            self = self.with_context(forcesave=True)
+        if forcebackup:
+            self = self.with_context(forcebackup=True)
 
         if no_enqueue:
             self = self.with_context(no_enqueue=True)
 
-        if 'nosave' in self.env.context \
-                or (not self.autosave and 'forcesave' not in self.env.context):
-            self.log('This service shall not be saved '
+        if 'no_backup' in self.env.context \
+                or (not self.auto_backup and
+                    'forcebackup' not in self.env.context):
+            self.log('This service shall not be backupd '
                      'or the backup isnt configured in conf, '
-                     'skipping save service')
+                     'skipping backup service')
             return
 
         for backup_node in self.backup_ids:
-            save_vals = {
+            backup_vals = {
                 'name': self.now_bup + '_' + self.fullname,
                 'backup_id': backup_node.id,
-                # 'repo_id': self.save_repository_id.id,
+                # 'repo_id': self.backup_repository_id.id,
                 'date_expiration': (now + timedelta(
-                    days=self.save_expiration or
-                    self.application_id.service_save_expiration
+                    days=self.backup_expiration or
+                    self.application_id.service_backup_expiration
                 )).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in self.env.context and
-                           self.env.context['save_comment'] or
-                           self.save_comment or 'Manual',
-                #            ''save_comment' in self.env.context
-                # and self.env.context['save_comment']
-                # or self.save_comment or 'Manual',
+                'comment': 'backup_comment' in self.env.context and
+                           self.env.context['backup_comment'] or
+                           self.backup_comment or 'Manual',
+                #            ''backup_comment' in self.env.context
+                # and self.env.context['backup_comment']
+                # or self.backup_comment or 'Manual',
                 'now_bup': self.now_bup,
                 'service_id': self.id,
             }
-            save = self.env['clouder.save'].create(save_vals)
-        date_next_save = (datetime.now() + timedelta(
-            minutes=self.time_between_save or
-            self.application_id.service_time_between_save
+            backup = self.env['clouder.backup'].create(backup_vals)
+        date_next_backup = (datetime.now() + timedelta(
+            minutes=self.time_between_backup or
+            self.application_id.service_time_between_backup
         )).strftime("%Y-%m-%d %H:%M:%S")
-        self.write({'save_comment': False, 'date_next_save': date_next_save})
-        return save
+        self.write({'backup_comment': False,
+                    'date_next_backup': date_next_backup})
+        return backup
 
     @api.multi
     def hook_deploy_source(self):
@@ -1309,17 +1311,17 @@ class ClouderService(models.Model):
         return
 
     @api.multi
-    def recursive_save(self):
+    def recursive_backup(self):
         """
-        Recursively execute save
+        Recursively execute backup
         """
         if self.child_ids:
             for child in self.child_ids:
-                child.child_id.recursive_save()
+                child.child_id.recursive_backup()
         else:
             # Avoid backup alert on monitoring
-            self = self.with_context(save_comment='First save')
-            self.save_exec(no_enqueue=True)
+            self = self.with_context(backup_comment='First backup')
+            self.backup_exec(no_enqueue=True)
         return
 
     @api.multi
@@ -1365,8 +1367,8 @@ class ClouderService(models.Model):
         # Restart all children
         self.start()
 
-        # Save all children, to avoid monitoring alert before daily cron
-        self.recursive_save()
+        # Backup all children, to avoid monitoring alert before daily cron
+        self.recursive_backup()
 
         return
 
@@ -1494,7 +1496,7 @@ class ClouderService(models.Model):
         for base in self.reset_base_ids:
             subbase_name = self.subservice_name + '-' + base.name
             base = base.with_context(
-                save_comment='Duplicate base into ' + subbase_name,
+                backup_comment='Duplicate base into ' + subbase_name,
                 reset_base_name=subbase_name, reset_service=subservice)
             base.reset_base_exec()
         self.subservice_name = False

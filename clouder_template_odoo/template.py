@@ -545,19 +545,19 @@ class ClouderBaseLink(models.Model):
             self.target.execute(['/etc/init.d/postfix', 'reload'])
 
 
-class ClouderSave(models.Model):
+class ClouderBackup(models.Model):
     """
-    Add methods to manage the odoo save specificities.
+    Add methods to manage the odoo backup specificities.
     """
 
-    _inherit = 'clouder.save'
+    _inherit = 'clouder.backup'
 
     @api.multi
     def deploy_base(self):
         """
         Backup filestore.
         """
-        res = super(ClouderSave, self).deploy_base()
+        res = super(ClouderBackup, self).deploy_base()
         if self.base_id.application_id.type_id.name == 'odoo':
             self.service_id.base_backup_service.execute([
                 'cp', '-R',
@@ -572,7 +572,7 @@ class ClouderSave(models.Model):
         """
         Restore filestore.
         """
-        res = super(ClouderSave, self).restore_base(base)
+        res = super(ClouderBackup, self).restore_base(base)
         if self.base_id.application_id.type_id.name == 'odoo':
             base.service_id.base_backup_service.execute([
                 'rm', '-rf',

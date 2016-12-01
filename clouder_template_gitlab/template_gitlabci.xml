@@ -25,7 +25,7 @@
             <field name="localpath">/var/run/docker.sock</field>
             <field name="hostpath">/var/run/docker.sock</field>
             <field name="readonly" eval="True"/>
-            <field name="nosave" eval="True"/>
+            <field name="no_backup" eval="True"/>
         </record>
         <record id="image_gitlabci" model="clouder.image">
             <field name="name">image_gitlabci</field>

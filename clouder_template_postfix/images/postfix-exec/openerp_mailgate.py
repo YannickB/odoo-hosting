@@ -160,7 +160,7 @@ def configure_parser():
         help="Dictionary of extra values to pass when creating records",
         default=None)
     parser.add_option(
-        "-s", dest="save_original",
+        "-s", dest="backup_original",
         action="store_true",
         help="Keep a full copy of the email source attached to each message",
         default=False)

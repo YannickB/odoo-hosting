@@ -156,18 +156,18 @@ class ClouderBase(models.Model):
         return super(ClouderBase, self).purge_database()
 
 
-class ClouderSave(models.Model):
+class ClouderBackup(models.Model):
 
-    _inherit = 'clouder.save'
+    _inherit = 'clouder.backup'
 
     @api.multi
-    def save_database(self):
+    def backup_database(self):
         """
 
         :return:
         """
 
-        res = super(ClouderSave, self).save_database()
+        res = super(ClouderBackup, self).backup_database()
 
         if self.base_id.service_id.db_type == 'pgsql':
             service = self.base_id.service_id.base_backup_service
@@ -183,7 +183,7 @@ class ClouderSave(models.Model):
 
     @api.multi
     def restore_database(self, base):
-        super(ClouderSave, self).restore_database(base)
+        super(ClouderBackup, self).restore_database(base)
         if base.service_id.db_type == 'pgsql':
             service = base.service_id.base_backup_service
             for key, database in base.databases.iteritems():

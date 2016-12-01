@@ -69,11 +69,11 @@ class ClouderBase(models.Model):
                                 'base_id', 'Childs')
     metadata_ids = fields.One2many(
         'clouder.base.metadata', 'base_id', 'Metadata')
-    time_between_save = fields.Integer('Minutes between each save')
-    save_expiration = fields.Integer('Days before save expiration')
-    date_next_save = fields.Datetime('Next save planned')
-    save_comment = fields.Text('Save Comment')
-    autosave = fields.Boolean('Save?', default=True)
+    time_between_backup = fields.Integer('Minutes between each backup')
+    backup_expiration = fields.Integer('Days before backup expiration')
+    date_next_backup = fields.Datetime('Next backup planned')
+    backup_comment = fields.Text('Backup Comment')
+    auto_backup = fields.Boolean('Backup?', default=True)
     reset_each_day = fields.Boolean('Reset each day?')
     cert_key = fields.Text('Cert Key')
     cert_cert = fields.Text('Cert')
@@ -494,12 +494,12 @@ class ClouderBase(models.Model):
                     if backups:
                         vals['backup_ids'] = [(6, 0, [backups[0].id])]
 
-            vals['autosave'] = application.autosave
+            vals['auto_backup'] = application.auto_backup
 
-            vals['time_between_save'] = \
-                application.base_time_between_save
-            vals['save_expiration'] = \
-                application.base_save_expiration
+            vals['time_between_backup'] = \
+                application.base_time_between_backup
+            vals['backup_expiration'] = \
+                application.base_backup_expiration
 
         return vals
 
@@ -594,21 +594,21 @@ class ClouderBase(models.Model):
         :param vals: The values to update.
         """
 
-        save = False
+        backup = False
         if 'service_id' in vals:
             self = self.with_context(self.create_log('service change'))
-            self = self.with_context(save_comment='Before service change')
-            save = self.save_exec(no_enqueue=True, forcesave=True)
+            self = self.with_context(backup_comment='Before service change')
+            backup = self.backup_exec(no_enqueue=True, forcebackup=True)
             self.purge()
 
         res = super(ClouderBase, self).write(vals)
-        if save:
-            save.service_id = vals['service_id']
+        if backup:
+            backup.service_id = vals['service_id']
             self = self.with_context(base_restoration=True)
             self.deploy()
-            save.restore()
+            backup.restore()
             self.end_log()
-        if 'autosave' in vals and self.autosave != vals['autosave'] \
+        if 'auto_backup' in vals and self.auto_backup != vals['auto_backup'] \
                 or 'ssl_only' in vals and self.ssl_only != vals['ssl_only']:
             self.deploy_links()
 
@@ -617,65 +617,67 @@ class ClouderBase(models.Model):
     @api.multi
     def unlink(self):
         """
-        Override unlink method to make a save before we delete a base.
+        Override unlink method to make a backup before we delete a base.
         """
-        self = self.with_context(save_comment='Before unlink')
-        save = self.save_exec(no_enqueue=True)
+        self = self.with_context(backup_comment='Before unlink')
+        backup = self.backup_exec(no_enqueue=True)
         if self.parent_id:
-            self.parent_id.save_id = save
+            self.parent_id.backup_id = backup
         return super(ClouderBase, self).unlink()
 
     @api.multi
-    def save(self):
-        self.do('save', 'save_exec')
+    def backup(self):
+        self.do('backup', 'backup_exec')
 
     @api.multi
-    def save_exec(self, no_enqueue=False, forcesave=False):
+    def backup_exec(self, no_enqueue=False, forcebackup=False):
         """
-        Make a new save.
+        Make a new backup.
         """
-        save = False
+        backup = False
         now = datetime.now()
 
-        if forcesave:
-            self = self.with_context(forcesave=True)
+        if forcebackup:
+            self = self.with_context(forcebackup=True)
 
         if no_enqueue:
             self = self.with_context(no_enqueue=True)
 
-        if 'nosave' in self.env.context \
-                or (not self.autosave and 'forcesave' not in self.env.context):
+        if 'no_backup' in self.env.context \
+                or (not self.auto_backup and
+                    'forcebackup' not in self.env.context):
             self.log(
-                'This base shall not be saved or the backup '
-                'isnt configured in conf, skipping save base')
+                'This base shall not be backupd or the backup '
+                'isnt configured in conf, skipping backup base')
             return
 
         if no_enqueue:
             self = self.with_context(no_enqueue=True)
 
         for backup_node in self.backup_ids:
-            save_vals = {
+            backup_vals = {
                 'name': self.now_bup + '_' + self.fullname,
                 'backup_id': backup_node.id,
-                # 'repo_id': self.save_repository_id.id,
+                # 'repo_id': self.backup_repository_id.id,
                 'date_expiration': (now + timedelta(
-                    days=self.save_expiration or
-                    self.application_id.base_save_expiration)
+                    days=self.backup_expiration or
+                    self.application_id.base_backup_expiration)
                 ).strftime("%Y-%m-%d"),
-                'comment': 'save_comment' in self.env.context and
-                           self.env.context['save_comment'] or
-                           self.save_comment or 'Manual',
+                'comment': 'backup_comment' in self.env.context and
+                           self.env.context['backup_comment'] or
+                           self.backup_comment or 'Manual',
                 'now_bup': self.now_bup,
                 'service_id': self.service_id.id,
                 'base_id': self.id,
             }
-            save = self.env['clouder.save'].create(save_vals)
-        date_next_save = (datetime.now() + timedelta(
-            minutes=self.time_between_save or
-            self.application_id.base_time_between_save)
+            backup = self.env['clouder.backup'].create(backup_vals)
+        date_next_backup = (datetime.now() + timedelta(
+            minutes=self.time_between_backup or
+            self.application_id.base_time_between_backup)
         ).strftime("%Y-%m-%d %H:%M:%S")
-        self.write({'save_comment': False, 'date_next_save': date_next_save})
-        return save
+        self.write({'backup_comment': False,
+                    'date_next_backup': date_next_backup})
+        return backup
 
     @api.multi
     def post_reset(self):
@@ -709,19 +711,19 @@ class ClouderBase(models.Model):
         if 'reset_service' in self.env.context:
             service = self.env.context['reset_service']
         base_reset_id = self.reset_id and self.reset_id or self
-        if 'save_comment' not in self.env.context:
-            self = self.with_context(save_comment='Reset base')
-        save = base_reset_id.save_exec(no_enqueue=True, forcesave=True)
-        self.with_context(nosave=True)
+        if 'backup_comment' not in self.env.context:
+            self = self.with_context(backup_comment='Reset base')
+        backup = base_reset_id.backup_exec(no_enqueue=True, forcebackup=True)
+        self.with_context(no_backup=True)
         vals = {'base_id': self.id, 'base_restore_to_name': self.name,
                 'base_restore_to_domain_id': self.domain_id.id,
-                'service_id': self.service_id.id, 'base_nosave': True}
+                'service_id': self.service_id.id, 'base_no_backup': True}
         if base_name and service:
             vals = {'base_id': False, 'base_restore_to_name': base_name,
                     'base_restore_to_domain_id': self.domain_id.id,
-                    'service_id': service.id, 'base_nosave': True}
-        save.write(vals)
-        base = save.restore()
+                    'service_id': service.id, 'base_no_backup': True}
+        backup.write(vals)
+        base = backup.restore()
         base.write({'reset_id': base_reset_id.id})
         base = base.with_context(
             base_reset_fullname_=base_reset_id.fullname_)
@@ -805,7 +807,7 @@ class ClouderBase(models.Model):
             self.deploy_build()
 
         elif self.build == 'restore':
-            # TODO restore from a selected save
+            # TODO restore from a selected backup
             self.deploy_post_restore()
 
         if self.build != 'none':
@@ -818,8 +820,8 @@ class ClouderBase(models.Model):
         self.deploy_post()
 
         # For shinken
-        self = self.with_context(save_comment='First save')
-        self.save_exec(no_enqueue=True)
+        self = self.with_context(backup_comment='First backup')
+        self.backup_exec(no_enqueue=True)
 
         # if self.application_id.update_bases:
         #     self.service_id.deploy_salt()
@@ -870,8 +872,8 @@ class ClouderBase(models.Model):
         Hook which can be called by submodules to execute commands when we
         want to update a base.
         """
-        self = self.with_context(save_comment='Before update')
-        self.save_exec(no_enqueue=True)
+        self = self.with_context(backup_comment='Before update')
+        self.backup_exec(no_enqueue=True)
         return
 
     @api.multi
