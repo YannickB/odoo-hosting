@@ -21,7 +21,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Bind',
+    'name': 'Clouder Template DNS',
     'version': '9.0.10.0.0',
     'category': 'Clouder',
     'depends': ['clouder'],
@@ -31,8 +31,13 @@
     'demo': [],
     'data': [
         'bind.xml',
-        'route53.xml'
+        'clouddns.xml'
     ],
+    'external_dependencies': {
+        'python': [
+            'libcloud',
+        ],
+    },
     'installable': True,
     'application': True,
 }

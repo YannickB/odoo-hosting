@@ -768,7 +768,7 @@ class ClouderModel(models.AbstractModel):
                 ssh.node_record.execute([
                     'cat', destination, '|', 'docker', 'exec', '-i',
                     username and ('-u %s' % username) or '',
-                    record.name, 'sh', '-c',
+                    record.pod, 'sh', '-c',
                     "'cat > %s'" % final_destination,
                 ])
     #            if username:

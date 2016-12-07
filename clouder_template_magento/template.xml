@@ -240,7 +240,7 @@
         </record>
         <record id="application_magento_link_bind" model="clouder.application.link">
             <field name="application_id" ref="application_magento"/>
-            <field name="name" ref="clouder_template_bind.application_bind"/>
+            <field name="name" ref="clouder_template_dns.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>
@@ -366,7 +366,7 @@
         </record>
         <record id="application_magento_odoo_link_bind" model="clouder.application.link">
             <field name="application_id" ref="application_magento_odoo"/>
-            <field name="name" ref="clouder_template_bind.application_bind"/>
+            <field name="name" ref="clouder_template_dns.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>

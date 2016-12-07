@@ -25,7 +25,7 @@
     'version': '9.0.10.0.0',
     'category': 'Clouder',
     'depends': ['clouder_template_mysql',
-                'clouder_template_bind',
+                'clouder_template_dns',
                 'clouder_template_proxy',
                 'clouder_template_shinken'],
     'author': 'Yannick Buron (Clouder)',

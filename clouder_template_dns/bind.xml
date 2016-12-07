@@ -8,12 +8,6 @@
             <field name="system_user">bind</field>
             <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_dns')])]"/>
         </record>
-        <record id="application_type_bind_option_slaveip" model="clouder.application.type.option">
-            <field name="application_type_id" ref="application_type_bind"/>
-            <field name="name">slave_ip</field>
-            <field name="type">service</field>
-            <field name="auto" eval="True"/>
-        </record>
 
         <record id="image_template_bind_data" model="clouder.image.template">
             <field name="name">image_template_bind_data</field>
@@ -73,6 +67,7 @@
             <field name="name">Bind</field>
             <field name="code">bind</field>
             <field name="type_id" ref="application_type_bind"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_dns')])]"/>
             <field name="child_ids" eval="[(4, [ref('application_bind_data'),ref('application_bind_exec')])]"/>
         </record>
 

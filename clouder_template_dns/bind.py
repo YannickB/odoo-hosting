@@ -73,7 +73,7 @@ class ClouderDomain(models.Model):
 
         if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
             self.dns_id.send(
-                modules.get_module_path('clouder_template_bind') +
+                modules.get_module_path('clouder_template_dns') +
                 '/res/bind.config', self.configfile)
             self.dns_id.execute([
                 'sed', '-i', '"s/DOMAIN/' + self.name + '/g"',
@@ -86,13 +86,6 @@ class ClouderDomain(models.Model):
                 "echo 'zone \"" + self.name + "\" {' >> /etc/bind/named.conf"])
             self.dns_id.execute([
                 'echo "type master;" >> /etc/bind/named.conf'])
-
-            # Configure this only if the option is set
-            if self.dns_id.options['slave_ip']['value']:
-                self.dns_id.execute([
-                    'echo "allow-transfer { ' +
-                    self.dns_id.options['slave_ip']['value'] + ';};" '
-                    '>> /etc/bind/named.conf'])
 
             self.dns_id.execute([
                 "echo 'file \"/etc/bind/db." +
@@ -125,50 +118,28 @@ class ClouderBaseLink(models.Model):
     _inherit = 'clouder.base.link'
 
     @api.multi
-    def deploy_bind_config(self, name):
-        proxy_link = self.search([('base_id', '=', self.base_id.id), (
-            'name.type_id.name', '=', 'proxy')])
-        self.target.execute([
-            'echo "' + name + ' IN A ' +
-            (proxy_link and proxy_link[0].target.node_id.public_ip or
-             self.base_id.service_id.node_id.public_ip) +
-            '" >> ' + self.base_id.domain_id.configfile])
-        self.base_id.domain_id.refresh_serial(self.base_id.fulldomain)
+    def deploy_dns_config(self, name, type, value):
+        super(ClouderBaseLink, self).deploy_dns_config(name, type, value)
 
-    @api.multi
-    def purge_bind_config(self, name):
-        self.target.execute([
-            'sed', '-i',
-            '"/' + name + r'\sIN\sA/d"',
-            self.base_id.domain_id.configfile])
-        self.base_id.domain_id.refresh_serial()
-
-    @api.multi
-    def deploy_link(self):
-        """
-        Add a new A record when we create a new base, and MX if the
-        base has a postfix link.
-        """
-        super(ClouderBaseLink, self).deploy_link()
         if self.name.type_id.name == 'bind':
-            if self.base_id.is_root:
-                self.deploy_bind_config('@')
-            self.deploy_bind_config(self.base_id.name)
 
-            proxy_link = self.search([
-                ('base_id', '=', self.base_id.id),
-                ('name.type_id.name', '=', 'proxy')])
-            if proxy_link and proxy_link.target and not self.base_id.cert_key \
-                    and not self.base_id.cert_cert:
-                self.base_id.generate_cert_exec()
+            if type == 'MX':
+                type = 'MX 1'
+
+            self.target.execute([
+                'echo "%s IN %s %s ; %s:%s\" >> %s' %
+                (name, type, value, type, self.base_id.fulldomain,
+                 self.base_id.domain_id.configfile)])
+            self.base_id.domain_id.refresh_serial(self.base_id.fulldomain)
 
     @api.multi
-    def purge_link(self):
-        """
-        Remove base records on the bind service.
-        """
-        super(ClouderBaseLink, self).purge_link()
+    def purge_dns_config(self, name, type):
+
+        super(ClouderBaseLink, self).purge_dns_config(name, type)
+
         if self.name.type_id.name == 'bind':
-            if self.base_id.is_root:
-                self.purge_bind_config('@')
-            self.purge_bind_config(self.base_id.name)
+            self.target.execute([
+                'sed', '-i',
+                '"/%s:%s/d"' % (type, self.base_id.fulldomain),
+                self.base_id.domain_id.configfile])
+            self.base_id.domain_id.refresh_serial()

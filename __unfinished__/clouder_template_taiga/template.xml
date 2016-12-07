@@ -48,7 +48,7 @@
         </record>
         <record id="application_wordpress_link_bind" model="clouder.application.link">
             <field name="application_id" ref="application_wordpress"/>
-            <field name="name" ref="clouder_template_bind.application_bind"/>
+            <field name="name" ref="clouder_template_dns.application_bind"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="base" eval="True"/>

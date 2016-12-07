@@ -97,7 +97,7 @@
         <record id="clouder_template_postfix.application_postfix_data" model="clouder.application">
             <field name="template_ids" eval="[(4, [ref('application_template_service_shinken')])]"/>
         </record>
-        <record id="clouder_template_bind.application_bind_data" model="clouder.application">
+        <record id="clouder_template_dns.application_bind_data" model="clouder.application">
             <field name="template_ids" eval="[(4, [ref('application_template_service_shinken')])]"/>
         </record>
         <record id="clouder_template_proxy.application_proxy_data" model="clouder.application">
