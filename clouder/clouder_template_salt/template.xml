@@ -33,27 +33,27 @@
         <record id="image_template_salt_master_exec_port_ssh" model="clouder.image.port">
             <field name="template_id" ref="image_template_salt_master_exec"/>
             <field name="name">ssh</field>
-            <field name="localport">22</field>
+            <field name="local_port">22</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_template_salt_master_exec_port_salt" model="clouder.image.port">
             <field name="template_id" ref="image_template_salt_master_exec"/>
             <field name="name">salt</field>
-            <field name="localport">4505</field>
+            <field name="local_port">4505</field>
             <field name="expose">internet</field>
             <field name="use_hostport" eval="True"/>
         </record>
         <record id="image_template_salt_master_exec_port_saltret" model="clouder.image.port">
             <field name="template_id" ref="image_template_salt_master_exec"/>
             <field name="name">saltret</field>
-            <field name="localport">4506</field>
+            <field name="local_port">4506</field>
             <field name="expose">internet</field>
             <field name="use_hostport" eval="True"/>
         </record>
         <record id="image_template_salt_master_exec_port_api" model="clouder.image.port">
             <field name="template_id" ref="image_template_salt_master_exec"/>
             <field name="name">api</field>
-            <field name="localport">8080</field>
+            <field name="local_port">8080</field>
             <field name="expose">internet</field>
         </record>
 
@@ -130,7 +130,7 @@
         <record id="image_template_salt_minion_port_nrpe" model="clouder.image.port">
             <field name="template_id" ref="image_template_salt_minion"/>
             <field name="name">nrpe</field>
-            <field name="localport">5666</field>
+            <field name="local_port">5666</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_salt_minion" model="clouder.image">

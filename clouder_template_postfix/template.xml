@@ -18,7 +18,7 @@
         <record id="image_template_spamassassin_port_spamd" model="clouder.image.port">
             <field name="template_id" ref="image_template_spamassassin"/>
             <field name="name">spamd</field>
-            <field name="localport">783</field>
+            <field name="local_port">783</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_spamassassin" model="clouder.image">
@@ -95,7 +95,7 @@
         <record id="image_template_postfix_exec_port_postfix" model="clouder.image.port">
             <field name="template_id" ref="image_template_postfix_exec"/>
             <field name="name">postfix</field>
-            <field name="localport">25</field>
+            <field name="local_port">25</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_postfix_exec" model="clouder.image">

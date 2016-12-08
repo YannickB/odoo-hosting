@@ -76,7 +76,7 @@ class ClouderImage(models.Model):
         if volumes:
             dockerfile.append('\nVOLUME %s' % ' '.join(volumes))
 
-        ports = [p.localport for p in self.port_ids]
+        ports = [p.local_port for p in self.port_ids]
         if ports:
             dockerfile.append('\nEXPOSE %s' % ' '.join(ports))
 

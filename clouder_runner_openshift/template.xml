@@ -54,14 +54,14 @@
         <record id="image_openshift_port_dns" model="clouder.image.port">
             <field name="image_id" ref="image_openshift"/>
             <field name="name">dns</field>
-            <field name="localport">53</field>
+            <field name="local_port">53</field>
             <field name="udp" eval="True"/>
             <field name="expose">internet</field>
         </record>
         <record id="image_openshift_port_openshift" model="clouder.image.port">
             <field name="image_id" ref="image_openshift"/>
             <field name="name">openshift</field>
-            <field name="localport">8443</field>
+            <field name="local_port">8443</field>
             <field name="expose">internet</field>
         </record>
 

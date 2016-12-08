@@ -128,7 +128,7 @@ class ClouderImageVersion(models.Model):
         if self.registry_id.application_id.type_id.name == 'registry':
 
             img_address = self.registry_id and 'localhost:' + \
-                self.registry_id.ports['http']['localport'] +\
+                self.registry_id.ports['http']['local_port'] +\
                 '/v1/repositories/' + self.image_id.name + \
                 '/tags/' + self.name
             self.registry_id.execute(

@@ -73,7 +73,7 @@ class ClouderService(models.Model):
                     i = start_port
                     while i <= end_port:
                         vals['port_ids'].append((0, 0, {
-                            'name': str(i), 'localport': str(i),
+                            'name': str(i), 'local_port': str(i),
                             'hostport': str(i), 'expose': 'internet'}))
                         i += 1
 

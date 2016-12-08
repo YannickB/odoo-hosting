@@ -33,7 +33,7 @@
         <record id="image_dolibarr_port_http" model="clouder.image.port">
             <field name="image_id" ref="image_dolibarr"/>
             <field name="name">http</field>
-            <field name="localport">80</field>
+            <field name="local_port">80</field>
             <field name="expose">internet</field>
         </record>
 

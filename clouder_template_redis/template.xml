@@ -29,7 +29,7 @@
         <record id="image_template_redis_exec_port_redis" model="clouder.image.port">
             <field name="template_id" ref="image_template_redis_exec"/>
             <field name="name">redis</field>
-            <field name="localport">6379</field>
+            <field name="local_port">6379</field>
         </record>
         <record id="image_redis_exec" model="clouder.image">
             <field name="name">image_redis_exec</field>

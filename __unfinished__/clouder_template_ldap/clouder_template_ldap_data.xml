@@ -58,20 +58,20 @@ RUN echo "command=/bin/bash -c 'source /etc/apache2/envvars && exec /usr/sbin/ap
         <record id="image_openldap_port1" model="clouder.image.port">
             <field name="image_id" ref="image_openldap"/>
             <field name="name">ssh</field>
-            <field name="localport">22</field>
+            <field name="local_port">22</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_openldap_port2" model="clouder.image.port">
             <field name="image_id" ref="image_openldap"/>
             <field name="name">openldap</field>
-            <field name="localport">389</field>
+            <field name="local_port">389</field>
             <field name="expose" eval="True"/>
             <field name="expose">internet</field>
         </record>
         <record id="image_openldap_port3" model="clouder.image.port">
             <field name="image_id" ref="image_openldap"/>
             <field name="name">phpldapadmin</field>
-            <field name="localport">80</field>
+            <field name="local_port">80</field>
             <field name="expose" eval="True"/>
             <field name="expose">internet</field>
         </record>

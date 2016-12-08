@@ -124,13 +124,13 @@
         <record id="image_template_backup_bup_port_web" model="clouder.image.port">
             <field name="template_id" ref="image_template_backup_bup"/>
             <field name="name">backup-web</field>
-            <field name="localport">8080</field>
+            <field name="local_port">8080</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_template_backup_bup_port_nrpe" model="clouder.image.port">
             <field name="template_id" ref="image_template_backup_bup"/>
             <field name="name">nrpe</field>
-            <field name="localport">5666</field>
+            <field name="local_port">5666</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_backup_bup" model="clouder.image">

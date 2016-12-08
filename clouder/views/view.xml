@@ -211,7 +211,7 @@
                             <field name="port_ids" colspan="4" attrs="{'invisible': [('child_ids','!=', [])]}">
                                 <tree string="Ports" editable="bottom">
                                     <field name="name"/>
-                                    <field name="localport"/>
+                                    <field name="local_port"/>
                                     <field name="hostport"/>
                                     <field name="expose"/>
                                     <field name="udp"/>
@@ -859,7 +859,7 @@
                     <field name="port_ids" colspan="4">
                         <tree string="Ports" editable="bottom">
                             <field name="name"/>
-                            <field name="localport"/>
+                            <field name="local_port"/>
                             <field name="expose"/>
                             <field name="udp"/>
                             <field name="use_hostport"/>
@@ -915,7 +915,7 @@
                     <field name="port_ids" colspan="4">
                         <tree string="Ports" editable="bottom">
                             <field name="name"/>
-                            <field name="localport"/>
+                            <field name="local_port"/>
                             <field name="expose"/>
                             <field name="udp"/>
                             <field name="use_hostport"/>

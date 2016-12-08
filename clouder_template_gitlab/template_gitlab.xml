@@ -83,19 +83,19 @@
         <record id="image_template_gitlab_exec_port_ssh" model="clouder.image.port">
             <field name="template_id" ref="image_template_gitlab_exec"/>
             <field name="name">ssh</field>
-            <field name="localport">22</field>
+            <field name="local_port">22</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_template_gitlab_exec_port_http" model="clouder.image.port">
             <field name="template_id" ref="image_template_gitlab_exec"/>
             <field name="name">http</field>
-            <field name="localport">80</field>
+            <field name="local_port">80</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_template_gitlab_exec_port_https" model="clouder.image.port">
             <field name="template_id" ref="image_template_gitlab_exec"/>
             <field name="name">https</field>
-            <field name="localport">443</field>
+            <field name="local_port">443</field>
             <field name="expose">internet</field>
         </record>
 

@@ -45,13 +45,13 @@
         <record id="image_piwik_port_ssh" model="clouder.image.port">
             <field name="image_id" ref="image_piwik"/>
             <field name="name">ssh</field>
-            <field name="localport">22</field>
+            <field name="local_port">22</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_piwik_port_nginx" model="clouder.image.port">
             <field name="image_id" ref="image_piwik"/>
             <field name="name">nginx</field>
-            <field name="localport">80</field>
+            <field name="local_port">80</field>
             <field name="expose">internet</field>
         </record>
 

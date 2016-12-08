@@ -209,7 +209,7 @@
         <record id="image_magento_exec_port_web" model="clouder.image.port">
             <field name="image_id" ref="image_magento_exec"/>
             <field name="name">web</field>
-            <field name="localport">80</field>
+            <field name="local_port">80</field>
             <field name="expose">internet</field>
         </record>
 
@@ -225,7 +225,7 @@
         <record id="image_magento_ssh_port_ssh" model="clouder.image.port">
             <field name="image_id" ref="image_magento_ssh"/>
             <field name="name">ssh</field>
-            <field name="localport">22</field>
+            <field name="local_port">22</field>
             <field name="expose">internet</field>
         </record>
 

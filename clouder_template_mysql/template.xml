@@ -57,7 +57,7 @@
         <record id="image_template_mysql_exec_port_mysql" model="clouder.image.port">
             <field name="template_id" ref="image_template_mysql_exec"/>
             <field name="name">mysql</field>
-            <field name="localport">3306</field>
+            <field name="local_port">3306</field>
         </record>
         <record id="image_mysql_exec" model="clouder.image">
             <field name="name">image_mysql_exec</field>

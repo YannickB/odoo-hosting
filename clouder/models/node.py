@@ -483,7 +483,7 @@ class ClouderNode(models.Model):
             if not service:
                 # ports = []
                 # if self.oneclick_ports:
-                #     ports = [(0,0,{'name':'bind', 'localport': 53,
+                #     ports = [(0,0,{'name':'bind', 'local_port': 53,
                 # 'hostport': 53, 'expose': 'internet', 'udp': True})]
                 service = service_obj.create({
                     'suffix': code,
@@ -495,7 +495,7 @@ class ClouderNode(models.Model):
                     for port in ports:
                         port_record = port_obj.search([
                             ('service_id', '=', service.childs['exec'].id),
-                            ('localport', '=', port)])
+                            ('local_port', '=', port)])
                         port_record.write({'hostport': port})
                     service = service.with_context(service_childs=False)
                     service.childs['exec'].deploy()

@@ -67,13 +67,13 @@
         <record id="image_template_nginx_exec_port_http" model="clouder.image.port">
             <field name="template_id" ref="image_template_nginx_exec"/>
             <field name="name">http</field>
-            <field name="localport">80</field>
+            <field name="local_port">80</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_template_nginx_exec_port_https" model="clouder.image.port">
             <field name="template_id" ref="image_template_nginx_exec"/>
             <field name="name">https</field>
-            <field name="localport">443</field>
+            <field name="local_port">443</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_nginx_exec" model="clouder.image">

@@ -63,31 +63,31 @@ VOLUME /base-backup
         <record id="image_seafile_port1" model="clouder.image.port">
             <field name="image_id" ref="image_seafile"/>
             <field name="name">ssh</field>
-            <field name="localport">22</field>
+            <field name="local_port">22</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_seafile_port2" model="clouder.image.port">
             <field name="image_id" ref="image_seafile"/>
             <field name="name">port</field>
-            <field name="localport">8000</field>
+            <field name="local_port">8000</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_seafile_port3" model="clouder.image.port">
             <field name="image_id" ref="image_seafile"/>
             <field name="name">seafile-fileserver</field>
-            <field name="localport">8082</field>
+            <field name="local_port">8082</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_seafile_port4" model="clouder.image.port">
             <field name="image_id" ref="image_seafile"/>
             <field name="name">seafile-ccnet</field>
-            <field name="localport">10001</field>
+            <field name="local_port">10001</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_seafile_port5" model="clouder.image.port">
             <field name="image_id" ref="image_seafile"/>
             <field name="name">seafile-server</field>
-            <field name="localport">12001</field>
+            <field name="local_port">12001</field>
             <field name="expose">internet</field>
         </record>
 

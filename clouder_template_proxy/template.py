@@ -246,7 +246,7 @@ class ClouderBaseLink(models.Model):
             type = 'hostport'
             if self.runner == 'swarm':
                 node = self.base_id.service_id.host
-                type = 'localport'
+                type = 'local_port'
             if 'http' in self.base_id.service_id.ports:
                 protocol = 'http'
                 port = self.base_id.service_id.ports['http'][type]

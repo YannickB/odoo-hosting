@@ -27,7 +27,7 @@ Note that the commands FROM (use parent field), MAINTENER (use the sysadmin emai
 | You can also map a directory to a directory in the host system with the host path option. This is especially useful to get the archives of the application you want to host in the container, in this case you often want to check the readonly checkbox to ensure the container can’t modify the directory in the host system.
 
 | Next you have the ports configuration, used to know the ports which need to be exposed to the outside of the container, to the local network or to the whole Internet.
-| In the container, one field will be added : the hostport which is the port to access the localport in the container from outside of the host system. It is automatically attributed within the port range of the server but you can also force a specific port (Especially needed for the Bind, Proxy and Postfix applications which have to listen on ports 25, 53, 80 and 443 of the host system)
+| In the container, one field will be added : the hostport which is the port to access the local_port in the container from outside of the host system. It is automatically attributed within the port range of the server but you can also force a specific port (Especially needed for the Bind, Proxy and Postfix applications which have to listen on ports 25, 53, 80 and 443 of the host system)
 
 | Then, if you have a parent image, you have to select the parent version you want to use. Else you have to specify the FROM statement like you would use in a Dockerfile (example : debian:latest).
 | You also have to specify the registry container where the image will be stored. For more information about this very specific kind of container, see the `Getting Started chapter <getting-started.html>`_.

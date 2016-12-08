@@ -31,7 +31,7 @@
         <record id="image_template_bind_exec_port_bind" model="clouder.image.port">
             <field name="template_id" ref="image_template_bind_exec"/>
             <field name="name">bind</field>
-            <field name="localport">53</field>
+            <field name="local_port">53</field>
             <field name="udp" eval="True"/>
             <field name="expose">internet</field>
         </record>

@@ -58,7 +58,7 @@
         <record id="image_drupal_port_http" model="clouder.image.port">
             <field name="image_id" ref="image_drupal"/>
             <field name="name">http</field>
-            <field name="localport">80</field>
+            <field name="local_port">80</field>
             <field name="expose">internet</field>
         </record>
         

@@ -31,7 +31,7 @@
         <record id="image_template_shinken_exec_port_shinken" model="clouder.image.port">
             <field name="template_id" ref="image_template_shinken_exec"/>
             <field name="name">http</field>
-            <field name="localport">7767</field>
+            <field name="local_port">7767</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_shinken_exec" model="clouder.image">

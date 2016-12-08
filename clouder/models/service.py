@@ -217,7 +217,7 @@ class ClouderService(models.Model):
         for port in self.port_ids:
             ports[port.name] = {
                 'id': port.id, 'name': port.name,
-                'hostport': port.hostport, 'localport': port.localport}
+                'hostport': port.hostport, 'local_port': port.local_port}
         return ports
 
     @property
@@ -717,7 +717,7 @@ class ClouderService(models.Model):
                         port = {
                             'name': port[2].get('name', False),
                             'hostport': port[2].get('hostport', False),
-                            'localport': port[2].get('localport', False),
+                            'local_port': port[2].get('local_port', False),
                             'expose': port[2].get('expose', False),
                             'udp': port[2].get('udp', False),
                             'use_hostport': port[2].get('use_hostport', False)
@@ -726,7 +726,7 @@ class ClouderService(models.Model):
                         port = {
                             'name': getattr(port, 'name', False),
                             'hostport': getattr(port, 'hostport', False),
-                            'localport': getattr(port, 'localport', False),
+                            'local_port': getattr(port, 'local_port', False),
                             'expose': getattr(port, 'expose', False),
                             'udp': getattr(port, 'udp', False),
                             'use_hostport': getattr(
@@ -746,8 +746,8 @@ class ClouderService(models.Model):
                     'name': getattr(port_sources[def_key_port], 'name', False),
                     'hostport': getattr(
                         port_sources[def_key_port], 'hostport', False),
-                    'localport': getattr(
-                        port_sources[def_key_port], 'localport', False),
+                    'local_port': getattr(
+                        port_sources[def_key_port], 'local_port', False),
                     'expose': getattr(
                         port_sources[def_key_port], 'expose', False),
                     'udp': getattr(port_sources[def_key_port], 'udp', False),
@@ -781,19 +781,19 @@ class ClouderService(models.Model):
                 if not port['hostport']:
                     self.raise_error(
                         "We were not able to assign an hostport to the "
-                        "localport %s .\n"
+                        "local_port %s .\n"
                         "If you don't want to assign one manually, "
                         "make sure you fill the port range in the node "
                         "configuration, and that all ports in that range "
                         "are not already used.",
-                        port['localport'],
+                        port['local_port'],
                     )
                 if port['expose'] != 'none':
-                    localport = port['localport']
+                    local_port = port['local_port']
                     if port['use_hostport']:
-                        localport = port['hostport']
+                        local_port = port['hostport']
                     ports.append(((0, 0, {
-                        'name': port['name'], 'localport': localport,
+                        'name': port['name'], 'local_port': local_port,
                         'hostport': port['hostport'],
                         'expose': port['expose'], 'udp': port['udp'],
                         'use_hostport': port['use_hostport']})))
@@ -1173,12 +1173,12 @@ class ClouderService(models.Model):
 
                 ports.append('%s:%s'
                              % (ip + str(port.hostport),
-                                port.localport + (port.udp and '/udp' or '')))
+                                port.local_port + (port.udp and '/udp' or '')))
 
             else:
                 # Expose port on the swarm only if expose to internet
                 if port.expose == 'internet':
-                    ports.append(str(port.hostport) + ':' + port.localport)
+                    ports.append(str(port.hostport) + ':' + port.local_port)
             if port.use_hostport:
                 expose_ports.append(port.hostport)
         volumes = []

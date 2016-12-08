@@ -118,13 +118,13 @@
         <record id="image_template_odoo_exec_port_http" model="clouder.image.port">
             <field name="template_id" ref="image_template_odoo_exec"/>
             <field name="name">http</field>
-            <field name="localport">8069</field>
+            <field name="local_port">8069</field>
             <field name="expose">internet</field>
         </record>
         <record id="image_template_odoo_exec_port_longpolling" model="clouder.image.port">
             <field name="template_id" ref="image_template_odoo_exec"/>
             <field name="name">longpolling</field>
-            <field name="localport">8072</field>
+            <field name="local_port">8072</field>
             <field name="expose">internet</field>
         </record>
 
@@ -134,7 +134,7 @@
         <record id="image_template_odoo_ssh_port_ssh" model="clouder.image.port">
             <field name="template_id" ref="image_template_odoo_ssh"/>
             <field name="name">ssh</field>
-            <field name="localport">22</field>
+            <field name="local_port">22</field>
             <field name="expose">internet</field>
         </record>
 

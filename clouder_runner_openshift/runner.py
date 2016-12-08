@@ -48,7 +48,7 @@ class ClouderContainer(models.Model):
                 ports_dict += '{"name": "' + port.name + '", '
                 ports_dict += '"protocol": "' + \
                               (port.udp and 'UDP' or 'TCP') + '",'
-                ports_dict += '"port": ' + port.localport + ','
+                ports_dict += '"port": ' + port.local_port + ','
                 ports_dict += '"targetPort": ' + port.hostport + ','
                 ports_dict += '"nodePort": 0}'
             ports_dict += ']'

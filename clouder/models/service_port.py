@@ -21,7 +21,7 @@ class ClouderServicePort(models.Model):
     service_id = fields.Many2one(
         'clouder.service', 'Service', ondelete="cascade", required=True)
     name = fields.Char('Name', required=True)
-    localport = fields.Char('Local port', required=True)
+    local_port = fields.Char('Local port', required=True)
     hostport = fields.Char('Host port')
     expose = fields.Selection(
         [('internet', 'Internet'), ('local', 'Local')], 'Expose?',

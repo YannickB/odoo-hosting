@@ -157,7 +157,7 @@ class ClouderBackup(models.Model):
             service_ports = {}
             for port in service.port_ids:
                 service_ports[port.name] = {
-                    'name': port.name, 'localport': port.localport,
+                    'name': port.name, 'local_port': port.local_port,
                     'expose': port.expose, 'udp': port.udp}
 
             service_volumes = {}

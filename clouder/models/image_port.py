@@ -26,14 +26,14 @@ class ClouderImagePort(models.Model):
 
     _template_parent_model = 'clouder.image'
     _template_parent_many2one = 'image_id'
-    _template_fields = ['localport', 'expose', 'udp', 'use_hostport']
+    _template_fields = ['local_port', 'expose', 'udp', 'use_hostport']
 
     image_id = fields.Many2one('clouder.image', 'Image', ondelete="cascade",
                                required=False)
     template_id = fields.Many2one(
         'clouder.image.template', 'Template', ondelete="cascade")
     name = fields.Char('Name', required=True)
-    localport = fields.Char('Local port', required=True)
+    local_port = fields.Char('Local port', required=True)
     expose = fields.Selection(
         [('internet', 'Internet'), ('local', 'Local'), ('none', 'None')],
         'Expose?', required=True, default='local')
