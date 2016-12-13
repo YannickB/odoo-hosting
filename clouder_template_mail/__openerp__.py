@@ -21,7 +21,7 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Postfix',
+    'name': 'Clouder Template Mail',
     'version': '9.0.10.0.0',
     'category': 'Clouder',
     'depends': ['clouder'],

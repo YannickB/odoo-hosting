@@ -989,6 +989,7 @@
                         <field name="type"/>
                         <field name="login"/>
                         <field name="secret_key"/>
+                        <field name="smtp_relayhost" attrs="{'invisible': [('type','!=', 'smtp')]}"/>
                     </group>
                 </form>
             </field>

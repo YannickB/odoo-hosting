@@ -284,7 +284,7 @@
             <field name="name">Odoo Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_service_postfix'),ref('clouder_template_postgres.application_template_service_postgres')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_mail.application_template_service_postfix'),ref('clouder_template_postgres.application_template_service_postgres')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_odoo_exec"/>
             <field name="sequence">3</field>
@@ -296,7 +296,7 @@
             <field name="name">Clouder Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="application_type_odoo"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_service_postfix'),ref('clouder_template_postgres.application_template_service_postgres')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_mail.application_template_service_postfix'),ref('clouder_template_postgres.application_template_service_postgres')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_odoo_clouder_exec"/>
             <field name="sequence">3</field>

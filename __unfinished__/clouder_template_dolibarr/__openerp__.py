@@ -28,7 +28,7 @@
         'clouder_template_dns',
         'clouder_template_postgres',
         'clouder_template_shinken',
-        'clouder_template_postfix',
+        'clouder_template_mail',
         'clouder_template_proxy',
         'clouder_template_piwik'
     ],

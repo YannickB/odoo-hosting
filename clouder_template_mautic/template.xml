@@ -37,7 +37,7 @@
             <field name="name">Mautic Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="application_type_mautic"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_service_postfix'),ref('clouder_template_mysql.application_template_service_mysql')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_mail.application_template_service_postfix'),ref('clouder_template_mysql.application_template_service_mysql')])]"/>
             <field name="current_version">2.1.0</field>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="clouder.image_php_exec"/>

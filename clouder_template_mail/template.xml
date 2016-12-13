@@ -24,7 +24,8 @@
         <record id="image_spamassassin" model="clouder.image">
             <field name="name">img_spamassassin</field>
             <field name="template_ids" eval="[(4, [ref('image_template_spamassassin')])]"/>
-            <field name="parent_from">dinkel/spamassassin</field>
+            <field name="parent_from">clouder/spamassassin:0.10.1</field>
+            <field name="dockerfile"/>
         </record>
 
         <record id="application_spamassassin" model="clouder.application">
@@ -42,30 +43,6 @@
             <field name="name">postfix</field>
             <field name="system_user">postfix</field>
         </record>
-         <record id="application_type_postfix_smtp_host" model="clouder.application.type.option">
-             <field name="application_type_id" ref="application_type_postfix"/>
-             <field name="name">smtp_host</field>
-             <field name="type">service</field>
-             <field name="auto" eval="True"/>
-         </record>
-         <record id="application_type_postfix_smtp_relayhost" model="clouder.application.type.option">
-             <field name="application_type_id" ref="application_type_postfix"/>
-             <field name="name">smtp_relayhost</field>
-             <field name="type">service</field>
-             <field name="auto" eval="True"/>
-         </record>
-         <record id="application_type_postfix_smtp_username" model="clouder.application.type.option">
-             <field name="application_type_id" ref="application_type_postfix"/>
-             <field name="name">smtp_username</field>
-             <field name="type">service</field>
-             <field name="auto" eval="True"/>
-         </record>
-         <record id="application_type_postfix_smtp_key" model="clouder.application.type.option">
-             <field name="application_type_id" ref="application_type_postfix"/>
-             <field name="name">smtp_key</field>
-             <field name="type">service</field>
-             <field name="auto" eval="True"/>
-         </record>
 
         <record id="image_template_postfix_data" model="clouder.image.template">
             <field name="name">image_template_postfix_data</field>

@@ -56,7 +56,7 @@
             <field name="name">Shinken Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="application_type_shinken"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_postfix.application_template_service_postfix')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_mail.application_template_service_postfix')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_shinken_exec"/>
             <field name="sequence">2</field>
@@ -94,7 +94,7 @@
         <record id="clouder.application_salt_minion" model="clouder.application">
             <field name="template_ids" eval="[(4, [ref('application_template_service_shinken')])]"/>
         </record>
-        <record id="clouder_template_postfix.application_postfix_data" model="clouder.application">
+        <record id="clouder_template_mail.application_postfix_data" model="clouder.application">
             <field name="template_ids" eval="[(4, [ref('application_template_service_shinken')])]"/>
         </record>
         <record id="clouder_template_dns.application_bind_data" model="clouder.application">

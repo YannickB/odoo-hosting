@@ -27,12 +27,14 @@ class ClouderProvider(models.Model):
     type = fields.Selection(lambda s: s._get_types(), required=True)
     login = fields.Char('Login')
     secret_key = fields.Char('Secret Key')
+    smtp_relayhost = fields.Char('SMTP Relay')
 
     @api.multi
     def _get_types(self):
         return [
             ('node', 'Node'), ('service', 'Service'),
-            ('dns', 'DNS'), ('load', 'Load Balancing'), ('backup', 'Backup')]
+            ('dns', 'DNS'), ('load', 'Load Balancing'),
+            ('backup', 'Backup'), ('smtp', 'SMTP')]
 
     @api.multi
     def _get_providers(self):

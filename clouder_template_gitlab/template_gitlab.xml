@@ -160,7 +160,7 @@
             <field name="name">Gitlab Exec</field>
             <field name="code">exec</field>
             <field name="type_id" ref="application_type_gitlab"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_postgres.application_template_service_postgres'),ref('clouder_template_postfix.application_template_service_postfix'),ref('clouder_template_redis.application_template_service_redis')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_postgres.application_template_service_postgres'),ref('clouder_template_mail.application_template_service_postfix'),ref('clouder_template_redis.application_template_service_redis')])]"/>
             <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
             <field name="default_image_id" ref="image_gitlab_exec"/>
             <field name="sequence">3</field>

@@ -71,7 +71,7 @@
         </record>
         <record id="application_wordpress_link_postfix" model="clouder.application.link">
             <field name="application_id" ref="application_wordpress"/>
-            <field name="name" ref="clouder_template_postfix.application_postfix"/>
+            <field name="name" ref="clouder_template_mail.application_postfix"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="make_link" eval="True"/>
