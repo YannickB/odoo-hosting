@@ -5,6 +5,6 @@
      if d == "www" and r:
          d = r.partition('.')[0]
 +    h = h.replace('.','_').replace('-','_')
-     r = openerp.tools.config['dbfilter'].replace('%h', h).replace('%d', d)
+     r = odoo.tools.config['dbfilter'].replace('%h', h).replace('%d', d)
      dbs = [i for i in dbs if re.match(r, i)]
      return dbs

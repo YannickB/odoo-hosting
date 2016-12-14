@@ -47,8 +47,8 @@ RUN echo "SigningTable       /opt/opendkim/SigningTable" >> /etc/opendkim.conf
 RUN echo "ExternalIgnoreList /opt/opendkim/TrustedHosts" >> /etc/opendkim.conf
 RUN echo "InternalHosts      /opt/opendkim/TrustedHosts" >> /etc/opendkim.conf
 
-#ADD openerp_mailgate.py /bin/openerp_mailgate.py
-#RUN chmod +x /bin/openerp_mailgate.py
+#ADD odoo_mailgate.py /bin/odoo_mailgate.py
+#RUN chmod +x /bin/odoo_mailgate.py
 
 RUN echo "" >> /etc/supervisord.conf
 RUN echo "[supervisord]" >> /etc/supervisord.conf

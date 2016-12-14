@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Author: Yannick Buron, Nicolas Petit
+# Author: Yannick Buron
 # Copyright 2015, TODAY Clouder SASU
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,19 +21,23 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Website Payment',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Template DNS',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
-    'depends': ['clouder_website', 'payment', 'clouder_invoicing'],
-    'author': 'Yannick Buron (Clouder), Nicolas Petit',
+    'depends': ['clouder'],
+    'author': 'Yannick Buron (Clouder)',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': [
-        'templates.xml',
-        'clouder_website_payment_data.xml',
-        'clouder_website_payment_view.xml'
+        'bind.xml',
+        'clouddns.xml'
     ],
+    'external_dependencies': {
+        'python': [
+            'libcloud',
+        ],
+    },
     'installable': True,
     'application': True,
 }

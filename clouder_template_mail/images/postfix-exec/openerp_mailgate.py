@@ -4,7 +4,7 @@
 #
 #    OpenERP, Open Source Management Solution
 #    Copyright (C) 2004-2009 Tiny SPRL (<http://tiny.be>).
-#    Copyright (C) 2010-TODAY OpenERP S.A. (http://www.openerp.com)
+#    Copyright (C) 2010-TODAY OpenERP S.A. (http://www.odoo.com)
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,7 @@
 #
 ##############################################################################
 """
-    openerp_mailgate.py
+    odoo_mailgate.py
 """
 
 import cgitb
@@ -45,7 +45,7 @@ class DefaultConfig(object):
     OPENERP_DEFAULT_PASSWORD = 'admin'
     OPENERP_HOSTNAME = 'localhost'
     OPENERP_PORT = 8069
-    OPENERP_DEFAULT_DATABASE = 'openerp'
+    OPENERP_DEFAULT_DATABASE = 'odoo'
     MAIL_ERROR = 'error@example.com'
     MAIL_SERVER = 'smtp.example.com'
     MAIL_SERVER_PORT = 25

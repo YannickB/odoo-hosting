@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data>
         <template id="plugin_form">
             <style><t t-raw="font_awesome_definition"/></style>
@@ -315,4 +315,4 @@
             <span>Placeholder for actual TOS</span>
         </template>
     </data>
-</openerp>
+</odoo>

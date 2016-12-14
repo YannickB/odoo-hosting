@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data>
 
 
@@ -100,4 +100,4 @@ RUN echo "command=/etc/init.d/tomcat6 start" >> /etc/supervisor/conf.d/superviso
         </record>
 
     </data>
-</openerp>
+</odoo>

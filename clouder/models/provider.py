@@ -4,9 +4,9 @@
 
 import logging
 
-from openerp import api
-from openerp import fields
-from openerp import models
+from odoo import api
+from odoo import fields
+from odoo import models
 
 _logger = logging.getLogger(__name__)
 

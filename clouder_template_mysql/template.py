@@ -21,8 +21,8 @@
 ##############################################################################
 
 
-from openerp import models, api
-from openerp.addons.clouder.tools import generate_random_password
+from odoo import models, api
+from odoo.addons.clouder.tools import generate_random_password
 
 
 class ClouderApplicationTypeOption(models.Model):

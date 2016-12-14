@@ -21,15 +21,24 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Proxy',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Template Mautic',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
-    'depends': ['clouder'],
-    'author': 'Yannick Buron (Clouder), LasLabs',
+    'depends': [
+        'clouder_template_dns',
+        'clouder_template_mysql',
+        'clouder_template_shinken',
+        'clouder_template_mail',
+        'clouder_template_proxy',
+        'clouder_template_piwik'
+    ],
+    'author': 'Yannick Buron (Clouder)',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
-    'data': ['template.xml'],
+    'data': [
+        'template.xml'
+    ],
     'installable': True,
     'application': True,
 }

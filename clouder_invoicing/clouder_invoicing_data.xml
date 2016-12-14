@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data>
         <!-- Invoicing daily cron -->
         <record model="ir.cron" id="clouder_invoicing_run">
@@ -29,4 +29,4 @@
             <field name="description_sale">The managing fee for your Container/Base instance</field>
         </record>
     </data>
-</openerp>
+</odoo>

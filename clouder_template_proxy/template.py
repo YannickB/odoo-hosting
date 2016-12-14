@@ -22,7 +22,7 @@
 
 import os.path
 
-from openerp import api, fields, models, modules
+from odoo import api, fields, models, modules
 from datetime import datetime, timedelta
 
 

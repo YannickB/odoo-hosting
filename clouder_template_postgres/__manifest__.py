@@ -21,19 +21,16 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Invoicing',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Template Postgres',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
-    'depends': ['base', 'clouder', 'account', 'account_accountant', 'product'],
-    'author': 'Yannick Buron (Clouder), Nicolas Petit',
+    'depends': ['clouder',
+                'clouder_template_shinken'],
+    'author': 'Yannick Buron (Clouder)',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
-    'data': [
-        'security/ir.model.access.csv',
-        'clouder_invoicing_view.xml',
-        'clouder_invoicing_data.xml'
-    ],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

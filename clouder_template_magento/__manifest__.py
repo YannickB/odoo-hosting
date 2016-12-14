@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Author: Yannick Buron, Nicolas Petit
+# Author: Yannick Buron
 # Copyright 2015, TODAY Clouder SASU
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,18 +21,23 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Website',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Template Magento',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
-    'depends': ['base', 'auth_signup', 'clouder'],
-    'author': 'Yannick Buron (Clouder), Nicolas Petit',
+    'depends': [
+        'clouder_template_dns',
+        'clouder_template_mysql',
+        'clouder_template_piwik',
+        'clouder_template_mail',
+        'clouder_template_proxy',
+        'clouder_template_shinken',
+    ],
+    'author': 'Yannick Buron (Clouder)',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
     'data': [
-        'security/ir.model.access.csv',
-        'clouder_website_view.xml',
-        'templates.xml'
+        'template.xml'
     ],
     'installable': True,
     'application': True,

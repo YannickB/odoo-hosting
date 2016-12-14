@@ -21,20 +21,19 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Redis',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Invoicing',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
-    'depends': [
-        'clouder_template_dns',
-        'clouder_template_shinken',
-        'clouder_template_mail',
-        'clouder_template_proxy'
-    ],
-    'author': 'Yannick Buron (Clouder)',
+    'depends': ['base', 'clouder', 'account', 'account_accountant', 'product'],
+    'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
-    'data': ['template.xml'],
+    'data': [
+        'security/ir.model.access.csv',
+        'clouder_invoicing_view.xml',
+        'clouder_invoicing_data.xml'
+    ],
     'installable': True,
     'application': True,
 }

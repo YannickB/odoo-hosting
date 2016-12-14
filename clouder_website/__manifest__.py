@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Author: Yannick Buron
+# Author: Yannick Buron, Nicolas Petit
 # Copyright 2015, TODAY Clouder SASU
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,18 +21,19 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Piwik',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Website',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
-    'depends': ['clouder_template_mysql',
-                'clouder_template_dns',
-                'clouder_template_proxy',
-                'clouder_template_shinken'],
-    'author': 'Yannick Buron (Clouder)',
+    'depends': ['base', 'auth_signup', 'clouder'],
+    'author': 'Yannick Buron (Clouder), Nicolas Petit',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
-    'data': ['template.xml'],
+    'data': [
+        'security/ir.model.access.csv',
+        'clouder_website_view.xml',
+        'templates.xml'
+    ],
     'installable': True,
     'application': True,
 }

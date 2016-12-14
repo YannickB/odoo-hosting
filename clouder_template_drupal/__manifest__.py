@@ -21,10 +21,17 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Drupal Wikicompare',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Template Drupal',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
-    'depends': ['clouder_template_drupal'],
+    'depends': [
+        'clouder_template_dns',
+        'clouder_template_shinken',
+        'clouder_template_mail',
+        'clouder_template_proxy',
+        'clouder_template_postgres',
+        'clouder_template_piwik'
+    ],
     'author': 'Yannick Buron (Clouder)',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',

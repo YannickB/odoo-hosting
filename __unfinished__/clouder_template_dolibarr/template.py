@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, modules
+from odoo import models, api, modules
 import requests
 import logging
 # from bs4 import BeautifulSoup

@@ -2,7 +2,7 @@
 # Copyright 2015 Clouder SASU
 # License LGPL-3.0 or later (http://gnu.org/licenses/lgpl.html).
 
-from openerp import models, api
+from odoo import models, api
 
 
 class ClouderService(models.Model):

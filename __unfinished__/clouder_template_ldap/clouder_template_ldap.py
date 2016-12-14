@@ -20,9 +20,9 @@
 #
 ##############################################################################
 
-from openerp import modules
-from openerp import models, api
-import openerp.addons.clouder.model as clouder_model
+from odoo import modules
+from odoo import models, api
+import odoo.addons.clouder.model as clouder_model
 
 
 class ClouderContainer(models.Model):

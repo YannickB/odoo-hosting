@@ -21,11 +21,10 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Postgres',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Template Mail',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
-    'depends': ['clouder',
-                'clouder_template_shinken'],
+    'depends': ['clouder'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',

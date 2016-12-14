@@ -1,4 +1,4 @@
-<openerp>
+<odoo>
     <data>
 
         <record id="tag_registry" model="clouder.application.tag">
@@ -111,4 +111,4 @@
 
 
     </data>
-</openerp>
+</odoo>

@@ -21,8 +21,8 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template Mautic',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Template Wordpress',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
     'depends': [
         'clouder_template_dns',

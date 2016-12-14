@@ -18,7 +18,7 @@ DAEMON=/opt/odoo/services/SERVICE/sandbox/bin/python /opt/odoo/services/SERVICE/
 # Specify the user name (Default: terp).
 USER="SYSTEM_USER"
  
-# Specifty an alternate config file (Default: ~/.openerp-serverrc)
+# Specifty an alternate config file (Default: ~/.odoo-serverrc)
 CONFIGFILE="/opt/odoo/etc/SERVICE.config"
  
 # pidfile

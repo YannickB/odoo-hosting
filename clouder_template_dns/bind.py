@@ -21,8 +21,8 @@
 ##############################################################################
 
 
-from openerp import models, api
-from openerp import modules
+from odoo import models, api
+from odoo import modules
 from datetime import datetime
 
 import socket

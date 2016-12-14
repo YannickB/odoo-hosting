@@ -20,8 +20,8 @@
 #
 ##############################################################################
 
-from openerp import modules
-from openerp import models, api
+from odoo import modules
+from odoo import models, api
 
 
 class ClouderNode(models.Model):

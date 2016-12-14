@@ -20,9 +20,9 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, release, _
-from openerp.exceptions import except_orm
-import openerp
+from odoo import models, fields, api, release, _
+from odoo.exceptions import except_orm
+import odoo
 import threading
 import logging
 
@@ -69,8 +69,8 @@ class ClouderApplication(models.Model):
             def thread_session_update_state(dbname, uid, context):
                 # Creating a separate cursor to commit errors
                 # in case of exception thrown
-                with openerp.api.Environment.manage():
-                    with openerp.registry(dbname).cursor() as new_cr:
+                with odoo.api.Environment.manage():
+                    with odoo.registry(dbname).cursor() as new_cr:
                         new_env = api.Environment(new_cr, uid, context)
 
                         orm_clws = new_env['clouder.web.session']

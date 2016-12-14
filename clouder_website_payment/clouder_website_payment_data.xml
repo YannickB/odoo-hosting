@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data noupdate="1">
         <!-- Cron to prune obsolete clouder web sessions -->
         <record model="ir.cron" id="clouder_web_session_prune">
@@ -39,4 +39,4 @@
             <field eval="'()'" name="args"/>
         </record>
     </data>
-</openerp>
+</odoo>

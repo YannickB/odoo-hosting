@@ -9,7 +9,7 @@ import socket
 from contextlib import contextmanager
 from threading import Lock
 
-from openerp.tools import classproperty
+from odoo.tools import classproperty
 from werkzeug.local import Local
 
 _logger = logging.getLogger(__name__)

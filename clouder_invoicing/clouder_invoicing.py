@@ -20,8 +20,8 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, release, _
-from openerp.exceptions import except_orm
+from odoo import models, fields, api, release, _
+from odoo.exceptions import except_orm
 from dateutil.relativedelta import relativedelta
 import logging
 

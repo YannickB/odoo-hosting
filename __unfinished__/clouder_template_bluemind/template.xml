@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data>
 
 
@@ -85,4 +85,4 @@ RUN chmod +X bluemind.bin
         </record>
 
     </data>
-</openerp>
+</odoo>

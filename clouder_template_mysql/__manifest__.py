@@ -21,24 +21,16 @@
 ##############################################################################
 
 {
-    'name': 'Clouder Template GitLab',
-    'version': '9.0.10.0.0',
+    'name': 'Clouder Template MySQL',
+    'version': '10.0.10.0.0',
     'category': 'Clouder',
-    'depends': [
-        'clouder',
-        'clouder_template_dns',
-        'clouder_template_shinken',
-        'clouder_template_mail',
-        'clouder_template_proxy',
-        'clouder_template_postgres',
-        'clouder_template_redis',
-        'clouder_template_piwik'
-    ],
+    'depends': ['clouder',
+                'clouder_template_shinken'],
     'author': 'Yannick Buron (Clouder)',
     'license': 'LGPL-3',
     'website': 'https://github.com/clouder-community/clouder',
     'demo': [],
-    'data': ['template_gitlab.xml', 'template_gitlabci.xml'],
+    'data': ['template.xml'],
     'installable': True,
     'application': True,
 }

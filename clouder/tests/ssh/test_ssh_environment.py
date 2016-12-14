@@ -11,7 +11,7 @@ from ..common import SetUpClouderTest
 from ...ssh.environment import Local, SSHEnvironment, SSHEnvironments
 
 
-MODULE_PATH = 'openerp.addons.clouder.ssh.environment'
+MODULE_PATH = 'odoo.addons.clouder.ssh.environment'
 
 
 class TestSSHEnvironment(SetUpClouderTest):

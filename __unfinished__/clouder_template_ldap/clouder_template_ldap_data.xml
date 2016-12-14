@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data>
 
 
@@ -100,4 +100,4 @@ RUN echo "command=/bin/bash -c 'source /etc/apache2/envvars && exec /usr/sbin/ap
         </record>
 
     </data>
-</openerp>
+</odoo>

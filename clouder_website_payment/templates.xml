@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data>
         <template id="payment_buttons">
             <t t-set="additional_title">Shop - Select Payment Mode</t>
@@ -54,4 +54,4 @@
             <p>Hope we meet again sometime in the future!</p>
         </template>
     </data>
-</openerp>
+</odoo>

@@ -20,8 +20,8 @@
 #
 ##############################################################################
 
-from openerp import http, api, _
-from openerp.http import request
+from odoo import http, api, _
+from odoo.http import request
 from werkzeug.wsgi import wrap_file
 from werkzeug.wrappers import Response
 from xmlrpclib import ServerProxy

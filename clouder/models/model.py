@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from os.path import expanduser
 
-from openerp import models, fields, api, _, release
+from odoo import models, fields, api, _, release
 
 from ..exceptions import ClouderError
 from ..ssh.environment import SSHEnvironment

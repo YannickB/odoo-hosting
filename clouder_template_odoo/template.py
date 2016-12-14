@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api
+from odoo import models, api
 
 import logging
 _logger = logging.getLogger(__name__)
@@ -510,7 +510,7 @@ class ClouderBaseLink(models.Model):
 
             self.target.execute([
                 "echo '" + self.base_id.fullname_ +
-                ": \"|openerp_mailgate.py --host=" +
+                ": \"|odoo_mailgate.py --host=" +
                 self.base_id.service_id.node_id.private_ip +
                 " --port=" +
                 self.base_id.odoo_port +

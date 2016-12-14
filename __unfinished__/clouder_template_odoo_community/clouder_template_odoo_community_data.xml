@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
+<odoo>
     <data>
 
 
@@ -23,16 +23,16 @@ git clone http://github.com/OCA/website.git extra/website -b 8.0
 #[buildout]
 #parts = odoo
 #extensions = gp.vcsdevelop
-#vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.openerp/1.8#egg=aro-1.8
+#vcs-extend-develop = bzr+http://bazaar.launchpad.net/~anybox/anybox.recipe.odoo/1.8#egg=aro-1.8
 #vcs-update = True
 #find-links = http://download.gna.org/pychart/
 
 #[versions]
 # in some cases that's needed
-#anybox.recipe.openerp =
+#anybox.recipe.odoo =
 
 #[odoo]
-#recipe = anybox.recipe.openerp:server
+#recipe = anybox.recipe.odoo:server
 #version = git http://github.com/odoo/odoo.git odoo 8.0
 #addons = git http://github.com/OCA/vertical-community.git extra/vertical-community 8.0
 #         git http://github.com/OCA/account-financial-tools.git extra/account-financial-tools 8.0
@@ -117,4 +117,4 @@ git clone http://github.com/OCA/website.git extra/website -b 8.0
         </record>
 
     </data>
-</openerp>
+</odoo>

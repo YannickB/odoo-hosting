@@ -857,8 +857,8 @@ Redistribution of this work, with or without modification, is permitted if
 the peoples or companies specified below are attributed as the original author
 or licensor of this work.
 
-For an Odoo module, this correspond to the peoples or compagnies specified in
-the __openerp_.py in the 'author' notice, in the licence notice with the clause
+For an Odoo module, this correspond to the peoples or companies specified in
+the __manifest__.py in the 'author' notice, in the licence notice with the clause
 'by AUTHOR', where AUTHOR represent the original author or licensor, and in the
 AUTHORS file if any.
 

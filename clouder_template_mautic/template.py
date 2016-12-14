@@ -20,7 +20,7 @@
 #
 ##############################################################################
 
-from openerp import models, api, modules
+from odoo import models, api, modules
 
 import logging
 _logger = logging.getLogger(__name__)

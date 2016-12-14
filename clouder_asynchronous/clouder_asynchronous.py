@@ -20,12 +20,12 @@
 #
 ##############################################################################
 
-from openerp import models, fields, api, tools
+from odoo import models, fields, api, tools
 import logging
 import copy_reg
 
-from openerp.addons.connector.session import ConnectorSession
-from openerp.addons.connector.queue.job import\
+from odoo.addons.connector.session import ConnectorSession
+from odoo.addons.connector.queue.job import\
     job, whitelist_unpickle_global
 
 _logger = logging.getLogger(__name__)
