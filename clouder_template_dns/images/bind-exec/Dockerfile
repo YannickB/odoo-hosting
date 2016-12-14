@@ -1,4 +1,4 @@
-FROM yannickburon/clouder:base
+FROM clouder/base:3.4
 MAINTAINER Yannick Buron yannick.buron@gmail.com
 
 RUN apk add --update bind
