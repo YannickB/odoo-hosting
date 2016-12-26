@@ -1,4 +1,4 @@
-FROM yannickburon/clouder:odoo-exec
+FROM clouder/odoo-exec:0.10.1
 MAINTAINER Yannick Buron yannick.buron@gmail.com
 
 ENV ODOO_CONNECTOR_CHANNELS root:4
