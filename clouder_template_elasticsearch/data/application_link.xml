@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 LasLabs Inc.
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html). -->
+
+<odoo>
+    
+    <record id="application_link_elasticsearch"
+            model="clouder.application.link"
+            >
+        <field name="template_id"
+               ref="application_template_elasticsearch"
+               />
+        <field name="name" ref="application_elasticsearch" />
+        <field name="service" eval="True" />
+        <field name="required" eval="True" />
+        <field name="auto" eval="True" />
+        <field name="make_link" eval="True" />
+    </record>
+    
+</odoo>

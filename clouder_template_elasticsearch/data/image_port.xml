@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 LasLabs Inc.
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html). -->
+
+<odoo>
+    
+    <record id="image_port_elasticsearch_http"
+            model="clouder.image.port"
+            >
+        <field name="template_id" ref="image_template_elasticsearch_exec" />
+        <field name="name">http</field>
+        <field name="local_port">9200</field>
+    </record>
+    
+    <record id="image_port_elasticsearch_transport"
+            model="clouder.image.port"
+            >
+        <field name="template_id" ref="image_template_elasticsearch_exec" />
+        <field name="name">transport</field>
+        <field name="local_port">9300</field>
+    </record>
+    
+</odoo>

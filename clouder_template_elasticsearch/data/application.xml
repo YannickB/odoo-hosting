@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 LasLabs Inc.
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html). -->
+
+<odoo>
+
+    <record id="application_elasticsearch_data" model="clouder.application">
+        <field name="name">Elasticsearch Data</field>
+        <field name="code">data</field>
+        <field name="type_id" ref="application_type_elasticsearch" />
+        <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]" />
+        <field name="default_image_id" ref="image_elasticsearch_data" />
+        <field name="sequence">1</field>
+        <field name="required" eval="True"/>
+    </record>
+
+    <record id="application_elasticsearch_exec" model="clouder.application">
+        <field name="name">Elasticsearch Exec</field>
+        <field name="code">exec</field>
+        <field name="type_id" ref="application_type_elasticsearch" />
+        <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]" />
+        <field name="default_image_id" ref="image_elasticsearch_exec" />
+        <field name="sequence">2</field>
+        <field name="required" eval="True"/>
+        <field name="update_strategy">auto</field>
+    </record>
+
+    <record id="application_elasticsearch" model="clouder.application">
+        <field name="name">Elasticsearch</field>
+        <field name="code">elasticsearch</field>
+        <field name="type_id" ref="application_type_elasticsearch" />
+        <field name="template_ids"
+               eval="[(4, ref('clouder.application_template_base_www'))]"
+               />
+        <field name="child_ids"
+               eval="[(4, [ref('application_elasticsearch_data'),
+                           ref('application_elasticsearch_exec'),
+                           ])]"
+               />
+        <field name="sequence">1</field>
+        <field name="required" eval="True"/>
+    </record>
+
+</odoo>

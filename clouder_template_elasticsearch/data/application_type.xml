@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 LasLabs Inc.
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html). -->
+
+<odoo>
+
+    <record id="application_type_elasticsearch"
+            model="clouder.application.type"
+            >
+        <field name="name">elasticsearch</field>
+        <field name="system_user">elasticsearch</field>
+    </record>
+    
+</odoo>

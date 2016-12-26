@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 LasLabs Inc.
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html). -->
+
+<odoo>
+
+    <record id="image_volume_elasticsearch_data"
+            model="clouder.image.volume"
+            >
+        <field name="template_id" ref="image_template_elasticsearch_data" />
+        <field name="name">data</field>
+        <field name="localpath">/opt/elasticsearch/data</field>
+        <field name="user">elasticsearch</field>
+    </record>
+    
+    <record id="image_volume_elasticsearch_etc"
+            model="clouder.image.volume"
+            >
+        <field name="template_id" ref="image_template_elasticsearch_data" />
+        <field name="name">etc</field>
+        <field name="localpath">/opt/elasticsearch/config</field>
+        <field name="user">elasticsearch</field>
+    </record>
+    
+    <record id="image_volume_elasticsearch_log"
+            model="clouder.image.volume"
+            >
+        <field name="template_id" ref="image_template_elasticsearch_data" />
+        <field name="name">log</field>
+        <field name="localpath">/opt/elasticsearch/logs</field>
+        <field name="user">elasticsearch</field>
+    </record>
+    
+    <record id="image_volume_elasticsearch_lib"
+            model="clouder.image.volume"
+            >
+        <field name="template_id" ref="image_template_elasticsearch_exec" />
+        <field name="name">lib</field>
+        <field name="localpath">/opt/elasticsearch/lib</field>
+        <field name="user">elasticsearch</field>
+    </record>
+    
+    <record id="image_volume_elasticsearch_module"
+            model="clouder.image.volume"
+            >
+        <field name="template_id" ref="image_template_elasticsearch_exec" />
+        <field name="name">module</field>
+        <field name="localpath">/opt/elasticsearch/modules</field>
+        <field name="user">elasticsearch</field>
+    </record>
+    
+    <record id="image_volume_elasticsearch_plugin"
+            model="clouder.image.volume"
+            >
+        <field name="template_id" ref="image_template_elasticsearch_exec" />
+        <field name="name">plugin</field>
+        <field name="localpath">/opt/elasticsearch/plugins</field>
+        <field name="user">elasticsearch</field>
+    </record>
+
+</odoo>
