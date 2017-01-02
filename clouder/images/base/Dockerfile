@@ -19,3 +19,5 @@ RUN apk add --update ssmtp wget curl rsync bash
 #RUN rm /usr/bin/mail
 #RUN ln -s /usr/sbin/ssmtp /usr/bin/mail
 #RUN echo "" > /etc/ssmtp/ssmtp.conf
+
+CMD cat
