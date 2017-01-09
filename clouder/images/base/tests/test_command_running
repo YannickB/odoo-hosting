@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# Copyright 2016 LasLabs Inc.
+# License MIT or later (https://opensource.org/licenses/MIT).
+
+# This script will test to see that $COMMAND is running on the Docker container.
+
+set -e
+
+# Change ``cat`` to be whatever command you are looking for in ``ps aux``
+COMMAND="cat"
+
+OUTPUT=`docker exec -i -t $DOCKER_CONTAINER_ID ps aux`
+
+echo $OUTPUT | grep -q $COMMAND
+
+echo "$COMMAND is running on $DOCKER_CONTAINER_ID"

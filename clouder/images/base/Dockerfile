@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.5
 MAINTAINER Yannick Buron yannick.buron@gmail.com
 
 RUN apk add --update ssmtp wget curl rsync bash
@@ -20,4 +20,7 @@ RUN apk add --update ssmtp wget curl rsync bash
 #RUN ln -s /usr/sbin/ssmtp /usr/bin/mail
 #RUN echo "" > /etc/ssmtp/ssmtp.conf
 
+COPY ./docker-entrypoint.sh /
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD cat

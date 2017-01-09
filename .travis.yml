@@ -1,5 +1,7 @@
 language: python
-sudo: false
+
+sudo: required
+
 cache:
   apt: true
   directories:
@@ -7,6 +9,9 @@ cache:
 
 python:
   - "2.7"
+
+services:
+  - docker
 
 addons:
   apt:
@@ -21,6 +26,7 @@ addons:
 env:
   global:
   - VERSION="10.0" TESTS="0" LINT_CHECK="0" TRANSIFEX="0"
+  - LINT_IGNORE="DL4001"
 
   matrix:
   - LINT_CHECK="1"
@@ -32,6 +38,7 @@ virtualenv:
 
 install:
   - git clone --depth=1 https://github.com/OCA/maintainer-quality-tools.git ${HOME}/maintainer-quality-tools
+  - git clone --depth=1 https://github.com/LasLabs/docker-quality-tools.git ${HOME}/docker-quality-tools
   - export PATH=${HOME}/maintainer-quality-tools/travis:${PATH}
   - travis_install_nightly
 

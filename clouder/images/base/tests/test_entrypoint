@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# Copyright 2016 LasLabs Inc.
+# License MIT or later (https://opensource.org/licenses/MIT).
+
+# This script will test that the entrypoint passes through commands.
+
+set -e
+
+OUTPUT=`docker exec -i -t $DOCKER_CONTAINER_ID echo "test"`
+
+echo "Command in $DOCKER_CONTAINER_ID responded with:"
+echo $OUTPUT
+
+echo $OUTPUT | grep -q "test"

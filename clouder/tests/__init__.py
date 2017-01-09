@@ -1,3 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from .ssh import *
+from . import test_docker_clouder_base
+
+from .ssh import test_ssh_environment
