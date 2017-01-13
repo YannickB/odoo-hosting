@@ -1,6 +1,6 @@
-FROM clouder/base:3.4
-MAINTAINER Yannick Buron yannick.buron@gmail.com
+FROM dinkel/spamassassin
+MAINTAINER Yannick Buron yburon@goclouder.net
 
-RUN apk add --update spamassassin
+#RUN apk add --update spamassassin
 
-CMD spamd
+#CMD spamd
