@@ -2,10 +2,11 @@
 # Copyright 2015 Clouder SASU
 # License LGPL-3.0 or later (http://gnu.org/licenses/lgpl.html).
 
+try:
+    from odoo import models, fields, api
+except ImportError:
+    from openerp import models, fields, api
 
-from odoo import api
-from odoo import fields
-from odoo import models
 import re
 from datetime import datetime
 

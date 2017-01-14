@@ -3,7 +3,10 @@
 # License LGPL-3.0 or later (http://gnu.org/licenses/lgpl.html).
 
 
-from odoo import models, fields, api
+try:
+    from odoo import models, fields, api
+except ImportError:
+    from openerp import models, fields, api
 
 
 class ClouderBaseOption(models.Model):

@@ -4,8 +4,11 @@
 
 import logging
 
-from odoo import models, fields, api
-from odoo import modules
+try:
+    from odoo import models, fields, api, modules
+except ImportError:
+    from openerp import models, fields, api, modules
+
 
 import os.path
 import socket

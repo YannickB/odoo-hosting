@@ -22,7 +22,11 @@
 
 import os.path
 
-from odoo import api, fields, models, modules
+try:
+    from odoo import models, fields, api, modules
+except ImportError:
+    from openerp import models, fields, api, modules
+
 from datetime import datetime, timedelta
 
 

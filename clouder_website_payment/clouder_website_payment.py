@@ -20,9 +20,14 @@
 #
 ##############################################################################
 
-from odoo import models, fields, api, release, _
-from odoo.exceptions import except_orm
-import odoo
+try:
+    from odoo import models, fields, api, release, _
+    from odoo.exceptions import except_orm
+    import odoo
+except ImportError:
+    from openerp import models, fields, api, release, _
+    from openerp.exceptions import except_orm
+    import openerp as odoo
 import threading
 import logging
 

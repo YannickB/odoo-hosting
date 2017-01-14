@@ -7,7 +7,11 @@ from datetime import datetime, timedelta
 import logging
 import re
 
-from odoo import models, fields, api
+try:
+    from odoo import models, fields, api
+except ImportError:
+    from openerp import models, fields, api
+
 
 from ..tools import generate_random_password
 

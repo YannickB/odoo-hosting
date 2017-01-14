@@ -3,7 +3,10 @@
 # License LGPL-3.0 or later (http://gnu.org/licenses/lgpl.html).
 
 
-from odoo import models, fields
+try:
+    from odoo import models, fields
+except ImportError:
+    from openerp import models, fields
 
 
 class ClouderImageTemplate(models.Model):

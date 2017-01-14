@@ -20,9 +20,15 @@
 #
 ##############################################################################
 
-from odoo import models, api, modules
+
 from datetime import datetime
-from odoo.addons.clouder.tools import generate_random_password
+
+try:
+    from odoo import models, api, modules
+    from odoo.addons.clouder.tools import generate_random_password
+except ImportError:
+    from openerp import models, api, modules
+    from openerp.addons.clouder.tools import generate_random_password
 
 
 class ClouderApplicationTypeOption(models.Model):

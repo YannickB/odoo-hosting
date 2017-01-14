@@ -8,7 +8,10 @@ import os.path
 import time
 import yaml
 
-from odoo import models, api, modules
+try:
+    from odoo import models, api, modules
+except ImportError:
+    from openerp import models, api, modules
 
 _logger = logging.getLogger(__name__)
 

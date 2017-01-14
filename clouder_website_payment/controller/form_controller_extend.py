@@ -20,10 +20,17 @@
 #
 ##############################################################################
 
-from odoo import http, _, fields, release
-from odoo.http import request
-from odoo.addons.clouder_website.controller.form_controller \
-    import FormController
+try:
+    from odoo import http, _, fields, release
+    from odoo.http import request
+    from odoo.addons.clouder_website.controller.form_controller \
+        import FormController
+except ImportError:
+    from openerp import http, _, fields, release
+    from openerp.http import request
+    from openerp.addons.clouder_website.controller.form_controller \
+        import FormController
+
 import json
 import logging
 

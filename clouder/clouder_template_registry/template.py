@@ -2,7 +2,11 @@
 # Copyright 2015 Clouder SASU
 # License LGPL-3.0 or later (http://gnu.org/licenses/lgpl.html).
 
-from odoo import models, api
+try:
+    from odoo import models, api
+except ImportError:
+    from openerp import models, api
+
 from ..tools import generate_random_password
 
 

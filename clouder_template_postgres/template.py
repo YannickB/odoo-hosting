@@ -20,7 +20,11 @@
 #
 ##############################################################################
 
-from odoo import models, api
+
+try:
+    from odoo import models, api
+except ImportError:
+    from openerp import models, api
 
 
 class ClouderContainer(models.Model):

@@ -6,7 +6,10 @@ from datetime import datetime
 import os.path
 import re
 
-from odoo import models, fields, api
+try:
+    from odoo import models, fields, api
+except ImportError:
+    from openerp import models, fields, api
 
 
 class ClouderApplication(models.Model):
