@@ -59,98 +59,177 @@
             <field name="name">clouder.base.form</field>
             <field name="model">clouder.base</field>
             <field name="arch" type="xml">
-                <form string="Base" version="7.0">
-                    <group col="4">
-                        <field name="name"/>
-                        <field name="domain_id"/>
-                        <field name="environment_id"/>
-                        <field name="title"/>
-                        <field name="application_id" domain="[('base','=',True)]"/>
-                        <field name="service_id" required="0" domain="[('application_id.base', '=', True)]"/>
-                        <field name="admin_name"/>
-                        <field name="admin_password"/>
-                        <field name="admin_email"/>
-                        <field name="poweruser_name"/>
-                        <field name="poweruser_password"/>
-                        <field name="poweruser_email"/>
-                        <field name="build"/>
-                        <field name="lang"/>
-                        <field name="ssl_only"/>
-                        <field name="auto_backup"/>
-                        <field name="test"/>
-                        <field name="reset_each_day"/>
-                        <newline/>
-                        <field name="cert_key"/>
-                        <field name="cert_cert"/>
-                        <newline/>
-                        <button name="generate_cert" string="Generate Certs" type="object" attrs="{'invisible': ['|','|',('cert_key','!=',False),('cert_cert','!=',False),('cert_renewal_date','!=',False)]}"/>
-                        <field name="cert_renewal_date" attrs="{'invisible': [('cert_renewal_date','=',False)]}"/>
-                        <button name="renew_cert" string="Renewal Certs" type="object" attrs="{'invisible': [('cert_renewal_date','=',False)]}"/>
-                        <newline/>
-                        <field name="reset_id"/>
-                        <button name="reset_base" string="Reset from parent" type="object" attrs="{'invisible': [('reset_id','=',False)]}"/>
-                        <newline/>
-                        <field name="public"/>
-                    </group>
-                    <notebook>
-                        <page string="General">
-                            <field name="option_ids" colspan="4">
-                                <tree string="Options" editable="bottom">
-                                    <field name="name" domain="[('application_type_id.application_ids.service_ids','in',parent.service_id),('type','=','base')]"/>
-                                    <field name="value"/>
-                                </tree>
-                            </field>
-                            <field name="link_ids" colspan="4">
-                                <tree string="Links" editable="bottom">
-                                    <field name="name"/>
-                                    <field name="target" domain="[('application_id','=',name)]"/>
-                                    <field name="required"/>
-                                    <field name="auto"/>
-                                    <field name="deployed"/>
-                                    <button name="deploy_" type="object" string="Reload"/>
-                                    <button name="purge_" type="object" string="Purge"/>
-                                </tree>
-                            </field>
-                            <field name="child_ids" colspan="4">
-                                <tree string="Childs" editable="bottom">
-                                    <field name="name"/>
-                                    <field name="sequence"/>
-                                    <field name="domainname"/>
-                                    <field name="domain_id" attrs="{'required': [('domainname', '!=', False)]}"/>
-                                    <field name="service_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
-                                    <field name="child_id"/>
-                                    <field name="backup_id"/>
-                                    <button name="create_child" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
-                                    <button name="delete_child" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
-                                </tree>
-                            </field>
-                            <button name="compute_childs" string="Compute links between childs" type="object" attrs="{'invisible': [('child_ids', '=', [])]}"/>
-                            <newline/>
-                            <button name="reinstall" string="Reinstall" type="object"/>
-                            <button name="purge" string="Purge" type="object"/>
-                            <button name="update" string="Update" type="object"/>
-                            <field name="job_ids" colspan="4"/>
-                        </page>
-                        <page name="backup" string="Backup">
-                            <group col="4">
-                                <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
-                                <field name="time_between_backup"/>
-                                <field name="backup_expiration"/>
-                                <newline/>
-                                <field name="date_next_backup"/>
-                                <field name="backup_comment"/>
+                <form string="Base">
+                    <header>
+                        <group name="group_buttons">
+                            <button name="generate_cert"
+                                    string="Generate Certs"
+                                    type="object"
+                                    attrs="{'invisible': ['|','|',('cert_key','!=',False),
+                                                                  ('cert_cert','!=',False),
+                                                                  ('cert_renewal_date','!=',False)],
+                                            }"
+                                    />
+                            <button name="renew_cert"
+                                    string="Renewal Certs"
+                                    type="object"
+                                    attrs="{'invisible': [('cert_renewal_date','=',False)]}"
+                                    />
+                            <button name="reset_base"
+                                    string="Reset from parent"
+                                    type="object"
+                                    attrs="{'invisible': [('reset_id','=',False)]}"
+                                    />
+                            <button name="compute_childs"
+                                    string="Compute Links"
+                                    type="object"
+                                    attrs="{'invisible': [('child_ids', '=', [])]}"
+                                    />
+                            <button name="reinstall"
+                                    string="Reinstall"
+                                    type="object"
+                                    />
+                            <button name="purge"
+                                    string="Purge"
+                                    type="object"
+                                    />
+                            <button name="update"
+                                    string="Update"
+                                    type="object"
+                                    />
+                        </group>
+                    </header>
+                    <sheet>
+
+                        <group name="group_meta" string="Meta">
+                            <group>
+                                <field name="name" />
                             </group>
-                            <button name="backup" string="Backup" type="object"/>
-                        </page>
-                        <page string="Metadata">
-                            <field name="metadata_ids" colspan="4">
-                                <tree string="Metadata" readonly="1">
-                                    <field name="name"/>
-                                    <field name="value_data"/>
-                                </tree>
-                            </field>
-                        </page>
-                    </notebook>
+                            <group>
+                                <field name="environment_id" />
+                                <field name="application_id"
+                                       domain="[('base','=',True)]"
+                                       />
+                            </group>
+                        </group>
+                        <group name="group_admin_user" string="Admin User">
+                            <group>
+                                <field name="admin_name" string="Name" />
+                                <field name="admin_email" string="Email" />
+                            </group>
+                            <group>
+                                <field name="admin_password" string="Password" />
+                            </group>
+                        </group>
+                        <group name="group_power_user" string="Power User">
+                            <group>
+                                <field name="poweruser_name" string="Name" />
+                                <field name="poweruser_email" string="Email" />
+                            </group>
+                            <group>
+                                <field name="poweruser_password" string="Password" />
+                            </group>
+                        </group>
+                        <group name="group_cert" string="Cert">
+                            <group>
+                                <field name="cert_renewal_date"
+                                       attrs="{'invisible': [('cert_renewal_date','=',False)]}"
+                                       />
+                                <field name="cert_cert" />
+                            </group>
+                            <group>
+                                <field name="cert_key" />
+                            </group>
+                        </group>
+                        <group name="group_reset" string="Reset Options">
+                            <group>
+                                <field name="reset_id" />
+                            </group>
+                            <group>
+                                <field name="reset_each_day"
+                                       options="{'invisible': [('reset_id', '=', False)]}"
+                                       />
+                            </group>
+                        </group>
+                        <group name="group_build_options" string="Build Options">
+                            <group>
+                                <field name="lang" />
+                                <field name="ssl_only" />
+                                <field name="public" />
+                            </group>
+                            <group>
+                                <field name="build" />
+                                <field name="test" />
+                                <field name="auto_backup" />
+                            </group>
+                        </group>
+                        <notebook>
+                            <page name="page_general" string="General">
+                                <group name="group_options" string="Options">
+                                    <field name="option_ids" nolabel="1">
+                                        <tree editable="bottom">
+                                            <field name="name"
+                                                   domain="[('application_type_id.application_ids.service_ids','in',parent.service_id),
+                                                            ('type','=','base')]"
+                                                   />
+                                            <field name="value" />
+                                        </tree>
+                                    </field>
+                                </group>
+                                <group name="group_links" string="Links">
+                                    <field name="link_ids" nolabel="1">
+                                        <tree editable="bottom">
+                                            <field name="name"/>
+                                            <field name="target" domain="[('application_id','=',name)]"/>
+                                            <field name="required"/>
+                                            <field name="auto"/>
+                                            <field name="deployed"/>
+                                            <button name="deploy_" type="object" string="Reload"/>
+                                            <button name="purge_" type="object" string="Purge"/>
+                                        </tree>
+                                    </field>
+                                </group>
+                                <group name="group_children" string="Children">
+                                    <field name="child_ids" nolabel="1">
+                                        <tree editable="bottom">
+                                            <field name="name"/>
+                                            <field name="sequence"/>
+                                            <field name="domainname"/>
+                                            <field name="domain_id" attrs="{'required': [('domainname', '!=', False)]}"/>
+                                            <field name="service_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
+                                            <field name="child_id"/>
+                                            <field name="backup_id"/>
+                                            <button name="create_child" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
+                                            <button name="delete_child" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
+                                        </tree>
+                                    </field>
+                                </group>
+                                <group name="group_jobs" string="Jobs">
+                                    <field name="job_ids"  nolabel="1" />
+                                </group>
+                            </page>
+                            <page name="backup" string="Backup">
+                                <group col="4">
+                                    <field name="backup_ids" widget="many2many_tags" domain="[('application_id.type_id.role_ids.name','=','backup')]"/>
+                                    <field name="time_between_backup"/>
+                                    <field name="backup_expiration"/>
+                                    <newline/>
+                                    <field name="date_next_backup"/>
+                                    <field name="backup_comment"/>
+                                </group>
+                                <button name="backup" string="Backup" type="object"/>
+                            </page>
+                            <page string="Metadata">
+                                <field name="metadata_ids" colspan="4">
+                                    <tree string="Metadata" readonly="1">
+                                        <field name="name"/>
+                                        <field name="value_data"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+
+                    </sheet>
                 </form>
             </field>
         </record>
