@@ -155,7 +155,7 @@ class ClouderBase(models.Model):
         """
 
         if self.service_id.db_type == 'mysql':
-            for key, database in self.databases.iteritems():
+            for key, database in self.db_names.iteritems():
                 self.service_id.database.execute([
                     "mysql -u root -p'" +
                     self.service_id.database.root_password +
@@ -175,7 +175,7 @@ class ClouderBase(models.Model):
         Purge the database.
         """
         if self.service_id.db_type == 'mysql':
-            for key, database in self.databases.iteritems():
+            for key, database in self.db_names.iteritems():
                 self.service_id.database.execute([
                     "mysql -u root -p'" +
                     self.service_id.database.root_password +
@@ -199,7 +199,7 @@ class ClouderBackup(models.Model):
 
         if self.base_id.service_id.db_type == 'mysql':
             service = self.base_id.service_id
-            for key, database in self.base_id.databases.iteritems():
+            for key, database in self.base_id.db_names.iteritems():
                 service.execute([
                     'mysqldump',
                     '-h', service.db_node,
@@ -215,7 +215,7 @@ class ClouderBackup(models.Model):
         super(ClouderBackup, self).restore_database(base)
         if base.service_id.db_type == 'mysql':
 
-            for key, database in base.databases.iteritems():
+            for key, database in base.db_names.iteritems():
                 db = base.service_id.database
                 db.execute([
                     "mysql -u root -p'" +

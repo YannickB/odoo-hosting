@@ -2,7 +2,7 @@ FROM clouder/base:3.4
 MAINTAINER Yannick Buron yannick.buron@gmail.com
 
 RUN apk add --update --no-cache supervisor ncftp python git openssh-client \
-        && apk add --update --no-cache --virtual .build-deps py-pip python-dev make gcc linux-headers musl-dev attr-dev acl-dev bash \
+        && apk add --update --no-cache --virtual .build-deps py2-pip python-dev make gcc linux-headers musl-dev attr-dev acl-dev bash \
         && pip --no-cache-dir install --upgrade pip fusepy pyxattr pylibacl tornado \
         && git clone git://github.com/bup/bup /opt/bup \
         && make -C /opt/bup \

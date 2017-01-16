@@ -17,7 +17,7 @@ MAINTAINER Yannick Buron yannick.buron@gmail.com
 # most dependencies are distributed as wheel packages at the next step
 #RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/pgdg.list && apt-get update && apt-get -yq install adduser ghostscript postgresql-client-9.5 python python-pip libjpeg-dev libfreetype6-dev zlib1g-dev libpng12-dev python-imaging python-pychart python-libxslt1 xfonts-base xfonts-75dpi libxrender1 libxext6 fontconfig python-zsi python-lasso libzmq5 libxslt1-dev libxml2-dev libxml2 libxslt1.1 python-dev libpq-dev libffi-dev libldap2-dev libssl-dev libsasl2-dev openssh-client node-less
 
-RUN apk add --update --no-cache postgresql-client py-pip \
+RUN apk add --update --no-cache postgresql-client nodejs py2-pip \
         && apk add --update --no-cache --virtual .build-deps gcc libffi-dev libjpeg-turbo-dev libxslt-dev linux-headers musl-dev openldap-dev postgresql-dev python-dev \
         && pip --no-cache-dir install --upgrade setuptools pip \
         && pip --no-cache-dir install --upgrade -r https://raw.githubusercontent.com/odoo/odoo/8.0/requirements.txt \
@@ -25,6 +25,7 @@ RUN apk add --update --no-cache postgresql-client py-pip \
         && pip --no-cache-dir install --upgrade -r https://raw.githubusercontent.com/odoo/odoo/10.0/requirements.txt \
         && pip --no-cache-dir install --upgrade paramiko erppeek \
         && easy_install -UZ py3o.template==0.9.5 \
+        && npm install -g less
         && apk add --update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing wkhtmltopdf \
         && apk del .build-deps
 
@@ -41,4 +42,4 @@ RUN chown -R odoo /opt/odoo/*
 
 # Execution environment
 USER odoo
-CMD /opt/odoo/files/odoo/odoo-server -c /opt/odoo/etc/odoo.conf
+CMD /opt/odoo/files/odoo/odoo.py -c /opt/odoo/etc/odoo.conf

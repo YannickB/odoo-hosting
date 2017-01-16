@@ -125,25 +125,32 @@ class ClouderBase(models.Model):
         return '%s.%s' % (self.name, self.domain_id.name)
 
     @property
-    def databases(self):
+    def db_name(self):
+        """
+        Property returning the name of the database
+        """
+        return self.fulldomain
+
+    @property
+    def db_names(self):
         """
         Property returning all databases names used for this base, in a dict.
         """
-        databases = {'single': self.fullname_}
+        db_names = {'single': self.db_name}
         if self.application_id.type_id.multiple_databases:
             dbs = self.application_id.type_id.multiple_databases.split(',')
-            databases = {
+            db_names = {
                 db: '%s_%s' % (self.fullname_, db) for db in dbs
             }
-        return databases
+        return db_names
 
     @property
-    def databases_comma(self):
+    def db_names_comma(self):
         """
         Property returning all databases names used for this base,
         separated by a comma.
         """
-        return ','.join([d for k, d in self.databases.iteritems()])
+        return ','.join(self.db_names.values())
 
     @property
     def http_port(self):

@@ -374,6 +374,9 @@ class ClouderService(models.Model):
 
                     # Run service
                     self.master_id.execute(cmd)
+
+                    # Keep here until service is deployed
+                    self.wait_for_start()
         return
 
     @api.multi
@@ -445,6 +448,49 @@ class ClouderService(models.Model):
         return res
 
     @api.multi
+    def get_pod(self):
+        return self.node_id.execute([
+            'docker ps --format={{.Names}}',  '|',
+            'grep', self.name + '.',  '|',
+            'head -n1', '|', "awk '{print $1;}'"])
+
+    def get_default_iteration_try(self):
+        return 60
+
+    def get_default_time_sleep(self):
+        return 2
+
+    @api.multi
+    def wait_for_stop(self):
+
+        # Keep here until service is deployed
+        res = 'Start'
+        i = 1
+        total = self.get_default_iteration_try()
+        while res and i <= total:
+            self.log('Stop %s' % (self.name))
+            self.log('Try %s/%s' % (i, total))
+            res = self.get_pod()
+            if res:
+                time.sleep(self.get_default_time_sleep())
+                i += 1
+
+    @api.multi
+    def wait_for_start(self):
+
+        # Keep here until service is deployed
+        res = ''
+        i = 1
+        total = self.get_default_iteration_try()
+        while not res and i <= total:
+            self.log('Start %s' % (self.name))
+            self.log('Try %s/%s' % (i, total))
+            res = self.get_pod()
+            if not res:
+                time.sleep(self.get_default_time_sleep())
+                i += 1
+
+    @api.multi
     def stop_exec(self):
         """
         Stop the service.
@@ -477,6 +523,7 @@ class ClouderService(models.Model):
                     self.master_id.execute(
                         ['docker', 'service', 'scale',
                          self.name + '=0'])
+                    self.wait_for_stop()
 
         return res
 
@@ -514,6 +561,7 @@ class ClouderService(models.Model):
                     self.master_id.execute(
                         ['docker', 'service', 'scale',
                          self.name + '=' + str(self.scale)])
+                    self.wait_for_start()
 
             time.sleep(3)
 

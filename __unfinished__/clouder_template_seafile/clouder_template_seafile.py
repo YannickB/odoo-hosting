@@ -82,9 +82,9 @@ class ClouderBase(models.Model):
                 '\n', '\n', '2\n', 'mysql\n', '\n',
                 self.service_id.db_user + '\n',
                 self.service_id.database_password + '\n',
-                self.databases['ccnet'] + '\n',
-                self.databases['seafile'] + '\n',
-                self.databases['seahub'] + '\n', '\n']
+                self.db_names['ccnet'] + '\n',
+                self.db_names['seafile'] + '\n',
+                self.db_names['seahub'] + '\n', '\n']
             seahub_args = [self.admin_email + '\n',
                            self.admin_password + '\n',
                            self.admin_password + '\n']

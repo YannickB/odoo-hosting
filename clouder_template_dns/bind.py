@@ -26,9 +26,9 @@ try:
 except ImportError:
     from openerp import models, api, modules
 
-from datetime import datetime
+# from datetime import datetime
 
-import socket
+# import socket
 
 
 class ClouderDomain(models.Model):
@@ -51,20 +51,21 @@ class ClouderDomain(models.Model):
         """
         Refresh the serial number in the config file
         """
-        if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
-            self.dns_id.execute([
-                'sed', '-i',
-                '"s/[0-9]* ;serial/' +
-                datetime.now().strftime('%m%d%H%M%S') + ' ;serial/g"',
-                self.configfile])
-            self.dns_id.start()
+        self.log('refresh')
+        # if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
+        #     self.dns_id.execute([
+        #         'sed', '-i',
+        #         '"s/[0-9]* ;serial/' +
+        #         datetime.now().strftime('%m%d%H%M%S') + ' ;serial/g"',
+        #         self.configfile])
+        # self.dns_id.start()
 
-            if domain:
-                try:
-                    socket.gethostbyname(domain)
-                except:
-                    self.dns_id.start()
-                    pass
+        # if domain:
+        #     try:
+        #         socket.gethostbyname(domain)
+        #     except:
+        #         # self.dns_id.start()
+        #         pass
 
     @api.multi
     def deploy(self):

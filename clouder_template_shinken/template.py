@@ -281,7 +281,7 @@ class ClouderBaseLink(models.Model):
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute([
                 'sed', '-i',
-                '"s/DATABASES/' + self.base_id.databases_comma + '/g"',
+                '"s/DATABASES/' + self.base_id.db_names_comma + '/g"',
                 self.base_id.shinken_configfile], username='shinken')
             self.target.execute([
                 'sed', '-i', '"s/BASE/' + self.base_id.name + '/g"',

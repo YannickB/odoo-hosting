@@ -1183,7 +1183,9 @@ class ClouderService(models.Model):
             else:
                 # Expose port on the swarm only if expose to internet
                 if port.expose == 'internet':
-                    ports.append(str(port.hostport) + ':' + port.local_port)
+                    ports.append(str(port.hostport) + ':' +
+                                 port.local_port +
+                                 (port.udp and '/udp' or ''))
             if port.use_hostport:
                 expose_ports.append(port.hostport)
         volumes = []

@@ -133,7 +133,7 @@ class ClouderBase(models.Model):
         """
 
         if self.service_id.db_type == 'pgsql':
-            for key, database in self.databases.iteritems():
+            for key, database in self.db_names.iteritems():
                 self.service_id.base_backup_service.execute([
                     'createdb', '-h', self.service_id.db_node, '-U',
                     self.service_id.db_user, database])
@@ -146,7 +146,7 @@ class ClouderBase(models.Model):
         Purge the database.
         """
         if self.service_id.db_type == 'pgsql':
-            for key, database in self.databases.iteritems():
+            for key, database in self.db_names.iteritems():
                 self.service_id.database.execute([
                     'psql', '-c',
                     '"update pg_database set datallowconn = \'false\' '
@@ -175,7 +175,7 @@ class ClouderBackup(models.Model):
 
         if self.base_id.service_id.db_type == 'pgsql':
             service = self.base_id.service_id.base_backup_service
-            for key, database in self.base_id.databases.iteritems():
+            for key, database in self.base_id.db_names.iteritems():
                 service.execute([
                     'pg_dump', '-O', ''
                     '-h', self.service_id.db_node,
@@ -190,7 +190,7 @@ class ClouderBackup(models.Model):
         super(ClouderBackup, self).restore_database(base)
         if base.service_id.db_type == 'pgsql':
             service = base.service_id.base_backup_service
-            for key, database in base.databases.iteritems():
+            for key, database in base.db_names.iteritems():
                 service.execute(['createdb', '-h',
                                  base.service_id.db_node, '-U',
                                  base.service_id.db_user,
