@@ -25,7 +25,7 @@ RUN apk add --update --no-cache postgresql-client nodejs py2-pip \
         && pip --no-cache-dir install --upgrade -r https://raw.githubusercontent.com/odoo/odoo/10.0/requirements.txt \
         && pip --no-cache-dir install --upgrade paramiko erppeek \
         && easy_install -UZ py3o.template==0.9.5 \
-        && npm install -g less
+        && npm install -g less \
         && apk add --update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing wkhtmltopdf \
         && apk del .build-deps
 
