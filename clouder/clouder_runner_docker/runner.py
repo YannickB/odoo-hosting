@@ -299,8 +299,7 @@ class ClouderService(models.Model):
                     cmd = ['docker', 'run', '-d', '-t', '--restart=always']
                     cmd += ('-p %s' % port for port in res['ports'])
                     cmd += ('-v %s' % volume for volume in res['volumes'])
-                    cmd += ('--volumes-from %s' % volume
-                            for volume in res['volumes_from'])
+                    cmd += ('-v %s' % volume for volume in res['volumes_from'])
                     cmd += ('--link %s:%s' % (link['name'], link['code'])
                             for link in res['links'])
                     cmd += ('-e "%s=%s"' % (key, environment)
@@ -432,11 +431,6 @@ class ClouderService(models.Model):
                     # Remove service
                     self.master_id.execute(
                         ['docker', 'service', 'rm', self.name])
-                    # Remove volume linked to this service
-                    for volume in self.volume_ids:
-                        self.master_id.execute(
-                            ['docker', 'volume', 'rm',
-                             self.name + '-' + volume.name])
                     # If last service using this network, delete it
                     if not self.search([
                             ('environment_id', '=', self.environment_id.id),
@@ -444,6 +438,11 @@ class ClouderService(models.Model):
                         self.node_id.execute(
                             ['docker', 'network', 'rm',
                              self.environment_id.prefix + '-network'])
+                # Remove volume linked to this service
+                for volume in self.volume_ids:
+                    self.node_id.execute(
+                        ['docker', 'volume', 'rm',
+                         self.name + '-' + volume.name])
 
         return res
 
@@ -491,16 +490,12 @@ class ClouderService(models.Model):
                 i += 1
 
     @api.multi
-    def stop_exec(self):
+    def hook_stop(self):
         """
         Stop the service.
         """
 
-        res = super(ClouderService, self).stop_exec()
-
-        if self.childs and 'exec' in self.childs:
-            self.childs['exec'].stop_exec()
-            return res
+        res = super(ClouderService, self).hook_stop()
 
         if not self.node_id.runner_id or \
                 self.node_id.runner_id.application_id.type_id.name\
@@ -528,16 +523,12 @@ class ClouderService(models.Model):
         return res
 
     @api.multi
-    def start_exec(self):
+    def hook_start(self):
         """
         Restart the service.
         """
 
-        res = super(ClouderService, self).start_exec()
-
-        if self.childs and 'exec' in self.childs:
-            self.childs['exec'].start_exec()
-            return res
+        res = super(ClouderService, self).hook_start()
 
         if not self.node_id.runner_id or \
                 self.node_id.runner_id.application_id.type_id.name\

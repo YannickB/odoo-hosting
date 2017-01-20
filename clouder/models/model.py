@@ -360,7 +360,6 @@ class ClouderModel(models.AbstractModel):
         self.ensure_one()
         try:
             self.deploy()
-            self.deploy_links()
         except:
             self.log_error(reverting=True)
             self.purge()

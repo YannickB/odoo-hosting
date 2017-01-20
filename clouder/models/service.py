@@ -259,14 +259,24 @@ class ClouderService(models.Model):
         return links
 
     @property
+    def childs_list(self):
+        """
+        Property returning a list containing childs.
+        """
+        childs = []
+        for child in self.child_ids:
+            if child.child_id:
+                childs.append(child.child_id)
+        return childs
+
+    @property
     def childs(self):
         """
         Property returning a dictionary containing childs.
         """
         childs = {}
-        for child in self.child_ids:
-            if child.child_id:
-                childs[child.child_id.application_id.code] = child.child_id
+        for child in self.childs_list:
+            childs[child.application_id.code] = child
         return childs
 
     @property
@@ -1196,6 +1206,10 @@ class ClouderService(models.Model):
                     if volume.readonly:
                         arg += ':ro'
                     volumes.append(arg)
+                else:
+                    volumes.append('%s-%s:%s'
+                                   % (self.name, volume.name,
+                                      volume.localpath))
             else:
                 volumes.append(
                     'type=volume,source=%s-%s,destination=%s'
@@ -1203,8 +1217,11 @@ class ClouderService(models.Model):
         volumes_from = []
         for volume_from in self.volumes_from_ids:
             if self.runner != 'swarm':
-                # If not swarm, only return the name of the service
-                volumes_from.append(volume_from.name)
+                # If not swarm, return all volumes of service
+                for volume in volume_from.volume_ids:
+                    volumes.append('%s-%s:%s'
+                                   % (volume_from.name, volume.name,
+                                      volume.localpath))
             else:
                 # If swarm, return all volumes of service
                 for volume in volume_from.volume_ids:
@@ -1315,6 +1332,7 @@ class ClouderService(models.Model):
         else:
             # We only call the hook if service without children
             self.deploy_post()
+            self.deploy_links()
         return
 
     @api.multi
@@ -1372,7 +1390,7 @@ class ClouderService(models.Model):
         self.recursive_deploy_post()
 
         # Restart all children
-        self.start()
+        self.start_exec(tag='exec')
 
         # Backup all children, to avoid monitoring alert before daily cron
         self.recursive_backup()
@@ -1427,10 +1445,23 @@ class ClouderService(models.Model):
         self.do('stop', 'stop_exec')
 
     @api.multi
-    def stop_exec(self):
+    def hook_stop(self):
+        return
+
+    @api.multi
+    def stop_exec(self, tag=None):
         """
         Stop the service.
         """
+        if self.childs_list:
+            for child in reversed(self.childs_list):
+                child.stop_exec(tag=tag)
+        else:
+            if tag:
+                if self.application_id.check_tags([tag]):
+                    self.hook_stop()
+            else:
+                self.hook_stop()
         return
 
     @api.multi
@@ -1439,11 +1470,24 @@ class ClouderService(models.Model):
         self.do('start', 'start_exec')
 
     @api.multi
-    def start_exec(self):
+    def hook_start(self):
+        return
+
+    @api.multi
+    def start_exec(self, tag='exec'):
         """
         Restart the service.
         """
-        self.stop_exec()
+        self.stop_exec(tag=tag)
+        if self.childs_list:
+            for child in self.childs_list:
+                child.start_exec(tag=tag)
+        else:
+            if tag:
+                if self.application_id.check_tags([tag]):
+                    self.hook_start()
+            else:
+                self.hook_start()
         return
 
     @api.multi

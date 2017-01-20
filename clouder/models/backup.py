@@ -412,7 +412,7 @@ class ClouderBackup(models.Model):
             )
             backup.execute([
                 'export BUP_DIR="%s";' % backup_dir,
-                'bup backup -n "%s" -d %d --strip "%s"' % (
+                'bup save -n "%s" -d %d --strip "%s"' % (
                     self.repo_name, int(self.now_epoch), directory,
                 )
             ],

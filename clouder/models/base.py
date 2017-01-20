@@ -829,6 +829,7 @@ class ClouderBase(models.Model):
                 self.deploy_test()
 
         self.deploy_post()
+        self.deploy_links()
 
         # For shinken
         self = self.with_context(backup_comment='First backup')

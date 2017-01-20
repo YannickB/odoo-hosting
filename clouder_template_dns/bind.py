@@ -26,7 +26,7 @@ try:
 except ImportError:
     from openerp import models, api, modules
 
-# from datetime import datetime
+from datetime import datetime
 
 # import socket
 
@@ -51,14 +51,13 @@ class ClouderDomain(models.Model):
         """
         Refresh the serial number in the config file
         """
-        self.log('refresh')
-        # if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
-        #     self.dns_id.execute([
-        #         'sed', '-i',
-        #         '"s/[0-9]* ;serial/' +
-        #         datetime.now().strftime('%m%d%H%M%S') + ' ;serial/g"',
-        #         self.configfile])
-        # self.dns_id.start()
+        if self.dns_id and self.dns_id.application_id.type_id.name == 'bind':
+            self.dns_id.execute([
+                'sed', '-i',
+                '"s/[0-9]* ;serial/' +
+                datetime.now().strftime('%m%d%H%M%S') + ' ;serial/g"',
+                self.configfile])
+        self.dns_id.start_exec(tag='exec')
 
         # if domain:
         #     try:
@@ -146,4 +145,4 @@ class ClouderBaseLink(models.Model):
                 'sed', '-i',
                 '"/%s:%s/d"' % (type, self.base_id.fulldomain),
                 self.base_id.domain_id.configfile])
-            self.base_id.domain_id.refresh_serial()
+            # self.base_id.domain_id.refresh_serial()
