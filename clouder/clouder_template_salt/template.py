@@ -243,7 +243,8 @@ class ClouderServiceLink(models.Model):
         """
         """
         super(ClouderServiceLink, self).deploy_link()
-        if self.name.type_id.name == 'shinken' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'shinken'\
                 and self.service_id.application_id.type_id.name == \
                 'salt-minion':
 
@@ -254,7 +255,8 @@ class ClouderServiceLink(models.Model):
         """
         """
         super(ClouderServiceLink, self).purge_link()
-        if self.name.type_id.name == 'shinken' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'shinken'\
                 and self.service_id.application_id.type_id.name == \
                 'salt-minion':
 

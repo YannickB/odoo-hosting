@@ -2,6 +2,10 @@
 <odoo>
     <data>
         <!-- apptype -->
+        <record id="tag_gitlabci" model="clouder.application.tag">
+            <field name="name">Gitlab CI</field>
+            <field name="code">gitlabci</field>
+        </record>
         <record id="application_type_gitlabci" model="clouder.application.type">
             <field name="name">gitlabci</field>
             <field name="system_user">git</field>
@@ -42,7 +46,7 @@
         </record>
         <record id="application_template_gitlabci_link_gitlab" model="clouder.application.link">
             <field name="template_id" ref="application_template_gitlabci"/>
-            <field name="name" ref="application_gitlab"/>
+            <field name="name" ref="tag_gitlabci"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>
             <field name="service" eval="True"/>
@@ -51,6 +55,7 @@
             <field name="name">Gitlab CI</field>
             <field name="code">gitlabci</field>
             <field name="type_id" ref="application_type_gitlabci"/>
+            <field name="tag_ids" eval="[(4, [ref('tag_gitlabci')])]"/>
             <field name="template_ids" eval="[(4, [ref('application_template_gitlabci')])]"/>
             <field name="default_image_id" ref="image_gitlabci"/>
         </record>

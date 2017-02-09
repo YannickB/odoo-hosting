@@ -222,9 +222,9 @@ class ClouderApplication(models.Model):
     def check_tags(self, needed_tags):
         tags = {}
         for tag in self.type_id.tag_ids:
-            tags[tag.name] = tag.name
+            tags[tag.code] = tag.code
         for tag in self.tag_ids:
-            tags[tag.name] = tag.name
+            tags[tag.code] = tag.code
 
         for needed_tag in needed_tags:
             if needed_tag not in tags:

@@ -51,10 +51,10 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
 
-        if self.name.check_tags(['dns']):
+        if self.target and self.target.application_id.check_tags(['dns']):
             proxy_link = self.search([
                 ('base_id', '=', self.base_id.id),
-                ('name.type_id.name', '=', 'proxy')])
+                ('target.application_id.type_id.name', '=', 'proxy')])
             ip = proxy_link and proxy_link[0].target.node_id.public_ip or \
                 self.base_id.service_id.node_id.public_ip
 
@@ -72,7 +72,7 @@ class ClouderBaseLink(models.Model):
         Remove base records on the bind service.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.check_tags(['dns']):
+        if self.target and self.target.application_id.check_tags(['dns']):
             if self.base_id.is_root:
                 self.purge_dns_config('@', 'A')
             self.purge_dns_config(self.base_id.name, 'A')

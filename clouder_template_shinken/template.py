@@ -180,7 +180,8 @@ class ClouderContainerLink(models.Model):
         Deploy the configuration file to watch the service.
         """
         super(ClouderContainerLink, self).deploy_link()
-        if self.name.type_id.name == 'shinken':
+        if self.target \
+                and self.target.application_id.type_id.name == 'shinken':
             if self.service_id.auto_backup:
                 config_file = 'service-shinken'
                 self.target.send(
@@ -229,7 +230,8 @@ class ClouderContainerLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderContainerLink, self).purge_link()
-        if self.name.type_id.name == 'shinken':
+        if self.target \
+                and self.target.application_id.type_id.name == 'shinken':
             self.target.execute(['rm', self.service_id.shinken_configfile],
                                 username='shinken')
             self.target.execute(
@@ -250,7 +252,8 @@ class ClouderBaseLink(models.Model):
         Deploy the configuration file to watch the base.
         """
         super(ClouderBaseLink, self).deploy_link()
-        if self.name.type_id.name == 'shinken':
+        if self.target \
+                and self.target.application_id.type_id.name == 'shinken':
             config_file = 'base-shinken'
             if not self.base_id.auto_backup:
                 config_file = 'base-shinken-no-backup'
@@ -300,7 +303,8 @@ class ClouderBaseLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.type_id.name == 'shinken':
+        if self.target \
+                and self.target.application_id.type_id.name == 'shinken':
             self.target.execute(['rm', self.base_id.shinken_configfile],
                                 username='shinken')
             self.target.execute(

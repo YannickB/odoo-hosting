@@ -124,7 +124,7 @@ class ClouderBaseLink(models.Model):
     def deploy_dns_config(self, name, type, value):
         super(ClouderBaseLink, self).deploy_dns_config(name, type, value)
 
-        if self.name.type_id.name == 'bind':
+        if self.target and self.target.application_id.type_id.name == 'bind':
 
             if type == 'MX':
                 type = 'MX 1'
@@ -140,7 +140,8 @@ class ClouderBaseLink(models.Model):
 
         super(ClouderBaseLink, self).purge_dns_config(name, type)
 
-        if self.name.type_id.name == 'bind':
+        if self.target and self.target.application_id.type_id.name == 'bind':
+
             self.target.execute([
                 'sed', '-i',
                 '"/%s:%s/d"' % (type, self.base_id.fulldomain),

@@ -451,7 +451,8 @@ class ClouderBaseLink(models.Model):
     def nginx_config_update(self, target):
         res = super(ClouderBaseLink, self).nginx_config_update(target)
 
-        if self.name.type_id.name == 'proxy' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'odoo':
 
             target.execute([
@@ -467,7 +468,8 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
 
-        if self.name.type_id.name == 'postfix' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'odoo':
 
             if 'base_restoration' in self.env.context \
@@ -529,7 +531,8 @@ class ClouderBaseLink(models.Model):
         Purge postfix configuration.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.type_id.name == 'postfix' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'odoo':
             self.target.execute([
                 'sed', '-i',

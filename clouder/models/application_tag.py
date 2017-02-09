@@ -13,6 +13,7 @@ class ClouderApplicationTag(models.Model):
     _name = 'clouder.application.tag'
 
     name = fields.Char('Name', required=True)
+    code = fields.Char('Code', required=True)
     application_ids = fields.Many2many(
         'clouder.application', 'clouder_application_tag_rel',
         'tag_id', 'application_id', 'Applications')

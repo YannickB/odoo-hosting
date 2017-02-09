@@ -172,7 +172,7 @@ class ClouderBase(models.Model):
         BaseLink = self.env['clouder.base.link']
         return BaseLink.search([
             ('base_id', '=', self.id),
-            ('name.type_id.name', '=', 'proxy'),
+            ('target.application_id.type_id.name', '=', 'proxy'),
             ('target', '!=', False),
         ])
 
@@ -194,7 +194,8 @@ class ClouderBaseLink(models.Model):
         Configure the proxy to redirect to the application port.
         """
         super(ClouderBaseLink, self).deploy_link()
-        if self.name.type_id.name == 'proxy':
+        if self.target \
+                and self.target.application_id.type_id.name == 'proxy':
             if not self.base_id.ssl_only:
                 configfile = 'proxy.config'
             else:
@@ -309,7 +310,8 @@ class ClouderBaseLink(models.Model):
         Remove the redirection.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.type_id.name == 'proxy':
+        if self.target \
+                and self.target.application_id.type_id.name == 'proxy':
             target = self.target
             target.execute([
                 'rm',

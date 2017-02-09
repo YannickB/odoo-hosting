@@ -29,6 +29,7 @@
         <field name="name">Elasticsearch</field>
         <field name="code">elasticsearch</field>
         <field name="type_id" ref="application_type_elasticsearch" />
+        <field name="tag_ids" eval="[(4, [ref('application_tag_elasticsearch')])]"/>
         <field name="template_ids"
                eval="[(4, ref('clouder.application_template_base_www'))]"
                />

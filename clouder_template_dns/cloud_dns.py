@@ -52,11 +52,13 @@ class ClouderDomain(models.Model):
         super(ClouderDomain, self).deploy()
 
         if self.dns_id and \
-                self.dns_id.application_id.type_id.name == 'clouddns':
+                self.dns_id.application_id.type_id.name == 'cloud-dns':
 
-            Driver = get_driver(getattr(Provider, self.provider_id.name))
+            Driver = get_driver(
+                getattr(Provider, self.dns_id.provider_id.provider_dns))
             driver = Driver(
-                self.provider_id.login, self.provider_id.secret_key)
+                self.dns_id.provider_id.login,
+                self.dns_id.provider_id.secret_key)
 
             # Create a new zone
             driver.create_zone(domain=self.name)
@@ -67,13 +69,15 @@ class ClouderDomain(models.Model):
 
         """
         if self.dns_id and \
-                self.dns_id.application_id.type_id.name == 'clouddns':
+                self.dns_id.application_id.type_id.name == 'cloud-dns':
 
-            Driver = get_driver(getattr(Provider, self.provider_id.name))
+            Driver = get_driver(
+                getattr(Provider, self.dns_id.provider_id.provider_dns))
             driver = Driver(
-                self.provider_id.login, self.provider_id.secret_key)
+                self.dns_id.provider_id.login,
+                self.dns_id.provider_id.secret_key)
 
-            zones = driver.list_zones
+            zones = driver.list_zones()
             for zone in zones:
                 if zone.domain == self.name:
                     driver.delete_zone(zone)
@@ -89,14 +93,16 @@ class ClouderBaseLink(models.Model):
     def deploy_dns_config(self, name, type, value):
         super(ClouderBaseLink, self).deploy_dns_config(name, type, value)
 
-        if self.name.type_id.name == 'clouddns':
+        if self.target \
+                and self.target.application_id.type_id.name == 'cloud-dns':
 
             Driver = get_driver(
-                getattr(Provider, self.target.provider_id.name))
+                getattr(Provider, self.target.provider_id.provider_dns))
             driver = Driver(
-                self.provider_id.login, self.target.provider_id.secret_key)
+                self.target.provider_id.login,
+                self.target.provider_id.secret_key)
 
-            zones = driver.list_zones
+            zones = driver.list_zones()
             for zone in zones:
                 if zone.domain == self.base_id.domain_id.name:
                     zone.create_record(
@@ -108,14 +114,16 @@ class ClouderBaseLink(models.Model):
 
         super(ClouderBaseLink, self).purge_dns_config(name, type)
 
-        if self.name.type_id.name == 'clouddns':
+        if self.target \
+                and self.target.application_id.type_id.name == 'cloud-dns':
 
             Driver = get_driver(
-                getattr(Provider, self.target.provider_id.name))
+                getattr(Provider, self.target.provider_id.provider_dns))
             driver = Driver(
-                self.provider_id.login, self.target.provider_id.secret_key)
+                self.target.provider_id.login,
+                self.target.provider_id.secret_key)
 
-            zones = driver.list_zones
+            zones = driver.list_zones()
             for zone in zones:
                 if zone.domain == self.base_id.domain_id.name:
                     records = driver.list_records(zone)

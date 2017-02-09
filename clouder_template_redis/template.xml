@@ -2,6 +2,11 @@
 <odoo>
     <data>
 
+        <record id="tag_redis" model="clouder.application.tag">
+            <field name="name">Redis</field>
+            <field name="code">redis</field>
+        </record>
+
         <record id="application_type_redis" model="clouder.application.type">
             <field name="name">redis</field>
             <field name="system_user">redis</field>
@@ -66,6 +71,7 @@
             <field name="name">Redis</field>
             <field name="code">redis</field>
             <field name="type_id" ref="application_type_redis"/>
+            <field name="tag_ids" eval="[(4, [ref('tag_redis')])]"/>
             <field name="child_ids" eval="[(4, [ref('application_redis_data'),ref('application_redis_exec')])]"/>
             <field name="sequence">2</field>
             <field name="required" eval="True"/>
@@ -76,7 +82,7 @@
         </record>
         <record id="application_template_service_redis_link_redis" model="clouder.application.link">
             <field name="template_id" ref="application_template_service_redis"/>
-            <field name="name" ref="application_redis"/>
+            <field name="name" ref="tag_redis"/>
             <field name="service" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>

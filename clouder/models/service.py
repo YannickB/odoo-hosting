@@ -137,7 +137,7 @@ class ClouderService(models.Model):
         database = False
         for link in self.link_ids:
             if link.target:
-                if link.name.check_tags(['database']):
+                if link.target.application_id.check_tags(['database']):
                     database = link.target
         return database
 
@@ -505,19 +505,20 @@ class ClouderService(models.Model):
                         for parent_code, parent_link \
                                 in parent.service_id.\
                                 available_links.iteritems():
-                            if link['source'].name.id == \
-                                    parent_link.application_id.id:
+                            if parent_link.application_id.check_tags(
+                                    link['source'].name.code):
                                 next_id = parent_link.id
                     context = self.env.context
                     if not next_id and 'service_links' in context:
-                        fullcode = link['source'].name.fullcode
-                        if fullcode in context['service_links']:
-                            next_id = context['service_links'][fullcode]
+                        code = link['source'].name.code
+                        if code in context['service_links']:
+                            next_id = context['service_links'][code]
                     if not next_id:
                         next_id = link['source'].next.id
                     if not next_id:
                         target_ids = self.search([
-                            ('application_id', '=', link['source'].name.id)])
+                            ('application_id.tag_ids', 'in',
+                             link['source'].name.id)])
                         if target_ids:
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link['source'].name.id,

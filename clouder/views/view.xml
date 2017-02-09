@@ -180,7 +180,7 @@
                                     <field name="link_ids" nolabel="1">
                                         <tree editable="bottom">
                                             <field name="name"/>
-                                            <field name="target" domain="[('application_id','=',name)]"/>
+                                            <field name="target" domain="[('application_id.tag_ids','in',name)]"/>
                                             <field name="required"/>
                                             <field name="auto"/>
                                             <field name="deployed"/>
@@ -269,8 +269,8 @@
                         <field name="suffix"/>
                         <field name="application_id"/>
                         <field name="node_id"/>
-                        <field name="image_id" attrs="{'invisible': [('child_ids','!=', [])], 'required': [('child_ids','=', [])]}"/>
-                        <field name="image_version_id" domain="[('image_id','=',image_id)]" attrs="{'invisible': [('child_ids','!=', [])]}"/>
+                        <field name="image_id" attrs="{'invisible': ['|',('child_ids','!=', []),('dummy','=',True)], 'required': [('child_ids','=', []),('dummy','!=',True)]}"/>
+                        <field name="image_version_id" domain="[('image_id','=',image_id)]" attrs="{'invisible': ['|',('child_ids','!=', []),('dummy','=',True)]}"/>
                         <newline/>
                         <field name="volumes_from_ids" widget="many2many_tags"/>
                         <field name="public"/>
@@ -310,7 +310,7 @@
                             <field name="link_ids" colspan="4">
                                 <tree string="Links" editable="bottom">
                                     <field name="name"/>
-                                    <field name="target" domain="[('application_id','=',name)]"/>
+                                    <field name="target" domain="[('application_id.tag_ids','in',name)]"/>
                                     <field name="required"/>
                                     <field name="auto"/>
                                     <field name="make_link"/>
@@ -422,7 +422,7 @@
                         <field name="ssh_port" attrs="{'invisible':[('runner_id','!=',False)], 'required':[('runner_id','=',False)]}"/>
                         <field name="environment_id"/>
                         <field name="manager"/>
-                        <field name="provider_id" domain="[('type','in',['node','service'])]"/>
+                        <field name="provider_id" domain="[('name','in',['compute','service'])]"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -818,7 +818,7 @@
                                     <field name="make_link"/>
                                     <field name="service"/>
                                     <field name="base"/>
-                                    <field name="next" domain="[('application_id','=',name)]"/>
+                                    <field name="next" domain="[('application_id.tag_ids','in',name)]"/>
                                 </tree>
                             </field>
                             <field name="child_ids" colspan="4">
@@ -1063,12 +1063,17 @@
             <field name="model">clouder.provider</field>
             <field name="arch" type="xml">
                 <form string="Provider" version="7.0">
-                    <group col="4">
-                        <field name="name"/>
-                        <field name="type"/>
-                        <field name="login"/>
-                        <field name="secret_key"/>
-                        <field name="smtp_relayhost" attrs="{'invisible': [('type','!=', 'smtp')]}"/>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="provider_compute" attrs="{'invisible': [('name','!=', 'compute')], 'required': [('name', '=', 'compute')]}"/>
+                            <field name="provider_dns" attrs="{'invisible': [('name','!=', 'dns')], 'required': [('name', '=', 'dns')]}"/>
+                        </group>
+                        <group>
+                            <field name="login"/>
+                            <field name="secret_key"/>
+                            <field name="smtp_relayhost" attrs="{'invisible': [('name','!=', 'smtp')]}"/>
+                        </group>
                     </group>
                 </form>
             </field>
@@ -1079,7 +1084,9 @@
             <field name="arch" type="xml">
                 <tree string="Providers">
                     <field name="name"/>
-                    <field name="type"/>
+                    <field name="provider_compute" attrs="{'invisible': [('name','!=', 'compute')]}"/>
+                    <field name="provider_dns" attrs="{'invisible': [('name','!=', 'dns')]}"/>
+                    <field name="login"/>
                 </tree>
             </field>
         </record>

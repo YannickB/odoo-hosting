@@ -40,7 +40,9 @@ class ClouderServiceLink(models.Model):
         """
         Upload the whole backups to a distant service.
         """
-        if self.name.type_id.name == 'backup-upload' \
+        if self.target \
+                and self.target.application_id.type_id.name ==\
+                'backup-upload' \
                 and self.service_id.application_id.type_id.name == 'backup':
             filegz = self.service_id.fullname + '.tar.gz'
             file_destination = '/opt/upload/' + filegz
@@ -103,7 +105,9 @@ class ClouderServiceLink(models.Model):
         """
         Remove the backups on the distant service.
         """
-        if self.name.type_id.name == 'backup-upload' \
+        if self.target \
+                and self.target.application_id.type_id.name ==\
+                'backup-upload' \
                 and self.service_id.application_id.type_id.name == 'backup':
             directory = '/opt/upload/' + self.service_id.name
             self.target.execute(['rm', '-rf', directory])

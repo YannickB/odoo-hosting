@@ -23,10 +23,13 @@ class ClouderProvider(models.Model):
     _name = 'clouder.provider'
     _description = 'Provider'
 
-    name = fields.Selection(lambda s: s._get_providers(), required=True)
     config_id = fields.Many2one('clouder.config.settings',
                                 'Configuration', required=True)
-    type = fields.Selection(lambda s: s._get_types(), required=True)
+    name = fields.Selection(lambda s: s._get_types(), required=True)
+    provider_compute = fields.Selection(
+        lambda s: s._get_providers_compute())
+    provider_dns = fields.Selection(
+        lambda s: s._get_providers_dns())
     login = fields.Char('Login')
     secret_key = fields.Char('Secret Key')
     smtp_relayhost = fields.Char('SMTP Relay')
@@ -34,14 +37,22 @@ class ClouderProvider(models.Model):
     @api.multi
     def _get_types(self):
         return [
-            ('node', 'Node'), ('service', 'Service'),
+            ('compute', 'Compute'), ('service', 'Service'),
             ('dns', 'DNS'), ('load', 'Load Balancing'),
             ('backup', 'Backup'), ('smtp', 'SMTP')]
 
     @api.multi
-    def _get_providers(self):
+    def _get_providers_compute(self):
         providers = []
         for key in sorted(libcloud.compute.providers.Provider.__dict__.keys()):
+            if '__'not in key:
+                providers.append((key, key))
+        return providers
+
+    @api.multi
+    def _get_providers_dns(self):
+        providers = []
+        for key in sorted(libcloud.dns.providers.Provider.__dict__.keys()):
             if '__'not in key:
                 providers.append((key, key))
         return providers

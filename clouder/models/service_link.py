@@ -26,7 +26,7 @@ class ClouderServiceLink(models.Model):
     service_id = fields.Many2one(
         'clouder.service', 'Service', ondelete="cascade", required=True)
     name = fields.Many2one(
-        'clouder.application', 'Application', required=True)
+        'clouder.application.tag', 'Application', required=True)
     target = fields.Many2one('clouder.service', 'Target')
     required = fields.Boolean('Required?')
     auto = fields.Boolean('Auto?')

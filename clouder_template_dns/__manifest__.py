@@ -31,7 +31,7 @@
     'demo': [],
     'data': [
         'bind.xml',
-        'clouddns.xml'
+        'cloud_dns.xml'
     ],
     'external_dependencies': {
         'python': [

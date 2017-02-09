@@ -4,6 +4,11 @@
 
         <record id="tag_root_password" model="clouder.application.tag">
             <field name="name">root_password</field>
+            <field name="code">root_password</field>
+        </record>
+        <record id="tag_mysql" model="clouder.application.tag">
+            <field name="name">MySQL</field>
+            <field name="code">mysql</field>
         </record>
 
         <record id="application_type_mysql" model="clouder.application.type">
@@ -94,7 +99,7 @@
             <field name="code">mysql</field>
             <field name="type_id" ref="application_type_mysql"/>
             <field name="child_ids" eval="[(4, [ref('application_mysql_data'),ref('application_mysql_exec')])]"/>
-            <field name="tag_ids" eval="[(6, 0, [ref('tag_root_password')])]"/>
+            <field name="tag_ids" eval="[(6, 0, [ref('tag_root_password'),ref('tag_mysql')])]"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
         </record>
@@ -104,7 +109,7 @@
         </record>
         <record id="application_template_service_mysql_link_mysql" model="clouder.application.link">
             <field name="template_id" ref="application_template_service_mysql"/>
-            <field name="name" ref="application_mysql"/>
+            <field name="name" ref="tag_mysql"/>
             <field name="service" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>

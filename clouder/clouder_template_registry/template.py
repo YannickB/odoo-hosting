@@ -86,7 +86,8 @@ class ClouderServiceLink(models.Model):
         """
         super(ClouderServiceLink, self).deploy_link()
 
-        if self.name.type_id.name == 'registry':
+        if self.target \
+                and self.target.application_id.type_id.name == 'registry':
             if 'exec' in self.target.childs:
                 self.target.execute([
                     'htpasswd', '-Bbn',  self.service_id.name,
@@ -103,7 +104,8 @@ class ClouderServiceLink(models.Model):
         """
         super(ClouderServiceLink, self).purge_link()
 
-        if self.name.type_id.name == 'registry':
+        if self.target \
+                and self.target.application_id.type_id.name == 'registry':
             if 'exec' in self.target.childs:
                 self.target.execute([
                     'sed', '-i', '"/%s/d"' % self.service_id.name,
@@ -127,7 +129,7 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
 
-        if self.name.type_id.name == 'proxy' \
+        if self.target and self.target.application_id.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'registry':
             registry = self.base_id.service_id.childs['exec']
             if self.base_id.cert_cert and self.base_id.cert_key:

@@ -577,7 +577,8 @@ class ClouderNode(models.Model):
         but we should only have one.
         :return:
         """
-        Driver = get_driver(getattr(Provider, self.provider_id.name))
+        Driver = get_driver(
+            getattr(Provider, self.provider_id.provider_compute))
         driver = Driver(self.provider_id.login, self.provider_id.secret_key)
 
         res = []
@@ -596,7 +597,8 @@ class ClouderNode(models.Model):
 
         self.libcloud_destroy_exec()
 
-        Driver = get_driver(getattr(Provider, self.provider_id.name))
+        Driver = get_driver(
+            getattr(Provider, self.provider_id.provider_compute))
         driver = Driver(self.provider_id.login, self.provider_id.secret_key)
 
         image = [i for i in driver.list_images()
@@ -639,7 +641,8 @@ class ClouderNode(models.Model):
 
     @api.multi
     def libcloud_reboot_exec(self):
-        Driver = get_driver(getattr(Provider, self.provider_id.name))
+        Driver = get_driver(
+            getattr(Provider, self.provider_id.provider_compute))
         driver = Driver(self.provider_id.login, self.provider_id.secret_key)
 
         for node in self.libcloud_get_nodes():
@@ -655,6 +658,7 @@ class ClouderNode(models.Model):
 
     @api.multi
     def libcloud_stop_exec(self):
-        Driver = get_driver(getattr(Provider, self.provider_id.name))
+        Driver = get_driver(
+            getattr(Provider, self.provider_id.provider_compute))
         driver = Driver(self.provider_id.login, self.provider_id.secret_key)
         driver.ex_stop_node(n for n in self.libcloud_get_nodes())

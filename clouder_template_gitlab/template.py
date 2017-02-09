@@ -182,7 +182,8 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).deploy_link()
 
-        if self.name.type_id.name == 'gitlab' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'gitlab' \
                 and self.service_id.application_id.type_id.name \
                 == 'gitlabci':
             if self.target.base_ids:
@@ -211,7 +212,8 @@ class ClouderContainerLink(models.Model):
                     self.service_id.options['concurrent']['value'] + '/g"',
                     '/etc/gitlab-runner/config.toml'])
 
-        elif self.name.type_id.name == 'gitlab' \
+        elif self.target \
+                and self.target.application_id.type_id.name == 'gitlab' \
                 and self.service_id.application_id.check_tags(['files']):
             if self.target.base_ids:
 
@@ -324,7 +326,8 @@ class ClouderContainerLink(models.Model):
                                   self.service_id.
                                   options['registry_password']['value']})
 
-        if self.name.type_id.name == 'registry':
+        if self.target \
+                and self.target.application_id.type_id.name == 'registry':
             if 'gitlab' in self.service_id.links:
                 self.service_id.links['gitlab'].deploy_link()
 
@@ -335,7 +338,8 @@ class ClouderContainerLink(models.Model):
         """
         super(ClouderContainerLink, self).purge_link()
 
-        if self.name.type_id.name == 'gitlab' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'gitlab' \
                 and self.service_id.application_id.type_id.name \
                 == 'gitlabci':
             if self.target.base_ids and 'exec' in self.service_id.childs:
@@ -460,7 +464,8 @@ class ClouderBaseLink(models.Model):
         Configure the proxy to redirect to the application port.
         """
         super(ClouderBaseLink, self).deploy_link()
-        if self.name.type_id.name == 'proxy' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'proxy' \
                 and self.base_id.application_id.type_id.name == 'gitlab':
             key = self.target.execute([
                 'cat', '/etc/ssl/private/' + self.base_id.fulldomain + '.key'])

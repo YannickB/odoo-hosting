@@ -4,6 +4,7 @@
 
         <record id="tag_no_salt" model="clouder.application.tag">
             <field name="name">no-salt</field>
+            <field name="code">no-salt</field>
         </record>
 
         <record id="application_type_salt_master" model="clouder.application.type">

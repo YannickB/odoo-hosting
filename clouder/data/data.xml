@@ -2,31 +2,52 @@
     <data>
 
         <record id="tag_registry" model="clouder.application.tag">
-            <field name="name">registry</field>
+            <field name="name">Registry</field>
+            <field name="code">registry</field>
         </record>
         <record id="tag_backup" model="clouder.application.tag">
-            <field name="name">backup</field>
+            <field name="name">Backup</field>
+            <field name="code">backup</field>
+        </record>
+        <record id="tag_backup_upload" model="clouder.application.tag">
+            <field name="name">Backup Upload</field>
+            <field name="code">backup-upload</field>
         </record>
         <record id="tag_no_backup" model="clouder.application.tag">
             <field name="name">no-backup</field>
+            <field name="code">no-backup</field>
         </record>
         <record id="tag_database" model="clouder.application.tag">
-            <field name="name">database</field>
+            <field name="name">Database</field>
+            <field name="code">database</field>
         </record>
         <record id="tag_dns" model="clouder.application.tag">
-            <field name="name">dns</field>
+            <field name="name">Dns</field>
+            <field name="code">dns</field>
+        </record>
+        <record id="tag_mail" model="clouder.application.tag">
+            <field name="name">Mail</field>
+            <field name="code">mail</field>
+        </record>
+        <record id="tag_proxy" model="clouder.application.tag">
+            <field name="name">Proxy</field>
+            <field name="code">proxy</field>
         </record>
         <record id="tag_data" model="clouder.application.tag">
-            <field name="name">data</field>
+            <field name="name">Data</field>
+            <field name="code">data</field>
         </record>
         <record id="tag_files" model="clouder.application.tag">
-            <field name="name">files</field>
+            <field name="name">Files</field>
+            <field name="code">files</field>
         </record>
         <record id="tag_exec" model="clouder.application.tag">
-            <field name="name">exec</field>
+            <field name="name">Exec</field>
+            <field name="code">exec</field>
         </record>
         <record id="tag_ssh" model="clouder.application.tag">
-            <field name="name">ssh</field>
+            <field name="name">SSH</field>
+            <field name="code">ssh</field>
         </record>
 
         <record id="image_base" model="clouder.image">
@@ -107,8 +128,29 @@
             <field name="name">Base WWW</field>
         </record>
 
+        <record id="application_template_base_www_link_bind" model="clouder.application.link">
+            <field name="template_id" ref="application_template_base_www"/>
+            <field name="name" ref="tag_dns"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
 
+        <record id="application_template_base_www_link_proxy" model="clouder.application.link">
+            <field name="template_id" ref="application_template_base_www"/>
+            <field name="name" ref="tag_proxy"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
 
+        <record id="application_template_base_www_link_postfix" model="clouder.application.link">
+            <field name="template_id" ref="application_template_base_www"/>
+            <field name="name" ref="tag_mail"/>
+            <field name="required" eval="True"/>
+            <field name="auto" eval="True"/>
+            <field name="base" eval="True"/>
+        </record>
 
     </data>
 </odoo>

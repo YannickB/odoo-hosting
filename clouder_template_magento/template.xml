@@ -238,49 +238,49 @@
             <field name="base" eval="True"/>
             <field name="current_version">8.0</field>
         </record>
-        <record id="application_magento_link_bind" model="clouder.application.link">
-            <field name="application_id" ref="application_magento"/>
-            <field name="name" ref="clouder_template_dns.application_bind"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="application_magento_link_shinken" model="clouder.application.link">
-            <field name="application_id" ref="application_magento"/>
-            <field name="name" ref="clouder_template_shinken.application_shinken"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="service" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="application_magento_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="application_magento"/>
-            <field name="name" ref="clouder_template_mysql.application_mysql"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="service" eval="True"/>
-        </record>
-        <record id="application_magento_link_postfix" model="clouder.application.link">
-            <field name="application_id" ref="application_magento"/>
-            <field name="name" ref="clouder_template_mail.application_postfix"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="application_magento_link_proxy" model="clouder.application.link">
-            <field name="application_id" ref="application_magento"/>
-            <field name="name" ref="clouder_template_proxy.application_proxy"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="base" eval="True"/>
-        </record>
-        <record id="application_magento_link_piwik" model="clouder.application.link">
-            <field name="application_id" ref="application_magento"/>
-            <field name="name" ref="clouder_template_piwik.application_piwik"/>
-            <field name="base" eval="True"/>
-        </record>
+        <!--<record id="application_magento_link_bind" model="clouder.application.link">-->
+            <!--<field name="application_id" ref="application_magento"/>-->
+            <!--<field name="name" ref="clouder_template_dns.application_bind"/>-->
+            <!--<field name="required" eval="True"/>-->
+            <!--<field name="auto" eval="True"/>-->
+            <!--<field name="base" eval="True"/>-->
+        <!--</record>-->
+        <!--<record id="application_magento_link_shinken" model="clouder.application.link">-->
+            <!--<field name="application_id" ref="application_magento"/>-->
+            <!--<field name="name" ref="clouder_template_shinken.application_shinken"/>-->
+            <!--<field name="required" eval="True"/>-->
+            <!--<field name="auto" eval="True"/>-->
+            <!--<field name="service" eval="True"/>-->
+            <!--<field name="base" eval="True"/>-->
+        <!--</record>-->
+        <!--<record id="application_magento_link_mysql" model="clouder.application.link">-->
+            <!--<field name="application_id" ref="application_magento"/>-->
+            <!--<field name="name" ref="clouder_template_mysql.application_mysql"/>-->
+            <!--<field name="required" eval="True"/>-->
+            <!--<field name="auto" eval="True"/>-->
+            <!--<field name="make_link" eval="True"/>-->
+            <!--<field name="service" eval="True"/>-->
+        <!--</record>-->
+        <!--<record id="application_magento_link_postfix" model="clouder.application.link">-->
+            <!--<field name="application_id" ref="application_magento"/>-->
+            <!--<field name="name" ref="clouder_template_mail.application_postfix"/>-->
+            <!--<field name="required" eval="True"/>-->
+            <!--<field name="auto" eval="True"/>-->
+            <!--<field name="make_link" eval="True"/>-->
+            <!--<field name="base" eval="True"/>-->
+        <!--</record>-->
+        <!--<record id="application_magento_link_proxy" model="clouder.application.link">-->
+            <!--<field name="application_id" ref="application_magento"/>-->
+            <!--<field name="name" ref="clouder_template_proxy.application_proxy"/>-->
+            <!--<field name="required" eval="True"/>-->
+            <!--<field name="auto" eval="True"/>-->
+            <!--<field name="base" eval="True"/>-->
+        <!--</record>-->
+        <!--<record id="application_magento_link_piwik" model="clouder.application.link">-->
+            <!--<field name="application_id" ref="application_magento"/>-->
+            <!--<field name="name" ref="clouder_template_piwik.application_piwik"/>-->
+            <!--<field name="base" eval="True"/>-->
+        <!--</record>-->
 
         <record id="application_magento_data" model="clouder.application">
             <field name="name">Magento Data</field>
@@ -292,14 +292,14 @@
             <field name="required" eval="True"/>
             <field name="auto_backup" eval="True"/>
         </record>
-        <record id="application_magento_data_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="application_magento_data"/>
-            <field name="name" ref="clouder_template_mysql.application_mysql"/>
-            <field name="service" eval="True"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
+        <!--<record id="application_magento_data_link_mysql" model="clouder.application.link">-->
+            <!--<field name="application_id" ref="application_magento_data"/>-->
+            <!--<field name="name" ref="clouder_template_mysql.application_mysql"/>-->
+            <!--<field name="service" eval="True"/>-->
+            <!--<field name="required" eval="True"/>-->
+            <!--<field name="auto" eval="True"/>-->
+            <!--<field name="make_link" eval="True"/>-->
+        <!--</record>-->
 
         <record id="application_magento_files" model="clouder.application">
             <field name="name">Magento Files</field>
@@ -320,13 +320,13 @@
             <field name="sequence">3</field>
             <field name="required" eval="True"/>
         </record>
-        <record id="application_magento_exec_link_mysql" model="clouder.application.link">
-            <field name="application_id" ref="application_magento_exec"/>
-            <field name="name" ref="clouder_template_mysql.application_mysql"/>
-            <field name="required" eval="True"/>
-            <field name="auto" eval="True"/>
-            <field name="make_link" eval="True"/>
-        </record>
+        <!--<record id="application_magento_exec_link_mysql" model="clouder.application.link">-->
+            <!--<field name="application_id" ref="application_magento_exec"/>-->
+            <!--<field name="name" ref="clouder_template_mysql.application_mysql"/>-->
+            <!--<field name="required" eval="True"/>-->
+            <!--<field name="auto" eval="True"/>-->
+            <!--<field name="make_link" eval="True"/>-->
+        <!--</record>-->
 
         <record id="application_magento_ssh" model="clouder.application">
             <field name="name">Magento SSH</field>

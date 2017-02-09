@@ -24,4 +24,4 @@
 
 from . import common
 from . import bind
-from . import clouddns
+from . import cloud_dns

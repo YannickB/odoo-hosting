@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+
+        <record id="application_type_cloud_dns" model="clouder.application.type">
+            <field name="name">cloud-dns</field>
+            <field name="system_user">cloud-dns</field>
+            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_dns')])]"/>
+        </record>
+
+        <record id="application_cloud_dns" model="clouder.application">
+            <field name="name">Cloud DNS</field>
+            <field name="code">cloud-dns</field>
+            <field name="type_id" ref="application_type_cloud_dns"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_dns')])]"/>
+            <field name="dummy" eval="True"/>
+        </record>
+
+    </data>
+</odoo>

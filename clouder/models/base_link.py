@@ -25,7 +25,7 @@ class ClouderBaseLink(models.Model):
 
     base_id = fields.Many2one('clouder.base', 'Base', ondelete="cascade",
                               required=True)
-    name = fields.Many2one('clouder.application', 'Application',
+    name = fields.Many2one('clouder.application.tag', 'Application',
                            required=True)
     target = fields.Many2one('clouder.service', 'Target')
     required = fields.Boolean('Required?')

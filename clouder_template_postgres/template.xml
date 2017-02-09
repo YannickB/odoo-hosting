@@ -2,6 +2,10 @@
 <odoo>
     <data>
 
+        <record id="tag_postgres" model="clouder.application.tag">
+            <field name="name">PostgreSQL</field>
+            <field name="code">postgres</field>
+        </record>
 
         <record id="application_type_postgres" model="clouder.application.type">
             <field name="name">postgres</field>
@@ -80,6 +84,7 @@
             <field name="name">Postgresql</field>
             <field name="code">postgres</field>
             <field name="type_id" ref="application_type_postgres"/>
+            <field name="tag_ids" eval="[(4, [ref('tag_postgres')])]"/>
             <field name="child_ids" eval="[(4, [ref('application_postgres_data'),ref('application_postgres_exec')])]"/>
             <field name="sequence">1</field>
             <field name="required" eval="True"/>
@@ -90,7 +95,7 @@
         </record>
         <record id="application_template_service_postgres_link_postgres" model="clouder.application.link">
             <field name="template_id" ref="application_template_service_postgres"/>
-            <field name="name" ref="application_postgres"/>
+            <field name="name" ref="tag_postgres"/>
             <field name="service" eval="True"/>
             <field name="required" eval="True"/>
             <field name="auto" eval="True"/>

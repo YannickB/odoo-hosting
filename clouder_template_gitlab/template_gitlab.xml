@@ -2,6 +2,10 @@
 <odoo>
     <data>
         <!-- apptype -->
+        <record id="tag_gitlab" model="clouder.application.tag">
+            <field name="name">Gitlab</field>
+            <field name="code">gitlab</field>
+        </record>
         <record id="application_type_gitlab" model="clouder.application.type">
             <field name="name">gitlab</field>
             <field name="system_user">git</field>
@@ -173,6 +177,7 @@
             <field name="name">Gitlab</field>
             <field name="code">gitlab</field>
             <field name="type_id" ref="application_type_gitlab"/>
+            <field name="tag_ids" eval="[(4, [ref('tag_gitlab')])]"/>
             <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
             <field name="child_ids" eval="[(4, [ref('application_gitlab_data'),ref('application_gitlab_files'),ref('application_gitlab_exec')])]"/>
             <field name="sequence">3</field>
@@ -192,13 +197,13 @@
         </record>
         <record id="application_template_service_gitlab_link_gitlab" model="clouder.application.link">
             <field name="template_id" ref="application_template_service_gitlab"/>
-            <field name="name" ref="application_gitlab"/>
+            <field name="name" ref="tag_gitlab"/>
             <field name="service" eval="True"/>
             <field name="auto" eval="False"/>
         </record>
         <record id="application_template_service_gitlab_link_registry" model="clouder.application.link">
             <field name="template_id" ref="application_template_service_gitlab"/>
-            <field name="name" ref="clouder.application_registry"/>
+            <field name="name" ref="clouder.tag_registry"/>
             <field name="service" eval="True"/>
             <field name="auto" eval="False"/>
         </record>

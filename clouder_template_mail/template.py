@@ -116,7 +116,8 @@ class ClouderContainerLink(models.Model):
         Deploy the configuration file to watch the service.
         """
         super(ClouderContainerLink, self).deploy_link()
-        if self.name.type_id.name == 'spamassassin' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'spamassassin' \
                 and self.service_id.application_id.type_id.name == 'postfix':
 
             self.service_id.execute([
@@ -149,7 +150,8 @@ class ClouderContainerLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderContainerLink, self).purge_link()
-        if self.name.type_id.name == 'spamassassin' \
+        if self.target \
+                and self.target.application_id.type_id.name == 'spamassassin' \
                 and self.service_id.application_id.type_id.name == 'postfix':
 
             self.service_id.execute([
@@ -217,11 +219,12 @@ class ClouderBaseLink(models.Model):
         """
         super(ClouderBaseLink, self).deploy_link()
 
-        if self.name.type_id.name == 'postfix':
+        if self.target \
+                and self.target.application_id.type_id.name == 'postfix':
 
             dns_link = False
             for link in self.base_id.link_ids:
-                if link.name.check_tags(['dns']):
+                if link.target.application_id.check_tags(['dns']):
                     dns_link = link
 
             if dns_link and dns_link.target:
@@ -268,11 +271,12 @@ class ClouderBaseLink(models.Model):
         Remove the configuration file.
         """
         super(ClouderBaseLink, self).purge_link()
-        if self.name.type_id.name == 'postfix':
+        if self.target \
+                and self.target.application_id.type_id.name == 'postfix':
 
             dns_link = False
             for link in self.base_id.link_ids:
-                if link.name.check_tags(['dns']):
+                if link.target.application_id.check_tags(['dns']):
                     dns_link = link
 
             if dns_link and dns_link.target:
