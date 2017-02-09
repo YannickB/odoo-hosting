@@ -1,47 +1,57 @@
 Services
 ========
 
-| A service is an installation of an application inside a container. For some applications, like Odoo or Drupal, you can have several services inside the same container.
-| This is useful if you want to give an ssh access of a container to a customer, and have the production and development/test services inside the same container.
+To create a new service on one of your node, you just have to add it in the Services menu and it will be automatically deployed.
 
-To create a new service on one of your containers, you just have to add it in the Services menu and it will be automatically deployed.
-
-.. image:: images/service-list.png
+.. image:: images/gettingstarted-services.png
 
 The important fields are :
 
-- The service name. You can only use here lowercase, digit and hyphen.
+- The environment, which define which users can access to this services. It also define the prefix used by the container which will be deployed.
 
-- The container where the service will be install, this will automatically fill the application.
+- The service suffix. You can only use here lowercase, digit and hyphen.
 
-- The application version to use, to know which archive shall be used.
+- The application which will be deployed in this service, the node where it will be deployed and the image which will be used. When you change the application, it will update most of the fields with the infos from applications and images.
 
-- The database password. If the application use a database, a new database user will be created along with the service and you have to define his password. A password is automatically generated but you can use one of yours.
+- The volume_from this service shall inherit. When the service is deployed, it will search for all other children with the tag specified here and attached all their volumes to this service.
 
-- If you use a custom version of the files. If yes, the files inside the archive will be copied inside the container, if no and if the symlink is allowed in the application type, a symlink will be created. Check with caution, this may strongly increase the container backups size.
+- The number of containers which shall be deployed by this service. Use the scale command for Docker Swarm mode.
 
-- Check the public checkbox if you want all users of the Clouder to be able to use this service. Otherwise, a user can only access a service if he is the manager of this service (or an administrator).
+- Check the public checkbox if you want all users of the Clouder to be able to use this container. Otherwise, a user can only access a container if he is the manager of this container (or an administrator).
 
-.. image:: images/gettingstarted-service.png
+- Check the dummy checkbox is this service shall not deploy any container, even without children.
 
-You can specify a parent service. This link is interesting to easily deploy files from the development service to the production service, if you click on the Deploy to parent button it will automatically (after a container backup) delete the production files, replace them with the files from child service and trigger an update on all the bases linked to the parent service.
+- Specify the provider is this services shall be deployed in the cloud with libcloud.
 
-You can also easily create a subservice by indicating the name of the subservice and clicking on Install subservice. This will create the subservice with the same files, link it to the current service, and duplicate all the base linked to the current service. Use Install test and Install formation to install these subservices.
+.. image:: images/service-form.png
 
-See the `Applications <applications.html>`_ chapter for more informations about options and links. Note that a link to a database container is often required.
+See the `Images <images.html>`_ and `Applications <applications.html>`_ chapters for more informations about options, ports, volumes, links and childs.
 
-When you save the new service :
+When you save the new services :
 
-- If needed, the files will be copied from the archive to the host system and will be copied inside the container.
+- If any childs, the childs will be deployed and create subservices. No container will be created for the parent service.
 
-- A database user will be created.
+- The command to create the new container will be launched on the target server
 
-- The commands post creation will finish to configure the service
+- The ports and volumes will be configured,
+
+- The commands post creation will finish to configure the container
 
 - The links will be deployed.
 
-You can check all the executed commands in the log.
+You can check all the executed command in the log.
 
 .. image:: images/service-log.png
 
-If something went wrong, you can use the reinstall button to purge and reinstall the service.
+If something went wrong, you can use the reinstall button to purge and reinstall the container. You can also also use the restart/stop buttons to restart the container.
+
+You can also easily create a subservice by indicating the name of the subservice and clicking on Install subservice. This will create the subservice with the same files, link it to the current service, and duplicate all the base linked to the current service.
+
+.. image:: images/service-reset.png
+
+Finally, you can configure in the save tab the backup container where the backup will be stored. The repository will be automatically created if needed, see the `Applications <applications.html>`_ chapter for more informations about the others fields
+You can use the Backup checkbox if you want to auto backup this service each day.
+You can use the Backup button to force a manual backup, use the comment field if you want to easily find this backup later. Note that all saves update the next save date field.
+
+.. image:: images/service-backup.png
+
