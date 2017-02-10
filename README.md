@@ -21,3 +21,5 @@ If you need help for using or contributing to Clouder, you can easily contact us
 Development (including documentation) is done here on github, contributions are welcome; please read the CLA guidelines https://github.com/clouder-community/clouder/blob/8.0/doc/cla/sign-cla.md if you want to make a pull request. 
 CLA is asked only to avoid possible legal issues in the future, like the OCA projects you keep your copyright but provide an irrevocable licence to the project maintener. If this happen in the future, you only give us the right to relicence under a licence recognized by the Open Source Initiative.
 
+Clouder shall actually be considered in Beta, use it at your own risk and strong admin system skills are recommended. It shall only be used for development/testing/demo environment right now.
+

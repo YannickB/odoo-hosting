@@ -10,20 +10,18 @@ Two methods are today available for the backups :
 
 Simple, will simply copy the files in a directory of the backup container.
 
-| Bup, will store the backup into a bup repository. Bup is a backup solution based on git which will do global deduplication on the backup to massively save disk space. With bup, you can make hourly backup without having to worry about disk space.
-| Among the downside it’s difficult to remove a backup once on bup, that’s why we sometimes change the repository where backup are stored, and we need to manage the concept of repository on Clouder.
+Bup, will store the backup into a bup repository. Bup is a backup solution based on git which will do global deduplication on the backup to massively save disk space. With bup, you can make hourly backup without having to worry about disk space.
+Among the downside it’s difficult to remove a backup once on bup, that’s why we sometimes change the repository where backup are stored, and we need to manage the concept of repository on Clouder.
 
 You can see the list of all backup on the Backup menu.
 
-.. image:: images/save-list.png
+.. image:: images/backup-list.png
 
-Each backup container contains :
+Each backup contains :
 
 - His name
 
-- The Backup container where it is stored.
-
-- His repository.
+- The Backup service where it is stored.
 
 - The reason for the backup.
 
@@ -33,7 +31,7 @@ Each backup container contains :
 
 All backups are linked to the container/service/base from which it was generated, but also most of the informations from container/service/base are stored into the save form because we need them if we need to regenerate them because the object was deleted.
 
-.. image:: images/save-form.png
+.. image:: images/backup-form.png
 
 To restore a backup, you simply can press the button restore, after having change the Restore to fields if you want to restore in another container of base. If not, it will delete the current container/base (after another backup).
 
@@ -47,30 +45,44 @@ The restore will :
 
 You can check the save and restore commands execution on the log window.
 
-.. image:: images/save-log.png
+.. image:: images/backup-log.png
 
 
 Configuration
 -------------
 
+
+On the Configure Clouder menu you’ll find some fields used in the whole Clouder instance.
+
+- The sysadmin email, used in services to configure them.
+
+- The runner, which specify how container are deployed. Docker Engine will use Docker in Engine mode, Clouder itself connect to each node and execute command to deploy container. In Docker Swarm mode, Clouder will connect to the master node and create service here, then Docker Swarm itself will create the pods.
+You can also specify a custom runner, like Kubernetes/OpenShift/Rancher, in this case you have to specify the link to the service running them.
+
+- Compose mode. In this mode, when you deploy a root service a compose file is generated for all the children and deployed. Otherwise, Clouder itself create the container one by one. Experimental until Docker Swarm itself is compatible with Docker Compose, not the case yet.
+
+- The executor, which specify how Clouder execute command on node/containers. By default it use ssh and docker exec, but you can also use other orchestrateur like Salt or Ansible recipes.
+
 .. image:: images/gettingstarted-configuration.png
 
-On the Configure Clouder menu you’ll find some buttons to execute maintenance tasks :
-
-- Reset keys will reset the keys of all containers managed by Clouder.
+You'll find also here some buttons to execute maintenance tasks :
 
 - Backup All will perform some maintenance task on the backup containers (if they use Bup), will launch a save on all containers and bases, and upload a copy of the backup containers to their backup-upload links.
 
 - Purge expired saves will drop all saves which pass their expiration date.
 
-- Purge expired logs will drop all logs which pass their expiration date.
+- Update services will destroy and reinstall all services with an autoupdate strategy. This mainly concern Exec containers, which need to be always uptodate for security and has no risk of losing data.
 
 - Reset bases will launch the reset action on the bases which have the Reset each day checkbox set to True.
+
+- Cert renewal will check for any LetsEncrypt cert about to expire and renew them.
 
 - Launch daily cron will execute all the above task, and is linked to a daily cron.
 
 - Launch next save will execute a backup on all containers/bases which pass the next save date. It’s linked to a cron which is executed every thirty minutes.
 
-Reset keys, Backup All and Reset bases, the longest tasks, will update the configuration dates when they end their actions, so you can easily know at which time the actions finished.
+Backup All, Update services, Reset bases and Cert renewal, the longest tasks, will update the configuration dates when they end their actions, so you can easily know at which time the actions finished.
 
-You also have to indicate in the configuration the sysadmin email. It’s a requirement, you can’t use Clouder with this field empty.
+Finally, you can also specify here the providers used by LibCloud to deploy new nodes, DNS records, SMTP etc... used in node and services form.
+
+.. image:: images/configuration-provider.png

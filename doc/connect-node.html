@@ -1,0 +1,91 @@
+Connect to a new node
+=====================
+
+We will see in this chapter how we can configure the nodes and connect them to your Clouder. Clouder is only compatible with Linux, and the Debian distribution is recommended.
+
+| First, if it's not already done, you shall install openssh on your server and Docker.
+| In Debian, you just have to execute these commands :
+
+For ssh :
+
+.. code-block:: none
+
+   apt-get install openssh-client
+
+For Docker :
+
+.. code-block:: none
+
+   sudo curl -sSL https://get.docker.com/ | sudo sh
+
+You can also follow the `official instructions <https://docs.docker.com/engine/installation/>`.
+
+Then, you need to add the public key of your clouder in the /root/.ssh/authorized_keys file, so Clouder can connect to the server. Root rights are needed for the docker commands.
+If you don't have a public key or don't know how to create one, a public key will be automatically generated when you register the server in your Clouder.
+
+And that's it. Now we can go to the Server menu in Clouder and create a new record.
+
+.. image:: images/gettingstarted-server.png
+
+Here the fields needed :
+
+- The prefix domain name used to contact the server. You can only use here lowercase, digit, hyphen and dot.
+
+- The domain name used to contact the server.
+
+- The server public IP. You can only use here digit and dot. This IP will be used to publish the services to Internet.
+
+- The server private IP. You can only use here digit and dot. This IP will be used internally for communication between services deployed by Clouder.
+
+- The ssh login user to use. Note you shall make sure this user can use the docker daemon. Otherwise root will be used.
+
+- The ssh port to connect to the server.
+
+- The environment of the server, define which user can use this server.
+
+- The provider field, if you want to use clouder provider. More detail below.
+
+- The SSH private and public key to connect to the server. A couple of keys are automatically generated when you create a new record, but you can use your owns.
+
+- The ports range for the containers which will be created in this server. When you create a container without specifying an hostport, a new port from this range will be attributed to it.
+
+- Assign port with public IP if you want to have several services with the same port on this node, with IP failover. This is interesting with Docker Engine to have several Clouder infrastructure on the same node. Otherwise, the 25/53/80/443 ports of mail/DNS/proxy services will conflicts. This doesn't work with Docker Swarm mode.
+
+- Check the public checkbox if you want all users of the Clouder to be able to use this server. Otherwise, a user can only access a server if he is the manager of this server (or an administrator).
+
+When you save the new record, the ssh key will be saved in the system hosting the Clouder so it can connect to the new server. You can check the result of the command in the logs.
+
+.. image:: images/server-log.png
+
+You have several actions available :
+
+- The reinstall action, if you think the ssh key wasn't correctly installed.
+
+- The purge action, to remove all configuration from the server. This is executed when you unlink/remove the node.
+
+- The configure action will connect to the node and make sure everything is correctly installed and configured (SSH, Docker, etc...), and will correct it otherwise.
+
+- The test connection action will check the node is ready to use.
+
+- The restart services will stop and restart all containers in the node.
+
+- The stop services will stop all containers in the node.
+
+- The Reinstall/Stop DNS will refresh the DNS record of the node in the DNS.
+
+- The Clean disk space action will perform some action on the node to clean Docker on the node (removing unused containers/volumes/images).
+
+At the bottom of the page, you can specify a oneclick and deploy it. This will deploy all core services needed for your infrastructure on this node.
+Assigning critical port means some services defined with specific port (for example 25/53/80/443 for mail/DNS/proxy) will use them instead of the usual auto-assigned port.
+
+Finally, you can specify a provider.
+
+In this case, a Libcloud tab will be displayed.
+
+.. image:: images/server-libcloud.png
+
+This tab is used to deploy a new node at your provider. When you use this method, you don't need to specify IP/port/keys, everything will be configured automatically.
+The provider credentials is configured in your provider record in configuration. Here you'll have to specify which image/size/location you want to use, and the name of your node.
+
+Then you can use the create button to create your node at your provider. The IP address will be recover and everything will be automatically configured so the node is ready to use.
+You can use the other button destroy/reboot/stop to change the state of your node directly from Clouder interface.

@@ -1,16 +1,15 @@
 Getting Started
 ===============
 
-| In this chapter, we'll see a step by step guide to install a ready-to-use infrastructure. For the example, the base we will create will be another Clouder.
-| Once installed using Clouder is easy, but set up all the infrastructure may take some time. Execute all this tutorial can take around two hours.
+In this chapter, we'll see a step by step guide to install a ready-to-use infrastructure. For the example, the base we will create will be another Clouder.
 
 
 Odoo installation
 -----------------
 
-| This guide will not cover the Odoo installation in itself, we suggest you read `the installation documentation on the official website <https://www.odoo.com/documentation/8.0/setup/install.html>`_.
-| You can also contact us on `www.goclouder.net <https://www.goclouder.net/>`_ to ask for a free instance, it may be easier for you because you obviously can't install your Clouder on a server managed by this same Clouder.
-| Due to the extensive use of ssh, Clouder is only compatible with Linux and has be tested on Debian and Ubuntu 16.04.
+This guide will not cover the Odoo installation in itself, we suggest you read `the installation documentation on the official website <https://www.odoo.com/documentation>`_.
+You can also, and it's probably the easier way, use an Odoo Docker image like https://hub.docker.com/_/odoo/ or https://hub.docker.com/r/tecnativa/odoo-base/
+Due to the extensive use of ssh, Clouder is only compatible with Linux.
 
 Once your Odoo installation is ready, install the paramiko, erppeek and apache-libcloud python libraries (``pip install paramiko erppeek apache-libcloud``), download the `OCA/Connector module on Github <https://github.com/OCA/connector/tree/10.0>`_ and the `Clouder modules on Github <https://github.com/clouder-community/clouder/tree/master>`_ and add them in your addons directory, then install the clouder module and clouder_template_odoo (this module will install a lot of template dependencies, like postgres, postfix etc...).
 
@@ -24,183 +23,74 @@ The first thing to do is to set the sysadmin email in the Clouder configuration.
 
 .. image:: images/gettingstarted-configuration.png
 
-Then you have to configure the server you want to connect. See the `how to connect a server chapter <connect-server.html>`_ for more explanation.
+You can also configure here how Clouder will deploy the container. You can either use Docker Engine (for single node) or Docker Swarm mode (for multiple node), see `Configuration <connect-server.html>`_ for more information about the settings and actions available in configuration page.
 
-.. image:: images/gettingstarted-server.png
+Then you have to create a new `Environment <environments.html>`_. An environment shall be seen as a project, this is the object where access right are based upon. All services/bases are linked to an environment, you'll usually create one for each customers.
 
+So first we'll create the main environment, which will deploy all the core services.
 
-The registry container
-----------------------
+.. image:: images/gettingstarted-environment.png
 
-The next thing to do is to generate the images for each applications we'll need, but for this we need a registry container to store theses images.
-
-First, go in the img_registry in the Images menu.
-
-.. image:: images/gettingstarted-registry-image.png
-
-And click on the Build button to generate a new version.
-
-Then go on the container menu and create a new registry container.
-
-.. image:: images/gettingstarted-registry-container.png
-
-When you save it, the registry image will be downloaded, build and deployed as a new container. Like all actions in Clouder, you can read the log to understand which commands was executed.
-
-.. image:: images/gettingstarted-registry-container-log.png
-
-The logs are also visible in the default Odoo output.
-
-
-Build the images
-----------------
-
-Now that we have the registry, we can build the images.
-
-First we need to build the base image, which will be used by all the others. This image update the debian package, install cron and supervisor and some useful packages.
-
-.. image:: images/gettingstarted-base-image.png
-
-Select the registry container, and click on the Build button to generate it.
-
-Then you can generate the others images. For this tutorial, we'll need theses ones :
-
-- img_archive
-
-- img_backup_bup
-
-- img_backup_upload
-
-- img_nginx
-
-- img_bind
-
-- img_postfix
-
-- img_shinken
-
-- img_postgres
-
-- img_odoo
-
-.. image:: images/gettingstarted-odoo-image.png
-
-For each, select the registry container and the version of the base image you want to use, then build it. Some of them will take time, especially shinken which may take around twenty minutes to generate.
-
-See the `Image chapter <images.html>`_ for more informations about the fields in the image form.
-
-
-Deploy containers
------------------
-
-The first containers we'll need to deploy will be the archive, backup and backup-upload containers because theses are containers used by Clouder (like the registry one).
-
-First generate the archive and backup-upload containers (because they are containers without link). Note that backup-upload container shall be in a distant server to protect your backups, but for this tutorial you can let it in the same server.
-
-.. image:: images/gettingstarted-archive-container.png
-.. image:: images/gettingstarted-backupupload-container.png
-
-Then, create the backup container. This one require a link to the backup-upload to know where the backup shall be exported.
-
-.. image:: images/gettingstarted-backup-container.png
-
-Now that the system containers are created, we can generate the containers for the subcomponents needed for hosting Odoo. For each, think about adding the backup container in the save tab.
-
-| Postfix for sending and receiving emails. You shall use an smtp provider to make sure your emails are send (mandrill is already configured, just indicate your email and api in the container options).
-| You have to map the port 25 of your server to the port 25 of your postfix container to receive emails.
-
-.. image:: images/gettingstarted-postfix-container.png
-
-Bind for resolving domain names. You have to map the port 53 of your server to the port 53 of your Bind container.
-
-.. image:: images/gettingstarted-bind-container.png
-
-Shinken for monitoring. If something goes wrong on your infrastructure an email will be send to the sysadmin email.
-
-Are monitored :
-
--The server cpu/RAM/disk space.
-
--If all the containers are accessible through ssh.
-
--If all bases are accessible at their url.
-
--If all containers and bases were backuped today.
-
-You have to specify the postfix container which will send the emails.
-
-.. image:: images/gettingstarted-shinken-container.png
-
-| Proxy for redirecting each url to the correct container.
-| You have to map the ports 80 and 443 of your server to the port 80 and 443 of your proxy container.
-
-.. image:: images/gettingstarted-proxy-container.png
-
-Postgres for managing your databases.
-
-.. image:: images/gettingstarted-postgres-container.png
-
-Finally, you can deploy your Odoo container. Indicate your postfix and postgres container in the links.
-
-.. image:: images/gettingstarted-clouder-container.png
-
-If you want to monitor ssh connexion and container backup, you can add shinken in the links and click on deploy. You can do it anytime, even after creating the container.
-
-For more information about the container fields, you can read the `Containers chapter <containers.html>`_.
-
-
-Build the application
----------------------
-
-Next, you need to go on the Clouder application in the Applications menu.
-
-.. image:: images/gettingstarted-application.png
-
-Indicate the archive container and click on the build button. This will download the Odoo files and the Clouder modules.
-
-For more information about the application fields, you can read the `Applications chapter <applications.html>`_.
-
-
-Deploy the service
-------------------
-
-Now that we have the application, we can deploy it in our Odoo container.
-
-.. image:: images/gettingstarted-service.png
-
-| Don’t forget to indicate the postgres container in the link.
-| For more information about the service fields, you can read the `Services chapter <services.html>`_.
-
-
-Configure the domain
---------------------
-
-Before we can add our base, we need to add the domain in your Clouder.
+You'll also need to create a `Domain <domains-bases.html>`_. The first base you'll deploy will be accessible under this domain.
 
 .. image:: images/gettingstarted-domain.png
 
-Configure your domain at your domain provider to use your server as the DNS server (take care, the change may take days to propagate). This is optional, you can continue to use the DNS of your provider but in this case you’ll have to add manually the record each time you create a base in your Clouder.
+Finally you have to configure the node you want to connect. See `how to connect a node <connect-node.html>`_ for more explanation.
 
-For more information about the domain fields, you can read the `Domains and Bases chapter <domains-bases.html>`_.
+.. image:: images/gettingstarted-server.png
 
+In the node form, click on `Test Connection` to check there is no problem. Also make sure your node is configured as the DNS nameserver of your domain.
 
-Add the base
-------------
+If everything is ok, select the Odoo oneclick, assign the critical port and click on deploy to launch the oneclick deploy.
+This will deploy all on your node all the services you need for your infrastructure, with an example of Odoo service with his database.
 
-Finally, we can configure the base.
+Keep an eye on your Odoo logs because you'll see all executed command there, and see if something wrong happen. You can also afterward check the log in the node record to see them.
+
+.. image:: images/gettingstarted-server-log.png
+
+Theses logs can be seen on all objects in Clouder, and are generated each time an action is perform. They are the best way for you to understand how each action work, and see if something wrong happened.
+
+Services deployed by the oneclick
+---------------------------------
+
+The oneclick will deploy 5 root services.
+
+.. image:: images/gettingstarted-services.png
+
+- The backup service, which will store your backup. Of course, we suggest you move this service on another node once in production.
+
+- The DNS service, which will resolve the DNS record of your infrastructure. You can either use a bind container on your node for this (deployed by the oneclick), or a `cloud provider <http://libcloud.readthedocs.io/en/latest/dns/supported_providers.html>_`.
+
+- The mail service, which will redirect outgoing and incoming emails from your containers.
+
+- The proxy service, which will redirect incoming http request to the correct service. It also take care of https encryption and LetsEncrypt cert generation.
+
+- The Odoo/Clouder service, which will deploy the Postgres database and the Odoo service. The example base deploy by the oneclick will be linked to this service.
+
+Services has a notion of parent/child, when a root service is deploy it will also deploy all child services. You can see them by removing the root filter.
+
+.. image:: images/gettingstarted-services-with-children.png
+
+Only children on the lowest level are containers actually deployed on your node.
+
+Usually a service can contain theses containers/childs :
+
+- A Data container, which only represent the volume created for this service. Removing this container means destroying the data.
+
+- A Files container, which represent the version of the application you want to deploy. For example for Odoo, this container will contain the files downloaded from Github, of Odoo but also community module you specified. Replace this container with another one when you want to update you service.
+
+- An Exec container, which contain the binary executed by this service. The proxy services usually redirect to the http port of this container. This container shall contain no data, it is linked to Data and Files containers, hence you can destroy and rebuilt it at will.
+
+- A SSH container, linked to others containers it allow you to give an SSH access to files to your customers, without having to give them access to the node itself.
+
+Note that you can have several layer of services. For example, the root Odoo services contain PostgreSQL and Odoo children, which themselves have Data/Files/Exec/SSH children.
+
+Finally, once all services are deployed, the oneclick will also deploy an example base.
 
 .. image:: images/gettingstarted-base.png
 
-Don’t forget to configure the bind/shinken/proxy/postfix links and the backup container. The database will be automatically created, your Clouder will be configured and the proxy will redirect the url to your Odoo container.
+This will create a new database on your Odoo service, and will configure it with the credentials and with the modules specified in application (here the clouder module).
 
-.. image:: images/gettingstarted-result.png
-
-For more information about the base fields, you can read the `Domains and Bases chapter <domains-bases.html>`_.
-
-Go to your shinken instance to see the health of your infrastructure in real time (Default login : admin / admin)
-
-.. image:: images/gettingstarted-shinken.png
+It will also configure the links to DNS/Proxy/Mail and generate LetsEncrypt certificate. After the deployment, you shall be able to access your example Odoo instance on the url clouder9.mydomain.com.
 
 Congratulations! You can now easily create another base or deploy any other application you can find in the clouder_template_* modules, or even create your own images and applications.
-
-| If you need any assistance you can contact us for professional services or ask on the forum/mailing-list in `www.goclouder.net <https://www.goclouder.net/>`_.
-| If you want to report a bug or contribute, go to the github repository `https://github.com/clouder-community/clouder <https://github.com/clouder-community/clouder/>`_.
