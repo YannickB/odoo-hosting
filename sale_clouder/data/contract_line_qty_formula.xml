@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2016 LasLabs Inc.
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+
+<odoo>
+
+    <record id="contract_line_qty_formula_clouder"
+            model="contract.line.qty.formula"
+            >
+        <field name="name">Clouder Billing</field>
+        <field name="code">result = env['clouder.contract'].get_invoice_line_quantity(contract, line, invoice)</field>
+    </record>
+
+</odoo>

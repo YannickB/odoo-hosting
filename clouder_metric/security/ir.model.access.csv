@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_clouder_metric_type,access_clouder_metric_type,model_clouder_metric_type,clouder.group_clouder_user,1,0,0,0
+access_clouder_metric_interface,access_clouder_metric_interface,model_clouder_metric_interface,clouder.group_clouder_user,1,0,0,0
+access_clouder_metric_value,access_clouder_metric_value,model_clouder_metric_value,clouder.group_clouder_user,1,0,0,0

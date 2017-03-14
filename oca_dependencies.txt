@@ -1,1 +1,4 @@
 connector
+contract
+# Pending https://github.com/OCA/server-tools/pull/660
+server-tools https://github.com/laslabs/server-tools feature/10.0/base_external_dbsource_elasticsearch-v10
