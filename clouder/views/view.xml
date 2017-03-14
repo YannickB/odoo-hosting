@@ -104,9 +104,13 @@
                         <group name="group_meta" string="Meta">
                             <group>
                                 <field name="name" />
+                                <field name="environment_id" />
+                                <field name="service_id"
+                                       required="0" 
+                                       domain="[('application_id', '=', application_id)]"/>
                             </group>
                             <group>
-                                <field name="environment_id" />
+                                <field name="domain_id"/>
                                 <field name="application_id"
                                        domain="[('base','=',True)]"
                                        />
