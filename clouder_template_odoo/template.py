@@ -34,7 +34,7 @@ except ImportError:
     _logger.debug('Cannot `import erppeek`.')
 
 
-class ClouderContainer(models.Model):
+class ClouderService(models.Model):
     """
     Add methods to manage the postgres specificities.
     """
@@ -50,44 +50,36 @@ class ClouderContainer(models.Model):
 
     @api.multi
     def deploy_post(self):
-        super(ClouderContainer, self).deploy_post()
+        super(ClouderService, self).deploy_post()
         if self.application_id.type_id.name == 'odoo':
             config_file = '/opt/odoo/etc/odoo.conf'
-            if self.application_id.code == 'data':
-                self.execute([
-                    'sed', '-i', '"s/APPLICATION/' +
-                    self.parent_id.service_id.application_id.fullcode
-                    .replace('-', '_') + '/g"', config_file])
-                self.execute([
-                    'sed', '-i', 's/DB_SERVER/' + self.db_node + '/g',
-                    config_file])
-                self.execute([
-                    'sed', '-i',
-                    's/DB_USER/' + self.db_user + '/g',
-                    config_file])
-                self.execute([
-                    'sed', '-i', 's/DB_PASSWORD/' +
-                    self.db_password + '/g',
-                    config_file])
+            self.execute([
+                'sed', '-i', '"s/APPLICATION/' +
+                self.application_id.fullcode
+                .replace('-', '_') + '/g"', config_file])
+            self.execute([
+                'sed', '-i', 's/DB_SERVER/' + self.db_node + '/g',
+                config_file])
+            self.execute([
+                'sed', '-i',
+                's/DB_USER/' + self.db_user + '/g',
+                config_file])
+            self.execute([
+                'sed', '-i', 's/DB_PASSWORD/' +
+                self.db_password + '/g',
+                config_file])
 
-            if self.application_id.code == 'exec':
-                addons_path = \
-                    '/opt/odoo/files/odoo/addons,/opt/odoo/extra-addons,'
-                for extra_dir in self.execute(
-                        ['ls', '/opt/odoo/files/extra']).split('\n'):
-                    if extra_dir:
-                        addons_path += \
-                            '/opt/odoo/files/extra/' + extra_dir + ','
-                self.execute([
-                    'sed', '-i', '"s/ADDONS_PATH/' +
-                    addons_path.replace('/', r'\/') + '/g"',
-                    config_file])
-
-            if self.application_id.code == 'ssh':
-                self.execute(['mkdir /root/.ssh'])
-                self.execute([
-                    'echo "' + self.options['ssh_publickey']['value'] +
-                    '" > /root/.ssh/authorized_keys'])
+            addons_path = \
+                '/opt/odoo/files/odoo/addons,/opt/odoo/extra-addons,'
+            for extra_dir in self.execute(
+                    ['ls', '/opt/odoo/files/extra']).split('\n'):
+                if extra_dir:
+                    addons_path += \
+                        '/opt/odoo/files/extra/' + extra_dir + ','
+            self.execute([
+                'sed', '-i', '"s/ADDONS_PATH/' +
+                addons_path.replace('/', r'\/') + '/g"',
+                config_file])
 
 
 class ClouderBase(models.Model):
@@ -99,8 +91,7 @@ class ClouderBase(models.Model):
 
     @property
     def odoo_port(self):
-        return self.service_id.childs['exec'] and \
-            self.service_id.childs['exec'].ports['http']['hostport']
+        return self.service_id.ports['http']['hostport']
 
     @api.multi
     def deploy_database(self):
@@ -123,16 +114,16 @@ class ClouderBase(models.Model):
                     ':' + self.odoo_port)
                 self.log(
                     "client.create_database('$$$" +
-                    self.service_id.childs['data'].db_password + "$$$','" +
+                    self.service_id.db_password + "$$$','" +
                     self.db_name + "'," + "demo=" + str(self.test) +
                     "," + "lang='" + self.lang + "'," +
                     "user_password='" + self.admin_password + "')")
                 client.create_database(
-                    self.service_id.childs['data'].db_password,
+                    self.service_id.db_password,
                     self.db_name, demo=self.test,
                     lang=self.lang,
                     user_password=self.admin_password)
-                self.service_id.childs['exec'].start_exec()
+                self.service_id.start_exec()
                 return True
         return super(ClouderBase, self).deploy_database()
 

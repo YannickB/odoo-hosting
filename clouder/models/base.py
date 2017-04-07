@@ -371,8 +371,7 @@ class ClouderBase(models.Model):
                     if not next_id:
                         target_ids = self.env['clouder.service'].search([
                             ('application_id.tag_ids', 'in',
-                             link['source'].name.id),
-                            ('parent_id', '=', False)])
+                             link['source'].name.id)])
                         if target_ids:
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link['source'].name.id,

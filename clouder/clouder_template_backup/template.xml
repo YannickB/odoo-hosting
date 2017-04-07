@@ -158,6 +158,7 @@
             <field name="type_id" ref="application_type_backup"/>
             <field name="template_ids" eval="[(4, [ref('application_template_backup')])]"/>
             <field name="default_image_id" ref="image_backup_bup"/>
+            <field name="container" eval="True"/>
         </record>
         <record id="application_backup_option_method_bup" model="clouder.application.option">
             <field name="application_id" ref="application_backup_bup"/>

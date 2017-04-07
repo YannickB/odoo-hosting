@@ -50,7 +50,7 @@ class ClouderBaseLink(models.Model):
         if self.required and not self.target:
             self.raise_error(
                 'You need to specify a link to "%s" for the base "%s"',
-                self.name.name, self.base_id.name,
+                (self.name.name, self.base_id.name),
             )
 
     @api.multi

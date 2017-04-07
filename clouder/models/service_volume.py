@@ -29,6 +29,8 @@ class ClouderServiceVolume(models.Model):
     user = fields.Char('System User')
     readonly = fields.Boolean('Readonly?')
     no_backup = fields.Boolean('No backup?')
+    manual_update = fields.Boolean('Reset on Manual Update?')
+    volume_id = fields.Many2one('clouder.volume', 'Volume')
 
     _sql_constraints = [
         ('name_uniq', 'unique(service_id,name)',

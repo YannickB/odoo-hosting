@@ -44,6 +44,9 @@ from . import service_option
 from . import service_port
 from . import service_volume
 
+# Volume
+from . import volume
+
 # Image
 from . import image
 from . import image_port

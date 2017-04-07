@@ -15,44 +15,24 @@
             <field name="application_type_id" ref="application_type_wordpress"/>
             <field name="name">db_password</field>
             <field name="type">service</field>
-            <field name="tag_ids" eval="[(6, 0, [ref('clouder.tag_data')])]"/>
             <field name="auto" eval="True"/>
         </record>
 
-
-        <record id="application_wordpress_data" model="clouder.application">
-            <field name="name">Wordpress Data</field>
-            <field name="code">data</field>
-            <field name="type_id" ref="application_type_wordpress"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_service_shinken'),ref('clouder_template_mysql.application_template_service_mysql')])]"/>
-            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data')])]"/>
-            <field name="default_image_id" ref="clouder.image_php_data"/>
-            <field name="sequence">1</field>
-            <field name="required" eval="True"/>
-            <field name="auto_backup" eval="True"/>
-        </record>
-
-        <record id="application_wordpress_exec" model="clouder.application">
-            <field name="name">Wordpress Exec</field>
-            <field name="code">exec</field>
-            <field name="type_id" ref="application_type_wordpress"/>
-            <field name="template_ids" eval="[(4, [ref('clouder_template_mail.application_template_service_postfix'),ref('clouder_template_mysql.application_template_service_mysql')])]"/>
-            <field name="tag_ids" eval="[(4, [ref('clouder.tag_exec')])]"/>
-            <field name="default_image_id" ref="clouder.image_php_exec"/>
-            <field name="sequence">2</field>
-            <field name="required" eval="True"/>
-            <field name="update_strategy">auto</field>
-        </record>
 
         <record id="application_wordpress" model="clouder.application">
             <field name="name">Wordpress</field>
             <field name="code">wordpress</field>
             <field name="type_id" ref="application_type_wordpress"/>
-            <field name="template_ids" eval="[(4, [ref('clouder.application_template_base_www')])]"/>
-            <field name="child_ids" eval="[(4, [ref('application_wordpress_data'),ref('application_wordpress_exec')])]"/>
+            <field name="template_ids" eval="[(4, [ref('clouder_template_shinken.application_template_service_shinken'),ref('clouder_template_mail.application_template_service_postfix'),ref('clouder_template_mysql.application_template_service_mysql'),ref('clouder.application_template_base_www')])]"/>
+            <field name="tag_ids" eval="[(4, [ref('clouder.tag_data'),ref('clouder.tag_exec')])]"/>
+            <field name="default_image_id" ref="clouder.image_php"/>
             <field name="sequence">2</field>
+            <field name="auto" eval="True"/>
             <field name="required" eval="True"/>
+            <field name="container" eval="True"/>
             <field name="base" eval="True"/>
+            <field name="auto_update" eval="True"/>
+            <field name="auto_backup" eval="True"/>
         </record>
 
         <record id="application_wordpress_all" model="clouder.application">

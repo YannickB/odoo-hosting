@@ -105,15 +105,16 @@
                             <group>
                                 <field name="name" />
                                 <field name="environment_id" />
-                                <field name="service_id"
-                                       required="0" 
-                                       domain="[('application_id', '=', application_id)]"/>
+                                <field name="title"/>
                             </group>
                             <group>
                                 <field name="domain_id"/>
                                 <field name="application_id"
                                        domain="[('base','=',True)]"
                                        />
+                                <field name="service_id"
+                                       required="0"
+                                       domain="[('application_id', '=', application_id)]"/>
                             </group>
                         </group>
                         <group name="group_admin_user" string="Admin User">
@@ -273,15 +274,15 @@
                         <field name="suffix"/>
                         <field name="application_id"/>
                         <field name="node_id"/>
-                        <field name="image_id" attrs="{'invisible': ['|',('child_ids','!=', []),('dummy','=',True)], 'required': [('child_ids','=', []),('dummy','!=',True)]}"/>
-                        <field name="image_version_id" domain="[('image_id','=',image_id)]" attrs="{'invisible': ['|',('child_ids','!=', []),('dummy','=',True)]}"/>
+                        <field name="image_id" attrs="{'invisible': [('container','!=',True)], 'required': [('container','=',True)]}"/>
+                        <field name="image_version_id" domain="[('image_id','=',image_id)]" attrs="{'invisible': [('container','!=',True)]}"/>
                         <newline/>
                         <field name="volumes_from_ids" widget="many2many_tags"/>
                         <field name="public"/>
-                        <field name="scale"/>
-                        <field name="from_id" attrs="{'invisible': [('from_id','=', False)]}"/>
-                        <field name="dummy"/>
+                        <field name="container"/>
                         <field name="provider_id"/>
+                        <field name="scale" attrs="{'invisible': [('container','!=',True)]}"/>
+                        <field name="from_id" attrs="{'invisible': [('from_id','=', False)]}"/>
                     </group>
                     <notebook>
                         <page string="General">
@@ -291,7 +292,7 @@
                                     <field name="value"/>
                                 </tree>
                             </field>
-                            <field name="port_ids" colspan="4" attrs="{'invisible': [('child_ids','!=', [])]}">
+                            <field name="port_ids" colspan="4" attrs="{'invisible': [('container','=', False)]}">
                                 <tree string="Ports" editable="bottom">
                                     <field name="name"/>
                                     <field name="local_port"/>
@@ -301,7 +302,7 @@
                                     <field name="use_hostport"/>
                                 </tree>
                             </field>
-                            <field name="volume_ids" colspan="4" attrs="{'invisible': [('child_ids','!=', [])]}">
+                            <field name="volume_ids" colspan="4" attrs="{'invisible': [('container','=', False)]}">
                                 <tree string="Volumes" editable="bottom">
                                     <field name="name"/>
                                     <field name="localpath"/>
@@ -309,6 +310,8 @@
                                     <field name="user"/>
                                     <field name="readonly"/>
                                     <field name="no_backup"/>
+                                    <field name="manual_update"/>
+                                    <field name="volume_id"/>
                                 </tree>
                             </field>
                             <field name="link_ids" colspan="4">
@@ -327,15 +330,16 @@
                                 <tree string="Childs" editable="bottom">
                                     <field name="name"/>
                                     <field name="sequence"/>
+                                    <field name="required"/>
                                     <field name="node_id" attrs="{'readonly': [('child_id','!=', False)]}"/>
                                     <field name="child_id"/>
-                                    <field name="backup_id"/>
                                     <button name="create_child" type="object" string="Deploy" attrs="{'invisible': [('child_id','!=', False)]}"/>
                                     <button name="delete_child" type="object" string="Purge" attrs="{'invisible': [('child_id','=', False)]}"/>
                                 </tree>
                             </field>
                             <button name="reinstall" string="Reinstall" type="object"/>
                             <button name="purge" string="Purge" type="object"/>
+                            <button name="purge_with_volume" string="Purge (including volume)" type="object"/>
                             <button name="update" string="Update" type="object"/>
                             <newline/>
                             <button name="start" string="Restart" type="object"/>
@@ -399,6 +403,43 @@
                     <field name="name"/>
                     <filter name="root" string="Root" domain="[('parent_id', '=', False)]"/>
                 </search>
+            </field>
+        </record>
+
+
+        <record id="action_clouder_volume_form" model="ir.actions.act_window">
+            <field name="name">Volumes</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">clouder.volume</field>
+            <field name="view_type">form</field>
+        </record>
+
+        <menuitem action="action_clouder_volume_form" id="menu_action_clouder_volume_form" parent="menu_clouder_clouder"/>
+
+        <record id="view_clouder_volume_form" model="ir.ui.view">
+            <field name="name">clouder.volume.form</field>
+            <field name="model">clouder.volume</field>
+            <field name="arch" type="xml">
+                <form string="Volume" version="7.0">
+                    <group col="4">
+                        <field name="name"/>
+                        <field name="path"/>
+                        <field name="node_id"/>
+                    </group>
+                    <button name="reinstall" string="Reinstall" type="object"/>
+                    <button name="purge" string="Purge" type="object"/>
+                </form>
+            </field>
+        </record>
+        <record id="view_clouder_volume_tree" model="ir.ui.view">
+            <field name="name">clouder.volume.tree</field>
+            <field name="model">clouder.volume</field>
+            <field name="arch" type="xml">
+                <tree string="Volumes">
+                    <field name="name"/>
+                    <field name="path"/>
+                    <field name="node_id"/>
+                </tree>
             </field>
         </record>
 
@@ -800,10 +841,11 @@
                         <field name="public"/>
                         <field name="partner_id"/>
                         <field name="sequence"/>
+                        <field name="auto"/>
                         <field name="required"/>
-                        <field name="update_strategy"/>
+                        <field name="auto_update"/>
                         <field name="update_bases"/>
-                        <field name="dummy"/>
+                        <field name="container"/>
                         <field name="provider"/>
                     </group>
                     <notebook>
@@ -830,6 +872,8 @@
                                     <field name="name"/>
                                     <field name="code"/>
                                     <field name="sequence"/>
+                                    <field name="auto"/>
+                                    <field name="required"/>
                                     <field name="next_node_id"/>
                                 </tree>
                             </field>
@@ -937,6 +981,7 @@
                             <field name="user"/>
                             <field name="readonly"/>
                             <field name="no_backup"/>
+                            <field name="manual_update"/>
                         </tree>
                     </field>
                     <field name="port_ids" colspan="4">

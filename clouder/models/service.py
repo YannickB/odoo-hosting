@@ -75,7 +75,7 @@ class ClouderService(models.Model):
         'service_id', 'from_id', 'Volumes from')
     public = fields.Boolean('Public?')
     scale = fields.Integer('Scale', default=1)
-    dummy = fields.Boolean('Dummy?')
+    container = fields.Boolean('Container?')
     provider_id = fields.Many2one('clouder.provider', 'Provider')
 
     @api.multi
@@ -188,10 +188,10 @@ class ClouderService(models.Model):
         """
         Property returning the database user of the service.
         """
-        fullname = self.fullname
+        db_user = self.name
         if self.parent_id and not self.child_ids:
-            fullname = self.parent_id.service_id.fullname
-        db_user = fullname.replace('-', '_').replace('.', '_')
+            db_user = self.parent_id.service_id.name
+        db_user = db_user.replace('-', '_').replace('.', '_')
         return db_user
 
     @property
@@ -522,9 +522,12 @@ class ClouderService(models.Model):
                         if target_ids:
                             next_id = target_ids[0].id
                     links.append((0, 0, {'name': link['source'].name.id,
-                                         'required': link['source'].required,
-                                         'auto': link['source'].auto,
-                                         'make_link': link['source'].make_link,
+                                         'required': self.container and
+                                                     link['source'].required,
+                                         'auto': self.container and
+                                                 link['source'].auto,
+                                         'make_link': self.container and
+                                                      link['source'].make_link,
                                          'target': next_id}))
             # Replacing old links
             vals['link_ids'] = links
@@ -542,6 +545,7 @@ class ClouderService(models.Model):
                         child = {
                             'name': child[2].get('name', False),
                             'sequence': child[2].get('sequence', False),
+                            'auto': child[2].get('auto', False),
                             'required': child[2].get('required', False),
                             'node_id': child[2].get('node_id', False)
                         }
@@ -557,15 +561,17 @@ class ClouderService(models.Model):
                         child = {
                             'name': getattr(child, 'name', False),
                             'sequence': getattr(child, 'sequence', False),
+                            'auto': getattr(child, 'auto', False),
                             'required': getattr(child, 'required', False),
                             'node_id': getattr(child, 'node_id', False)
                         }
                     if child['name'] and child['name'].id in child_sources:
                         child['source'] = child_sources[child['name'].id]
-                        if child['source'].required:
+                        if child['source'].auto:
                             childs.append((0, 0, {
                                 'name': child['source'].id,
                                 'sequence':  child['sequence'],
+                                'required': child['required'],
                                 'node_id':
                                     child['node_id'] and
                                     child['node_id'].id or
@@ -578,10 +584,11 @@ class ClouderService(models.Model):
             # Adding remaining childs from source
             for def_child_key in sources_to_add:
                 child = child_sources[def_child_key]
-                if child.required:
+                if child.auto:
                     childs.append((0, 0, {
                         'name': child.id,
                         'sequence': child.sequence,
+                        'required': child.required,
                         'node_id':
                             getattr(child, 'node_id', False) and
                             child.node_id.id or
@@ -665,7 +672,7 @@ class ClouderService(models.Model):
                         vals['backup_ids'] = [(6, 0, [backups[0].id])]
 
             vals['auto_backup'] = application.auto_backup
-            vals['dummy'] = application.dummy
+            vals['container'] = application.container
 
             vals['time_between_backup'] = \
                 application.service_time_between_backup
@@ -897,14 +904,19 @@ class ClouderService(models.Model):
             [('service_id', '=', self.id)]).unlink()
 
         image = self.env['clouder.image'].browse(vals['image_id'])
-        if vals['parent_id'] and image.volumes_from:
-            volumes_from = image.volumes_from.split(',')
-            targets = []
-            for child in self.env['clouder.service.child'].\
-                    browse(vals['parent_id']).service_id.child_ids:
-                for code in volumes_from:
-                    if child.name.check_tags([code]):
-                        targets.append(child.child_id)
+        targets = []
+        if vals['parent_id']:
+            parent = self.env['clouder.service.child'].browse(
+                vals['parent_id']).service_id
+            if image.volumes_from:
+                volumes_from = image.volumes_from.split(',')
+                for child in parent.child_ids:
+                    for code in volumes_from:
+                        if child.name.check_tags([code]):
+                            targets.append(child.child_id)
+            if parent.container:
+                targets.append(parent)
+        if targets:
             vals['volumes_from_ids'] = [(6, 0, [c.id for c in targets])]
 
         for key, value in vals.iteritems():
@@ -1051,9 +1063,8 @@ class ClouderService(models.Model):
             self.env['clouder.image.version'].search(
                 [('registry_id', '=', service.id)]).unlink()
             self = self.with_context(backup_comment='Before unlink')
-            backup = service.backup_exec(no_enqueue=True)
-            if service.parent_id:
-                service.parent_id.backup_id = backup
+            service.backup_exec(no_enqueue=True)
+
         return super(ClouderService, self).unlink()
 
     @api.multi
@@ -1208,27 +1219,27 @@ class ClouderService(models.Model):
                         arg += ':ro'
                     volumes.append(arg)
                 else:
-                    volumes.append('%s-%s:%s'
-                                   % (self.name, volume.name,
+                    volumes.append('%s:%s'
+                                   % (volume.volume_id.name,
                                       volume.localpath))
             else:
                 volumes.append(
-                    'type=volume,source=%s-%s,destination=%s'
-                    % (self.name, volume.name, volume.localpath))
+                    'type=volume,source=%s,destination=%s'
+                    % (volume.volume_id.name, volume.localpath))
         volumes_from = []
         for volume_from in self.volumes_from_ids:
             if self.runner != 'swarm':
                 # If not swarm, return all volumes of service
                 for volume in volume_from.volume_ids:
-                    volumes.append('%s-%s:%s'
-                                   % (volume_from.name, volume.name,
+                    volumes.append('%s:%s'
+                                   % (volume.volume_id.name,
                                       volume.localpath))
             else:
                 # If swarm, return all volumes of service
                 for volume in volume_from.volume_ids:
                     volumes_from.append(
-                        'type=volume,source=%s-%s,destination=%s'
-                        % (volume_from.name, volume.name, volume.localpath))
+                        'type=volume,source=%s,destination=%s'
+                        % (volume.name, volume.localpath))
         links = []
         for link in self.link_ids:
             if link.make_link:
@@ -1309,17 +1320,41 @@ class ClouderService(models.Model):
         return
 
     @api.multi
-    def recursive_deploy_one(self):
+    def recursive_deploy_volume(self):
         """
         Recursively deploy services one by one
         """
 
-        if self.child_ids:
-            for child in self.child_ids:
-                child.child_id.recursive_deploy_one()
-        else:
-            # We only call the hook if service without children
+        # Create Volume
+        if self.container:
+            volume_obj = self.env['clouder.volume']
+            for service_volume in self.volume_ids:
+                volume_name = '%s-%s' % (self.name, service_volume.name)
+                if not service_volume.volume_id:
+                    volumes = volume_obj.search([('name', '=', volume_name)])
+                    if not volumes:
+                        service_volume.volume_id = volume_obj.create(
+                            {'name': volume_name,
+                             'path': service_volume.localpath,
+                             'node_id': self.node_id.id})
+                    else:
+                        service_volume.volume_id = volumes[0]
+
+        for child in self.child_ids.filtered(lambda r: r.child_id):
+            child.child_id.recursive_deploy_volume()
+        return
+
+    @api.multi
+    def recursive_deploy_one(self):
+        """
+        Recursively deploy services one by one
+        """
+        if self.container:
             self.hook_deploy_one()
+
+        for child in self.child_ids.filtered(lambda r: r.child_id):
+            child.child_id.recursive_deploy_one()
+
         return
 
     @api.multi
@@ -1327,13 +1362,12 @@ class ClouderService(models.Model):
         """
         Recursively execute deploy_post function
         """
-        if self.child_ids:
-            for child in self.child_ids:
-                child.child_id.recursive_deploy_post()
-        else:
-            # We only call the hook if service without children
+        if self.container:
             self.deploy_post()
-            self.deploy_links()
+        self.deploy_links()
+
+        for child in self.child_ids.filtered(lambda r: r.child_id):
+            child.child_id.recursive_deploy_post()
         return
 
     @api.multi
@@ -1341,13 +1375,12 @@ class ClouderService(models.Model):
         """
         Recursively execute backup
         """
-        if self.child_ids:
-            for child in self.child_ids:
-                child.child_id.recursive_backup()
-        else:
-            # Avoid backup alert on monitoring
-            self = self.with_context(backup_comment='First backup')
-            self.backup_exec(no_enqueue=True)
+        # Avoid backup alert on monitoring
+        self = self.with_context(backup_comment='First backup')
+        self.backup_exec(no_enqueue=True)
+
+        self.child_ids.mapped('child_id').recursive_backup()
+
         return
 
     @api.multi
@@ -1361,14 +1394,10 @@ class ClouderService(models.Model):
 
         # Create childs
         if self.child_ids:
-            for child in self.child_ids:
+            for child in self.child_ids.filtered(lambda r: r.required):
                 # Childs does not execute deploy when initiated by parent
                 child = child.with_context(no_deploy=True)
                 child.create_child_exec()
-
-        # Skip deploy if not a real service
-        if self.dummy:
-            return
 
         # Skip deploy if compose context and not root
         if 'no_deploy' in self.env.context:
@@ -1376,6 +1405,9 @@ class ClouderService(models.Model):
 
         if self.parent_id:
             self.parent_id.child_id = self
+
+        # Execute deploy volume on all children
+        self.recursive_deploy_volume()
 
         # If compose mode, we only execute deploy for root
         if self.compose:
@@ -1415,6 +1447,11 @@ class ClouderService(models.Model):
         return
 
     @api.multi
+    def purge_with_volume(self):
+        service = self.with_context(no_enqueue=True, purge_volume=True)
+        service.do('purge_with_volume', 'purge')
+
+    @api.multi
     def purge(self):
         """
         Remove the service.
@@ -1423,19 +1460,22 @@ class ClouderService(models.Model):
         childs = self.env['clouder.service.child'].search(
             [('service_id', '=', self.id)], order='sequence DESC')
 
-        if childs:
-            # If compose mode, purge if root
-            if self.compose and not self.parent_id:
+        # If compose mode, purge if root
+        if self.compose:
+            if not self.parent_id:
                 self.hook_purge_compose()
+        else:
             # Recursively delete childs in Odoo
             for child in childs:
                 child.delete_child_exec()
-        else:
-            # If not compose, purge current service
-            if not self.compose:
+            if self.container:
                 self.stop()
                 # self.purge_salt()
                 self.hook_purge_one()
+
+        if 'purge_volume' in self.env.context:
+            self.volume_ids.mapped('volume_id').unlink()
+
         super(ClouderService, self).purge()
 
         return

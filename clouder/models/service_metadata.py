@@ -93,5 +93,5 @@ class ClouderServiceMetadata(models.Model):
             # User display
             self.raise_error(
                 'Invalid value for type "%s": \n\t"%s"\n',
-                self.name.value_type, self.value_data,
+                (self.name.value_type, self.value_data),
             )

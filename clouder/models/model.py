@@ -393,7 +393,8 @@ class ClouderModel(models.AbstractModel):
         self.ensure_one()
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
-                link.deploy_()
+                if link.auto:
+                    link.deploy_()
 
     @api.multi
     def purge_links(self):
@@ -403,7 +404,8 @@ class ClouderModel(models.AbstractModel):
         self.ensure_one()
         if hasattr(self, 'link_ids'):
             for link in self.link_ids:
-                link.purge_()
+                if link.auto:
+                    link.purge_()
 
     @api.multi
     def reinstall(self):

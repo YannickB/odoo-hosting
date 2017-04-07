@@ -45,7 +45,7 @@ class ClouderServiceLink(models.Model):
             self.raise_error(
                 'You need to specify a link to '
                 '"%s" for the service "%s".',
-                self.name.name, self.service_id.name,
+                (self.name.name, self.service_id.name)
             )
 
     @api.multi
@@ -72,9 +72,6 @@ class ClouderServiceLink(models.Model):
         """
         Make the control to know if we can launch the deploy/purge.
         """
-        if self.service_id.child_ids:
-            self.log('The service has children, skipping deploy link')
-            return False
         if not self.target:
             self.log('The target isnt configured in the link, '
                      'skipping deploy link')

@@ -43,5 +43,5 @@ class ClouderServiceOption(models.Model):
             self.raise_error(
                 'You need to specify a value for the option '
                 '"%s" for the service "%s".',
-                self.name.name, self.service_id.name,
+                (self.name.name, self.service_id.name),
             )

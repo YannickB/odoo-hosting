@@ -46,7 +46,7 @@ class ClouderNode(models.Model):
             self.domain_id.write({'dns_id': bind.id})
             self.deploy_dns_exec()
 
-        self.oneclick_deploy_element('service', 'postfix', ports=[25])
+        self.oneclick_deploy_element('service', 'postfix-all', ports=[25])
 
         self.oneclick_deploy_element('service', 'proxy', ports=[80, 443])
 
@@ -86,7 +86,7 @@ class ClouderNode(models.Model):
                             ('suffix', '=', 'bind')]).unlink()
 
         service_obj.search([('environment_id', '=', self.environment_id.id),
-                            ('suffix', '=', 'postfix')]).unlink()
+                            ('suffix', '=', 'postfix-all')]).unlink()
 
         service_obj.search([('environment_id', '=', self.environment_id.id),
                             ('suffix', '=', 'backup-bup')]).unlink()

@@ -34,7 +34,8 @@ class ClouderTemplateOne2Many(models.AbstractModel):
                     ('name', '=', name)])
                 vals = {}
                 for field in self._template_fields:
-                    vals[field] = getattr(self, field)
+                    if getattr(self, field):
+                        vals[field] = getattr(self, field)
                 if childs:
                     for child in childs:
                         child.write(vals)

@@ -38,5 +38,5 @@ class ClouderBaseOption(models.Model):
             self.raise_error(
                 'You need to specify a value for the option "%s" '
                 'for the base "%s".',
-                self.name.name, self.base_id.name,
+                (self.name.name, self.base_id.name),
             )

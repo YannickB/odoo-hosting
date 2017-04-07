@@ -460,6 +460,26 @@ class ClouderNode(models.Model):
             self.domain_id.refresh_serial()
 
     @api.multi
+    def oneclick_recursive_update_ports(self, service, ports):
+        """
+        Recursively deploy services one by one
+        """
+        port_obj = self.env['clouder.service.port']
+        for port in ports:
+            port_record = port_obj.search([
+                ('service_id', '=', service.id),
+                ('local_port', '=', port)])
+            port_record.write({'hostport': port})
+        service = service.with_context(service_childs=[])
+        service.deploy()
+
+        for child in service.child_ids:
+            if child.child_id:
+                self.oneclick_recursive_update_ports(child.child_id, ports)
+
+        return
+
+    @api.multi
     def oneclick_deploy_element(
             self, type, code, service=False, code_service='', ports=None):
 
@@ -468,7 +488,6 @@ class ClouderNode(models.Model):
 
         application_obj = self.env['clouder.application']
         service_obj = self.env['clouder.service']
-        port_obj = self.env['clouder.service.port']
         base_obj = self.env['clouder.base']
 
         application = application_obj.search([('code', '=', code)])
@@ -495,13 +514,8 @@ class ClouderNode(models.Model):
                     'application_id': application.id,
                 })
                 if self.oneclick_ports and ports:
-                    for port in ports:
-                        port_record = port_obj.search([
-                            ('service_id', '=', service.childs['exec'].id),
-                            ('local_port', '=', port)])
-                        port_record.write({'hostport': port})
-                    service = service.with_context(service_childs=False)
-                    service.childs['exec'].deploy()
+                    self.oneclick_recursive_update_ports(service, ports)
+
             return service
 
         if type == 'base':
@@ -543,11 +557,12 @@ class ClouderNode(models.Model):
 
     @api.multi
     def oneclick_purge(self):
-        self = self.with_context(no_enqueue=True)
+        self = self.with_context(no_enqueue=True, purge_volume=True)
         self.do('oneclick_purge', 'oneclick_purge_exec')
 
     @api.multi
     def oneclick_purge_exec(self):
+
         return
 
     @api.multi

@@ -41,3 +41,4 @@ class ClouderImageVolume(models.Model):
     user = fields.Char('System User')
     readonly = fields.Boolean('Readonly?')
     no_backup = fields.Boolean('No backup?')
+    manual_update = fields.Boolean('Reset on Manual Update?')

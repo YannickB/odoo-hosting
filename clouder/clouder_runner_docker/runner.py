@@ -425,7 +425,7 @@ class ClouderService(models.Model):
             else:
 
                 if self.runner == 'engine':
-                    self.node_id.execute(['docker', 'rm', '-v', self.name])
+                    self.node_id.execute(['docker', 'rm', self.name])
 
                 elif self.runner == 'swarm':
                     # Remove service
@@ -438,11 +438,6 @@ class ClouderService(models.Model):
                         self.node_id.execute(
                             ['docker', 'network', 'rm',
                              self.environment_id.prefix + '-network'])
-                # Remove volume linked to this service
-                for volume in self.volume_ids:
-                    self.node_id.execute(
-                        ['docker', 'volume', 'rm',
-                         self.name + '-' + volume.name])
 
         return res
 
@@ -557,3 +552,45 @@ class ClouderService(models.Model):
             time.sleep(3)
 
         return res
+
+
+class ClouderVolume(models.Model):
+    """
+    Add methods to manage the docker volume specificities.
+    """
+
+    _inherit = 'clouder.volume'
+
+    @api.multi
+    def hook_deploy(self):
+        """
+        Deploy the volume in the node.
+        """
+
+        super(ClouderVolume, self).hook_deploy()
+
+        if any((
+                not self.node_id.runner_id,
+                self.node_id.runner_id.application_id.type_id.name == 'docker',
+        )):
+            self.node_id.execute([
+                'docker', 'volume', 'create', self.name])
+
+        return
+
+    @api.multi
+    def hook_purge(self):
+        """
+        Purge the volume in the node.
+        """
+
+        super(ClouderVolume, self).hook_purge()
+
+        if any((
+                not self.node_id.runner_id,
+                self.node_id.runner_id.application_id.type_id.name == 'docker',
+        )):
+            self.node_id.execute([
+                'docker', 'volume', 'rm', self.name])
+
+        return

@@ -63,7 +63,7 @@ class ClouderImage(models.Model):
         elif self.parent_from:
             dockerfile.append(self.parent_from)
         else:
-            self.raise_error(
+            self.env['clouder.model'].raise_error(
                 "You need to specify the image to inherit!",
             )
 
@@ -73,7 +73,7 @@ class ClouderImage(models.Model):
 
         dockerfile.append(self.dockerfile or '')
 
-        volumes = [v.name for v in self.volume_ids]
+        volumes = [v.localpath for v in self.volume_ids]
         if volumes:
             dockerfile.append('\nVOLUME %s' % ' '.join(volumes))
 

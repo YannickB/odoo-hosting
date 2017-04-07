@@ -53,6 +53,7 @@ class ClouderApplication(models.Model):
                                       'Links Targets')
     metadata_ids = fields.One2many(
         'clouder.application.metadata', 'application_id', 'Metadata')
+    auto = fields.Boolean('Auto?')
     required = fields.Boolean('Required?')
     sequence = fields.Integer('Sequence')
     child_ids = fields.Many2many(
@@ -60,9 +61,7 @@ class ClouderApplication(models.Model):
         'parent_id', 'child_id', 'Childs')
     service_ids = fields.One2many('clouder.service', 'application_id',
                                   'Services')
-    update_strategy = fields.Selection([
-        ('never', 'Never'), ('manual', 'Manual'), ('auto', 'Automatic')],
-        string='Service Update Strategy', required=True, default='never')
+    auto_update = fields.Boolean('Auto Update?')
     update_bases = fields.Boolean('Update bases?')
     auto_backup = fields.Boolean('Backup?')
     service_backup_ids = fields.Many2many(
@@ -85,7 +84,7 @@ class ClouderApplication(models.Model):
     partner_id = fields.Many2one(
         'res.partner', 'Manager',
         default=lambda self: self.env['clouder.model'].user_partner)
-    dummy = fields.Boolean('Dummy?')
+    container = fields.Boolean('Container?')
     provider = fields.Boolean('Display Provider?')
 
     @property
@@ -195,7 +194,7 @@ class ClouderApplication(models.Model):
     def _check_image(self):
         """
         """
-        if not self.default_image_id and not self.child_ids and not self.dummy:
+        if not self.default_image_id and not self.child_ids and self.container:
             self.raise_error('You need to specify the image!')
 
     @api.multi

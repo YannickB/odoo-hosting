@@ -1,6 +1,20 @@
 FROM clouder/base:3.4
 MAINTAINER Yannick Buron yannick.buron@gmail.com
 
+# create the odoo user
+RUN adduser -D -g "" odoo
+RUN touch /home/odoo/.pgpass
+
+RUN mkdir -p /opt/odoo/data
+RUN mkdir -p /opt/odoo/etc
+RUN mkdir -p /opt/odoo/extra-addons
+RUN mkdir -p /opt/odoo/var/run
+RUN mkdir -p /opt/odoo/var/log
+RUN mkdir -p /opt/odoo/var/egg-cache
+ADD odoo.conf /opt/odoo/etc/odoo.conf
+
+RUN chown -R odoo:odoo /opt/odoo
+
 #RUN touch /tmp/odoo-exec
 # generate locales
 #RUN locale-gen en_US.UTF-8 && update-locale
@@ -17,28 +31,26 @@ MAINTAINER Yannick Buron yannick.buron@gmail.com
 # most dependencies are distributed as wheel packages at the next step
 #RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/pgdg.list && apt-get update && apt-get -yq install adduser ghostscript postgresql-client-9.5 python python-pip libjpeg-dev libfreetype6-dev zlib1g-dev libpng12-dev python-imaging python-pychart python-libxslt1 xfonts-base xfonts-75dpi libxrender1 libxext6 fontconfig python-zsi python-lasso libzmq5 libxslt1-dev libxml2-dev libxml2 libxslt1.1 python-dev libpq-dev libffi-dev libldap2-dev libssl-dev libsasl2-dev openssh-client node-less
 
-RUN apk add --update --no-cache postgresql-client nodejs py2-pip \
+RUN apk add --update --no-cache postgresql-client nodejs py2-pip py-libxslt libjpeg-turbo \
         && apk add --update --no-cache --virtual .build-deps gcc libffi-dev libjpeg-turbo-dev libxslt-dev linux-headers musl-dev openldap-dev postgresql-dev python-dev \
-        && pip --no-cache-dir install --upgrade setuptools pip \
-        && pip --no-cache-dir install --upgrade -r https://raw.githubusercontent.com/odoo/odoo/8.0/requirements.txt \
+        && pip --no-cache-dir install --upgrade --force setuptools pip \
+        # Fix problem with pyparsing, remove later
+        # && pip install setuptools==33.1.1 \
+        # && pip --no-cache-dir install --upgrade -r https://raw.githubusercontent.com/odoo/odoo/8.0/requirements.txt \
         && pip --no-cache-dir install --upgrade -r https://raw.githubusercontent.com/odoo/odoo/9.0/requirements.txt \
         && pip --no-cache-dir install --upgrade -r https://raw.githubusercontent.com/odoo/odoo/10.0/requirements.txt \
-        && pip --no-cache-dir install --upgrade paramiko erppeek \
         && easy_install -UZ py3o.template==0.9.5 \
         && npm install -g less \
-        && apk add --update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing wkhtmltopdf \
+        # && apk add --update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing wkhtmltopdf \
         && apk del .build-deps
 
-# create the odoo user
-RUN adduser -D -g "" odoo
-RUN mkdir -p /opt/odoo/data
-RUN mkdir -p /opt/odoo/etc
-RUN mkdir -p /opt/odoo/extra-addons
-RUN mkdir -p /opt/odoo/var
-RUN chown -R odoo /opt/odoo/*
-#RUN chown -R odoo /opt/odoo/etc
-#RUN chown -R odoo /opt/odoo/extra-addons
-#RUN chown -R odoo /opt/odoo/data
+RUN apk add --update --no-cache \
+    libgcc libstdc++ libx11 glib libxrender libxext libintl \
+    libcrypto1.0 libssl1.0 \
+    ttf-dejavu ttf-droid ttf-freefont ttf-liberation ttf-ubuntu-font-family
+
+RUN wget https://github.com/madnight/docker-alpine-wkhtmltopdf/raw/master/wkhtmltopdf -O /usr/bin/wkhtmltopdf
+RUN chmod +x /usr/bin/wkhtmltopdf
 
 # Execution environment
 USER odoo
