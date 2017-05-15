@@ -1379,7 +1379,8 @@ class ClouderService(models.Model):
         self = self.with_context(backup_comment='First backup')
         self.backup_exec(no_enqueue=True)
 
-        self.child_ids.mapped('child_id').recursive_backup()
+        for child in self.child_ids.filtered(lambda r: r.child_id):
+            child.child_id.recursive_backup()
 
         return
 
