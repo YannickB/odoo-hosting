@@ -1,6 +1,11 @@
 Clouder
 -------
 
+<b>This project isn't maintained anymore. We believe the core need to be rewritten from scratch to be more compatible with the microservices principles, unfortunately Clouder was centralizing too many things instead of just being so sort of control interface</b>
+
+Some developments are being made in a new project, which take into account both the learning we get with Clouder and the microservices principles, but you should not expect to see anything working soon.
+Meanwhile, the code of Clouder will stay here for reference, still open-sourced, and available if anyone want to become the new maintainers.
+
 [![Join the chat at https://gitter.im/clouder-community/clouder](https://badges.gitter.im/clouder-community/clouder.svg)](https://gitter.im/clouder-community/clouder?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 Clouder is a platform which aim to standardize good practices for hosting open-source software. Whether you are launching a hosting offer, are the sysadmin of a company, or just want to host software for you and your friends, Clouder will allow you to easily deploy and maintain a professionnal infrastructure with very basic technical knowledge.
